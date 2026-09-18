@@ -8,10 +8,18 @@ from pydantic import BaseModel
 
 import json
 
-from app.analysis import profile_csv
+from app.analysis import profile_csv, run_query
 import app.db as db_module
 from app.db import get_connection
-from app.models import Case, CaseCreate, Dataset, Profile
+from app.models import (
+    Case,
+    CaseCreate,
+    Dataset,
+    Profile,
+    Run,
+    RunCreate,
+    RunSummary,
+)
 
 app = FastAPI(
     title="DAH Harness Core",
@@ -250,4 +258,106 @@ async def get_profile(
         columns=json.loads(row["columns_json"]),
         stats=json.loads(row["stats_json"]),
         profiled_at=row["profiled_at"],
+    )
+
+
+@app.post(
+    "/cases/{case_id}/datasets/{dataset_id}/runs",
+    status_code=201,
+    response_model=Run,
+)
+async def create_run(
+    case_id: str,
+    dataset_id: str,
+    payload: RunCreate,
+    db=Depends(get_db),
+) -> Run:
+    """Run user SQL against an attached dataset and persist the result.
+
+    The query is a placeholder-free string bound to the dataset path by the
+    engine; the read-only check in run_query gates what may execute. Results
+    are capped (default 1000 rows) and marked truncated when they exceed it.
+    """
+    dataset = _require_dataset(db, case_id, dataset_id)
+
+    try:
+        result = run_query(dataset.stored_path, payload.sql)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error))
+    except Exception as error:
+        raise HTTPException(status_code=400, detail=f"query failed: {error}")
+
+    run = Run(
+        id=str(uuid4()),
+        case_id=case_id,
+        dataset_id=dataset_id,
+        sql=payload.sql,
+        columns=result["columns"],
+        rows=result["rows"],
+        row_count=result["row_count"],
+        truncated=result["truncated"],
+        executed_at=datetime.now(timezone.utc),
+    )
+    db.execute(
+        "INSERT INTO runs (id, case_id, dataset_id, sql, columns_json, rows_json, "
+        "row_count, truncated, executed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (
+            run.id,
+            run.case_id,
+            run.dataset_id,
+            run.sql,
+            json.dumps(run.columns),
+            json.dumps(run.rows),
+            run.row_count,
+            1 if run.truncated else 0,
+            run.executed_at.isoformat(),
+        ),
+    )
+    return run
+
+
+@app.get("/cases/{case_id}/runs", response_model=list[RunSummary])
+async def list_runs(case_id: str, db=Depends(get_db)) -> list[RunSummary]:
+    """List analysis runs for a case, without the heavy result rows."""
+    _require_case(db, case_id)
+    rows = db.execute(
+        "SELECT id, case_id, dataset_id, sql, row_count, truncated, executed_at "
+        "FROM runs WHERE case_id = ? ORDER BY executed_at DESC",
+        (case_id,),
+    ).fetchall()
+    return [
+        RunSummary(
+            id=row["id"],
+            case_id=row["case_id"],
+            dataset_id=row["dataset_id"],
+            sql=row["sql"],
+            row_count=row["row_count"],
+            truncated=bool(row["truncated"]),
+            executed_at=row["executed_at"],
+        )
+        for row in rows
+    ]
+
+
+@app.get("/cases/{case_id}/runs/{run_id}", response_model=Run)
+async def get_run(case_id: str, run_id: str, db=Depends(get_db)) -> Run:
+    """Reopen a persisted analysis run, including its result rows."""
+    _require_case(db, case_id)
+    row = db.execute(
+        "SELECT id, case_id, dataset_id, sql, columns_json, rows_json, row_count, "
+        "truncated, executed_at FROM runs WHERE id = ? AND case_id = ?",
+        (run_id, case_id),
+    ).fetchone()
+    if row is None:
+        raise HTTPException(status_code=404, detail="run not found")
+    return Run(
+        id=row["id"],
+        case_id=row["case_id"],
+        dataset_id=row["dataset_id"],
+        sql=row["sql"],
+        columns=json.loads(row["columns_json"]),
+        rows=json.loads(row["rows_json"]),
+        row_count=row["row_count"],
+        truncated=bool(row["truncated"]),
+        executed_at=row["executed_at"],
     )

@@ -24,7 +24,7 @@ must work first; AI assistance joins in a later slice once the chain is proven.
 |---------|-----------|----------|--------|--------------|--------------|
 | P1-DATA-001 | Data Ingestion | M | DONE | none (P0 done) | CSV attaches to a case, file on disk, survives reopen |
 | P1-DATA-002 | Data Profiling | M | DONE | P1-DATA-001 | Profile (rows/columns/missingness) stored against the dataset |
-| P1-ANALYSIS-003 | Analysis Execution | M | NOT_STARTED | P1-DATA-002 | SQL run against attached CSV via DuckDB, result persisted |
+| P1-ANALYSIS-003 | Analysis Execution | M | DONE | P1-DATA-002 | SQL run against attached CSV via DuckDB, result persisted |
 | P1-EVIDENCE-004 | Evidence & Findings | M | NOT_STARTED | P1-ANALYSIS-003 | Finding links to result -> query -> dataset chain |
 | P1-VALID-005 | Validation | M | NOT_STARTED | P1-EVIDENCE-004 | Rerun reproduces result; missing-data caveat attached |
 

@@ -4,32 +4,38 @@
 
 - P0 PASSED: all exit criteria, verification/p0/REPORT.md
 - P1 decomposed into 5 tasks (ai/TASKS.md)
-- P1-DATA-001 DONE: CSV dataset attachment (multipart upload, on-disk storage)
-- P1-DATA-002 DONE: deterministic dataset profiling (rows, columns, per-column null counts)
+- P1-DATA-001 DONE: CSV dataset attachment
+- P1-DATA-002 DONE: deterministic dataset profiling
+- P1-ANALYSIS-003 DONE: read-only SQL analysis runs, persisted with results
 
 ## What changed
 
-- server/app/analysis.py: profile_csv now returns rows/columns/stats with null counts
-- server/app/db.py: profiles table added
-- server/app/models.py: Profile model
-- server/app/main.py: POST/GET /cases/{id}/datasets/{dataset_id}/profile
-- server/tests/test_analysis.py: updated for new profile_csv shape + missingness test
-- server/tests/test_profiles.py: profile+reopen, 404 for unknown dataset, 404 before profiling
+- server/app/analysis.py: run_query - read-only check (single SELECT-family statement,
+  no semicolons), parameter-bound dataset path, 1000-row cap + truncation flag
+- server/app/db.py: runs table
+- server/app/models.py: RunCreate / Run / RunSummary
+- server/app/main.py: POST /cases/{id}/datasets/{dataset_id}/runs,
+  GET /cases/{id}/runs (summaries, no rows), GET /cases/{id}/runs/{run_id} (full)
+- server/tests/test_runs.py: aggregation+reopen, list excludes rows, DELETE rejected,
+  multi-statement rejected, unknown dataset 404
 
 ## Tests performed
 
-- server pytest: 13 passed
-- Live: profiled messy.csv -> 3 rows, null counts correct (revenue=1, region=1)
+- server pytest: 18 passed
+- Live: SUM(revenue) GROUP BY region -> 2 rows correct; DELETE and multi-statement
+  both rejected with 400; run reopened with rows intact
 
 ## Unresolved problems
 
-- none. SQL execution is next - profiles are read-only inputs to it.
+- none. The read-only check is a prefix/semicolon gate, not a full SQL parser -
+  acceptable for local single-user MVP; the Verification Plan's Gate K security
+  work hardens this later with sandboxing.
 
 ## Next action
 
-P1-ANALYSIS-003: run user SQL against an attached dataset via DuckDB and persist
-the result. Introduces the evidence chain: result -> query -> dataset.
-Consider SQL safety (read-only, single statement) since query text is user input.
+P1-EVIDENCE-004: findings linked to runs. Establishes the trust chain
+finding -> result -> query -> dataset. Then P1-VALID-005 reruns the query to
+prove reproducibility.
 
 ## Important context
 

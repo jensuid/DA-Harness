@@ -1,6 +1,7 @@
-"""Request/response models for Analysis Cases, datasets, and profiles."""
+"""Request/response models for Analysis Cases, datasets, profiles, and runs."""
 
 from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel
 
@@ -32,3 +33,29 @@ class Profile(BaseModel):
     columns: list[str]
     stats: dict
     profiled_at: datetime
+
+
+class RunCreate(BaseModel):
+    sql: str
+
+
+class Run(BaseModel):
+    id: str
+    case_id: str
+    dataset_id: str
+    sql: str
+    columns: list[str]
+    rows: list[list[Any]]
+    row_count: int
+    truncated: bool
+    executed_at: datetime
+
+
+class RunSummary(BaseModel):
+    id: str
+    case_id: str
+    dataset_id: str
+    sql: str
+    row_count: int
+    truncated: bool
+    executed_at: datetime

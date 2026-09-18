@@ -41,6 +41,20 @@ CREATE TABLE IF NOT EXISTS profiles (
     profiled_at TEXT NOT NULL,
     FOREIGN KEY (dataset_id) REFERENCES datasets(id)
 );
+
+CREATE TABLE IF NOT EXISTS runs (
+    id TEXT PRIMARY KEY,
+    case_id TEXT NOT NULL,
+    dataset_id TEXT NOT NULL,
+    sql TEXT NOT NULL,
+    columns_json TEXT NOT NULL,
+    rows_json TEXT NOT NULL,
+    row_count INTEGER NOT NULL,
+    truncated INTEGER NOT NULL,
+    executed_at TEXT NOT NULL,
+    FOREIGN KEY (case_id) REFERENCES cases(id),
+    FOREIGN KEY (dataset_id) REFERENCES datasets(id)
+);
 """
 
 
