@@ -24,6 +24,7 @@ class Dataset(BaseModel):
     case_id: str
     filename: str
     stored_path: str
+    format: str
     created_at: datetime
 
 

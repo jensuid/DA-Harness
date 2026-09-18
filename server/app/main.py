@@ -107,6 +107,14 @@ async def list_cases(db=Depends(get_db)) -> list[Case]:
     ]
 
 
+SUPPORTED_FORMATS = (".csv", ".parquet", ".xlsx")
+
+
+def _format_for(filename: str) -> str:
+    """Dataset format is the lowercased extension, without the dot."""
+    return Path(filename).suffix.lower().lstrip(".")
+
+
 def _require_case(db, case_id: str) -> None:
     row = db.execute("SELECT 1 FROM cases WHERE id = ?", (case_id,)).fetchone()
     if row is None:
@@ -129,8 +137,10 @@ async def attach_dataset(
     """
     _require_case(db, case_id)
 
-    if not file.filename or not file.filename.lower().endswith(".csv"):
-        raise HTTPException(status_code=400, detail="only .csv files are supported")
+    if not file.filename or not file.filename.lower().endswith(SUPPORTED_FORMATS):
+        raise HTTPException(
+            status_code=400, detail="only .csv, .parquet, and .xlsx files are supported"
+        )
 
     content = await file.read()
     if not content.strip():
@@ -139,7 +149,7 @@ async def attach_dataset(
     dataset_id = str(uuid4())
     case_dir = db_module.DATA_DIR / case_id
     case_dir.mkdir(parents=True, exist_ok=True)
-    stored_path = case_dir / f"{dataset_id}.csv"
+    stored_path = case_dir / f"{dataset_id}.{_format_for(file.filename)}"
     stored_path.write_bytes(content)
 
     dataset = Dataset(
@@ -147,16 +157,18 @@ async def attach_dataset(
         case_id=case_id,
         filename=file.filename,
         stored_path=str(stored_path),
+        format=_format_for(file.filename),
         created_at=datetime.now(timezone.utc),
     )
     db.execute(
-        "INSERT INTO datasets (id, case_id, filename, stored_path, created_at) "
-        "VALUES (?, ?, ?, ?, ?)",
+        "INSERT INTO datasets (id, case_id, filename, stored_path, format, created_at) "
+        "VALUES (?, ?, ?, ?, ?, ?)",
         (
             dataset.id,
             dataset.case_id,
             dataset.filename,
             dataset.stored_path,
+            dataset.format,
             dataset.created_at.isoformat(),
         ),
     )
@@ -168,7 +180,7 @@ async def list_datasets(case_id: str, db=Depends(get_db)) -> list[Dataset]:
     """List datasets attached to an Analysis Case."""
     _require_case(db, case_id)
     rows = db.execute(
-        "SELECT id, case_id, filename, stored_path, created_at FROM datasets "
+        "SELECT id, case_id, filename, stored_path, format, created_at FROM datasets "
         "WHERE case_id = ? ORDER BY created_at DESC",
         (case_id,),
     ).fetchall()
@@ -178,6 +190,7 @@ async def list_datasets(case_id: str, db=Depends(get_db)) -> list[Dataset]:
             case_id=row["case_id"],
             filename=row["filename"],
             stored_path=row["stored_path"],
+            format=row["format"],
             created_at=row["created_at"],
         )
         for row in rows
@@ -186,7 +199,7 @@ async def list_datasets(case_id: str, db=Depends(get_db)) -> list[Dataset]:
 
 def _require_dataset(db, case_id: str, dataset_id: str) -> Dataset:
     row = db.execute(
-        "SELECT id, case_id, filename, stored_path, created_at FROM datasets "
+        "SELECT id, case_id, filename, stored_path, format, created_at FROM datasets "
         "WHERE id = ? AND case_id = ?",
         (dataset_id, case_id),
     ).fetchone()
@@ -197,6 +210,7 @@ def _require_dataset(db, case_id: str, dataset_id: str) -> Dataset:
         case_id=row["case_id"],
         filename=row["filename"],
         stored_path=row["stored_path"],
+        format=row["format"],
         created_at=row["created_at"],
     )
 

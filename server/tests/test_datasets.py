@@ -21,7 +21,39 @@ def _temp_env(tmp_path):
     return data_dir
 
 
-CSV = b"order_id,revenue,region\n1,125.0,north\n2,80.5,south\n"
+CSV = b"order_id,revenue,region\n1,125.0,north\n2,80.5,south\n3,200.0,north\n"
+
+
+def _golden_parquet(tmp_path) -> bytes:
+    """Build a two-row parquet file from the golden CSV content."""
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+
+    path = tmp_path / "golden.parquet"
+    table = pa.table(
+        {
+            "order_id": pa.array([1, 2, 3], type=pa.int64()),
+            "revenue": pa.array([125.0, 80.5, 200.0], type=pa.float64()),
+            "region": pa.array(["north", "south", "north"]),
+        }
+    )
+    pq.write_table(table, path)
+    return path.read_bytes()
+
+
+def _golden_xlsx(tmp_path) -> bytes:
+    """Build a two-row xlsx file from the golden CSV content."""
+    import openpyxl
+
+    path = tmp_path / "golden.xlsx"
+    workbook = openpyxl.Workbook()
+    sheet = workbook.active
+    sheet.append(["order_id", "revenue", "region"])
+    sheet.append([1, 125.0, "north"])
+    sheet.append([2, 80.5, "south"])
+    sheet.append([3, 200.0, "north"])
+    workbook.save(path)
+    return path.read_bytes()
 
 
 def _make_case(client) -> str:
@@ -43,6 +75,7 @@ def test_attach_and_reopen_dataset(tmp_path) -> None:
         assert response.status_code == 201
         dataset = response.json()
         assert dataset["filename"] == "sales.csv"
+        assert dataset["format"] == "csv"
         assert (data_dir / case_id / f"{dataset['id']}.csv").exists()
 
     # Reopen in a fresh client - the dataset must still be listed.
@@ -52,6 +85,91 @@ def test_attach_and_reopen_dataset(tmp_path) -> None:
     assert listed.status_code == 200
     assert len(listed.json()) == 1
     assert listed.json()[0]["filename"] == "sales.csv"
+
+
+def _attach(client, case_id: str, filename: str, content: bytes) -> str:
+    response = client.post(
+        f"/cases/{case_id}/datasets",
+        files={"file": (filename, content, "application/octet-stream")},
+    )
+    assert response.status_code == 201
+    return response.json()["id"]
+
+
+def _profile(client, case_id: str, dataset_id: str) -> dict:
+    response = client.post(f"/cases/{case_id}/datasets/{dataset_id}/profile")
+    assert response.status_code == 201
+    return response.json()
+
+
+def test_attach_and_profile_parquet(tmp_path) -> None:
+    data_dir = _temp_env(tmp_path)
+    parquet = _golden_parquet(tmp_path)
+
+    with TestClient(app) as client:
+        case_id = _make_case(client)
+        dataset_id = _attach(client, case_id, "sales.parquet", parquet)
+        dataset = client.get(f"/cases/{case_id}/datasets").json()[0]
+        assert dataset["format"] == "parquet"
+        assert (data_dir / case_id / f"{dataset_id}.parquet").exists()
+
+        profile = _profile(client, case_id, dataset_id)
+        assert profile["rows"] == 3
+        assert profile["columns"] == ["order_id", "revenue", "region"]
+
+
+def test_attach_and_profile_xlsx(tmp_path) -> None:
+    _temp_env(tmp_path)
+    xlsx = _golden_xlsx(tmp_path)
+
+    with TestClient(app) as client:
+        case_id = _make_case(client)
+        dataset_id = _attach(client, case_id, "sales.xlsx", xlsx)
+        dataset = client.get(f"/cases/{case_id}/datasets").json()[0]
+        assert dataset["format"] == "xlsx"
+
+        profile = _profile(client, case_id, dataset_id)
+        assert profile["rows"] == 3
+        assert profile["columns"] == ["order_id", "revenue", "region"]
+
+
+def test_query_across_each_format(tmp_path) -> None:
+    """The same SQL runs against csv, parquet, and xlsx datasets."""
+    _temp_env(tmp_path)
+    sql = (
+        "SELECT region, SUM(revenue) AS total FROM read_csv_auto(?) "
+        "GROUP BY region ORDER BY region"
+    )
+    payloads = [
+        ("sales.csv", CSV),
+        ("sales.parquet", _golden_parquet(tmp_path)),
+        ("sales.xlsx", _golden_xlsx(tmp_path)),
+    ]
+
+    with TestClient(app) as client:
+        case_id = _make_case(client)
+        for filename, content in payloads:
+            dataset_id = _attach(client, case_id, filename, content)
+            run = client.post(
+                f"/cases/{case_id}/datasets/{dataset_id}/runs", json={"sql": sql}
+            )
+            assert run.status_code == 201, run.text
+            assert run.json()["rows"] == [["north", 325.0], ["south", 80.5]]
+
+
+def test_parquet_placeholder_form_is_accepted(tmp_path) -> None:
+    """Writing the natural read_parquet(?) placeholder works on a parquet file."""
+    _temp_env(tmp_path)
+
+    with TestClient(app) as client:
+        case_id = _make_case(client)
+        dataset_id = _attach(client, case_id, "sales.parquet", _golden_parquet(tmp_path))
+        run = client.post(
+            f"/cases/{case_id}/datasets/{dataset_id}/runs",
+            json={"sql": "SELECT COUNT(*) AS n FROM read_parquet(?)"},
+        )
+        assert run.status_code == 201, run.text
+        assert run.json()["rows"] == [[3]]
 
 
 def test_attach_to_unknown_case_returns_404(tmp_path) -> None:

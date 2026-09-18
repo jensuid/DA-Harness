@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS datasets (
     case_id TEXT NOT NULL,
     filename TEXT NOT NULL,
     stored_path TEXT NOT NULL,
+    format TEXT NOT NULL,
     created_at TEXT NOT NULL,
     FOREIGN KEY (case_id) REFERENCES cases(id)
 );
@@ -81,6 +82,14 @@ def get_connection(db_path: Path = DB_PATH) -> Iterator[sqlite3.Connection]:
     conn.row_factory = sqlite3.Row
     try:
         conn.executescript(SCHEMA)
+        # Databases created before the format column existed need it added.
+        # Guarded so it is a no-op on current schemas.
+        columns = {
+            row["name"]
+            for row in conn.execute("PRAGMA table_info(datasets)")
+        }
+        if "format" not in columns:
+            conn.execute("ALTER TABLE datasets ADD COLUMN format TEXT")
         yield conn
         conn.commit()
     finally:
