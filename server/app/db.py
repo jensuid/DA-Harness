@@ -39,6 +39,7 @@ CREATE TABLE IF NOT EXISTS profiles (
     rows INTEGER NOT NULL,
     columns_json TEXT NOT NULL,
     stats_json TEXT NOT NULL,
+    duplicate_rows INTEGER NOT NULL DEFAULT 0,
     profiled_at TEXT NOT NULL,
     FOREIGN KEY (dataset_id) REFERENCES datasets(id)
 );
@@ -72,6 +73,16 @@ CREATE TABLE IF NOT EXISTS runs (
 """
 
 
+def _ensure_column(conn, table: str, column: str, definition: str) -> None:
+    """Add a column to an older schema; a no-op on current ones."""
+    existing = {
+        row["name"]
+        for row in conn.execute(f"PRAGMA table_info({table})")
+    }
+    if column not in existing:
+        conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
+
+
 @contextmanager
 def get_connection(db_path: Path = DB_PATH) -> Iterator[sqlite3.Connection]:
     """Open a connection, ensuring the schema exists, and commit on success."""
@@ -84,12 +95,8 @@ def get_connection(db_path: Path = DB_PATH) -> Iterator[sqlite3.Connection]:
         conn.executescript(SCHEMA)
         # Databases created before the format column existed need it added.
         # Guarded so it is a no-op on current schemas.
-        columns = {
-            row["name"]
-            for row in conn.execute("PRAGMA table_info(datasets)")
-        }
-        if "format" not in columns:
-            conn.execute("ALTER TABLE datasets ADD COLUMN format TEXT")
+        _ensure_column(conn, "datasets", "format", "TEXT")
+        _ensure_column(conn, "profiles", "duplicate_rows", "INTEGER DEFAULT 0")
         yield conn
         conn.commit()
     finally:

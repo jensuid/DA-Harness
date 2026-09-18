@@ -83,8 +83,33 @@ def _is_read_only(sql: str) -> bool:
     return stripped.lower().startswith(_ALLOWED_PREFIXES)
 
 
+# DuckDB type families that support the basic stats below.
+_NUMERIC_TYPES = (
+    "TINYINT", "SMALLINT", "INTEGER", "BIGINT", "HUGEINT",
+    "UTINYINT", "USMALLINT", "UINTEGER", "UBIGINT",
+    "FLOAT", "DOUBLE", "REAL", "DECIMAL",
+)
+_TEMPORAL_TYPES = ("DATE", "TIME", "TIMESTAMP", "TIMESTAMP_MS", "TIMESTAMP_NS")
+
+
+def _type_family(type_name: str) -> str:
+    """Collapse a DuckDB type name into numeric / temporal / other."""
+    upper = type_name.upper()
+    for family, members in (
+        ("numeric", _NUMERIC_TYPES),
+        ("temporal", _TEMPORAL_TYPES),
+    ):
+        if any(upper.startswith(m) for m in members):
+            return family
+    return "other"
+
+
 def profile_csv(path: str) -> dict:
-    """Profile a tabular file: row count, columns, and per-column null counts.
+    """Profile a tabular file: shape, per-column type and null stats, duplicates.
+
+    Numeric and temporal columns also get min/max; numeric columns get an
+    average. The profile is deterministic and is the input the AI planner will
+    reason over, so it describes the data rather than just counting rows.
 
     The path is bound as a parameter, never interpolated into SQL text.
     Column names are quoted defensively; they come from DuckDB's own header
@@ -94,23 +119,114 @@ def profile_csv(path: str) -> dict:
     try:
         reader_call, bind_path = _reader_for(path)
         reader = connection.execute(f"SELECT * FROM {reader_call}", [bind_path])
-        columns = [column[0] for column in (reader.description or [])]
-        rows = len(reader.fetchall()) if columns else 0
+        description = reader.description or []
+        columns = [column[0] for column in description]
+        # DuckDB reports logical types per column; they drive which stats apply.
+        families = {name: _type_family(str(column[1])) for name, column in
+                    zip(columns, description)}
+        reader.fetchall()
 
         stats: dict[str, dict] = {}
+        total_rows = 0
+        duplicate_rows = 0
         if columns:
-            null_exprs = ", ".join(
-                'COUNT(*) - COUNT("' + column.replace('"', '""') + '")'
-                for column in columns
-            )
-            null_counts = connection.execute(
-                f"SELECT {null_exprs} FROM {reader_call}", [bind_path]
+            # Each column contributes 2 base aggregates, plus min/max for
+            # temporal/numeric and avg for numeric - so the flat result row is
+            # sliced per column by how many aggregates that column produced.
+            exprs = [_column_stat_expr(name, families[name]) for name in columns]
+            widths = [_stat_width(families[name]) for name in columns]
+            row = connection.execute(
+                f"SELECT {', '.join(exprs)} FROM {reader_call}", [bind_path]
             ).fetchone()
-            for index, column in enumerate(columns):
-                stats[column] = {"null_count": int(null_counts[index])}
+
+            total_rows = connection.execute(
+                f"SELECT COUNT(*) FROM {reader_call}", [bind_path]
+            ).fetchone()[0]
+
+            offset = 0
+            for name, width in zip(columns, widths):
+                stats[name] = _column_stat(
+                    name, families[name], row[offset:offset + width], total_rows
+                )
+                offset += width
+            duplicate_rows = _duplicate_row_count(connection, path)
     finally:
         connection.close()
-    return {"rows": rows, "columns": columns, "stats": stats}
+
+    return {
+        "rows": total_rows if columns else 0,
+        "columns": columns,
+        "stats": stats,
+        "duplicate_rows": duplicate_rows,
+    }
+
+
+def _column_stat_expr(name: str, family: str) -> str:
+    """Build the per-column aggregate expression for a profiling pass."""
+    quoted = '"' + name.replace('"', '""') + '"'
+    expr = (
+        f"COUNT(*) - COUNT({quoted}) AS nulls,"
+        f"COUNT(DISTINCT {quoted}) AS distinct_values"
+    )
+    if family in ("numeric", "temporal"):
+        expr += f",MIN({quoted}) AS min_value,MAX({quoted}) AS max_value"
+    if family == "numeric":
+        expr += f",AVG({quoted}) AS avg_value"
+    return expr
+
+
+def _stat_width(family: str) -> int:
+    """Aggregates _column_stat_expr emits for a column of this family."""
+    if family == "numeric":
+        return 5
+    if family == "temporal":
+        return 4
+    return 2
+
+
+def _coerce(value) -> object:
+    """Make a DuckDB scalar JSON-safe (dates and decimals are not)."""
+    if value is None:
+        return None
+    if isinstance(value, (str, int, float, bool)):
+        return value
+    return str(value)
+
+
+def _column_stat(name: str, family: str, values, total_rows: int) -> dict:
+    """Assemble one column's stat dict from its aggregate row."""
+    null_count = int(values[0])
+    stat = {
+        "type": family,
+        "null_count": null_count,
+        "null_percentage": round(null_count / total_rows * 100, 2)
+        if total_rows else 0.0,
+        "distinct_count": int(values[1]),
+    }
+    if family in ("numeric", "temporal"):
+        stat["min"] = _coerce(values[2])
+        stat["max"] = _coerce(values[3])
+    if family == "numeric":
+        stat["avg"] = _coerce(values[4])
+    return stat
+
+
+def _duplicate_row_count(connection, path: str) -> int:
+    """Count rows that are exact duplicates of an earlier row.
+
+    Total rows minus distinct rows: a row appearing three times contributes two
+    duplicates. Computed on the full row, not per column.
+    """
+    reader_call, bind_path = _reader_for(path)
+    row = connection.execute(
+        f"SELECT COUNT(*) FROM {reader_call}", [bind_path]
+    ).fetchone()
+    total = int(row[0])
+    distinct = int(connection.execute(
+        f"SELECT COUNT(*) FROM (SELECT DISTINCT * FROM {reader_call})",
+        [bind_path],
+    ).fetchone()[0])
+    return total - distinct
 
 
 def run_query(path: str, sql: str, limit: int = 1000) -> dict:

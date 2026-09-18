@@ -237,17 +237,19 @@ async def profile_dataset(
         rows=raw["rows"],
         columns=raw["columns"],
         stats=raw["stats"],
+        duplicate_rows=raw["duplicate_rows"],
         profiled_at=datetime.now(timezone.utc),
     )
     db.execute(
         "INSERT OR REPLACE INTO profiles "
-        "(dataset_id, rows, columns_json, stats_json, profiled_at) "
-        "VALUES (?, ?, ?, ?, ?)",
+        "(dataset_id, rows, columns_json, stats_json, duplicate_rows, profiled_at) "
+        "VALUES (?, ?, ?, ?, ?, ?)",
         (
             profile.dataset_id,
             profile.rows,
             json.dumps(profile.columns),
             json.dumps(profile.stats),
+            profile.duplicate_rows,
             profile.profiled_at.isoformat(),
         ),
     )
@@ -266,7 +268,7 @@ async def get_profile(
     """Retrieve the stored profile for an attached dataset."""
     _require_dataset(db, case_id, dataset_id)
     row = db.execute(
-        "SELECT dataset_id, rows, columns_json, stats_json, profiled_at "
+        "SELECT dataset_id, rows, columns_json, stats_json, duplicate_rows, profiled_at "
         "FROM profiles WHERE dataset_id = ?",
         (dataset_id,),
     ).fetchone()
@@ -277,6 +279,7 @@ async def get_profile(
         rows=row["rows"],
         columns=json.loads(row["columns_json"]),
         stats=json.loads(row["stats_json"]),
+        duplicate_rows=row["duplicate_rows"],
         profiled_at=row["profiled_at"],
     )
 

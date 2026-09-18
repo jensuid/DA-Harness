@@ -33,6 +33,7 @@ class Profile(BaseModel):
     rows: int
     columns: list[str]
     stats: dict
+    duplicate_rows: int
     profiled_at: datetime
 
 
