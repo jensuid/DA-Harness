@@ -1,0 +1,26 @@
+{
+  "docs/Coding-Agent Production System.md": {
+    "mtime": 1789734956.8002238,
+    "seen": 1789743111.648299,
+    "ast_hash": "0f623966c370365a8a9d9e7257f30e85",
+    "semantic_hash": "0f623966c370365a8a9d9e7257f30e85"
+  },
+  "docs/Implementation Roadmap.md": {
+    "mtime": 1789734719.838902,
+    "seen": 1789743111.648308,
+    "ast_hash": "f282c80f8499ef471a76345d8f4797be",
+    "semantic_hash": "f282c80f8499ef471a76345d8f4797be"
+  },
+  "docs/Product & Engineering Master Specification.md": {
+    "mtime": 1789734581.2312906,
+    "seen": 1789743111.6483111,
+    "ast_hash": "e760ec5df7517e4af9c55082ec2ae57c",
+    "semantic_hash": "e760ec5df7517e4af9c55082ec2ae57c"
+  },
+  "docs/Verification & Production Readiness Plan.md": {
+    "mtime": 1789736525.2858264,
+    "seen": 1789743111.648316,
+    "ast_hash": "11ade377b8989bd802c31f0c1313df3a",
+    "semantic_hash": "11ade377b8989bd802c31f0c1313df3a"
+  }
+}
