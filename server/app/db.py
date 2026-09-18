@@ -42,6 +42,19 @@ CREATE TABLE IF NOT EXISTS profiles (
     FOREIGN KEY (dataset_id) REFERENCES datasets(id)
 );
 
+CREATE TABLE IF NOT EXISTS findings (
+    id TEXT PRIMARY KEY,
+    case_id TEXT NOT NULL,
+    run_id TEXT NOT NULL,
+    statement TEXT NOT NULL,
+    interpretation TEXT,
+    caveat TEXT,
+    validation_status TEXT NOT NULL DEFAULT 'not_evaluated',
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (case_id) REFERENCES cases(id),
+    FOREIGN KEY (run_id) REFERENCES runs(id)
+);
+
 CREATE TABLE IF NOT EXISTS runs (
     id TEXT PRIMARY KEY,
     case_id TEXT NOT NULL,
