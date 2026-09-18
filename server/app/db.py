@@ -1,4 +1,4 @@
-"""SQLite persistence for Analysis Cases and their datasets.
+"""SQLite persistence for Analysis Cases, datasets, and profiles.
 
 Owns case STATE only. Analytical queries belong in analysis.py against DuckDB -
 the two stores stay separate by design (DEC-001).
@@ -31,6 +31,15 @@ CREATE TABLE IF NOT EXISTS datasets (
     stored_path TEXT NOT NULL,
     created_at TEXT NOT NULL,
     FOREIGN KEY (case_id) REFERENCES cases(id)
+);
+
+CREATE TABLE IF NOT EXISTS profiles (
+    dataset_id TEXT PRIMARY KEY,
+    rows INTEGER NOT NULL,
+    columns_json TEXT NOT NULL,
+    stats_json TEXT NOT NULL,
+    profiled_at TEXT NOT NULL,
+    FOREIGN KEY (dataset_id) REFERENCES datasets(id)
 );
 """
 

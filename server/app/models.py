@@ -1,4 +1,4 @@
-"""Request/response models for Analysis Cases and datasets."""
+"""Request/response models for Analysis Cases, datasets, and profiles."""
 
 from datetime import datetime
 
@@ -24,3 +24,11 @@ class Dataset(BaseModel):
     filename: str
     stored_path: str
     created_at: datetime
+
+
+class Profile(BaseModel):
+    dataset_id: str
+    rows: int
+    columns: list[str]
+    stats: dict
+    profiled_at: datetime

@@ -6,9 +6,12 @@ from uuid import uuid4
 from fastapi import Depends, FastAPI, HTTPException, UploadFile
 from pydantic import BaseModel
 
+import json
+
+from app.analysis import profile_csv
 import app.db as db_module
 from app.db import get_connection
-from app.models import Case, CaseCreate, Dataset
+from app.models import Case, CaseCreate, Dataset, Profile
 
 app = FastAPI(
     title="DAH Harness Core",
@@ -165,3 +168,86 @@ async def list_datasets(case_id: str, db=Depends(get_db)) -> list[Dataset]:
         )
         for row in rows
     ]
+
+
+def _require_dataset(db, case_id: str, dataset_id: str) -> Dataset:
+    row = db.execute(
+        "SELECT id, case_id, filename, stored_path, created_at FROM datasets "
+        "WHERE id = ? AND case_id = ?",
+        (dataset_id, case_id),
+    ).fetchone()
+    if row is None:
+        raise HTTPException(status_code=404, detail="dataset not found")
+    return Dataset(
+        id=row["id"],
+        case_id=row["case_id"],
+        filename=row["filename"],
+        stored_path=row["stored_path"],
+        created_at=row["created_at"],
+    )
+
+
+@app.post(
+    "/cases/{case_id}/datasets/{dataset_id}/profile",
+    status_code=201,
+    response_model=Profile,
+)
+async def profile_dataset(
+    case_id: str,
+    dataset_id: str,
+    db=Depends(get_db),
+) -> Profile:
+    """Profile an attached dataset with DuckDB and persist the result.
+
+    The profile is deterministic - no LLM involved (DEC-001).
+    """
+    dataset = _require_dataset(db, case_id, dataset_id)
+
+    raw = profile_csv(dataset.stored_path)
+    profile = Profile(
+        dataset_id=dataset_id,
+        rows=raw["rows"],
+        columns=raw["columns"],
+        stats=raw["stats"],
+        profiled_at=datetime.now(timezone.utc),
+    )
+    db.execute(
+        "INSERT OR REPLACE INTO profiles "
+        "(dataset_id, rows, columns_json, stats_json, profiled_at) "
+        "VALUES (?, ?, ?, ?, ?)",
+        (
+            profile.dataset_id,
+            profile.rows,
+            json.dumps(profile.columns),
+            json.dumps(profile.stats),
+            profile.profiled_at.isoformat(),
+        ),
+    )
+    return profile
+
+
+@app.get(
+    "/cases/{case_id}/datasets/{dataset_id}/profile",
+    response_model=Profile,
+)
+async def get_profile(
+    case_id: str,
+    dataset_id: str,
+    db=Depends(get_db),
+) -> Profile:
+    """Retrieve the stored profile for an attached dataset."""
+    _require_dataset(db, case_id, dataset_id)
+    row = db.execute(
+        "SELECT dataset_id, rows, columns_json, stats_json, profiled_at "
+        "FROM profiles WHERE dataset_id = ?",
+        (dataset_id,),
+    ).fetchone()
+    if row is None:
+        raise HTTPException(status_code=404, detail="profile not found")
+    return Profile(
+        dataset_id=row["dataset_id"],
+        rows=row["rows"],
+        columns=json.loads(row["columns_json"]),
+        stats=json.loads(row["stats_json"]),
+        profiled_at=row["profiled_at"],
+    )

@@ -2,11 +2,11 @@
 
 - **Phase:** P1 Vertical Slice
 - **Milestone status:** IN PROGRESS
-- **Completed capabilities:** FastAPI core; SQLite case persistence; DuckDB engine; Vite/React shell; P0 verification harness; CSV dataset attachment
-- **Active task:** none (P1-DATA-001 complete)
+- **Completed capabilities:** FastAPI core; SQLite case persistence; DuckDB engine; Vite/React shell; P0 verification harness; CSV dataset attachment; deterministic dataset profiling
+- **Active task:** none (P1-DATA-002 complete)
 - **Known issues:** none
-- **Test status:** server 9 passed; web 2 passed
-- **Next task:** P1-DATA-002 (dataset profiling: rows/columns/missingness stored against the dataset)
+- **Test status:** server 13 passed; web 2 passed
+- **Next task:** P1-ANALYSIS-003 (SQL run against attached CSV via DuckDB, result persisted)
 - **Blockers:** none
 
 ## P1 progress
@@ -14,7 +14,7 @@
 | Task | Status |
 |------|--------|
 | P1-DATA-001 CSV ingest | DONE |
-| P1-DATA-002 Dataset profiling | NOT STARTED |
+| P1-DATA-002 Dataset profiling | DONE |
 | P1-ANALYSIS-003 SQL analysis run | NOT STARTED |
 | P1-EVIDENCE-004 Findings & evidence | NOT STARTED |
 | P1-VALID-005 Validation | NOT STARTED |
