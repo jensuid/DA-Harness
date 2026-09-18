@@ -9,40 +9,38 @@
 - P0-INFRA-001 DONE: git repo, repo scaffold, FastAPI skeleton, health endpoint, pytest
 - P0-WEB-002 DONE: Vite + React + TS shell, case-creation screen, api client, Vitest
 - P0-DATA-003 DONE: SQLite case persistence, DuckDB analytical engine, case endpoints
+- P0 GATE PASSED: verification/p0/verify_p0.py runs the exit-test sequence, REPORT.md written
 
 ## What changed
 
-- server/app/db.py: SQLite connection + cases schema (check_same_thread=False for FastAPI threadpool)
-- server/app/models.py: CaseCreate / Case pydantic models
-- server/app/analysis.py: DuckDB profile_csv (row count + columns) - the seed of the Data & Evidence Engine
-- server/app/main.py: POST /cases, GET /cases/{id}, GET /cases
-- server/tests/test_cases.py: create/reopen golden test, 404, list
-- server/tests/test_analysis.py: DuckDB CSV profiling test
-- .gitignore: excludes the local dev database
+- verification/p0/verify_p0.py: repeatable P0 gate (start -> backend op -> persist
+  -> restart -> recover -> tests); DB wiped only on first start so recovery is real
+- ai/: state updated to P1 phase
 
 ## Tests performed
 
-- server `pytest`: 5 passed (health, create+reopen, 404, list, profile_csv)
-- Live golden test: created case, killed server, restarted, case reopened intact
-- End-to-end: POST /api/cases through the Vite proxy -> 201; list returned the case
-- web `npm test` / `npm run build`: still green (2 passed, build ok)
+- P0 exit-test sequence: all 6 steps PASS
+- server pytest: 5 passed; web vitest: 2 passed
 
 ## Unresolved problems
 
-- none blocking. CSV profiling is engine-only (no endpoint yet) - the API surface
-  arrives in P1 when the vertical slice needs it.
+- none. CSV profiling exists in the engine but has no endpoint yet - arrives in P1.
 
 ## Next action
 
-Run the P0 milestone verification: execute the exit-test sequence
-(start app -> backend op -> persist state -> restart -> recover -> run tests)
-and confirm all nine P0 exit criteria pass (see ai/CURRENT_STATE.md).
-On PASS, begin P1 task decomposition: Case -> Question -> CSV -> Profile -> Plan
--> Analysis -> Evidence -> Finding -> Validation -> Save.
+Decompose P1 into tasks. Suggested first batch (one session each):
+1. CSV ingest endpoint (upload/attach a dataset to a case) + golden test
+2. Attach profile to a case (wire profile_csv into the case flow)
+3. SQL analysis run against an attached dataset via DuckDB + result persistence
+4. Finding + evidence link (finding -> result -> query -> dataset chain)
+5. Validation checks (reproducibility, denominator, missing data)
+
+Keep AI planning out of the first slices - prove the deterministic loop first.
 
 ## Important context
 
 - server venv at server/.venv (Python 3.14); install with `uv pip install --python .venv/bin/python -e ".[dev]"`
 - web deps installed; node_modules gitignored
 - dev DB is server/dah.db (gitignored); tests use tmp_path
-- graph is stale vs docs (doc-only semantic changes); rebuild now that real code exists.
+- graph is stale: corpus is still the four docs but the repo now has real code
+  (Python + TypeScript). Rebuild before P1 so the AST pass maps call/import structure.
