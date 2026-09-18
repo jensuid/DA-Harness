@@ -3,13 +3,12 @@ from pathlib import Path
 from typing import Iterator
 from uuid import uuid4
 
-from fastapi import Depends, FastAPI, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi import Depends, FastAPI, HTTPException, UploadFile
 from pydantic import BaseModel
 
-from app.analysis import profile_csv
-from app.db import DB_PATH, get_connection
-from app.models import Case, CaseCreate
+import app.db as db_module
+from app.db import get_connection
+from app.models import Case, CaseCreate, Dataset
 
 app = FastAPI(
     title="DAH Harness Core",
@@ -86,6 +85,83 @@ async def list_cases(db=Depends(get_db)) -> list[Case]:
             dataset=row["dataset"],
             created_at=row["created_at"],
             updated_at=row["updated_at"],
+        )
+        for row in rows
+    ]
+
+
+def _require_case(db, case_id: str) -> None:
+    row = db.execute("SELECT 1 FROM cases WHERE id = ?", (case_id,)).fetchone()
+    if row is None:
+        raise HTTPException(status_code=404, detail="case not found")
+
+
+@app.post(
+    "/cases/{case_id}/datasets",
+    status_code=201,
+    response_model=Dataset,
+)
+async def attach_dataset(
+    case_id: str,
+    file: UploadFile,
+    db=Depends(get_db),
+) -> Dataset:
+    """Attach a CSV dataset to an Analysis Case.
+
+    The file is written to disk by the core, never by the frontend (DEC-001).
+    """
+    _require_case(db, case_id)
+
+    if not file.filename or not file.filename.lower().endswith(".csv"):
+        raise HTTPException(status_code=400, detail="only .csv files are supported")
+
+    content = await file.read()
+    if not content.strip():
+        raise HTTPException(status_code=400, detail="uploaded file is empty")
+
+    dataset_id = str(uuid4())
+    case_dir = db_module.DATA_DIR / case_id
+    case_dir.mkdir(parents=True, exist_ok=True)
+    stored_path = case_dir / f"{dataset_id}.csv"
+    stored_path.write_bytes(content)
+
+    dataset = Dataset(
+        id=dataset_id,
+        case_id=case_id,
+        filename=file.filename,
+        stored_path=str(stored_path),
+        created_at=datetime.now(timezone.utc),
+    )
+    db.execute(
+        "INSERT INTO datasets (id, case_id, filename, stored_path, created_at) "
+        "VALUES (?, ?, ?, ?, ?)",
+        (
+            dataset.id,
+            dataset.case_id,
+            dataset.filename,
+            dataset.stored_path,
+            dataset.created_at.isoformat(),
+        ),
+    )
+    return dataset
+
+
+@app.get("/cases/{case_id}/datasets", response_model=list[Dataset])
+async def list_datasets(case_id: str, db=Depends(get_db)) -> list[Dataset]:
+    """List datasets attached to an Analysis Case."""
+    _require_case(db, case_id)
+    rows = db.execute(
+        "SELECT id, case_id, filename, stored_path, created_at FROM datasets "
+        "WHERE case_id = ? ORDER BY created_at DESC",
+        (case_id,),
+    ).fetchall()
+    return [
+        Dataset(
+            id=row["id"],
+            case_id=row["case_id"],
+            filename=row["filename"],
+            stored_path=row["stored_path"],
+            created_at=row["created_at"],
         )
         for row in rows
     ]

@@ -1,4 +1,4 @@
-"""Request/response models for Analysis Cases."""
+"""Request/response models for Analysis Cases and datasets."""
 
 from datetime import datetime
 
@@ -16,3 +16,11 @@ class Case(BaseModel):
     dataset: str
     created_at: datetime
     updated_at: datetime
+
+
+class Dataset(BaseModel):
+    id: str
+    case_id: str
+    filename: str
+    stored_path: str
+    created_at: datetime

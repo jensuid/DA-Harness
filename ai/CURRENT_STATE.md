@@ -1,27 +1,23 @@
 # DAH - Current State
 
 - **Phase:** P1 Vertical Slice
-- **Milestone status:** P0 Foundation PASSED (2026-09-18, verification/p0/REPORT.md)
-- **Completed capabilities:** FastAPI core (health, case create/get/list); SQLite case persistence; DuckDB analytical engine; Vite/React/TS shell with case-creation screen; pytest + Vitest; git repository; P0 verification harness
-- **Active task:** none (P0 complete, P1 not yet decomposed)
+- **Milestone status:** IN PROGRESS
+- **Completed capabilities:** FastAPI core; SQLite case persistence; DuckDB engine; Vite/React shell; P0 verification harness; CSV dataset attachment
+- **Active task:** none (P1-DATA-001 complete)
 - **Known issues:** none
-- **Test status:** server 5 passed; web 2 passed
-- **Architecture status:** web-first MVP decided (DEC-001); FastAPI + SQLite (state) + DuckDB (analytics); Tauri deferred to post-MVP
-- **Next task:** decompose P1 into tasks (see P1 scope below)
+- **Test status:** server 9 passed; web 2 passed
+- **Next task:** P1-DATA-002 (dataset profiling: rows/columns/missingness stored against the dataset)
 - **Blockers:** none
 
-## P1 scope - the vertical slice
+## P1 progress
 
-One complete analytical investigation, end to end:
-
-```
-Create Case -> Question -> Load CSV -> Profile Data -> Generate Analysis Plan
--> Run Simple Analysis -> Create Finding -> Attach Evidence -> Validate Finding
--> Save Case
-```
-
-No expansion to broad MVP features until this gate passes. AI planning is
-deferred to a later slice within P1 - the loop must work deterministically first.
+| Task | Status |
+|------|--------|
+| P1-DATA-001 CSV ingest | DONE |
+| P1-DATA-002 Dataset profiling | NOT STARTED |
+| P1-ANALYSIS-003 SQL analysis run | NOT STARTED |
+| P1-EVIDENCE-004 Findings & evidence | NOT STARTED |
+| P1-VALID-005 Validation | NOT STARTED |
 
 ## Platform decisions (locked, see ai/DECISIONS.md)
 
@@ -33,9 +29,9 @@ deferred to a later slice within P1 - the loop must work deterministically first
 
 ## How to run
 
-- P0 verification: `python3 verification/p0/verify_p0.py`
 - Server: `cd server && .venv/bin/python -m uvicorn app.main:app --port 8123`
 - Server tests: `cd server && .venv/bin/python -m pytest`
 - Web dev: `cd web && npm run dev` (proxies /api to :8123)
 - Web build: `cd web && npm run build`
 - Web tests: `cd web && npm test`
+- P0 verification: `python3 verification/p0/verify_p0.py`

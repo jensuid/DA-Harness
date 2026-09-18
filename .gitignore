@@ -29,3 +29,6 @@ graphify-out/graph.html
 
 # Local SQLite dev database
 *.db
+
+# Uploaded datasets (dev)
+server/data/

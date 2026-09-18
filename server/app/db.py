@@ -1,4 +1,4 @@
-"""SQLite persistence for Analysis Cases.
+"""SQLite persistence for Analysis Cases and their datasets.
 
 Owns case STATE only. Analytical queries belong in analysis.py against DuckDB -
 the two stores stay separate by design (DEC-001).
@@ -12,6 +12,9 @@ from typing import Iterator
 
 DB_PATH = Path(os.environ.get("DAH_DB_PATH", Path(__file__).resolve().parent.parent / "dah.db"))
 
+# Datasets are stored as files on disk; only their metadata lives in SQLite.
+DATA_DIR = Path(os.environ.get("DAH_DATA_DIR", Path(__file__).resolve().parent.parent / "data"))
+
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS cases (
     id TEXT PRIMARY KEY,
@@ -19,6 +22,15 @@ CREATE TABLE IF NOT EXISTS cases (
     dataset TEXT NOT NULL,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS datasets (
+    id TEXT PRIMARY KEY,
+    case_id TEXT NOT NULL,
+    filename TEXT NOT NULL,
+    stored_path TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (case_id) REFERENCES cases(id)
 );
 """
 
@@ -32,7 +44,7 @@ def get_connection(db_path: Path = DB_PATH) -> Iterator[sqlite3.Connection]:
     conn = sqlite3.connect(db_path, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     try:
-        conn.execute(SCHEMA)
+        conn.executescript(SCHEMA)
         yield conn
         conn.commit()
     finally:
