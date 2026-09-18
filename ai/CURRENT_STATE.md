@@ -3,10 +3,10 @@
 - **Phase:** P2 MVP
 - **Milestone status:** P1 Vertical Slice PASSED (verification/p1/REPORT.md)
 - **Completed capabilities:** FastAPI core; SQLite case persistence; DuckDB engine; Vite/React shell; P0 verification harness; CSV dataset attachment; deterministic dataset profiling; read-only SQL analysis runs with persisted results; findings with evidence chain; validation via rerun
-- **Active task:** P2-DATA-007 (deep profiling) - DATA-006 complete
+- **Active task:** P2-ANALYSIS-008 (Python execution) - DATA-007 complete
 - **Known issues:** none
-- **Test status:** server 29 passed; web 2 passed
-- **Next task:** P2-DATA-007 - profile covers duplicates, types, basic stats
+- **Test status:** server 32 passed; web 2 passed
+- **Next task:** P2-ANALYSIS-008 - read-only Python executes against a dataset, result persisted
 - **Blockers:** none
 
 ## P1 progress

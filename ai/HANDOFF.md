@@ -2,6 +2,7 @@
 
 ## What was completed
 
+- P2-DATA-007 PASSED: deep profile (types, null %, distinct counts, min/max/avg, duplicate rows)
 - P2-DATA-006 PASSED: parquet + xlsx attach, profile, and query alongside CSV
 - P0 PASSED: verification/p0/REPORT.md
 - P1 PASSED: verification/p1/REPORT.md - full vertical slice verified end to end
@@ -24,6 +25,7 @@ Create Case -> Question -> Load CSV -> Profile -> SQL Analysis
 
 - P1 exit-test sequence: all 9 steps PASS
 - P2-DATA-006: server pytest 29 passed (5 new: parquet attach+profile, xlsx attach+profile, cross-format query, parquet placeholder form); web vitest: 2 passed
+- P2-DATA-007: server pytest 32 passed (3 new: deep stats incl. numeric min/max/avg, type inference, duplicate rows; header-only dataset); P1 gate re-run PASS; deep stats verified identical across csv/parquet/xlsx
 
 ## Unresolved problems
 
@@ -34,7 +36,7 @@ Create Case -> Question -> Load CSV -> Profile -> SQL Analysis
 
 ## Next action
 
-P2-DATA-007: deepen the profile (duplicate rows, inferred types, basic stats). Per the roadmap, P2 broadens the working loop:
+P2-ANALYSIS-008: read-only Python execution against a dataset, result persisted. Per the roadmap, P2 broadens the working loop:
 - Parquet and Excel ingest (in addition to CSV)
 - Python execution in the workspace (alongside SQL)
 - essential charts / result tables

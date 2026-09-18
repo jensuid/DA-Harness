@@ -70,7 +70,7 @@
       "file_type": "code",
       "norm_label": "evidencechain",
       "source_file": "server/app/models.py",
-      "source_location": "L94"
+      "source_location": "L95"
     },
     {
       "id": "server_app_models_finding",
@@ -83,7 +83,7 @@
       "file_type": "code",
       "norm_label": "finding",
       "source_file": "server/app/models.py",
-      "source_location": "L83"
+      "source_location": "L84"
     },
     {
       "id": "server_app_models_findingcreate",
@@ -96,7 +96,7 @@
       "file_type": "code",
       "norm_label": "findingcreate",
       "source_file": "server/app/models.py",
-      "source_location": "L76"
+      "source_location": "L77"
     },
     {
       "id": "server_app_models_profile",
@@ -122,7 +122,7 @@
       "file_type": "code",
       "norm_label": "run",
       "source_file": "server/app/models.py",
-      "source_location": "L43"
+      "source_location": "L44"
     },
     {
       "id": "server_app_models_runcreate",
@@ -135,7 +135,7 @@
       "file_type": "code",
       "norm_label": "runcreate",
       "source_file": "server/app/models.py",
-      "source_location": "L39"
+      "source_location": "L40"
     },
     {
       "id": "server_app_models_runsummary",
@@ -148,7 +148,7 @@
       "file_type": "code",
       "norm_label": "runsummary",
       "source_file": "server/app/models.py",
-      "source_location": "L55"
+      "source_location": "L56"
     },
     {
       "id": "server_app_models_validationcheck",
@@ -161,7 +161,7 @@
       "file_type": "code",
       "norm_label": "validationcheck",
       "source_file": "server/app/models.py",
-      "source_location": "L105"
+      "source_location": "L106"
     },
     {
       "id": "server_app_models_validationresult",
@@ -174,7 +174,7 @@
       "file_type": "code",
       "norm_label": "validationresult",
       "source_file": "server/app/models.py",
-      "source_location": "L112"
+      "source_location": "L113"
     },
     {
       "id": "web_src_api_health",
@@ -236,7 +236,7 @@
       "file_type": "code",
       "norm_label": "create_finding()",
       "source_file": "server/app/main.py",
-      "source_location": "L399"
+      "source_location": "L402"
     },
     {
       "id": "server_app_main_create_run",
@@ -248,7 +248,7 @@
       "file_type": "code",
       "norm_label": "create_run()",
       "source_file": "server/app/main.py",
-      "source_location": "L289"
+      "source_location": "L292"
     },
     {
       "id": "server_app_main_format_for",
@@ -284,7 +284,7 @@
       "file_type": "code",
       "norm_label": "get_evidence_chain()",
       "source_file": "server/app/main.py",
-      "source_location": "L492"
+      "source_location": "L495"
     },
     {
       "id": "server_app_main_get_finding",
@@ -296,7 +296,7 @@
       "file_type": "code",
       "norm_label": "get_finding()",
       "source_file": "server/app/main.py",
-      "source_location": "L466"
+      "source_location": "L469"
     },
     {
       "id": "server_app_main_get_profile",
@@ -308,7 +308,7 @@
       "file_type": "code",
       "norm_label": "get_profile()",
       "source_file": "server/app/main.py",
-      "source_location": "L261"
+      "source_location": "L263"
     },
     {
       "id": "server_app_main_get_run",
@@ -320,7 +320,7 @@
       "file_type": "code",
       "norm_label": "get_run()",
       "source_file": "server/app/main.py",
-      "source_location": "L363"
+      "source_location": "L366"
     },
     {
       "id": "server_app_main_health",
@@ -368,7 +368,7 @@
       "file_type": "code",
       "norm_label": "list_findings()",
       "source_file": "server/app/main.py",
-      "source_location": "L441"
+      "source_location": "L444"
     },
     {
       "id": "server_app_main_list_runs",
@@ -380,7 +380,7 @@
       "file_type": "code",
       "norm_label": "list_runs()",
       "source_file": "server/app/main.py",
-      "source_location": "L340"
+      "source_location": "L343"
     },
     {
       "id": "server_app_main_profile_dataset",
@@ -428,7 +428,7 @@
       "file_type": "code",
       "norm_label": "_require_run()",
       "source_file": "server/app/main.py",
-      "source_location": "L386"
+      "source_location": "L389"
     },
     {
       "id": "server_app_main_set_validation_status",
@@ -440,7 +440,7 @@
       "file_type": "code",
       "norm_label": "set_validation_status()",
       "source_file": "server/app/main.py",
-      "source_location": "L533"
+      "source_location": "L536"
     },
     {
       "id": "server_app_main_validate_finding",
@@ -452,7 +452,7 @@
       "file_type": "code",
       "norm_label": "validate_finding()",
       "source_file": "server/app/main.py",
-      "source_location": "L559"
+      "source_location": "L562"
     },
     {
       "id": "server_tests_test_health_test_health_returns_ok",
@@ -659,6 +659,18 @@
       "source_location": "L17"
     },
     {
+      "id": "server_app_db_ensure_column",
+      "label": "_ensure_column()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 5,
+      "community_name": "get_connection",
+      "file_type": "code",
+      "norm_label": "_ensure_column()",
+      "source_file": "server/app/db.py",
+      "source_location": "L76"
+    },
+    {
       "id": "server_app_db_get_connection",
       "label": "get_connection()",
       "_callable": true,
@@ -668,7 +680,7 @@
       "file_type": "code",
       "norm_label": "get_connection()",
       "source_file": "server/app/db.py",
-      "source_location": "L76"
+      "source_location": "L87"
     },
     {
       "id": "server_app_main_get_db",
@@ -791,6 +803,30 @@
       "source_location": "L15"
     },
     {
+      "id": "server_tests_test_profiles_test_deep_profile_stats",
+      "label": "test_deep_profile_stats()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 5,
+      "community_name": "get_connection",
+      "file_type": "code",
+      "norm_label": "test_deep_profile_stats()",
+      "source_file": "server/tests/test_profiles.py",
+      "source_location": "L93"
+    },
+    {
+      "id": "server_tests_test_profiles_test_deep_profile_survives_reopen",
+      "label": "test_deep_profile_survives_reopen()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 5,
+      "community_name": "get_connection",
+      "file_type": "code",
+      "norm_label": "test_deep_profile_survives_reopen()",
+      "source_file": "server/tests/test_profiles.py",
+      "source_location": "L149"
+    },
+    {
       "id": "server_tests_test_profiles_test_get_profile_before_profiling_returns_404",
       "label": "test_get_profile_before_profiling_returns_404()",
       "_callable": true,
@@ -800,7 +836,19 @@
       "file_type": "code",
       "norm_label": "test_get_profile_before_profiling_returns_404()",
       "source_file": "server/tests/test_profiles.py",
-      "source_location": "L70"
+      "source_location": "L71"
+    },
+    {
+      "id": "server_tests_test_profiles_test_header_only_dataset_profiles_cleanly",
+      "label": "test_header_only_dataset_profiles_cleanly()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 5,
+      "community_name": "get_connection",
+      "file_type": "code",
+      "norm_label": "test_header_only_dataset_profiles_cleanly()",
+      "source_file": "server/tests/test_profiles.py",
+      "source_location": "L131"
     },
     {
       "id": "server_tests_test_profiles_test_profile_and_reopen",
@@ -812,7 +860,7 @@
       "file_type": "code",
       "norm_label": "test_profile_and_reopen()",
       "source_file": "server/tests/test_profiles.py",
-      "source_location": "L31"
+      "source_location": "L32"
     },
     {
       "id": "server_tests_test_profiles_test_profile_unknown_dataset_returns_404",
@@ -824,7 +872,7 @@
       "file_type": "code",
       "norm_label": "test_profile_unknown_dataset_returns_404()",
       "source_file": "server/tests/test_profiles.py",
-      "source_location": "L56"
+      "source_location": "L57"
     },
     {
       "id": "server_tests_test_runs_case_with_dataset",
@@ -1007,6 +1055,54 @@
       "source_location": "L61"
     },
     {
+      "id": "server_app_analysis_coerce",
+      "label": "_coerce()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 6,
+      "community_name": "analysis.py",
+      "file_type": "code",
+      "norm_label": "_coerce()",
+      "source_file": "server/app/analysis.py",
+      "source_location": "L187"
+    },
+    {
+      "id": "server_app_analysis_column_stat",
+      "label": "_column_stat()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 6,
+      "community_name": "analysis.py",
+      "file_type": "code",
+      "norm_label": "_column_stat()",
+      "source_file": "server/app/analysis.py",
+      "source_location": "L196"
+    },
+    {
+      "id": "server_app_analysis_column_stat_expr",
+      "label": "_column_stat_expr()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 6,
+      "community_name": "analysis.py",
+      "file_type": "code",
+      "norm_label": "_column_stat_expr()",
+      "source_file": "server/app/analysis.py",
+      "source_location": "L164"
+    },
+    {
+      "id": "server_app_analysis_duplicate_row_count",
+      "label": "_duplicate_row_count()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 6,
+      "community_name": "analysis.py",
+      "file_type": "code",
+      "norm_label": "_duplicate_row_count()",
+      "source_file": "server/app/analysis.py",
+      "source_location": "L214"
+    },
+    {
       "id": "server_app_analysis_is_read_only",
       "label": "_is_read_only()",
       "_callable": true,
@@ -1028,7 +1124,7 @@
       "file_type": "code",
       "norm_label": "profile_csv()",
       "source_file": "server/app/analysis.py",
-      "source_location": "L86"
+      "source_location": "L107"
     },
     {
       "id": "server_app_analysis_reader_for",
@@ -1052,7 +1148,31 @@
       "file_type": "code",
       "norm_label": "run_query()",
       "source_file": "server/app/analysis.py",
-      "source_location": "L116"
+      "source_location": "L232"
+    },
+    {
+      "id": "server_app_analysis_stat_width",
+      "label": "_stat_width()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 6,
+      "community_name": "analysis.py",
+      "file_type": "code",
+      "norm_label": "_stat_width()",
+      "source_file": "server/app/analysis.py",
+      "source_location": "L178"
+    },
+    {
+      "id": "server_app_analysis_type_family",
+      "label": "_type_family()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 6,
+      "community_name": "analysis.py",
+      "file_type": "code",
+      "norm_label": "_type_family()",
+      "source_file": "server/app/analysis.py",
+      "source_location": "L95"
     },
     {
       "id": "server_tests_test_analysis_test_profile_csv",
@@ -1451,7 +1571,7 @@
       "source_location": "L228"
     },
     {
-      "id": "server_app_main_rationale_266",
+      "id": "server_app_main_rationale_268",
       "label": "Retrieve the stored profile for an attached dataset.",
       "_origin": "ast",
       "community": 1,
@@ -1459,10 +1579,10 @@
       "file_type": "rationale",
       "norm_label": "retrieve the stored profile for an attached dataset.",
       "source_file": "server/app/main.py",
-      "source_location": "L266"
+      "source_location": "L268"
     },
     {
-      "id": "server_app_main_rationale_295",
+      "id": "server_app_main_rationale_298",
       "label": "Run user SQL against an attached dataset and persist the result. The query is a\u2026",
       "_origin": "ast",
       "community": 1,
@@ -1470,10 +1590,10 @@
       "file_type": "rationale",
       "norm_label": "run user sql against an attached dataset and persist the result. the query is a...",
       "source_file": "server/app/main.py",
-      "source_location": "L295"
+      "source_location": "L298"
     },
     {
-      "id": "server_app_main_rationale_341",
+      "id": "server_app_main_rationale_344",
       "label": "List analysis runs for a case, without the heavy result rows.",
       "_origin": "ast",
       "community": 1,
@@ -1481,10 +1601,10 @@
       "file_type": "rationale",
       "norm_label": "list analysis runs for a case, without the heavy result rows.",
       "source_file": "server/app/main.py",
-      "source_location": "L341"
+      "source_location": "L344"
     },
     {
-      "id": "server_app_main_rationale_364",
+      "id": "server_app_main_rationale_367",
       "label": "Reopen a persisted analysis run, including its result rows.",
       "_origin": "ast",
       "community": 1,
@@ -1492,7 +1612,7 @@
       "file_type": "rationale",
       "norm_label": "reopen a persisted analysis run, including its result rows.",
       "source_file": "server/app/main.py",
-      "source_location": "L364"
+      "source_location": "L367"
     },
     {
       "id": "server_app_main_rationale_39",
@@ -1506,7 +1626,7 @@
       "source_location": "L39"
     },
     {
-      "id": "server_app_main_rationale_404",
+      "id": "server_app_main_rationale_407",
       "label": "Record a finding against a specific analysis run. The finding starts\u2026",
       "_origin": "ast",
       "community": 1,
@@ -1514,10 +1634,10 @@
       "file_type": "rationale",
       "norm_label": "record a finding against a specific analysis run. the finding starts...",
       "source_file": "server/app/main.py",
-      "source_location": "L404"
+      "source_location": "L407"
     },
     {
-      "id": "server_app_main_rationale_442",
+      "id": "server_app_main_rationale_445",
       "label": "List findings recorded against a case.",
       "_origin": "ast",
       "community": 1,
@@ -1525,10 +1645,10 @@
       "file_type": "rationale",
       "norm_label": "list findings recorded against a case.",
       "source_file": "server/app/main.py",
-      "source_location": "L442"
+      "source_location": "L445"
     },
     {
-      "id": "server_app_main_rationale_467",
+      "id": "server_app_main_rationale_470",
       "label": "Reopen a single finding.",
       "_origin": "ast",
       "community": 1,
@@ -1536,18 +1656,7 @@
       "file_type": "rationale",
       "norm_label": "reopen a single finding.",
       "source_file": "server/app/main.py",
-      "source_location": "L467"
-    },
-    {
-      "id": "server_app_main_rationale_497",
-      "label": "Trace a finding back to its computation and dataset. Walks finding -> run ->\u2026",
-      "_origin": "ast",
-      "community": 1,
-      "community_name": "main.py",
-      "file_type": "rationale",
-      "norm_label": "trace a finding back to its computation and dataset. walks finding -> run ->...",
-      "source_file": "server/app/main.py",
-      "source_location": "L497"
+      "source_location": "L470"
     },
     {
       "id": "server_app_main_rationale_50",
@@ -1561,7 +1670,18 @@
       "source_location": "L50"
     },
     {
-      "id": "server_app_main_rationale_539",
+      "id": "server_app_main_rationale_500",
+      "label": "Trace a finding back to its computation and dataset. Walks finding -> run ->\u2026",
+      "_origin": "ast",
+      "community": 1,
+      "community_name": "main.py",
+      "file_type": "rationale",
+      "norm_label": "trace a finding back to its computation and dataset. walks finding -> run ->...",
+      "source_file": "server/app/main.py",
+      "source_location": "L500"
+    },
+    {
+      "id": "server_app_main_rationale_542",
       "label": "Set a finding's validation status by explicit decision only.",
       "_origin": "ast",
       "community": 1,
@@ -1569,10 +1689,10 @@
       "file_type": "rationale",
       "norm_label": "set a finding's validation status by explicit decision only.",
       "source_file": "server/app/main.py",
-      "source_location": "L539"
+      "source_location": "L542"
     },
     {
-      "id": "server_app_main_rationale_564",
+      "id": "server_app_main_rationale_567",
       "label": "Reproduce a finding's computation and check its support. The trust loop closes\u2026",
       "_origin": "ast",
       "community": 1,
@@ -1580,7 +1700,7 @@
       "file_type": "rationale",
       "norm_label": "reproduce a finding's computation and check its support. the trust loop closes...",
       "source_file": "server/app/main.py",
-      "source_location": "L564"
+      "source_location": "L567"
     },
     {
       "id": "server_app_main_rationale_75",
@@ -1616,7 +1736,7 @@
       "source_location": "L1"
     },
     {
-      "id": "server_app_models_rationale_106",
+      "id": "server_app_models_rationale_107",
       "label": "One check from the validation pass.",
       "_origin": "ast",
       "community": 1,
@@ -1624,10 +1744,10 @@
       "file_type": "rationale",
       "norm_label": "one check from the validation pass.",
       "source_file": "server/app/models.py",
-      "source_location": "L106"
+      "source_location": "L107"
     },
     {
-      "id": "server_app_models_rationale_95",
+      "id": "server_app_models_rationale_96",
       "label": "The trust chain a reviewer walks to verify a finding.",
       "_origin": "ast",
       "community": 1,
@@ -1635,7 +1755,7 @@
       "file_type": "rationale",
       "norm_label": "the trust chain a reviewer walks to verify a finding.",
       "source_file": "server/app/models.py",
-      "source_location": "L95"
+      "source_location": "L96"
     },
     {
       "id": "verification_p1_verify_p1",
@@ -2561,6 +2681,17 @@
     },
     {
       "id": "server_app_db_rationale_77",
+      "label": "Add a column to an older schema; a no-op on current ones.",
+      "_origin": "ast",
+      "community": 5,
+      "community_name": "get_connection",
+      "file_type": "rationale",
+      "norm_label": "add a column to an older schema; a no-op on current ones.",
+      "source_file": "server/app/db.py",
+      "source_location": "L77"
+    },
+    {
+      "id": "server_app_db_rationale_88",
       "label": "Open a connection, ensuring the schema exists, and commit on success.",
       "_origin": "ast",
       "community": 5,
@@ -2568,7 +2699,7 @@
       "file_type": "rationale",
       "norm_label": "open a connection, ensuring the schema exists, and commit on success.",
       "source_file": "server/app/db.py",
-      "source_location": "L77"
+      "source_location": "L88"
     },
     {
       "id": "server_tests_test_cases_rationale_20",
@@ -2648,15 +2779,26 @@
       "source_location": "L1"
     },
     {
-      "id": "server_app_analysis_rationale_117",
-      "label": "Run a read-only SQL query against a CSV file. The dataset path is bound as a\u2026",
+      "id": "server_app_analysis_rationale_108",
+      "label": "Profile a tabular file: shape, per-column type and null stats, duplicates.\u2026",
       "_origin": "ast",
       "community": 6,
       "community_name": "analysis.py",
       "file_type": "rationale",
-      "norm_label": "run a read-only sql query against a csv file. the dataset path is bound as a...",
+      "norm_label": "profile a tabular file: shape, per-column type and null stats, duplicates....",
       "source_file": "server/app/analysis.py",
-      "source_location": "L117"
+      "source_location": "L108"
+    },
+    {
+      "id": "server_app_analysis_rationale_165",
+      "label": "Build the per-column aggregate expression for a profiling pass.",
+      "_origin": "ast",
+      "community": 6,
+      "community_name": "analysis.py",
+      "file_type": "rationale",
+      "norm_label": "build the per-column aggregate expression for a profiling pass.",
+      "source_file": "server/app/analysis.py",
+      "source_location": "L165"
     },
     {
       "id": "server_app_analysis_rationale_17",
@@ -2668,6 +2810,61 @@
       "norm_label": "return the duckdb reader call and the path to bind for a file. duckdb cannot...",
       "source_file": "server/app/analysis.py",
       "source_location": "L17"
+    },
+    {
+      "id": "server_app_analysis_rationale_179",
+      "label": "Aggregates _column_stat_expr emits for a column of this family.",
+      "_origin": "ast",
+      "community": 6,
+      "community_name": "analysis.py",
+      "file_type": "rationale",
+      "norm_label": "aggregates _column_stat_expr emits for a column of this family.",
+      "source_file": "server/app/analysis.py",
+      "source_location": "L179"
+    },
+    {
+      "id": "server_app_analysis_rationale_188",
+      "label": "Make a DuckDB scalar JSON-safe (dates and decimals are not).",
+      "_origin": "ast",
+      "community": 6,
+      "community_name": "analysis.py",
+      "file_type": "rationale",
+      "norm_label": "make a duckdb scalar json-safe (dates and decimals are not).",
+      "source_file": "server/app/analysis.py",
+      "source_location": "L188"
+    },
+    {
+      "id": "server_app_analysis_rationale_197",
+      "label": "Assemble one column's stat dict from its aggregate row.",
+      "_origin": "ast",
+      "community": 6,
+      "community_name": "analysis.py",
+      "file_type": "rationale",
+      "norm_label": "assemble one column's stat dict from its aggregate row.",
+      "source_file": "server/app/analysis.py",
+      "source_location": "L197"
+    },
+    {
+      "id": "server_app_analysis_rationale_215",
+      "label": "Count rows that are exact duplicates of an earlier row. Total rows minus\u2026",
+      "_origin": "ast",
+      "community": 6,
+      "community_name": "analysis.py",
+      "file_type": "rationale",
+      "norm_label": "count rows that are exact duplicates of an earlier row. total rows minus...",
+      "source_file": "server/app/analysis.py",
+      "source_location": "L215"
+    },
+    {
+      "id": "server_app_analysis_rationale_233",
+      "label": "Run a read-only SQL query against a CSV file. The dataset path is bound as a\u2026",
+      "_origin": "ast",
+      "community": 6,
+      "community_name": "analysis.py",
+      "file_type": "rationale",
+      "norm_label": "run a read-only sql query against a csv file. the dataset path is bound as a...",
+      "source_file": "server/app/analysis.py",
+      "source_location": "L233"
     },
     {
       "id": "server_app_analysis_rationale_62",
@@ -2692,15 +2889,15 @@
       "source_location": "L77"
     },
     {
-      "id": "server_app_analysis_rationale_87",
-      "label": "Profile a CSV: row count, columns, and per-column null counts. The path is\u2026",
+      "id": "server_app_analysis_rationale_96",
+      "label": "Collapse a DuckDB type name into numeric / temporal / other.",
       "_origin": "ast",
       "community": 6,
       "community_name": "analysis.py",
       "file_type": "rationale",
-      "norm_label": "profile a csv: row count, columns, and per-column null counts. the path is...",
+      "norm_label": "collapse a duckdb type name into numeric / temporal / other.",
       "source_file": "server/app/analysis.py",
-      "source_location": "L87"
+      "source_location": "L96"
     },
     {
       "id": "server_tests_test_datasets",
@@ -3787,6 +3984,30 @@
       "weight": 1.0
     },
     {
+      "source": "server_app_analysis_column_stat",
+      "target": "server_app_analysis_coerce",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "server/app/analysis.py",
+      "source_location": "L207",
+      "weight": 1.0
+    },
+    {
+      "source": "server_app_analysis_duplicate_row_count",
+      "target": "server_app_analysis_reader_for",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "server/app/analysis.py",
+      "source_location": "L220",
+      "weight": 1.0
+    },
+    {
       "source": "server_app_analysis_profile_csv",
       "target": "server_app_analysis_reader_for",
       "relation": "calls",
@@ -3795,7 +4016,67 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/app/analysis.py",
-      "source_location": "L95",
+      "source_location": "L120",
+      "weight": 1.0
+    },
+    {
+      "source": "server_app_analysis_profile_csv",
+      "target": "server_app_analysis_type_family",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "server/app/analysis.py",
+      "source_location": "L125",
+      "weight": 1.0
+    },
+    {
+      "source": "server_app_analysis_profile_csv",
+      "target": "server_app_analysis_column_stat_expr",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "server/app/analysis.py",
+      "source_location": "L136",
+      "weight": 1.0
+    },
+    {
+      "source": "server_app_analysis_profile_csv",
+      "target": "server_app_analysis_stat_width",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "server/app/analysis.py",
+      "source_location": "L137",
+      "weight": 1.0
+    },
+    {
+      "source": "server_app_analysis_profile_csv",
+      "target": "server_app_analysis_column_stat",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "server/app/analysis.py",
+      "source_location": "L148",
+      "weight": 1.0
+    },
+    {
+      "source": "server_app_analysis_profile_csv",
+      "target": "server_app_analysis_duplicate_row_count",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "server/app/analysis.py",
+      "source_location": "L152",
       "weight": 1.0
     },
     {
@@ -3807,7 +4088,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/app/analysis.py",
-      "source_location": "L122",
+      "source_location": "L238",
       "weight": 1.0
     },
     {
@@ -3819,7 +4100,19 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/app/analysis.py",
-      "source_location": "L127",
+      "source_location": "L243",
+      "weight": 1.0
+    },
+    {
+      "source": "server_app_db_get_connection",
+      "target": "server_app_db_ensure_column",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "server/app/db.py",
+      "source_location": "L98",
       "weight": 1.0
     },
     {
@@ -3879,7 +4172,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/app/main.py",
-      "source_location": "L409",
+      "source_location": "L412",
       "weight": 1.0
     },
     {
@@ -3891,7 +4184,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/app/main.py",
-      "source_location": "L410",
+      "source_location": "L413",
       "weight": 1.0
     },
     {
@@ -3903,7 +4196,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/app/main.py",
-      "source_location": "L412",
+      "source_location": "L415",
       "weight": 1.0
     },
     {
@@ -3915,7 +4208,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/app/main.py",
-      "source_location": "L301",
+      "source_location": "L304",
       "weight": 1.0
     },
     {
@@ -3927,7 +4220,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/app/main.py",
-      "source_location": "L304",
+      "source_location": "L307",
       "weight": 1.0
     },
     {
@@ -3939,7 +4232,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/app/main.py",
-      "source_location": "L310",
+      "source_location": "L313",
       "weight": 1.0
     },
     {
@@ -3975,7 +4268,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/app/main.py",
-      "source_location": "L502",
+      "source_location": "L505",
       "weight": 1.0
     },
     {
@@ -3987,7 +4280,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/app/main.py",
-      "source_location": "L518",
+      "source_location": "L521",
       "weight": 1.0
     },
     {
@@ -3999,7 +4292,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/app/main.py",
-      "source_location": "L468",
+      "source_location": "L471",
       "weight": 1.0
     },
     {
@@ -4011,7 +4304,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/app/main.py",
-      "source_location": "L476",
+      "source_location": "L479",
       "weight": 1.0
     },
     {
@@ -4023,7 +4316,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/app/main.py",
-      "source_location": "L267",
+      "source_location": "L269",
       "weight": 1.0
     },
     {
@@ -4035,7 +4328,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/app/main.py",
-      "source_location": "L275",
+      "source_location": "L277",
       "weight": 1.0
     },
     {
@@ -4047,7 +4340,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/app/main.py",
-      "source_location": "L365",
+      "source_location": "L368",
       "weight": 1.0
     },
     {
@@ -4059,7 +4352,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/app/main.py",
-      "source_location": "L373",
+      "source_location": "L376",
       "weight": 1.0
     },
     {
@@ -4107,7 +4400,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/app/main.py",
-      "source_location": "L443",
+      "source_location": "L446",
       "weight": 1.0
     },
     {
@@ -4119,7 +4412,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/app/main.py",
-      "source_location": "L451",
+      "source_location": "L454",
       "weight": 1.0
     },
     {
@@ -4131,7 +4424,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/app/main.py",
-      "source_location": "L342",
+      "source_location": "L345",
       "weight": 1.0
     },
     {
@@ -4143,7 +4436,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/app/main.py",
-      "source_location": "L349",
+      "source_location": "L352",
       "weight": 1.0
     },
     {
@@ -4203,7 +4496,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/app/main.py",
-      "source_location": "L545",
+      "source_location": "L548",
       "weight": 1.0
     },
     {
@@ -4215,7 +4508,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/app/main.py",
-      "source_location": "L570",
+      "source_location": "L573",
       "weight": 1.0
     },
     {
@@ -4227,7 +4520,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/app/main.py",
-      "source_location": "L591",
+      "source_location": "L594",
       "weight": 1.0
     },
     {
@@ -4239,7 +4532,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/app/main.py",
-      "source_location": "L654",
+      "source_location": "L657",
       "weight": 1.0
     },
     {
@@ -4795,6 +5088,54 @@
       "weight": 1.0
     },
     {
+      "source": "server_tests_test_profiles_test_deep_profile_stats",
+      "target": "server_tests_test_profiles_attach",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "server/tests/test_profiles.py",
+      "source_location": "L100",
+      "weight": 1.0
+    },
+    {
+      "source": "server_tests_test_profiles_test_deep_profile_stats",
+      "target": "server_tests_test_profiles_temp_env",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "server/tests/test_profiles.py",
+      "source_location": "L94",
+      "weight": 1.0
+    },
+    {
+      "source": "server_tests_test_profiles_test_deep_profile_survives_reopen",
+      "target": "server_tests_test_profiles_temp_env",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "server/tests/test_profiles.py",
+      "source_location": "L150",
+      "weight": 1.0
+    },
+    {
+      "source": "server_tests_test_profiles_test_deep_profile_survives_reopen",
+      "target": "server_tests_test_profiles_attach",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "server/tests/test_profiles.py",
+      "source_location": "L156",
+      "weight": 1.0
+    },
+    {
       "source": "server_tests_test_profiles_test_get_profile_before_profiling_returns_404",
       "target": "server_tests_test_profiles_temp_env",
       "relation": "calls",
@@ -4803,7 +5144,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/tests/test_profiles.py",
-      "source_location": "L71",
+      "source_location": "L72",
       "weight": 1.0
     },
     {
@@ -4815,7 +5156,31 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/tests/test_profiles.py",
-      "source_location": "L77",
+      "source_location": "L78",
+      "weight": 1.0
+    },
+    {
+      "source": "server_tests_test_profiles_test_header_only_dataset_profiles_cleanly",
+      "target": "server_tests_test_profiles_temp_env",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "server/tests/test_profiles.py",
+      "source_location": "L132",
+      "weight": 1.0
+    },
+    {
+      "source": "server_tests_test_profiles_test_header_only_dataset_profiles_cleanly",
+      "target": "server_tests_test_profiles_attach",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "server/tests/test_profiles.py",
+      "source_location": "L138",
       "weight": 1.0
     },
     {
@@ -4827,7 +5192,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/tests/test_profiles.py",
-      "source_location": "L32",
+      "source_location": "L33",
       "weight": 1.0
     },
     {
@@ -4839,7 +5204,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/tests/test_profiles.py",
-      "source_location": "L38",
+      "source_location": "L39",
       "weight": 1.0
     },
     {
@@ -4851,7 +5216,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/tests/test_profiles.py",
-      "source_location": "L57",
+      "source_location": "L58",
       "weight": 1.0
     },
     {
@@ -5271,7 +5636,7 @@
       "confidence_score": 1.0,
       "context": "decorator",
       "source_file": "server/app/main.py",
-      "source_location": "L394",
+      "source_location": "L397",
       "weight": 1.0
     },
     {
@@ -5283,7 +5648,7 @@
       "confidence_score": 1.0,
       "context": "decorator",
       "source_file": "server/app/main.py",
-      "source_location": "L284",
+      "source_location": "L287",
       "weight": 1.0
     },
     {
@@ -5307,7 +5672,7 @@
       "confidence_score": 1.0,
       "context": "decorator",
       "source_file": "server/app/main.py",
-      "source_location": "L488",
+      "source_location": "L491",
       "weight": 1.0
     },
     {
@@ -5319,7 +5684,7 @@
       "confidence_score": 1.0,
       "context": "decorator",
       "source_file": "server/app/main.py",
-      "source_location": "L465",
+      "source_location": "L468",
       "weight": 1.0
     },
     {
@@ -5331,7 +5696,7 @@
       "confidence_score": 1.0,
       "context": "decorator",
       "source_file": "server/app/main.py",
-      "source_location": "L257",
+      "source_location": "L259",
       "weight": 1.0
     },
     {
@@ -5343,7 +5708,7 @@
       "confidence_score": 1.0,
       "context": "decorator",
       "source_file": "server/app/main.py",
-      "source_location": "L362",
+      "source_location": "L365",
       "weight": 1.0
     },
     {
@@ -5391,7 +5756,7 @@
       "confidence_score": 1.0,
       "context": "decorator",
       "source_file": "server/app/main.py",
-      "source_location": "L440",
+      "source_location": "L443",
       "weight": 1.0
     },
     {
@@ -5403,7 +5768,7 @@
       "confidence_score": 1.0,
       "context": "decorator",
       "source_file": "server/app/main.py",
-      "source_location": "L339",
+      "source_location": "L342",
       "weight": 1.0
     },
     {
@@ -5427,7 +5792,7 @@
       "confidence_score": 1.0,
       "context": "decorator",
       "source_file": "server/app/main.py",
-      "source_location": "L529",
+      "source_location": "L532",
       "weight": 1.0
     },
     {
@@ -5439,7 +5804,7 @@
       "confidence_score": 1.0,
       "context": "decorator",
       "source_file": "server/app/main.py",
-      "source_location": "L554",
+      "source_location": "L557",
       "weight": 1.0
     },
     {
@@ -5451,7 +5816,7 @@
       "confidence_score": 1.0,
       "context": "generic_arg",
       "source_file": "server/app/db.py",
-      "source_location": "L76",
+      "source_location": "L87",
       "weight": 1.0
     },
     {
@@ -6351,7 +6716,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "server/app/db.py",
-      "source_location": "L76",
+      "source_location": "L87",
       "weight": 1.0
     },
     {
@@ -6426,13 +6791,13 @@
     },
     {
       "source": "server_app_analysis",
-      "target": "server_app_analysis_run_query",
+      "target": "server_app_analysis_profile_csv",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/analysis.py",
-      "source_location": "L116",
+      "source_location": "L107",
       "weight": 1.0
     },
     {
@@ -6444,6 +6809,72 @@
       "confidence_score": 1.0,
       "source_file": "server/app/analysis.py",
       "source_location": "L16",
+      "weight": 1.0
+    },
+    {
+      "source": "server_app_analysis",
+      "target": "server_app_analysis_column_stat_expr",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "server/app/analysis.py",
+      "source_location": "L164",
+      "weight": 1.0
+    },
+    {
+      "source": "server_app_analysis",
+      "target": "server_app_analysis_stat_width",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "server/app/analysis.py",
+      "source_location": "L178",
+      "weight": 1.0
+    },
+    {
+      "source": "server_app_analysis",
+      "target": "server_app_analysis_coerce",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "server/app/analysis.py",
+      "source_location": "L187",
+      "weight": 1.0
+    },
+    {
+      "source": "server_app_analysis",
+      "target": "server_app_analysis_column_stat",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "server/app/analysis.py",
+      "source_location": "L196",
+      "weight": 1.0
+    },
+    {
+      "source": "server_app_analysis",
+      "target": "server_app_analysis_duplicate_row_count",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "server/app/analysis.py",
+      "source_location": "L214",
+      "weight": 1.0
+    },
+    {
+      "source": "server_app_analysis",
+      "target": "server_app_analysis_run_query",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "server/app/analysis.py",
+      "source_location": "L232",
       "weight": 1.0
     },
     {
@@ -6470,13 +6901,24 @@
     },
     {
       "source": "server_app_analysis",
-      "target": "server_app_analysis_profile_csv",
+      "target": "server_app_analysis_type_family",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/analysis.py",
-      "source_location": "L86",
+      "source_location": "L95",
+      "weight": 1.0
+    },
+    {
+      "source": "server_app_db",
+      "target": "server_app_db_ensure_column",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "server/app/db.py",
+      "source_location": "L76",
       "weight": 1.0
     },
     {
@@ -6487,7 +6929,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/db.py",
-      "source_location": "L76",
+      "source_location": "L87",
       "weight": 1.0
     },
     {
@@ -6564,7 +7006,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/main.py",
-      "source_location": "L261",
+      "source_location": "L263",
       "weight": 1.0
     },
     {
@@ -6575,7 +7017,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/main.py",
-      "source_location": "L289",
+      "source_location": "L292",
       "weight": 1.0
     },
     {
@@ -6586,7 +7028,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/main.py",
-      "source_location": "L340",
+      "source_location": "L343",
       "weight": 1.0
     },
     {
@@ -6597,7 +7039,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/main.py",
-      "source_location": "L363",
+      "source_location": "L366",
       "weight": 1.0
     },
     {
@@ -6619,7 +7061,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/main.py",
-      "source_location": "L386",
+      "source_location": "L389",
       "weight": 1.0
     },
     {
@@ -6630,7 +7072,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/main.py",
-      "source_location": "L399",
+      "source_location": "L402",
       "weight": 1.0
     },
     {
@@ -6652,7 +7094,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/main.py",
-      "source_location": "L441",
+      "source_location": "L444",
       "weight": 1.0
     },
     {
@@ -6663,7 +7105,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/main.py",
-      "source_location": "L466",
+      "source_location": "L469",
       "weight": 1.0
     },
     {
@@ -6685,7 +7127,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/main.py",
-      "source_location": "L492",
+      "source_location": "L495",
       "weight": 1.0
     },
     {
@@ -6696,7 +7138,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/main.py",
-      "source_location": "L533",
+      "source_location": "L536",
       "weight": 1.0
     },
     {
@@ -6707,7 +7149,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/main.py",
-      "source_location": "L559",
+      "source_location": "L562",
       "weight": 1.0
     },
     {
@@ -6740,7 +7182,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/models.py",
-      "source_location": "L105",
+      "source_location": "L106",
       "weight": 1.0
     },
     {
@@ -6751,7 +7193,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/models.py",
-      "source_location": "L112",
+      "source_location": "L113",
       "weight": 1.0
     },
     {
@@ -6795,7 +7237,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/models.py",
-      "source_location": "L39",
+      "source_location": "L40",
       "weight": 1.0
     },
     {
@@ -6806,7 +7248,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/models.py",
-      "source_location": "L43",
+      "source_location": "L44",
       "weight": 1.0
     },
     {
@@ -6817,7 +7259,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/models.py",
-      "source_location": "L55",
+      "source_location": "L56",
       "weight": 1.0
     },
     {
@@ -6828,7 +7270,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/models.py",
-      "source_location": "L76",
+      "source_location": "L77",
       "weight": 1.0
     },
     {
@@ -6839,7 +7281,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/models.py",
-      "source_location": "L83",
+      "source_location": "L84",
       "weight": 1.0
     },
     {
@@ -6861,7 +7303,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/models.py",
-      "source_location": "L94",
+      "source_location": "L95",
       "weight": 1.0
     },
     {
@@ -7174,6 +7616,28 @@
     },
     {
       "source": "server_tests_test_profiles",
+      "target": "server_tests_test_profiles_test_header_only_dataset_profiles_cleanly",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "server/tests/test_profiles.py",
+      "source_location": "L131",
+      "weight": 1.0
+    },
+    {
+      "source": "server_tests_test_profiles",
+      "target": "server_tests_test_profiles_test_deep_profile_survives_reopen",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "server/tests/test_profiles.py",
+      "source_location": "L149",
+      "weight": 1.0
+    },
+    {
+      "source": "server_tests_test_profiles",
       "target": "server_tests_test_profiles_attach",
       "relation": "contains",
       "_origin": "ast",
@@ -7191,7 +7655,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/tests/test_profiles.py",
-      "source_location": "L31",
+      "source_location": "L32",
       "weight": 1.0
     },
     {
@@ -7202,7 +7666,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/tests/test_profiles.py",
-      "source_location": "L56",
+      "source_location": "L57",
       "weight": 1.0
     },
     {
@@ -7213,7 +7677,18 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/tests/test_profiles.py",
-      "source_location": "L70",
+      "source_location": "L71",
+      "weight": 1.0
+    },
+    {
+      "source": "server_tests_test_profiles",
+      "target": "server_tests_test_profiles_test_deep_profile_stats",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "server/tests/test_profiles.py",
+      "source_location": "L93",
       "weight": 1.0
     },
     {
@@ -8038,7 +8513,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/models.py",
-      "source_location": "L94",
+      "source_location": "L95",
       "weight": 1.0
     },
     {
@@ -8049,7 +8524,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/models.py",
-      "source_location": "L83",
+      "source_location": "L84",
       "weight": 1.0
     },
     {
@@ -8060,7 +8535,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/models.py",
-      "source_location": "L76",
+      "source_location": "L77",
       "weight": 1.0
     },
     {
@@ -8082,7 +8557,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/models.py",
-      "source_location": "L43",
+      "source_location": "L44",
       "weight": 1.0
     },
     {
@@ -8093,7 +8568,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/models.py",
-      "source_location": "L39",
+      "source_location": "L40",
       "weight": 1.0
     },
     {
@@ -8104,7 +8579,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/models.py",
-      "source_location": "L55",
+      "source_location": "L56",
       "weight": 1.0
     },
     {
@@ -8115,7 +8590,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/models.py",
-      "source_location": "L105",
+      "source_location": "L106",
       "weight": 1.0
     },
     {
@@ -8126,7 +8601,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/models.py",
-      "source_location": "L112",
+      "source_location": "L113",
       "weight": 1.0
     },
     {
@@ -8141,14 +8616,25 @@
       "weight": 1.0
     },
     {
-      "source": "server_app_analysis_rationale_117",
-      "target": "server_app_analysis_run_query",
+      "source": "server_app_analysis_rationale_108",
+      "target": "server_app_analysis_profile_csv",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/analysis.py",
-      "source_location": "L117",
+      "source_location": "L108",
+      "weight": 1.0
+    },
+    {
+      "source": "server_app_analysis_rationale_165",
+      "target": "server_app_analysis_column_stat_expr",
+      "relation": "rationale_for",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "server/app/analysis.py",
+      "source_location": "L165",
       "weight": 1.0
     },
     {
@@ -8160,6 +8646,61 @@
       "confidence_score": 1.0,
       "source_file": "server/app/analysis.py",
       "source_location": "L17",
+      "weight": 1.0
+    },
+    {
+      "source": "server_app_analysis_rationale_179",
+      "target": "server_app_analysis_stat_width",
+      "relation": "rationale_for",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "server/app/analysis.py",
+      "source_location": "L179",
+      "weight": 1.0
+    },
+    {
+      "source": "server_app_analysis_rationale_188",
+      "target": "server_app_analysis_coerce",
+      "relation": "rationale_for",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "server/app/analysis.py",
+      "source_location": "L188",
+      "weight": 1.0
+    },
+    {
+      "source": "server_app_analysis_rationale_197",
+      "target": "server_app_analysis_column_stat",
+      "relation": "rationale_for",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "server/app/analysis.py",
+      "source_location": "L197",
+      "weight": 1.0
+    },
+    {
+      "source": "server_app_analysis_rationale_215",
+      "target": "server_app_analysis_duplicate_row_count",
+      "relation": "rationale_for",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "server/app/analysis.py",
+      "source_location": "L215",
+      "weight": 1.0
+    },
+    {
+      "source": "server_app_analysis_rationale_233",
+      "target": "server_app_analysis_run_query",
+      "relation": "rationale_for",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "server/app/analysis.py",
+      "source_location": "L233",
       "weight": 1.0
     },
     {
@@ -8185,14 +8726,14 @@
       "weight": 1.0
     },
     {
-      "source": "server_app_analysis_rationale_87",
-      "target": "server_app_analysis_profile_csv",
+      "source": "server_app_analysis_rationale_96",
+      "target": "server_app_analysis_type_family",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/analysis.py",
-      "source_location": "L87",
+      "source_location": "L96",
       "weight": 1.0
     },
     {
@@ -8208,13 +8749,24 @@
     },
     {
       "source": "server_app_db_rationale_77",
-      "target": "server_app_db_get_connection",
+      "target": "server_app_db_ensure_column",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/db.py",
       "source_location": "L77",
+      "weight": 1.0
+    },
+    {
+      "source": "server_app_db_rationale_88",
+      "target": "server_app_db_get_connection",
+      "relation": "rationale_for",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "server/app/db.py",
+      "source_location": "L88",
       "weight": 1.0
     },
     {
@@ -8262,47 +8814,47 @@
       "weight": 1.0
     },
     {
-      "source": "server_app_main_rationale_266",
+      "source": "server_app_main_rationale_268",
       "target": "server_app_main_get_profile",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/main.py",
-      "source_location": "L266",
+      "source_location": "L268",
       "weight": 1.0
     },
     {
-      "source": "server_app_main_rationale_295",
+      "source": "server_app_main_rationale_298",
       "target": "server_app_main_create_run",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/main.py",
-      "source_location": "L295",
+      "source_location": "L298",
       "weight": 1.0
     },
     {
-      "source": "server_app_main_rationale_341",
+      "source": "server_app_main_rationale_344",
       "target": "server_app_main_list_runs",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/main.py",
-      "source_location": "L341",
+      "source_location": "L344",
       "weight": 1.0
     },
     {
-      "source": "server_app_main_rationale_364",
+      "source": "server_app_main_rationale_367",
       "target": "server_app_main_get_run",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/main.py",
-      "source_location": "L364",
+      "source_location": "L367",
       "weight": 1.0
     },
     {
@@ -8317,47 +8869,36 @@
       "weight": 1.0
     },
     {
-      "source": "server_app_main_rationale_404",
+      "source": "server_app_main_rationale_407",
       "target": "server_app_main_create_finding",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/main.py",
-      "source_location": "L404",
+      "source_location": "L407",
       "weight": 1.0
     },
     {
-      "source": "server_app_main_rationale_442",
+      "source": "server_app_main_rationale_445",
       "target": "server_app_main_list_findings",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/main.py",
-      "source_location": "L442",
+      "source_location": "L445",
       "weight": 1.0
     },
     {
-      "source": "server_app_main_rationale_467",
+      "source": "server_app_main_rationale_470",
       "target": "server_app_main_get_finding",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/main.py",
-      "source_location": "L467",
-      "weight": 1.0
-    },
-    {
-      "source": "server_app_main_rationale_497",
-      "target": "server_app_main_get_evidence_chain",
-      "relation": "rationale_for",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "server/app/main.py",
-      "source_location": "L497",
+      "source_location": "L470",
       "weight": 1.0
     },
     {
@@ -8372,25 +8913,36 @@
       "weight": 1.0
     },
     {
-      "source": "server_app_main_rationale_539",
+      "source": "server_app_main_rationale_500",
+      "target": "server_app_main_get_evidence_chain",
+      "relation": "rationale_for",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "server/app/main.py",
+      "source_location": "L500",
+      "weight": 1.0
+    },
+    {
+      "source": "server_app_main_rationale_542",
       "target": "server_app_main_set_validation_status",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/main.py",
-      "source_location": "L539",
+      "source_location": "L542",
       "weight": 1.0
     },
     {
-      "source": "server_app_main_rationale_564",
+      "source": "server_app_main_rationale_567",
       "target": "server_app_main_validate_finding",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/main.py",
-      "source_location": "L564",
+      "source_location": "L567",
       "weight": 1.0
     },
     {
@@ -8427,25 +8979,25 @@
       "weight": 1.0
     },
     {
-      "source": "server_app_models_rationale_106",
+      "source": "server_app_models_rationale_107",
       "target": "server_app_models_validationcheck",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/models.py",
-      "source_location": "L106",
+      "source_location": "L107",
       "weight": 1.0
     },
     {
-      "source": "server_app_models_rationale_95",
+      "source": "server_app_models_rationale_96",
       "target": "server_app_models_evidencechain",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/models.py",
-      "source_location": "L95",
+      "source_location": "L96",
       "weight": 1.0
     },
     {
@@ -8674,7 +9226,7 @@
       "confidence_score": 0.95,
       "context": "parameter_type",
       "source_file": "server/app/main.py",
-      "source_location": "L401",
+      "source_location": "L404",
       "weight": 0.8
     },
     {
@@ -8686,7 +9238,7 @@
       "confidence_score": 0.95,
       "context": "parameter_type",
       "source_file": "server/app/main.py",
-      "source_location": "L292",
+      "source_location": "L295",
       "weight": 0.8
     },
     {
@@ -8698,7 +9250,7 @@
       "confidence_score": 0.95,
       "context": "return_type",
       "source_file": "server/app/main.py",
-      "source_location": "L538",
+      "source_location": "L541",
       "weight": 0.8
     },
     {
@@ -8709,7 +9261,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "server/app/main.py",
-      "source_location": "L587",
+      "source_location": "L590",
       "weight": 0.8
     },
     {
@@ -9796,5 +10348,5 @@
       "source_file": "verification/p0/REPORT.md"
     }
   ],
-  "built_at_commit": "10bff137e8747596c91a4d53882d7927896dd083"
+  "built_at_commit": "55e1e7593033e9c4ce3cc6573211bf715858ba4a"
 }

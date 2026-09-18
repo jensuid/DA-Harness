@@ -32,7 +32,7 @@ Parquet/Excel + richer profiling + Python execution + charts
 | Task ID | Capability | Priority | Status | Dependencies | Verification |
 |---------|-----------|----------|--------|--------------|--------------|
 | P2-DATA-006 | Data Layer (breadth) | M | DONE | P1 done | Parquet and Excel attach alongside CSV |
-| P2-DATA-007 | Data Layer (depth) | M | NOT_STARTED | P2-DATA-006 | Profile covers duplicates, types, basic stats |
+| P2-DATA-007 | Data Layer (depth) | M | DONE | P2-DATA-006 | Profile covers duplicates, types, basic stats |
 | P2-ANALYSIS-008 | Analysis Workspace | M | NOT_STARTED | P2-DATA-006 | Read-only Python executes against a dataset, result persisted |
 | P2-ANALYSIS-009 | Analysis Workspace | M | NOT_STARTED | P2-ANALYSIS-008 | Chart image persisted from a run result |
 | P2-CASE-010 | Analysis Case | M | NOT_STARTED | P1 done | Rename, duplicate, delete cases |
@@ -60,4 +60,40 @@ ACCEPTANCE CRITERIA:
 TESTS: golden parquet, golden xlsx, unsupported type.
 VERIFICATION: pytest + in-process round-trip.
 STATE UPDATE: mark P2-DATA-006 done on pass.
+```
+
+### P2-DATA-007 contract
+
+```
+TASK ID: P2-DATA-007
+MILESTONE: P2 MVP
+CAPABILITY: Data Layer (depth)
+GOAL: Deepen the profile so it carries what an analyst (and later the AI planner)
+      needs before writing a query.
+
+CONTEXT: csv/parquet/xlsx all attach and profile (rows/columns/null counts).
+         The profile is the input to the AI planning step, so it has to describe
+         the data, not just count rows.
+INPUTS: an attached, profiled dataset (any supported format).
+RELEVANT FILES: server/app/analysis.py, models.py, main.py, db.py,
+                tests/test_profiles.py
+REQUIRED CHANGE: extend the profile with
+  - per column: inferred DuckDB type, null count, null percentage, distinct count
+  - per numeric column: min, max, average
+  - per dataset: duplicate row count (total rows minus distinct rows)
+NON-GOALS: no visualization, no AI interpretation, no UI, no heuristic schema
+           repair, no per-value histograms.
+CONSTRAINTS: read via DuckDB throughout - one engine, one path; every new
+             stat must survive across formats (csv/parquet/xlsx); the existing
+             validation null_count sum must keep working unchanged.
+ACCEPTANCE CRITERIA:
+- [x] every column reports type, null_count, null_percentage, distinct_count
+- [x] numeric columns report min/max/avg
+- [x] duplicate row count is reported and correct
+- [x] empty (header-only) datasets profile without error
+- [x] existing profiles and the validation gate still pass
+TESTS: numeric stats; type inference; distinct counts; duplicate rows;
+       header-only dataset; full regression suite.
+VERIFICATION: pytest + in-process round-trip.
+STATE UPDATE: mark P2-DATA-007 done on pass.
 ```
