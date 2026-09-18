@@ -1,12 +1,12 @@
 # DAH - Current State
 
-- **Phase:** P1 Vertical Slice
-- **Milestone status:** IN PROGRESS
-- **Completed capabilities:** FastAPI core; SQLite case persistence; DuckDB engine; Vite/React shell; P0 verification harness; CSV dataset attachment; deterministic dataset profiling; read-only SQL analysis runs with persisted results
-- **Active task:** none (P1-ANALYSIS-003 complete)
+- **Phase:** P2 MVP
+- **Milestone status:** P1 Vertical Slice PASSED (verification/p1/REPORT.md)
+- **Completed capabilities:** FastAPI core; SQLite case persistence; DuckDB engine; Vite/React shell; P0 verification harness; CSV dataset attachment; deterministic dataset profiling; read-only SQL analysis runs with persisted results; findings with evidence chain; validation via rerun
+- **Active task:** P2-DATA-007 (deep profiling) - DATA-006 complete
 - **Known issues:** none
-- **Test status:** server 18 passed; web 2 passed
-- **Next task:** P1-EVIDENCE-004 (findings linked to runs: finding -> result -> query -> dataset)
+- **Test status:** server 29 passed; web 2 passed
+- **Next task:** P2-DATA-007 - profile covers duplicates, types, basic stats
 - **Blockers:** none
 
 ## P1 progress
@@ -17,7 +17,7 @@
 | P1-DATA-002 Dataset profiling | DONE |
 | P1-ANALYSIS-003 SQL analysis run | DONE |
 | P1-EVIDENCE-004 Findings & evidence | NOT STARTED |
-| P1-VALID-005 Validation | NOT STARTED |
+| P1-VALID-005 Validation | DONE |
 
 ## Platform decisions (locked, see ai/DECISIONS.md)
 

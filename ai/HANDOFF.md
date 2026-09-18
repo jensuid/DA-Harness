@@ -2,43 +2,47 @@
 
 ## What was completed
 
-- P0 PASSED: all exit criteria, verification/p0/REPORT.md
-- P1 decomposed into 5 tasks (ai/TASKS.md)
-- P1-DATA-001 DONE: CSV dataset attachment
-- P1-DATA-002 DONE: deterministic dataset profiling
-- P1-ANALYSIS-003 DONE: read-only SQL analysis runs, persisted with results
+- P2-DATA-006 PASSED: parquet + xlsx attach, profile, and query alongside CSV
+- P0 PASSED: verification/p0/REPORT.md
+- P1 PASSED: verification/p1/REPORT.md - full vertical slice verified end to end
+- All five P1 tasks done: ingest, profiling, SQL runs, findings+evidence, validation
+
+## P1 vertical slice (verified)
+
+```
+Create Case -> Question -> Load CSV -> Profile -> SQL Analysis
+-> Finding -> Evidence chain -> Validation (rerun) -> Save -> Reopen
+```
 
 ## What changed
 
-- server/app/analysis.py: run_query - read-only check (single SELECT-family statement,
-  no semicolons), parameter-bound dataset path, 1000-row cap + truncation flag
-- server/app/db.py: runs table
-- server/app/models.py: RunCreate / Run / RunSummary
-- server/app/main.py: POST /cases/{id}/datasets/{dataset_id}/runs,
-  GET /cases/{id}/runs (summaries, no rows), GET /cases/{id}/runs/{run_id} (full)
-- server/tests/test_runs.py: aggregation+reopen, list excludes rows, DELETE rejected,
-  multi-statement rejected, unknown dataset 404
+- verification/p1/verify_p1.py: repeatable P1 gate (in-process, no network needed)
+- verification/p1/REPORT.md: PASS on all 9 steps and all 8 exit criteria
+- ai/: phase advanced to P2
 
 ## Tests performed
 
-- server pytest: 18 passed
-- Live: SUM(revenue) GROUP BY region -> 2 rows correct; DELETE and multi-statement
-  both rejected with 400; run reopened with rows intact
+- P1 exit-test sequence: all 9 steps PASS
+- P2-DATA-006: server pytest 29 passed (5 new: parquet attach+profile, xlsx attach+profile, cross-format query, parquet placeholder form); web vitest: 2 passed
 
 ## Unresolved problems
 
-- none. The read-only check is a prefix/semicolon gate, not a full SQL parser -
-  acceptable for local single-user MVP; the Verification Plan's Gate K security
-  work hardens this later with sandboxing.
+- Commits blocked from the agent side: .git read-only under the current permission
+  profile, and escalation reviewer errors ("A supported model is required").
+  Two commits' worth of work is uncommitted on disk (EVIDENCE-004, VALID-005,
+  graph updates, P1 harness).
 
 ## Next action
 
-P1-EVIDENCE-004: findings linked to runs. Establishes the trust chain
-finding -> result -> query -> dataset. Then P1-VALID-005 reruns the query to
-prove reproducibility.
+P2-DATA-007: deepen the profile (duplicate rows, inferred types, basic stats). Per the roadmap, P2 broadens the working loop:
+- Parquet and Excel ingest (in addition to CSV)
+- Python execution in the workspace (alongside SQL)
+- essential charts / result tables
+- AI planning with structured output (this is where AI joins)
+- export of an Analysis Case
 
 ## Important context
 
-- python-multipart installed for uploads
-- DATA_DIR defaults to server/data/ (gitignored); tests patch app.db.DATA_DIR
+- P1 gate runs in-process: `server/.venv/bin/python verification/p1/verify_p1.py`
+- python-multipart installed; DATA_DIR gitignored
 - server venv at server/.venv (Python 3.14)
