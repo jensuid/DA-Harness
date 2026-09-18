@@ -1,7 +1,9 @@
 # Graph Report - DA-Harness  (2026-09-18)
 
 ## Corpus Check
-- cluster-only mode — file stats not available
+- 36 files · ~15,116 words
+- Verdict: corpus is large enough that graph structure adds value.
+- Unclassified: 3 file(s) not represented in the graph (top: (none) 1, .css 1, .tsbuildinfo 1)
 
 ## Summary
 - 238 nodes · 377 edges · 15 communities (11 shown, 1 thin omitted)
@@ -36,8 +38,8 @@
 6. `Verification & Production Readiness Plan` - 12 edges
 7. `_temp_env()` - 8 edges
 8. `_temp_env()` - 8 edges
-9. `create_run()` - 7 edges
-10. `_temp_db()` - 7 edges
+9. `profile_csv()` - 7 edges
+10. `create_run()` - 7 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `DEC-001: Web-first MVP, Tauri post-MVP` --references--> `P0 Foundation`  [INFERRED]
@@ -46,10 +48,10 @@
   ai/DECISIONS.md → docs/Implementation Roadmap.md
 - `Locked tech selections (FastAPI/SQLite/DuckDB)` --implements--> `Control-Layer Architecture`  [INFERRED]
   ai/DECISIONS.md → docs/Product & Engineering Master Specification.md
-- `Milestone Exit Criteria (P0-P5)` --semantically_similar_to--> `Verification Gates A-H`  [INFERRED] [semantically similar]
-  docs/Coding-Agent Production System.md → docs/Implementation Roadmap.md
-- `P0 Gate Result: PASS` --references--> `Milestone Exit Criteria (P0-P5)`  [INFERRED]
-  verification/p0/REPORT.md → docs/Coding-Agent Production System.md
+- `AGENTS.md graphify guidance` --references--> `web/index.html (React entry point)`  [INFERRED]
+  AGENTS.md → web/index.html
+- `web/index.html (React entry point)` --references--> `Web-First Delivery Strategy (Tauri post-MVP)`  [INFERRED]
+  web/index.html → docs/Product & Engineering Master Specification.md
 
 ## Import Cycles
 - None detected.
@@ -104,7 +106,7 @@ Cohesion: 0.40
 Nodes (3): devDependencies, @testing-library/jest-dom, @testing-library/jest-dom
 
 ## Knowledge Gaps
-- **58 isolated node(s):** `Health`, `NewCase`, `jsdom`, `@testing-library/react`, `@types/react` (+53 more)
+- **58 isolated node(s):** `@testing-library/jest-dom`, `dah-server`, `name`, `private`, `version` (+53 more)
   These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 106 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
 - **1 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
@@ -117,7 +119,7 @@ _Questions this graph is uniquely positioned to answer:_
   _High betweenness centrality (0.034) - this node is a cross-community bridge._
 - **Why does `Coding-Agent Production System` connect `Coding-Agent Production System` to `Product & Engineering Master Specification`?**
   _High betweenness centrality (0.025) - this node is a cross-community bridge._
-- **What connects `Health`, `NewCase`, `jsdom` to the rest of the system?**
+- **What connects `@testing-library/jest-dom`, `dah-server`, `name` to the rest of the system?**
   _58 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Product & Engineering Master Specification` be split into smaller, more focused modules?**
   _Cohesion score 0.08333333333333333 - nodes in this community are weakly interconnected._
