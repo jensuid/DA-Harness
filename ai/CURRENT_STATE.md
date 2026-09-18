@@ -1,14 +1,26 @@
 # DAH - Current State
 
 - **Phase:** P0 Foundation
-- **Milestone status:** IN PROGRESS
-- **Completed capabilities:** FastAPI core with health endpoint; Vite/React/TypeScript shell with case-creation screen; pytest + Vitest infrastructure; git repository
-- **Active task:** none (P0-WEB-002 complete)
+- **Milestone status:** VERIFICATION (all three P0 tasks implemented; milestone gate pending)
+- **Completed capabilities:** FastAPI core (health, case create/get/list); SQLite case persistence; DuckDB analytical engine; Vite/React/TS shell with case-creation screen; pytest + Vitest; git repository
+- **Active task:** none (P0-DATA-003 complete)
 - **Known issues:** none
-- **Test status:** server 1 passed; web 2 passed
+- **Test status:** server 5 passed; web 2 passed
 - **Architecture status:** web-first MVP decided (DEC-001); FastAPI + SQLite (state) + DuckDB (analytics); Tauri deferred to post-MVP
-- **Next task:** P0-DATA-003 (SQLite case persistence + DuckDB analytical engine)
+- **Next step:** run the P0 milestone exit test and evaluate exit criteria (see below)
 - **Blockers:** none
+
+## P0 exit criteria checklist
+
+- [x] application launches (web frontend builds and serves)
+- [x] web frontend builds and serves (was: Tauri shell works)
+- [x] React UI renders
+- [x] Python backend starts
+- [x] frontend <-> backend communication works (proxy verified)
+- [x] basic state can persist (SQLite, survives restart)
+- [x] test suite runs (pytest 5, vitest 2)
+- [x] repository structure is established
+- [x] development documentation exists (docs/ + ai/)
 
 ## Platform decisions (locked, see ai/DECISIONS.md)
 

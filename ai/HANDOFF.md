@@ -8,34 +8,41 @@
 - graphify skill installed for Codex; AGENTS.md guidance live
 - P0-INFRA-001 DONE: git repo, repo scaffold, FastAPI skeleton, health endpoint, pytest
 - P0-WEB-002 DONE: Vite + React + TS shell, case-creation screen, api client, Vitest
+- P0-DATA-003 DONE: SQLite case persistence, DuckDB analytical engine, case endpoints
 
 ## What changed
 
-- docs/: six Tauri-as-initial-platform references corrected
-- ai/: DECISIONS.md, TASKS.md, CURRENT_STATE.md maintained
-- server/: FastAPI app + GET /health + pytest test
-- web/: Vite/React/TS app, CaseCreation screen, api.ts client (GET /health, POST /cases), setup-tests.ts, Vitest tests
+- server/app/db.py: SQLite connection + cases schema (check_same_thread=False for FastAPI threadpool)
+- server/app/models.py: CaseCreate / Case pydantic models
+- server/app/analysis.py: DuckDB profile_csv (row count + columns) - the seed of the Data & Evidence Engine
+- server/app/main.py: POST /cases, GET /cases/{id}, GET /cases
+- server/tests/test_cases.py: create/reopen golden test, 404, list
+- server/tests/test_analysis.py: DuckDB CSV profiling test
+- .gitignore: excludes the local dev database
 
 ## Tests performed
 
-- server `pytest`: 1 passed (test_health_returns_ok)
-- web `npm test`: 2 passed (renders form; core reachable via mocked /health)
-- web `npm run build`: tsc -b + vite build succeed (145 KB bundle)
-- Live: uvicorn + vite booted together; `/api/health` proxied through Vite -> 200 `{"status":"ok"}`
+- server `pytest`: 5 passed (health, create+reopen, 404, list, profile_csv)
+- Live golden test: created case, killed server, restarted, case reopened intact
+- End-to-end: POST /api/cases through the Vite proxy -> 201; list returned the case
+- web `npm test` / `npm run build`: still green (2 passed, build ok)
 
 ## Unresolved problems
 
-- POST /cases endpoint does not exist yet - intentionally deferred to P0-DATA-003.
-  The frontend client is already written against it.
+- none blocking. CSV profiling is engine-only (no endpoint yet) - the API surface
+  arrives in P1 when the vertical slice needs it.
 
 ## Next action
 
-Start P0-DATA-003: SQLite-backed case persistence (create/save/reopen) behind
-POST /cases + GET /cases/{id}, plus DuckDB wired for analytical queries only.
-Add golden tests for persistence. Then rerun the frontend against the real endpoint.
+Run the P0 milestone verification: execute the exit-test sequence
+(start app -> backend op -> persist state -> restart -> recover -> run tests)
+and confirm all nine P0 exit criteria pass (see ai/CURRENT_STATE.md).
+On PASS, begin P1 task decomposition: Case -> Question -> CSV -> Profile -> Plan
+-> Analysis -> Evidence -> Finding -> Validation -> Save.
 
 ## Important context
 
 - server venv at server/.venv (Python 3.14); install with `uv pip install --python .venv/bin/python -e ".[dev]"`
 - web deps installed; node_modules gitignored
-- graph is stale vs docs (doc-only semantic changes); rebuild after P0 code lands.
+- dev DB is server/dah.db (gitignored); tests use tmp_path
+- graph is stale vs docs (doc-only semantic changes); rebuild now that real code exists.

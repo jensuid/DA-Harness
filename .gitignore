@@ -26,3 +26,6 @@ graphify-out/graph.html
 # Local env
 .env
 .env.local
+
+# Local SQLite dev database
+*.db
