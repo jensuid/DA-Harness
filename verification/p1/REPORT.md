@@ -1,7 +1,7 @@
 # P1 Vertical Slice - Verification Report
 
 **Milestone:** P1 Vertical Slice  
-**Date:** 2026-09-18T17:13:32.848633+00:00  
+**Date:** 2026-09-18T23:46:41.943898+00:00  
 **Decision:** **PASS**
 
 ## Exit-test sequence (the full user journey)
@@ -41,7 +41,7 @@
 - Trace evidence chain: finding -> run -> dataset verified
 - Validate finding: status=supported
 - Save and reopen case: finding survived to a new session
-- Test suite runs: 25 passed, 2 warnings in 2.45s
+- Test suite runs: 32 passed, 2 warnings in 3.26s
 
 ## Decision
 
