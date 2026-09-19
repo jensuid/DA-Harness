@@ -153,6 +153,12 @@ jobs:
       - name: Install dependencies including PyInstaller
         run: uv pip install --python .venv/bin/python -e ".[dev,charts,packaging]"
 
+      - name: Install Rust toolchain
+        # build_sidecar.sh derives the target triple from `rustc -vV` - the
+        # macOS runners do not ship a Rust toolchain, so without this the
+        # triple comes out empty and the artifact lands under the wrong name.
+        uses: dtolnay/rust-toolchain@stable
+
       - name: Build the sidecar
         run: ./build_sidecar.sh
 
@@ -160,7 +166,8 @@ jobs:
         # The binary must actually serve, not merely build.
         run: |
           BINARY="$(rustc -vV | awk '/^host:/ {print $2}')"
-          ARTIFACT="desktop/src-tauri/binaries/dah-core-${BINARY}"
+          # This step runs from server/, so the artifact is one level up.
+          ARTIFACT="../desktop/src-tauri/binaries/dah-core-${BINARY}"
           test -x "$ARTIFACT" || { echo "missing $ARTIFACT"; exit 1; }
           DATA="$(mktemp -d)"
           DAH_DATA_DIR="$DATA" DAH_DB_PATH="$DATA/dah.db" \
@@ -171,5 +178,11 @@ jobs:
             sleep 0.5
           done
           curl -fsS http://127.0.0.1:8124/health
+          # Deliberately a plain kill, not the group signal the shell uses: a
+          # non-interactive shell keeps background jobs in its own process
+          # group, so a negative PID would take the runner's shell down with
+          # the core. Orphaning the bootloader child does not matter here -
+          # the VM is destroyed the moment the job ends, unlike a user's
+          # machine where it would hold the port past launch.
           kill "$CORE_PID"
           wait "$CORE_PID" 2>/dev/null || true
