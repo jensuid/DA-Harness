@@ -1,0 +1,148 @@
+"""Case history: a timeline of everything that happened in a case (P3-CASE-007).
+
+The evidence graph answers "what backs each claim". This answers the simpler
+question an analyst asks on reopening a case: what did I do here, and when?
+
+It is a read-side projection, like evidence.py: it reads the persisted rows and
+derives the timeline from each artifact's own timestamp. Nothing is stored, so
+the timeline cannot drift from what is on disk - attach a dataset and an event
+appears; delete the case and it is gone.
+
+Validation has no persisted timestamp of its own (the finding keeps its status,
+not when it was set), so a finding's validation status rides along as the detail
+of its event rather than being invented as a separate timestamped entry.
+"""
+
+from datetime import datetime, timezone
+from typing import Any
+
+# One per artifact kind, in the order the loop usually produces them. Ties in
+# timestamps keep this order, so a fast session still reads top to bottom.
+EVENT_CASE_CREATED = "case_created"
+EVENT_DATASET_ATTACHED = "dataset_attached"
+EVENT_DATASET_PROFILED = "dataset_profiled"
+EVENT_PLAN_CREATED = "plan_created"
+EVENT_RUN_EXECUTED = "run_executed"
+EVENT_CHART_RENDERED = "chart_rendered"
+EVENT_FINDING_RECORDED = "finding_recorded"
+
+
+def _parse(timestamp: str | None) -> datetime | None:
+    if not timestamp:
+        return None
+    try:
+        # fromisoformat handles the +00:00 offset this project writes.
+        parsed = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed
+
+
+def build_case_history(db, case_id: str) -> dict[str, Any]:
+    """Project a case into its timeline.
+
+    Raises ValueError when the case does not exist, so the caller answers 404.
+    """
+    case = db.execute(
+        "SELECT id, question, dataset, created_at FROM cases WHERE id = ?",
+        (case_id,),
+    ).fetchone()
+    if case is None:
+        raise ValueError("case not found")
+
+    events: list[tuple[datetime, int, dict[str, Any]]] = []
+    order = 0
+
+    def add(timestamp: str | None, kind: str, artifact_id: str | None,
+            label: str, detail: str | None) -> None:
+        nonlocal order
+        when = _parse(timestamp)
+        if when is None:
+            # An artifact without a usable timestamp is not silently dropped:
+            # it lands at the case's start so the timeline stays complete.
+            when = _parse(case["created_at"]) or datetime.now()
+        order += 1
+        events.append((when, order, {
+            "timestamp": when.isoformat(),
+            "kind": kind,
+            "artifact_id": artifact_id,
+            "label": label,
+            "detail": detail,
+        }))
+
+    add(case["created_at"], EVENT_CASE_CREATED, case["id"],
+        case["question"], f"dataset: {case['dataset']}")
+
+    datasets = db.execute(
+        "SELECT id, filename, format, created_at FROM datasets "
+        "WHERE case_id = ? ORDER BY created_at",
+        (case_id,),
+    ).fetchall()
+    dataset_names = {row["id"]: row["filename"] for row in datasets}
+    for row in datasets:
+        add(row["created_at"], EVENT_DATASET_ATTACHED, row["id"],
+            row["filename"], f"format: {row['format']}")
+
+    for row in db.execute(
+        "SELECT dataset_id, rows, duplicate_rows, profiled_at FROM profiles "
+        "WHERE dataset_id IN (SELECT id FROM datasets WHERE case_id = ?) "
+        "ORDER BY profiled_at",
+        (case_id,),
+    ).fetchall():
+        add(row["profiled_at"], EVENT_DATASET_PROFILED, row["dataset_id"],
+            dataset_names.get(row["dataset_id"], row["dataset_id"]),
+            f"{row['rows']} rows, {row['duplicate_rows']} duplicate")
+
+    for row in db.execute(
+        "SELECT id, dataset_id, question, source, created_at FROM plans "
+        "WHERE case_id = ? ORDER BY created_at",
+        (case_id,),
+    ).fetchall():
+        add(row["created_at"], EVENT_PLAN_CREATED, row["id"],
+            row["question"], f"source: {row['source']}")
+
+    for row in db.execute(
+        "SELECT id, kind, sql, code, row_count, executed_at FROM runs "
+        "WHERE case_id = ? ORDER BY executed_at",
+        (case_id,),
+    ).fetchall():
+        source = (row["sql"] or row["code"] or "").strip().splitlines()
+        label = source[0][:120] if source else f"{row['kind']} run"
+        add(row["executed_at"], EVENT_RUN_EXECUTED, row["id"], label,
+            f"{row['kind']}, {row['row_count']} row(s) returned")
+
+    for row in db.execute(
+        "SELECT id, run_id, kind, x, y, title, created_at FROM charts "
+        "WHERE case_id = ? ORDER BY created_at",
+        (case_id,),
+    ).fetchall():
+        label = row["title"] or f"{row['kind']} of {row['y']} by {row['x']}"
+        add(row["created_at"], EVENT_CHART_RENDERED, row["id"], label,
+            f"from run {row['run_id']}")
+
+    for row in db.execute(
+        "SELECT id, statement, validation_status, created_at FROM findings "
+        "WHERE case_id = ? ORDER BY created_at",
+        (case_id,),
+    ).fetchall():
+        add(row["created_at"], EVENT_FINDING_RECORDED, row["id"],
+            row["statement"], f"validation: {row['validation_status']}")
+
+    events.sort(key=lambda item: (item[0], item[1]))
+
+    counts = {
+        "datasets": len(datasets),
+        "profiles": sum(1 for e in events if e[2]["kind"] == EVENT_DATASET_PROFILED),
+        "plans": sum(1 for e in events if e[2]["kind"] == EVENT_PLAN_CREATED),
+        "runs": sum(1 for e in events if e[2]["kind"] == EVENT_RUN_EXECUTED),
+        "charts": sum(1 for e in events if e[2]["kind"] == EVENT_CHART_RENDERED),
+        "findings": sum(1 for e in events if e[2]["kind"] == EVENT_FINDING_RECORDED),
+    }
+    return {
+        "case_id": case_id,
+        "question": case["question"],
+        "events": [event for _, _, event in events],
+        "counts": counts,
+    }

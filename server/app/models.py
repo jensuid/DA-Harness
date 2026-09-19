@@ -297,3 +297,56 @@ class ValidationResult(BaseModel):
     status: str
     checks: list[ValidationCheck]
     validated_at: datetime
+
+
+class TemplateCreate(BaseModel):
+    """Promote a case into a reusable template (P3-CASE-007).
+
+    `name` is optional - it defaults to the case's question - so the common
+    "save this as a template" gesture needs no second prompt.
+    """
+    name: str | None = None
+
+
+class Template(BaseModel):
+    """A reusable case skeleton: the question and the dataset label.
+
+    A template outlives the case it came from - promoting a case and then
+    deleting it keeps the template - because templates are not case children.
+    """
+    id: str
+    name: str
+    question: str
+    dataset: str
+    created_at: datetime
+
+
+class CaseFromTemplate(BaseModel):
+    """Start a new case from a template, optionally overriding its fields."""
+    template_id: str
+    question: str | None = None
+    dataset: str | None = None
+
+
+class HistoryEvent(BaseModel):
+    """One entry in a case's timeline (P3-CASE-007).
+
+    The timestamp is the artifact's own `created_at`; nothing extra is stored.
+    """
+    timestamp: datetime
+    kind: str
+    artifact_id: str | None = None
+    label: str
+    detail: str | None = None
+
+
+class CaseHistory(BaseModel):
+    """Everything that happened in a case, in the order it happened.
+
+    A read-side projection like the evidence graph: it is recomputed from the
+    persisted rows, so the timeline cannot drift from what is on disk.
+    """
+    case_id: str
+    question: str
+    events: list[HistoryEvent]
+    counts: dict[str, int]

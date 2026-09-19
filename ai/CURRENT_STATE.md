@@ -7,13 +7,14 @@
 case management - rename, duplicate, delete (P2-CASE-010);
 AI planning with structured output (P2-AI-011); case export as a self-contained
 JSON package with import round trip (P2-CASE-012)**
-- **Active task:** P3 V1 in progress - P3-SEC-001, P3-CHART-002, P3-DATA-003, P3-FLOW-004, P3-ANALYSIS-005, P3-EVIDENCE-006 DONE
+- **Active task:** P3 V1 in progress - P3-SEC-001, P3-CHART-002, P3-DATA-003, P3-FLOW-004, P3-ANALYSIS-005, P3-EVIDENCE-006, P3-CASE-007 DONE. Remaining: Tauri desktop shell (roadmap item 10)
 - **Known issues:** none
-- **Test status:** server 125 passed (+7 evidence-graph tests) (5 new for export); web 2 passed
-- **Next task:** remaining P3 items: case templates + search + history, contextual
-  AI (needs DAH_LLM_API_KEY - a user action), Tauri shell. Also carried:
-  validation of Python runs (the one place the trust loop still answers
-  "not supported") and a single-dataset delete endpoint
+- **Test status:** server 145 passed (+6 history, +10 templates, +4 search); web 2 passed
+- **Next task:** Tauri desktop shell (roadmap item 10 - verify the Rust toolchain and
+  network first). Contextual AI still needs DAH_LLM_API_KEY (a user action).
+  Carried: validation of Python runs (the one place the trust loop answers
+  "not supported" - now unblocked by the hard sandbox) and a single-dataset
+  delete endpoint
 - **Blockers:** none
 
 ## P2 progress
@@ -50,6 +51,11 @@ JSON package with import round trip (P2-CASE-012)**
 - Export: `GET /cases/{id}/export` (self-contained JSON package); `POST /cases/import`
   reconstructs it with fresh IDs
 - Plan: `POST /cases/{id}/datasets/{id}/plan` (structured plan from question + profile; deterministic by default, LLM when DAH_LLM_API_KEY is set, source field records which); latest at `GET .../plan`, history at `GET .../plans`
+- Search cases: `GET /cases?q=<term>` (case-insensitive substring over question and dataset; blank lists all)
+- Case timeline: `GET /cases/{id}/history` (one event per artifact, chronological)
+- Templates: `POST /cases/{id}/template` with `{"name"?}` (promote), `GET /templates`,
+  `POST /cases/from-template` with `{"template_id", "question"?, "dataset"?}`,
+  `DELETE /templates/{id}` (templates outlive their source case)
 - Chart from a run: `POST /cases/{id}/runs/{id}/charts` with `{"kind": "bar|line", "x": ..., "y": ..., "series": ...}`; image at `GET /cases/{id}/charts/{id}/image`
 - Rename: `PATCH /cases/{id}` with `{question?, dataset?}`; duplicate: `POST /cases/{id}/duplicate`;
   delete: `DELETE /cases/{id}` (removes the case row, all children, and its on-disk data)

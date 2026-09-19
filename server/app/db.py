@@ -91,6 +91,14 @@ CREATE TABLE IF NOT EXISTS charts (
     FOREIGN KEY (run_id) REFERENCES runs(id)
 );
 
+CREATE TABLE IF NOT EXISTS templates (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    question TEXT NOT NULL,
+    dataset TEXT NOT NULL,
+    created_at TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS plans (
     id TEXT PRIMARY KEY,
     case_id TEXT NOT NULL,

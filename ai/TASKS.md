@@ -109,6 +109,10 @@ AI code-generation work multiplies the risk of the P2 soft sandbox.
 | P3-SEC-001 | Analysis Workspace (hardening) | M | DONE | P2-ANALYSIS-008 | Python runs in a separate process under an OS sandbox; writes outside scratch, network, and runaway CPU are bounded and reported as 400 |
 | P3-CHART-002 | Analysis Workspace (raster charts) | M | DONE | P3-SEC-001 | PNG rendering behind the same interface; bar geometry and export round trip verified |
 | P3-DATA-003 | Data Layer (multi-dataset) | M | DONE | P2 done | Join runs across attached files; validation, duplicate, export all carry the dataset list |
+| P3-FLOW-004 | Analysis workflow (guided) | M | DONE | P3-DATA-003 | Derived stage and single next action from the case's artifacts |
+| P3-ANALYSIS-005 | Analysis Workspace (richer EDA) | M | DONE | P3-FLOW-004 | Segment / correlate / distribution compile to read-only SQL |
+| P3-EVIDENCE-006 | Evidence (richer lineage) | M | DONE | P3-ANALYSIS-005 | Case-wide evidence graph with claim-to-source tracing |
+| P3-CASE-007 | Analysis Case (reuse) | M | DONE | P3-EVIDENCE-006 | Case search, case history timeline, and case templates |
 
 ### P3-SEC-001 contract
 
@@ -359,4 +363,69 @@ TESTS: 7 tests - coverage, edge relations, single and multi-dataset traces,
        orphan reporting, empty case, 404.
 VERIFICATION: pytest (125 passed) + verification/p2/verify_p2.py PASS.
 STATE UPDATE: mark P3-EVIDENCE-006 done on pass.
+```
+
+### P3-CASE-007 contract
+
+```
+TASK ID: P3-CASE-007
+MILESTONE: P3 V1
+CAPABILITY: Analysis Case (reuse)
+GOAL: Make a finished investigation reusable: find a case again, see what
+      happened in it, and start a new one from its shape.
+
+CONTEXT: P2 proved the loop and P3 widened it, but nothing helps the analyst
+         the *second* time through. Cases accumulate with no way to find one,
+         no way to see what was done without opening every artifact, and no
+         way to start a new case shaped like a previous one.
+INPUTS: an existing case (for history and templates); a search term (for
+        listing).
+RELEVANT FILES: server/app/history.py (NEW), server/app/main.py,
+                server/app/models.py, server/app/db.py,
+                tests/test_case_history.py (NEW),
+                tests/test_case_templates.py (NEW),
+                tests/test_cases.py (search)
+REQUIRED CHANGE:
+  - search: optional `q` on GET /cases, case-insensitive substring over the
+    question and the dataset label, with LIKE wildcards in the term treated as
+    literals; absent or blank `q` lists everything
+  - history: GET /cases/{id}/history - a timeline derived from each artifact's
+    own timestamp (datasets, profiles, plans, runs, charts, findings), a
+    read-side projection like the evidence graph; a finding's validation status
+    rides along as its event detail because validation has no persisted
+    timestamp of its own
+  - templates: a `templates` table (id, name, question, dataset, created_at)
+    created with IF NOT EXISTS so older databases need no migration;
+    POST /cases/{id}/template (promote, name defaults to the question),
+    GET /templates (newest first), POST /cases/from-template (with optional
+    question/dataset overrides), DELETE /templates/{id}
+NON-GOALS: template categories or tagging, template versioning, sharing
+           templates across installs (export/import already moves whole
+           cases), full-text search across artifact bodies (the search covers
+           case-level fields only), a history UI.
+CONSTRAINTS: history and search are pure reads - no schema change for either,
+             so the timeline cannot drift from the persisted rows; templates
+             are not case children, so deleting a case leaves its template and
+             deleting a template leaves its cases; existing endpoints and their
+             responses are unchanged.
+ACCEPTANCE CRITERIA:
+- [x] `q` filters case-insensitively on question and dataset; a blank or absent
+      `q` lists every case
+- [x] `%` and `_` in a search term are literals, never wildcards
+- [x] the history covers every artifact kind in chronological order and is
+      recomputed per request, never leaking across cases
+- [x] a just-created case has exactly one event; an unknown case answers 404
+- [x] a promoted template keeps question and dataset label only - no data,
+      runs or findings are copied
+- [x] a templated case starts clean and accepts inline overrides
+- [x] a template survives its source case; deleting a template leaves the
+      cases it seeded untouched
+- [x] full suite and the P2 gate still pass
+TESTS: 20 tests - 4 search (question, dataset label, wildcard escaping,
+       no-filter paths), 6 history (fresh case, full-loop ordering, event
+       details, validation status, case scoping, 404), 10 templates (default
+       and explicit name, empty name 400, 404s, newest-first listing, clean
+       start, overrides, survives source case, delete with cascades).
+VERIFICATION: pytest (145 passed) + verification/p2/verify_p2.py PASS.
+STATE UPDATE: mark P3-CASE-007 done on pass.
 ```

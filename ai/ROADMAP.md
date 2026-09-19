@@ -71,7 +71,7 @@ come first because P3 code generation multiplies the risk.
 | 6 | Richer EDA, segmentation, statistical tests — **DONE (P3-ANALYSIS-005)** | Depth after the multi-dataset base (formal hypothesis tests deferred) | P3 Analysis |
 | 7 | Contextual AI assistant, code generation, result interpretation, finding drafting | Only after the deterministic surface is complete | P3 AI |
 | 8 | Evidence graph / claim-to-source tracing — **DONE (P3-EVIDENCE-006)** | Trust layer for repeated use | P3 Evidence |
-| 9 | Case templates, search, case history | Repeatability and reuse | P3 Case management |
+| 9 | Case templates, search, case history — **DONE (P3-CASE-007)** | Repeatability and reuse | P3 Case management |
 | 10 | Tauri desktop shell | Wraps the existing React bundle; post-MVP as planned | Platform decision |
 
 ## Rules this file enforces

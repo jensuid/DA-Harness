@@ -2,6 +2,15 @@
 
 ## What was completed
 
+- P3-CASE-007 PASSED: a finished investigation is now reusable. `GET /cases?q=`
+  finds a case by question or dataset label (case-insensitive, literal
+  substring); `GET /cases/{id}/history` replays everything that happened in a
+  case as a chronological timeline derived from each artifact's own timestamp;
+  templates (`POST /cases/{id}/template`, `GET /templates`,
+  `POST /cases/from-template`, `DELETE /templates/{id}`) capture a case's
+  skeleton so a new one can start shaped like a previous one. Templates are not
+  case children - they outlive the case they came from.
+
 - P3-EVIDENCE-006 PASSED: GET /cases/{id}/evidence-graph projects a case into
   its evidence graph - every dataset, run, chart, plan and finding as a node,
   each derivation as an edge, and a per-claim trace walking a finding out to
@@ -127,6 +136,28 @@ Create Case -> Question -> Load CSV -> Profile -> SQL Analysis
   index, not the point index, or later bars slide off-canvas. Fixed in both
   backends and pinned by the new pixel test.
 
+## What changed (P3-CASE-007)
+
+- server/app/history.py (NEW): `build_case_history` reads the case's rows and
+  derives a timeline - one event per artifact, stamped with that artifact's own
+  timestamp. Like the evidence graph it is a pure projection, so it cannot drift
+  from what is on disk. Validation has no persisted timestamp of its own, so a
+  finding's validation status rides along as its event's detail rather than
+  being invented as a separate timestamped entry.
+- server/app/db.py: new `templates` table (`id, name, question, dataset,
+  created_at`) under `CREATE TABLE IF NOT EXISTS` - older databases need no
+  migration.
+- server/app/main.py: `q` on `GET /cases` (LIKE on LOWER(question)/LOWER(dataset)
+  with the term's wildcards escaped so a search is a literal substring);
+  `GET /cases/{id}/history`; the four template endpoints. Case insertion is now
+  a shared `_insert_case` helper so direct creation and templated creation
+  cannot diverge on defaults.
+- server/app/models.py: `Template`, `TemplateCreate`, `CaseFromTemplate`,
+  `HistoryEvent`, `CaseHistory`.
+- server/tests/test_case_history.py (NEW): 6 tests. server/tests/
+  test_case_templates.py (NEW): 10 tests. tests/test_cases.py: 4 search tests,
+  including one pinning that `%` and `_` in a term stay literal.
+
 ## What changed (P3-SEC-001)
 
 - server/app/python_exec.py: `run_python` is now an orchestrator. It writes a
@@ -241,7 +272,7 @@ reported as unsupported (clear 400) rather than faked; that gate is future work.
 
 ## Tests performed (current)
 
-- server pytest: 125 passed
+- server pytest: 145 passed (+6 history, +10 templates, +4 search)
 - P2 gate: `server/.venv/bin/python verification/p2/verify_p2.py` PASS
   (re-verified after each P3 task; the gate re-runs the suite)
 
@@ -250,7 +281,8 @@ reported as unsupported (clear 400) rather than faked; that gate is future work.
 - Working tree clean; every P3 task so far is one atomic commit, all pushed to
   `origin/master` (github.com/jensuid/DA-Harness):
   `dfb115b` P3-SEC-001, `2c7b11f` P3-CHART-002, `f5df5d1` P3-DATA-003,
-  `967544b` P3-FLOW-004, `7b7e49f` P3-ANALYSIS-005, `ebaa30e` P3-EVIDENCE-006
+  `967544b` P3-FLOW-004, `7b7e49f` P3-ANALYSIS-005, `ebaa30e` P3-EVIDENCE-006,
+  <this commit> P3-CASE-007
 - `.git` is writable under the current permission profile (this changed
   mid-session; the earlier read-only restriction is gone).
 
@@ -267,21 +299,26 @@ reported as unsupported (clear 400) rather than faked; that gate is future work.
 
 ## Next action
 
-P3-CASE-007 (roadmap item 9: case templates + search + case history) is the next
-task. Design already decided, nothing committed yet:
+Remaining P3 is roadmap item 10: the Tauri desktop shell. It wraps the existing
+React bundle (`web/`) around a Rust core that spawns the FastAPI server, so a
+user gets a double-clickable app instead of two terminals. Verify the toolchain
+first - it needs a Rust toolchain plus npm deps; check `cargo --version` and
+network reachability for crates.io before committing to it. The P0 web build
+already produces a static bundle the shell can load.
 
-- Search: optional `q` param on `GET /cases`, filtering on question + dataset
-  case-insensitively (SQLite `LIKE` on `LOWER(...)`).
-- Case history: `GET /cases/{id}/history` - a timeline derived from each
-  artifact's `created_at` (datasets, profiles, runs, findings, charts, plans).
-  Read-side projection like the evidence graph; no schema change.
-- Templates: new `templates` table (`id, name, question, dataset_label,
-  created_at`) via `CREATE TABLE IF NOT EXISTS` in db.py SCHEMA - no migration
-  needed. Endpoints: `POST /cases/{id}/template` (promote), `GET /templates`,
-  `POST /cases/from-template`, `DELETE /templates/{id}`.
+Two carried follow-ups, both recorded in ai/TASKS.md and both unblocked by work
+already landed:
 
-After that, remaining P3: item 10 Tauri desktop shell (needs Rust toolchain + npm
-deps; verify network first).
+- Validation of Python runs still answers a clear 400 "not supported yet". The
+  hard sandbox (P3-SEC-001) makes re-execution safe, so the gate itself is now
+  implementable: rerun the stored script in the sandbox and compare the result
+  shape, the way SQL validation compares rows.
+- No single-dataset delete endpoint, so nothing can walk a case backwards. It
+  would also make the derived workflow stage's "moves back" property
+  observable (P3-FLOW-004 follow-up).
+
+Contextual AI (roadmap item 7) remains BLOCKED on the user setting
+`DAH_LLM_API_KEY`; not an agent task.
 
 ## Important context
 

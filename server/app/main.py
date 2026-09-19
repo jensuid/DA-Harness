@@ -14,6 +14,7 @@ import json
 from app.analysis import profile_csv, run_query, run_query_multi
 from app.eda import EDA_OPS, run_eda
 from app.evidence import build_evidence_graph
+from app.history import build_case_history
 from app.python_exec import run_python
 from app.workflow import STAGES, case_progress
 from app.charts import render_chart, CHART_KINDS, CHART_FORMATS
@@ -25,6 +26,8 @@ from app.db import get_connection
 from app.models import (
     Case,
     CaseCreate,
+    CaseFromTemplate,
+    CaseHistory,
     CaseProgress,
     CaseUpdate,
     EdaCreate,
@@ -53,6 +56,8 @@ from app.models import (
     ChartCreate,
     Plan,
     PlanSummary,
+    Template,
+    TemplateCreate,
 )
 
 app = FastAPI(
@@ -73,14 +78,17 @@ def get_db() -> Iterator[object]:
         yield connection
 
 
-@app.post("/cases", status_code=201, response_model=Case)
-async def create_case(payload: CaseCreate, db=Depends(get_db)) -> Case:
-    """Create and persist a new Analysis Case."""
+def _insert_case(db, question: str, dataset: str) -> Case:
+    """Persist a fresh case row and return it (P3-CASE-007).
+
+    Shared by direct creation and creation from a template, so the two paths
+    cannot diverge on defaults like `updated_at`.
+    """
     now = datetime.now(timezone.utc)
     case = Case(
         id=str(uuid4()),
-        question=payload.question,
-        dataset=payload.dataset,
+        question=question,
+        dataset=dataset,
         created_at=now,
         updated_at=now,
     )
@@ -96,6 +104,12 @@ async def create_case(payload: CaseCreate, db=Depends(get_db)) -> Case:
         ),
     )
     return case
+
+
+@app.post("/cases", status_code=201, response_model=Case)
+async def create_case(payload: CaseCreate, db=Depends(get_db)) -> Case:
+    """Create and persist a new Analysis Case."""
+    return _insert_case(db, payload.question, payload.dataset)
 
 
 @app.get("/cases/{case_id}", response_model=Case)
@@ -147,13 +161,37 @@ async def get_case_progress(case_id: str, db=Depends(get_db)) -> CaseProgress:
     )
 
 
+def _like_pattern(term: str) -> str:
+    """Turn a search term into a literal-substring LIKE pattern (P3-CASE-007).
+
+    LIKE wildcards in the term are escaped so `q1_1` does not match `q1a1` and
+    `50%` stays a literal percent sign; backslash is the escape character.
+    """
+    escaped = term.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+    return f"%{escaped}%"
+
+
 @app.get("/cases", response_model=list[Case])
-async def list_cases(db=Depends(get_db)) -> list[Case]:
-    """List all persisted Analysis Cases."""
-    rows = db.execute(
-        "SELECT id, question, dataset, created_at, updated_at FROM cases "
-        "ORDER BY created_at DESC"
-    ).fetchall()
+async def list_cases(q: str | None = None, db=Depends(get_db)) -> list[Case]:
+    """List all persisted Analysis Cases.
+
+    `q` filters case-insensitively on the question and the dataset label; an
+    absent or empty `q` lists everything (P3-CASE-007).
+    """
+    if q and q.strip():
+        pattern = _like_pattern(q.strip().lower())
+        rows = db.execute(
+            "SELECT id, question, dataset, created_at, updated_at FROM cases "
+            "WHERE LOWER(question) LIKE ? ESCAPE '\\' "
+            "OR LOWER(dataset) LIKE ? ESCAPE '\\' "
+            "ORDER BY created_at DESC",
+            (pattern, pattern),
+        ).fetchall()
+    else:
+        rows = db.execute(
+            "SELECT id, question, dataset, created_at, updated_at FROM cases "
+            "ORDER BY created_at DESC"
+        ).fetchall()
     return [
         Case(
             id=row["id"],
@@ -1570,3 +1608,116 @@ async def import_case_package(payload: dict, db=Depends(get_db)) -> Case:
         created_at=case["created_at"],
         updated_at=case["updated_at"],
     )
+
+
+@app.get(
+    "/cases/{case_id}/history",
+    response_model=CaseHistory,
+)
+async def get_case_history(case_id: str, db=Depends(get_db)) -> CaseHistory:
+    """Everything that happened in a case, in order (P3-CASE-007).
+
+    A read-side projection: the timeline is derived from each artifact's own
+    timestamp, so it cannot drift from the persisted rows. A just-created case
+    has a single event; validation has no timestamp of its own, so a finding's
+    status rides along as its event's detail.
+    """
+    try:
+        history = build_case_history(db, case_id)
+    except ValueError:
+        raise HTTPException(status_code=404, detail="case not found")
+    return CaseHistory(**history)
+
+
+@app.post(
+    "/cases/{case_id}/template",
+    status_code=201,
+    response_model=Template,
+)
+async def promote_template(
+    case_id: str,
+    payload: TemplateCreate,
+    db=Depends(get_db),
+) -> Template:
+    """Promote a case into a reusable template (P3-CASE-007).
+
+    The template keeps the case's question and dataset label - the skeleton a
+    new case starts from - and nothing else: data, runs and findings stay with
+    the case. Templates are not case children, so outliving their source case
+    is the point.
+    """
+    case = db.execute(
+        "SELECT id, question, dataset FROM cases WHERE id = ?", (case_id,)
+    ).fetchone()
+    if case is None:
+        raise HTTPException(status_code=404, detail="case not found")
+
+    name = (payload.name or case["question"]).strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="name must not be empty")
+
+    template = Template(
+        id=str(uuid4()),
+        name=name,
+        question=case["question"],
+        dataset=case["dataset"],
+        created_at=datetime.now(timezone.utc),
+    )
+    db.execute(
+        "INSERT INTO templates (id, name, question, dataset, created_at) "
+        "VALUES (?, ?, ?, ?, ?)",
+        (template.id, template.name, template.question, template.dataset,
+         template.created_at.isoformat()),
+    )
+    return template
+
+
+@app.get("/templates", response_model=list[Template])
+async def list_templates(db=Depends(get_db)) -> list[Template]:
+    """List every saved template, newest first (P3-CASE-007)."""
+    rows = db.execute(
+        "SELECT id, name, question, dataset, created_at FROM templates "
+        "ORDER BY created_at DESC"
+    ).fetchall()
+    return [
+        Template(
+            id=row["id"],
+            name=row["name"],
+            question=row["question"],
+            dataset=row["dataset"],
+            created_at=row["created_at"],
+        )
+        for row in rows
+    ]
+
+
+@app.post("/cases/from-template", status_code=201, response_model=Case)
+async def create_case_from_template(
+    payload: CaseFromTemplate,
+    db=Depends(get_db),
+) -> Case:
+    """Start a new case from a saved template (P3-CASE-007).
+
+    The template's question and dataset label seed the case; either may be
+    overridden inline. Only the skeleton is copied - no data, runs or findings -
+    so every case from a template starts clean.
+    """
+    template = db.execute(
+        "SELECT id, name, question, dataset FROM templates WHERE id = ?",
+        (payload.template_id,),
+    ).fetchone()
+    if template is None:
+        raise HTTPException(status_code=404, detail="template not found")
+
+    question = payload.question if payload.question is not None else template["question"]
+    dataset = payload.dataset if payload.dataset is not None else template["dataset"]
+    return _insert_case(db, question, dataset)
+
+
+@app.delete("/templates/{template_id}", status_code=204)
+async def delete_template(template_id: str, db=Depends(get_db)) -> None:
+    """Remove a template. Cases created from it are unaffected (P3-CASE-007)."""
+    row = db.execute("SELECT 1 FROM templates WHERE id = ?", (template_id,)).fetchone()
+    if row is None:
+        raise HTTPException(status_code=404, detail="template not found")
+    db.execute("DELETE FROM templates WHERE id = ?", (template_id,))

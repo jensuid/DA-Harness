@@ -64,3 +64,81 @@ def test_list_cases(tmp_path) -> None:
     assert len(response.json()) == 2
 
     app.dependency_overrides.clear()
+
+
+def _client(db_path):
+    def override():
+        with get_connection(db_path) as connection:
+            yield connection
+
+    app.dependency_overrides[get_db] = override
+    return TestClient(app)
+
+
+def test_search_filters_question_case_insensitively(tmp_path) -> None:
+    """`q` matches the question, ignoring case (P3-CASE-007)."""
+    db_path = _temp_db(tmp_path)
+    with _client(db_path) as client:
+        client.post("/cases", json={"question": "Why did REVENUE decline?",
+                                    "dataset": "sales.csv"})
+        client.post("/cases", json={"question": "Churn drivers",
+                                    "dataset": "users.csv"})
+        hits = client.get("/cases", params={"q": "revenue"}).json()
+
+    assert len(hits) == 1
+    assert "REVENUE" in hits[0]["question"]
+
+    app.dependency_overrides.clear()
+
+
+def test_search_matches_dataset_label(tmp_path) -> None:
+    """`q` also matches the dataset label."""
+    db_path = _temp_db(tmp_path)
+    with _client(db_path) as client:
+        client.post("/cases", json={"question": "one", "dataset": "sales_q3.csv"})
+        client.post("/cases", json={"question": "two", "dataset": "users.csv"})
+        hits = client.get("/cases", params={"q": "SALES"}).json()
+
+    assert len(hits) == 1
+    assert hits[0]["dataset"] == "sales_q3.csv"
+
+    app.dependency_overrides.clear()
+
+
+def test_search_treats_term_as_literal_not_wildcard(tmp_path) -> None:
+    """A `%` or `_` in the term is literal, not a LIKE wildcard."""
+    db_path = _temp_db(tmp_path)
+    with _client(db_path) as client:
+        client.post("/cases", json={"question": "Growth 50% in q3",
+                                    "dataset": "a.csv"})
+        client.post("/cases", json={"question": "Growth 50x in q3",
+                                    "dataset": "b.csv"})
+        client.post("/cases", json={"question": "code q1_1 run",
+                                    "dataset": "c.csv"})
+        client.post("/cases", json={"question": "code q1a1 run",
+                                    "dataset": "d.csv"})
+        percent = client.get("/cases", params={"q": "50%"}).json()
+        underscore = client.get("/cases", params={"q": "q1_1"}).json()
+
+    assert [hit["question"] for hit in percent] == ["Growth 50% in q3"]
+    # A wildcard `_` would match either; escaped, it matches only the literal.
+    assert [hit["question"] for hit in underscore] == ["code q1_1 run"]
+
+    app.dependency_overrides.clear()
+
+
+def test_search_without_q_lists_everything(tmp_path) -> None:
+    """Absent or blank `q` is not a filter."""
+    db_path = _temp_db(tmp_path)
+    with _client(db_path) as client:
+        client.post("/cases", json={"question": "one", "dataset": "a.csv"})
+        client.post("/cases", json={"question": "two", "dataset": "b.csv"})
+        all_cases = client.get("/cases").json()
+        blank = client.get("/cases", params={"q": "  "}).json()
+        no_hits = client.get("/cases", params={"q": "zzz"}).json()
+
+    assert len(all_cases) == 2
+    assert len(blank) == 2
+    assert no_hits == []
+
+    app.dependency_overrides.clear()
