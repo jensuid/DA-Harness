@@ -1217,6 +1217,57 @@ async def set_validation_status(
     return finding
 
 
+def _record_repro(checks, reproduced, detail_ok, detail_bad) -> bool:
+    """Append the reproducibility check and report whether it passed."""
+    checks.append(
+        ValidationCheck(
+            name="reproducibility",
+            passed=reproduced,
+            detail=detail_ok if reproduced else detail_bad,
+        )
+    )
+    return reproduced
+
+
+def _reproduce_sql(run_row, dataset_ids, by_id, checks) -> bool:
+    """Rerun the stored SQL and compare it to the persisted rows.
+
+    A multi-dataset run re-binds every placeholder in order. A query that no
+    longer binds against the stored data - a renamed column, a changed schema
+    - is a failed check, not a server error.
+    """
+    try:
+        if len(dataset_ids) > 1:
+            rerun = run_query_multi(
+                [by_id[dataset_id]["stored_path"] for dataset_id in dataset_ids],
+                run_row["sql"],
+            )
+        else:
+            rerun = run_query(by_id[dataset_ids[0]]["stored_path"], run_row["sql"])
+        matches = rerun["rows"] == json.loads(run_row["rows_json"])
+    except (ValueError, Exception) as error:
+        return _record_repro(checks, False, "", f"query rejected: {error}")
+    return _record_repro(checks, matches, "rerun matches stored result", "rerun differs")
+
+
+def _reproduce_python(run_row, dataset_row, checks) -> bool:
+    """Re-execute the stored script and compare the whole tabulated result.
+
+    Both columns and rows are compared: the tabulator names columns in
+    first-seen order, so a script whose result shape drifted shows up as a
+    column change even when the values happen to line up.
+    """
+    try:
+        rerun = run_python(dataset_row["stored_path"], run_row["code"])
+        matches = (
+            rerun["columns"] == json.loads(run_row["columns_json"])
+            and rerun["rows"] == json.loads(run_row["rows_json"])
+        )
+    except (ValueError, Exception) as error:
+        return _record_repro(checks, False, "", f"script rejected: {error}")
+    return _record_repro(checks, matches, "rerun matches stored result", "rerun differs")
+
+
 @app.post(
     "/cases/{case_id}/findings/{finding_id}/validate",
     status_code=200,
@@ -1229,27 +1280,22 @@ async def validate_finding(
 ) -> ValidationResult:
     """Reproduce a finding's computation and check its support.
 
-    The trust loop closes here: the stored SQL is rerun against the stored
-    dataset and compared to the persisted result. A finding is `supported`
-    only if the numbers still reproduce (Master Spec section 10.5).
+    The trust loop closes here: the stored computation is rerun against the
+    stored dataset and compared to the persisted result - SQL since P1, and
+    Python since P3-SEC-001 made re-executing user script safe (it runs in a
+    separate OS-sandboxed process, so validating costs no more trust than the
+    original run did). A finding is `supported` only if the numbers still
+    reproduce (Master Spec section 10.5).
     """
     finding = await get_finding(case_id, finding_id, db)
 
     run_row = db.execute(
-        "SELECT id, case_id, dataset_id, kind, sql, dataset_ids_json, "
+        "SELECT id, case_id, dataset_id, kind, sql, code, dataset_ids_json, "
         "columns_json, rows_json, row_count, truncated FROM runs WHERE id = ?",
         (finding.run_id,),
     ).fetchone()
     if run_row is None:
         raise HTTPException(status_code=500, detail="referenced run is missing")
-
-    if run_row["kind"] != "sql":
-        # Reproducing a Python run means re-executing its script; that gate is
-        # not part of this task, so it is reported rather than faked.
-        raise HTTPException(
-            status_code=400,
-            detail="validation of Python runs is not supported yet",
-        )
 
     dataset_ids = _dataset_ids_of(run_row) or [run_row["dataset_id"]]
     dataset_rows = db.execute(
@@ -1264,34 +1310,12 @@ async def validate_finding(
 
     checks: list[ValidationCheck] = []
 
-    # 1. Reproducibility: rerun the stored SQL and compare to the stored rows.
-    # A multi-dataset run re-binds every placeholder in order.
-    try:
-        if len(dataset_ids) > 1:
-            rerun = run_query_multi(
-                [by_id[dataset_id]["stored_path"] for dataset_id in dataset_ids],
-                run_row["sql"],
-            )
-        else:
-            rerun = run_query(dataset_row["stored_path"], run_row["sql"])
-        reproduced = rerun["rows"] == json.loads(run_row["rows_json"])
-    except (ValueError, Exception) as error:
-        # A query that no longer binds against the stored data - a renamed
-        # column, a changed schema - is a failed check, not a server error.
-        checks.append(
-            ValidationCheck(
-                name="reproducibility", passed=False, detail=f"query rejected: {error}"
-            )
-        )
-        reproduced = False
+    # 1. Reproducibility: rerun the stored computation - SQL or Python - and
+    # compare it to the stored rows.
+    if run_row["kind"] == "python":
+        reproduced = _reproduce_python(run_row, dataset_row, checks)
     else:
-        checks.append(
-            ValidationCheck(
-                name="reproducibility",
-                passed=reproduced,
-                detail="rerun matches stored result" if reproduced else "rerun differs",
-            )
-        )
+        reproduced = _reproduce_sql(run_row, dataset_ids, by_id, checks)
 
     # 2. Denominator: a null-free basis for any aggregate claim.
     profile_row = db.execute(

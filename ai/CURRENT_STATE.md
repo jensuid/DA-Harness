@@ -7,15 +7,16 @@
 case management - rename, duplicate, delete (P2-CASE-010);
 AI planning with structured output (P2-AI-011); case export as a self-contained
 JSON package with import round trip (P2-CASE-012)**
-- **Active task:** P3 V1 - P3-SEC-001, P3-CHART-002, P3-DATA-003, P3-FLOW-004, P3-ANALYSIS-005, P3-EVIDENCE-006, P3-CASE-007, P3-SHELL-008, P3-DATA-009 all DONE. Remaining P3 item: 7, the contextual AI assistant (code generation, result interpretation, finding drafting). The planner backend exists and is live via DAH_LLM_API_KEY, but the assistant surface is not built.
+- **Active task:** P3 V1 - P3-SEC-001, P3-CHART-002, P3-DATA-003, P3-FLOW-004, P3-ANALYSIS-005, P3-EVIDENCE-006, P3-CASE-007, P3-SHELL-008, P3-DATA-009, P3-VALID-010 all DONE. Remaining P3 item: 7, the contextual AI assistant (code generation, result interpretation, finding drafting). The planner backend exists and is live via DAH_LLM_API_KEY, but the assistant surface is not built.
 - **Known issues:** none
-- **Test status:** server 163 passed; web 2 passed; desktop shell 7 Rust tests (5 unit + 2 e2e, `cd desktop/src-tauri && cargo test [--features e2e]`)
-- **Next task:** P3 item 7, the contextual AI assistant. DAH_LLM_API_KEY is
+- **Test status:** server 167 passed; web 2 passed; desktop shell 7 Rust tests (5 unit + 2 e2e, `cd desktop/src-tauri && cargo test [--features e2e]`)
+- **Next task:** P3 item 7, the contextual AI assistant - the last open P3
+  item. Validation of Python runs and single-dataset deletion are both done, so
+  the trust loop is complete. DAH_LLM_API_KEY is
   already configured in server/.env (the P2 gate's plan step reports source=llm),
   so this is an agent task now, not a user action.
-  Carried: validation of Python runs (the one place the trust loop answers
-  "not supported" - now unblocked by the hard sandbox, and the next task,
-  P3-VALID-010)
+  Carried: nothing agent-shaped remains. The packaged app is unsigned
+  (macOS gatekeeps the first launch; signing is P5)
 - **Blockers:** none
 
 ## P2 progress

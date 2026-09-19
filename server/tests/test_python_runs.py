@@ -247,9 +247,12 @@ def test_evidence_chain_works_for_python_run(tmp_path) -> None:
     assert evidence["columns"] == ["region", "revenue"]
     assert evidence["dataset_filename"] == "sales.csv"
 
-    # Validating a finding against a Python run is future work, not a crash.
-    blocked = client.post(
+    # A Python-backed finding validates like a SQL one (P3-VALID-010): the
+    # stored script is re-executed in the sandbox and its table compared.
+    verdict = client.post(
         f"/cases/{case_id}/findings/{finding_id}/validate"
     )
-    assert blocked.status_code == 400
-    assert "Python" in blocked.json()["detail"]
+    assert verdict.status_code == 200, verdict.text
+    assert verdict.json()["status"] == "supported"
+    checks = {c["name"]: c for c in verdict.json()["checks"]}
+    assert checks["reproducibility"]["passed"] is True

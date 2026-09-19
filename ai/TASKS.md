@@ -501,8 +501,7 @@ STATE UPDATE: mark P3-SHELL-008 done on pass.
 - Validation of Python runs still answers a clear 400 "not supported yet". The
   hard sandbox (P3-SEC-001) makes re-execution safe, so the gate is now
   implementable: rerun the stored script in the sandbox and compare the result
-  shape, the way SQL validation compares rows. This is the next task
-  (P3-VALID-010).
+  shape, the way SQL validation compares rows. DELIVERED as P3-VALID-010.
 - The packaged app is unsigned: macOS gatekeeps the first launch (right-click,
   Open). Signing and notarization are P5.
 
@@ -558,4 +557,56 @@ TESTS: 8 tests - happy path with a sibling dataset untouched, profile + plans
        404s (unknown case, unknown dataset, cross-case dataset).
 VERIFICATION: pytest green + verification/p2/verify_p2.py PASS.
 STATE UPDATE: mark P3-DATA-009 done on pass.
+```
+
+### P3-VALID-010 contract
+
+```
+TASK ID: P3-VALID-010
+MILESTONE: P3 V1
+CAPABILITY: Validation
+GOAL: Close the last gap in the trust loop - a finding built on a Python run
+      can now be validated, not just assumed.
+
+CONTEXT: Validation reruns a finding's stored computation and compares it to
+         the persisted result. SQL runs have had that since P1; Python runs
+         answered a flat 400 "not supported yet" because re-executing user
+         script in-process was unsafe. P3-SEC-001 changed that: the script now
+         runs in a separate, OS-sandboxed process with a scrubbed environment,
+         so re-execution carries no more risk than the original run.
+INPUTS: a finding whose run has kind=python.
+RELEVANT FILES: server/app/main.py (validate_finding's Python branch +
+                the two reproduction helpers), server/tests/test_validation.py
+                (NEW, or extended if it exists)
+REQUIRED CHANGE:
+  - validate_finding reproduces a Python run by re-executing the stored code
+    through run_python against the stored dataset and comparing the tabulated
+    columns AND rows to what the run persists - the same reproducibility check
+    SQL gets.
+  - A script that no longer runs (changed data, a now-broken assumption, a
+    time limit) is a FAILED reproducibility check with the reason in its
+    detail, never a 500 - mirroring how SQL validation treats a query that no
+    longer binds.
+  - The missing_data and evidence_integrity checks, and the status arithmetic
+    (supported / partially_supported / insufficient_evidence), are shared with
+    the SQL path unchanged.
+NON-GOALS: validating chart rendering, validating plans, a diff view of
+           stored-vs-rerun rows, comparing anything but the tabulated result.
+CONSTRAINTS: no schema change; the SQL path's behaviour and response shape are
+             unchanged; the sandbox posture of run_python is unchanged (this
+             task only calls it again).
+ACCEPTANCE CRITERIA:
+- [x] a finding on a reproducible Python run validates to supported, with a
+      reproducibility check that says the rerun matches
+- [x] a finding on a Python run whose stored result was tampered with
+      validates to not-supported (partially_supported at minimum), with a
+      reproducibility check that says the rerun differs
+- [x] a finding whose script now raises validates with a failed check and the
+      reason in the detail, and the endpoint returns 200 (a verdict, not a 500)
+- [x] the SQL validation path still behaves exactly as before
+- [x] full suite and the P2 gate still pass
+TESTS: 4 tests - reproduces, tampered result is caught, failing script is a
+       verdict, and SQL validation is unchanged.
+VERIFICATION: pytest green + verification/p2/verify_p2.py PASS.
+STATE UPDATE: mark P3-VALID-010 done on pass.
 ```

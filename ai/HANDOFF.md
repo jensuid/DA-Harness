@@ -2,6 +2,14 @@
 
 ## What was completed
 
+- P3-VALID-010 PASSED: the trust loop has no gaps left. A finding built on a
+  Python run now validates the same way a SQL one does - the stored script is
+  re-executed through the hard sandbox against the stored dataset and its
+  tabulated columns AND rows are compared to what the run persists. A script
+  that no longer runs is a failed reproducibility check with the reason in its
+  detail, never a 500, exactly like a SQL query that no longer binds. This was
+  the last place the loop answered "not supported".
+
 - P3-DATA-009 PASSED: a dataset can now be removed from a case without throwing
   the case away. `DELETE /cases/{id}/datasets/{id}` drops the row, its profile,
   its plans and its on-disk file, and refuses with a 400 while any run still
@@ -279,6 +287,24 @@ Create Case -> Question -> Load CSV -> Profile -> SQL Analysis
   from Python, listing alongside SQL, and rejection of write queries, blocked
   imports, filesystem writes, dunder escapes, missing/empty `result`, 404s.
 
+## What changed (P3-VALID-010)
+
+- server/app/main.py: validate_finding no longer special-cases Python runs
+  aside with a 400. Reproduction is factored into `_reproduce_sql` and
+  `_reproduce_python` (both record the same reproducibility check through
+  `_record_repro`), and the missing_data / evidence_integrity checks and the
+  status arithmetic are shared between the two kinds. Python compares both
+  columns and rows, because the tabulator names columns in first-seen order and
+  a shape change would otherwise hide behind matching values.
+- One real bug surfaced and is pinned by a test: the run lookup in
+  validate_finding did not select `runs.code`, so `run_row["code"]` raised
+  sqlite3's IndexError "No item with that key" - which the broad except
+  faithfully reported as "script rejected". Fixed by selecting the column.
+- server/tests/test_validation.py: +4 tests (reproduces, row drift, shape drift,
+  and a script that now raises returning a verdict rather than a 500).
+  tests/test_python_runs.py: the one test that pinned the old 400 now asserts a
+  real `supported` verdict.
+
 ## What changed (P3-DATA-009)
 
 - server/app/main.py: `DELETE /cases/{case_id}/datasets/{dataset_id}` (204),
@@ -330,7 +356,7 @@ reported as unsupported (clear 400) rather than faked; that gate is future work.
 
 ## Tests performed (current)
 
-- server pytest: 163 passed (155 + 8 dataset deletion)
+- server pytest: 167 passed (163 + 4 Python-run validation)
 - desktop shell: 7 Rust tests - `cd desktop/src-tauri && cargo test` (5 unit)
   and `cargo test --features e2e` (+2 live-core tests)
 - web: 2 passed
@@ -343,7 +369,7 @@ reported as unsupported (clear 400) rather than faked; that gate is future work.
   `origin/master` (github.com/jensuid/DA-Harness):
   `dfb115b` P3-SEC-001, `2c7b11f` P3-CHART-002, `f5df5d1` P3-DATA-003,
   `967544b` P3-FLOW-004, `7b7e49f` P3-ANALYSIS-005, `ebaa30e` P3-EVIDENCE-006,
-  P3-CASE-007, P3-SHELL-008, <this commit> P3-DATA-009
+  P3-CASE-007, P3-SHELL-008, P3-DATA-009, <this commit> P3-VALID-010
 - `.gitignore` covers `web/dist-desktop/`, `server/build/` (the 98MB PyInstaller
   tree) and `desktop/src-tauri/{target,gen,binaries}` - the 85MB sidecar is
   never committed.
@@ -380,15 +406,9 @@ would build on is already live - `DAH_LLM_API_KEY` is configured in
 agent task now, not a user action. Everything else in the P3 entry checklist is
 done, including the desktop shell.
 
-One carried follow-up, recorded in ai/TASKS.md and unblocked by work already
-landed:
-
-- Validation of Python runs still answers a clear 400 "not supported yet". The
-  hard sandbox (P3-SEC-001) makes re-execution safe, so the gate itself is now
-  implementable: rerun the stored script in the sandbox and compare the result
-  shape, the way SQL validation compares rows. With the single-dataset delete
-  landed it is the last place the trust loop answers "not supported", and it is
-  the next task (P3-VALID-010).
+Nothing is unblocked-but-undone. The one remaining carried item is not agent
+work: the packaged app is unsigned, so macOS gatekeeps the first launch
+(right-click, Open); signing and notarization are P5.
 
 Contextual AI (roadmap item 7) remains BLOCKED on the user setting
 `DAH_LLM_API_KEY`; not an agent task.
