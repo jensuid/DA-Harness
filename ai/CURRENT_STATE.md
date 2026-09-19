@@ -1,13 +1,13 @@
 # DAH - Current State
 
- - **Phase:** P3 V1 - IN PROGRESS (P2 gate re-verified PASS during P3-SHELL-008)
+ - **Phase:** P3 V1 - COMPLETE (all 10 entry-checklist items; P2 gate re-verified PASS during the close, 211 tests). Next: P4 Production Candidate.
 - **Global roadmap status:** ai/ROADMAP.md (phase tracker - current stage, phase table, next-phase entry checklist)
 - **Milestone status:** P1 Vertical Slice PASSED (verification/p1/REPORT.md); P0 PASSED
 - **Completed capabilities:** FastAPI core; SQLite case persistence; DuckDB engine; Vite/React shell; P0 verification harness; CSV dataset attachment; deterministic dataset profiling; read-only SQL analysis runs with persisted results; findings with evidence chain; validation via rerun; parquet + xlsx ingest; deep profiling; **read-only Python execution with persisted results (P2-ANALYSIS-008); chart images rendered and persisted from run results (P2-ANALYSIS-009);
 case management - rename, duplicate, delete (P2-CASE-010);
 AI planning with structured output (P2-AI-011); case export as a self-contained
 JSON package with import round trip (P2-CASE-012)**
-- **Active task:** P3 V1 - every entry-checklist item is DONE: P3-SEC-001, P3-CHART-002, P3-DATA-003, P3-FLOW-004, P3-ANALYSIS-005, P3-EVIDENCE-006, P3-CASE-007, P3-SHELL-008, P3-DATA-009, P3-VALID-010 and the four contextual AI slices P3-AI-011..014. P3 is complete; the phase-close commit follows this task.
+- **Active task:** none - P3 V1 is complete. Every entry-checklist item is DONE: P3-SEC-001, P3-CHART-002, P3-DATA-003, P3-FLOW-004, P3-ANALYSIS-005, P3-EVIDENCE-006, P3-CASE-007, P3-SHELL-008, P3-DATA-009, P3-VALID-010 and the four contextual AI slices P3-AI-011..014. P4's entry checklist is sketched in ai/ROADMAP.md as a proposal for the user to reorder.
 - **Known issues:** none
 - **Test status:** server 211 passed; web 2 passed; desktop shell 7 Rust tests (5 unit + 2 e2e, `cd desktop/src-tauri && cargo test [--features e2e]`)
 - **Next task:** close P3 (phase table, stage marker, P4 entry checklist)

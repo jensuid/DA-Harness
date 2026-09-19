@@ -4,14 +4,14 @@ Source of truth for **where we are** on the global roadmap
 (`docs/Implementation Roadmap.md`). Every phase completion must update this
 file together with `CURRENT_STATE.md` and `TASKS.md`.
 
-**Current stage: P3 V1 — IN PROGRESS (all but contextual AI delivered).**
+**Current stage: P4 Production Candidate — NOT STARTED (P3 V1 complete).**
 
 ```
 P0 Foundation          DONE  ✓
 P1 Vertical Slice      DONE  ✓
 P2 MVP                 DONE  ✓   (all gates green)
-P3 V1                  IN PROGRESS  ← we are here
-P4 Production Candidate NOT STARTED
+P3 V1                  DONE  ✓   (all 10 entry-checklist items, 211 tests)
+P4 Production Candidate NOT STARTED  ← we are here
 P5 Production Grade    NOT STARTED
 P6 Evolution           NOT STARTED
 ```
@@ -28,7 +28,7 @@ repeatable**.
 | P0 Foundation | Runnable app, cross-layer comms, basic persistence, tests | DONE | PASS | `verification/p0/REPORT.md` |
 | P1 Vertical Slice | One complete analytical case end to end | DONE | PASS | `verification/p1/REPORT.md` |
 | P2 MVP | Usable analytical application; inspectable, reproducible case | DONE | PASS | `verification/p2/REPORT.md` (16 steps, 10 exit criteria) |
-| P3 V1 | Repeated real-world use: multi-dataset, joins, richer EDA, contextual AI | IN PROGRESS | P2 gate PASS (re-verified) | hard sandbox, raster charts, multi-dataset joins, workflow, EDA, evidence graph, case reuse, desktop shell all DONE; contextual AI (item 7) outstanding |
+| P3 V1 | Repeated real-world use: multi-dataset, joins, richer EDA, contextual AI | DONE | P2 gate PASS (re-verified during close, 211 tests) | hard sandbox, raster charts, multi-dataset joins, workflow, EDA, evidence graph, case reuse, desktop shell and all four contextual AI slices DONE |
 | P4 Production Candidate | Serious software: reliability, security, performance, UX, observability | NOT STARTED | — | — |
 | P5 Production Grade | Maintainable, distributable, secure product | NOT STARTED | — | — |
 | P6 Post-Launch Evolution | Scale and intelligence | NOT STARTED | — | — |
@@ -58,7 +58,14 @@ repeatable**.
 - **Known issues / blockers:** none.
 - **Repository:** private, `master` tracks `origin/master`.
 
-## P3 V1 — entry checklist (next work, nothing started)
+## P3 V1 — entry checklist (COMPLETE)
+
+All ten items delivered. Contextual AI (item 7) landed as four slices - result
+interpretation (P3-AI-011), finding drafting (P3-AI-012), code generation
+(P3-AI-013) and conversational memory (P3-AI-014) - each behind one interface
+with a deterministic engine that is always available and an LLM that degrades
+to it on any failure, and each validated so it cannot invent a number, a column
+or a citation.
 
 Ordered so each step unblocks the next; the hardening items deferred from P2
 come first because P3 code generation multiplies the risk.
@@ -75,6 +82,22 @@ come first because P3 code generation multiplies the risk.
 | 8 | Evidence graph / claim-to-source tracing — **DONE (P3-EVIDENCE-006)** | Trust layer for repeated use | P3 Evidence |
 | 9 | Case templates, search, case history — **DONE (P3-CASE-007)** | Repeatability and reuse | P3 Case management |
 | 10 | Tauri desktop shell — **DONE (P3-SHELL-008)** | Wraps the existing React bundle; post-MVP as planned | Platform decision |
+
+## P4 Production Candidate — entry checklist (proposed, not started)
+
+Ordered oldest-risk first; a proposal for the user to reorder before work
+starts. P3 has no gate of its own yet, so that comes first.
+
+| # | Capability | Why now | Roadmap section |
+|---|-----------|---------|-----------------|
+| 1 | P3 gate script (`verification/p3/verify_p3.py`) — one journey exercising multi-dataset joins, the hard sandbox and the four assistant slices | The P2 gate re-verifies the suite but nothing walks the P3 capabilities end to end; a phase is done when a gate says so | P4 Verification |
+| 2 | Narrow the broad exception handlers; no input error may answer 500 | P3 added four LLM fallback paths, each intentionally broad; P4 is where that breadth stops hiding real bugs | P4 Reliability |
+| 3 | Assistant surfaces in the React shell (generate-code, draft-finding, interpret, chat) | The widest gap between what DAH can do and what it shows; the backend is complete, the UI is still the P0/P1 surface | P4 UX |
+| 4 | Large-dataset behaviour: result caps, profiling cost, export package size | P3 caps results at 1000 rows but nothing has been measured at scale | P4 Performance |
+| 5 | Desktop shell lifecycle under CI; app signing decision (sign now, or formally defer to P5) | The shell is tested locally; the unsigned first launch is the carried P3 item | P4 Distribution |
+
+
+
 
 ## Rules this file enforces
 
