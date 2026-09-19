@@ -5,6 +5,7 @@ description = "Data Analysis Harness - deterministic core (FastAPI)"
 requires-python = ">=3.10"
 dependencies = [
     "fastapi>=0.115",
+    "python-dotenv>=1.0",
     "uvicorn[standard]>=0.30",
     "python-multipart>=0.0.18",
     "duckdb>=1.1",

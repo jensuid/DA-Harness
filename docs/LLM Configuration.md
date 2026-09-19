@@ -10,9 +10,9 @@ and it is agnostic to what is behind them.
 
 ## Variables
 
-The planner reads these from the **server process environment**. There is no
-dotenv auto-loading - the `.env` file must be sourced into the shell that
-starts uvicorn (see below).
+The planner reads these from the **server process environment**. The server
+loads `server/.env` itself at startup, so a plain uvicorn command is enough -
+no need to source the file first (see below).
 
 | Variable | Required | Purpose |
 |----------|----------|---------|
@@ -41,25 +41,26 @@ chmod 600 .env
 Only `DAH_LLM_API_KEY` is required. Drop the last two lines if you are using
 OpenAI itself (the defaults already point there).
 
-### 2. Start the server with the file loaded
+### 2. Start the server
+
+That is all - the server reads the file at startup:
 
 ```bash
-set -a; . ./.env; set +a
 .venv/bin/python -m uvicorn app.main:app --port 8123
 ```
 
-`set -a` exports every variable the file defines, so a plain `. ./.env` is
-not enough on its own - without it the variables stay shell-local and never
-reach the server process.
+It loads `server/.env` relative to the package, so the command works from any
+directory. An environment variable already set (exported in the shell, or
+injected by a container) always wins over the file, so an export still overrides
+what is in `.env`.
 
-To avoid typing the source line every time, wrap it in a small launcher:
+For convenience, a small launcher:
 
 ```bash
 # server/run.sh
 #!/usr/bin/env bash
 set -euo pipefail
 cd "$(dirname "$0")"
-set -a; . ./.env; set +a
 exec .venv/bin/python -m uvicorn app.main:app --port 8123
 ```
 
@@ -67,6 +68,9 @@ exec .venv/bin/python -m uvicorn app.main:app --port 8123
 chmod +x run.sh
 ./run.sh
 ```
+
+> The file is **not** loaded under pytest, so a configured key never turns
+> test-time plan calls into live LLM calls - the suite stays deterministic.
 
 ### 3. Check it took effect
 

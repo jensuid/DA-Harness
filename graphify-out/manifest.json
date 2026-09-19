@@ -54,9 +54,9 @@
     "semantic_hash": ""
   },
   "server/app/main.py": {
-    "mtime": 1789788193.831996,
-    "seen": 1789788512.216118,
-    "ast_hash": "c638f94b58de94820e99c86c8b45429c",
+    "mtime": 1789789627.9372678,
+    "seen": 1789789784.621286,
+    "ast_hash": "9d5535f679bbc1993db345a7a477669f",
     "semantic_hash": ""
   },
   "server/app/models.py": {
@@ -66,9 +66,9 @@
     "semantic_hash": ""
   },
   "server/pyproject.toml": {
-    "mtime": 1789780761.511765,
-    "seen": 1789781042.671256,
-    "ast_hash": "3fd621add8378cd6f600a21afeaece98",
+    "mtime": 1789789633.4869452,
+    "seen": 1789789784.62131,
+    "ast_hash": "120f6c1d84b23f478afd28d07b4dbbb1",
     "semantic_hash": ""
   },
   "server/tests/__init__.py": {
@@ -180,9 +180,9 @@
     "semantic_hash": "25b5adff030d3b2aab676170e54ca24e"
   },
   "ai/HANDOFF.md": {
-    "mtime": 1789788504.6015022,
-    "seen": 1789788512.216238,
-    "ast_hash": "0b7f3235386d5412308d767b4b345297",
+    "mtime": 1789789757.9040914,
+    "seen": 1789789784.621444,
+    "ast_hash": "9272b5407f593c1c921ca12e6eb37313",
     "semantic_hash": ""
   },
   "ai/TASKS.md": {
@@ -393,6 +393,18 @@
     "mtime": 1789788275.7395697,
     "seen": 1789788512.21615,
     "ast_hash": "9cb899f245e7d8303f1abf27ba305e5f",
+    "semantic_hash": ""
+  },
+  "server/tests/test_env_config.py": {
+    "mtime": 1789789633.5146563,
+    "seen": 1789789784.6213498,
+    "ast_hash": "f114eb5324b943bf0109b08152f86f84",
+    "semantic_hash": ""
+  },
+  "docs/LLM Configuration.md": {
+    "mtime": 1789789641.8775918,
+    "seen": 1789789784.62146,
+    "ast_hash": "ef77d39f9c79b0cd1f99c0116c0da278",
     "semantic_hash": ""
   }
 }

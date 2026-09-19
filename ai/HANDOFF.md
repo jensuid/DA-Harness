@@ -324,6 +324,11 @@ Contextual AI (roadmap item 7) remains BLOCKED on the user setting
 
 - Server venv: server/.venv (Python 3.14). There is no `pip` module - install
   with `uv pip install --python .venv/bin/python <package>`; PyPI is reachable.
+- LLM config: `server/.env` is auto-loaded at server startup (see
+  `docs/LLM Configuration.md`), so `uvicorn app.main:app` alone picks up
+  DAH_LLM_API_KEY / DAH_LLM_BASE_URL / DAH_LLM_MODEL. The load is skipped under
+  pytest so a configured key never makes test-time live calls; an exported
+  variable always overrides the file.
 - Run tests: `cd server && .venv/bin/python -m pytest -q`
 - P2 gate: `server/.venv/bin/python verification/p2/verify_p2.py` (~70-90s; it
   re-runs the suite)

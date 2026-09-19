@@ -1,8 +1,29 @@
+import os
 import shutil
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterator
 from uuid import uuid4
+
+
+def load_env_config(env_path: Path) -> bool:
+    """Load a local .env into the process environment.
+
+    Returns True when a file was found and loaded. Existing environment
+    variables win - `load_dotenv` does not override them - so a variable
+    exported in the shell or injected by a container always beats the file.
+    """
+    from dotenv import load_dotenv
+
+    return load_dotenv(env_path)
+
+
+# A plain `uvicorn app.main:app` start picks up server/.env without the caller
+# sourcing it first. Skipped under pytest so a developer with a real LLM key
+# configured does not make live calls from the test suite.
+if "pytest" not in sys.modules:
+    load_env_config(Path(__file__).resolve().parent.parent / ".env")
 
 
 from fastapi import Depends, FastAPI, HTTPException, UploadFile
