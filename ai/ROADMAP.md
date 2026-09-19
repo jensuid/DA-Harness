@@ -83,3 +83,6 @@ come first because P3 code generation multiplies the risk.
   (roadmap section 14).
 - When a phase closes: update this file's stage marker, the phase table, and
   the entry checklist of the next phase.
+- Commit and push continuously: one atomic commit per task and one per phase
+  close, green state only, pushed to origin/master before work is called done
+  (see the commit and push discipline section of AGENTS.md).
