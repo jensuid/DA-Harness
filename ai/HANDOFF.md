@@ -2,6 +2,16 @@
 
 ## What was completed
 
+- P3-DATA-009 PASSED: a dataset can now be removed from a case without throwing
+  the case away. `DELETE /cases/{id}/datasets/{id}` drops the row, its profile,
+  its plans and its on-disk file, and refuses with a 400 while any run still
+  binds it - because a run is the evidence a finding or a chart stands on (the
+  chain is finding -> run -> dataset), and deleting underneath it would leave a
+  dangling trace. The refusal names the blocker count, and the check reads both
+  runs.dataset_id and the multi-dataset JSON list. This is also the first thing
+  that makes the derived workflow stage observable moving *backwards*
+  (P3-FLOW-004).
+
 - P3-SHELL-008 PASSED: DAH is a double-clickable app. A Tauri 2 shell serves the
   *same* React bundle (`web/`, built into `web/dist-desktop`) and that bundle
   keeps talking to the *same* FastAPI core over HTTP - a host swap, not a
@@ -269,6 +279,20 @@ Create Case -> Question -> Load CSV -> Profile -> SQL Analysis
   from Python, listing alongside SQL, and rejection of write queries, blocked
   imports, filesystem writes, dunder escapes, missing/empty `result`, 404s.
 
+## What changed (P3-DATA-009)
+
+- server/app/main.py: `DELETE /cases/{case_id}/datasets/{dataset_id}` (204),
+  plus `_runs_touching_dataset`, the lookup that decides whether deletion is
+  safe. It scans a case's runs for the dataset as either the primary
+  (runs.dataset_id) or one of several (runs.dataset_ids_json, P3-DATA-003) -
+  legacy runs have no JSON list, so the primary column is checked on its own.
+  Deletion removes the profile, the plans and the file alongside the row.
+- server/tests/test_dataset_delete.py (NEW): 8 tests. The refusal is exercised
+  both for a single-dataset run and for the non-primary member of a join run,
+  and one proves the gate is live data rather than a stored flag by removing
+  the run row directly (no run-delete endpoint exists yet) and watching
+  deletion succeed.
+
 ## What changed (P3-SHELL-008)
 
 - desktop/ (NEW): the whole Tauri 2 shell. `src/core_server.rs` is the pure,
@@ -306,7 +330,7 @@ reported as unsupported (clear 400) rather than faked; that gate is future work.
 
 ## Tests performed (current)
 
-- server pytest: 155 passed (145 + 7 supervisor + 3 env-config)
+- server pytest: 163 passed (155 + 8 dataset deletion)
 - desktop shell: 7 Rust tests - `cd desktop/src-tauri && cargo test` (5 unit)
   and `cargo test --features e2e` (+2 live-core tests)
 - web: 2 passed
@@ -319,7 +343,7 @@ reported as unsupported (clear 400) rather than faked; that gate is future work.
   `origin/master` (github.com/jensuid/DA-Harness):
   `dfb115b` P3-SEC-001, `2c7b11f` P3-CHART-002, `f5df5d1` P3-DATA-003,
   `967544b` P3-FLOW-004, `7b7e49f` P3-ANALYSIS-005, `ebaa30e` P3-EVIDENCE-006,
-  P3-CASE-007, <this commit> P3-SHELL-008
+  P3-CASE-007, P3-SHELL-008, <this commit> P3-DATA-009
 - `.gitignore` covers `web/dist-desktop/`, `server/build/` (the 98MB PyInstaller
   tree) and `desktop/src-tauri/{target,gen,binaries}` - the 85MB sidecar is
   never committed.
@@ -356,16 +380,15 @@ would build on is already live - `DAH_LLM_API_KEY` is configured in
 agent task now, not a user action. Everything else in the P3 entry checklist is
 done, including the desktop shell.
 
-Two carried follow-ups, both recorded in ai/TASKS.md and both unblocked by work
-already landed:
+One carried follow-up, recorded in ai/TASKS.md and unblocked by work already
+landed:
 
 - Validation of Python runs still answers a clear 400 "not supported yet". The
   hard sandbox (P3-SEC-001) makes re-execution safe, so the gate itself is now
   implementable: rerun the stored script in the sandbox and compare the result
-  shape, the way SQL validation compares rows.
-- No single-dataset delete endpoint, so nothing can walk a case backwards. It
-  would also make the derived workflow stage's "moves back" property
-  observable (P3-FLOW-004 follow-up).
+  shape, the way SQL validation compares rows. With the single-dataset delete
+  landed it is the last place the trust loop answers "not supported", and it is
+  the next task (P3-VALID-010).
 
 Contextual AI (roadmap item 7) remains BLOCKED on the user setting
 `DAH_LLM_API_KEY`; not an agent task.

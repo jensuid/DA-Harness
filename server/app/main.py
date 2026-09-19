@@ -531,6 +531,38 @@ async def list_datasets(case_id: str, db=Depends(get_db)) -> list[Dataset]:
     ]
 
 
+@app.delete("/cases/{case_id}/datasets/{dataset_id}", status_code=204)
+async def delete_dataset(case_id: str, dataset_id: str, db=Depends(get_db)) -> None:
+    """Remove one dataset from a case, leaving the case itself standing.
+
+    The dataset row, its profile, its plans and its on-disk file go together.
+    It refuses while any run still binds the dataset: a run is the evidence a
+    finding or a chart stands on - the evidence chain runs
+    finding -> run -> dataset - so deleting the dataset underneath would leave
+    a dangling trace. Delete the blocking run(s) first; that is also what makes
+    the derived workflow stage move backwards (P3-FLOW-004).
+    """
+    dataset = _require_dataset(db, case_id, dataset_id)
+
+    blocking = _runs_touching_dataset(db, case_id, dataset_id)
+    if blocking:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"{len(blocking)} run(s) still bind this dataset, and a finding "
+                "or chart may stand on that evidence - delete the run(s) first"
+            ),
+        )
+
+    db.execute("DELETE FROM profiles WHERE dataset_id = ?", (dataset_id,))
+    db.execute("DELETE FROM plans WHERE dataset_id = ?", (dataset_id,))
+    db.execute("DELETE FROM datasets WHERE id = ?", (dataset_id,))
+
+    stored = Path(dataset.stored_path)
+    if stored.is_file():
+        stored.unlink()
+
+
 def _dataset_ids_of(row) -> list[str] | None:
     """The datasets a run touches; None means an unknown (legacy) set.
 
@@ -545,6 +577,29 @@ def _dataset_ids_of(row) -> list[str] | None:
     except json.JSONDecodeError:
         return None
     return [str(item) for item in ids] if ids else None
+
+
+def _runs_touching_dataset(db, case_id: str, dataset_id: str) -> list[str]:
+    """IDs of the runs that bind this dataset, newest-independent order.
+
+    A run binds a dataset either as its primary (runs.dataset_id) or as one of
+    several (runs.dataset_ids_json, P3-DATA-003); a legacy run has no JSON list,
+    so the primary column is checked on its own. This is the set a dataset
+    deletion would undercut, and it is why deletion refuses while it is alive.
+    """
+    touching: set[str] = set()
+    rows = db.execute(
+        "SELECT id, dataset_id, dataset_ids_json FROM runs WHERE case_id = ?",
+        (case_id,),
+    ).fetchall()
+    for row in rows:
+        if row["dataset_id"] == dataset_id:
+            touching.add(row["id"])
+            continue
+        bound = _dataset_ids_of(row)
+        if bound and dataset_id in bound:
+            touching.add(row["id"])
+    return sorted(touching)
 
 
 @app.post(

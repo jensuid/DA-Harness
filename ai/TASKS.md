@@ -501,9 +501,61 @@ STATE UPDATE: mark P3-SHELL-008 done on pass.
 - Validation of Python runs still answers a clear 400 "not supported yet". The
   hard sandbox (P3-SEC-001) makes re-execution safe, so the gate is now
   implementable: rerun the stored script in the sandbox and compare the result
-  shape, the way SQL validation compares rows. Recorded here since P3-ANALYSIS-008.
-- No single-dataset delete endpoint, so nothing can walk a case backwards. It
-  would also make the derived workflow stage's "moves back" property
-  observable (P3-FLOW-004 follow-up). Recorded here since P3-DATA-003.
+  shape, the way SQL validation compares rows. This is the next task
+  (P3-VALID-010).
 - The packaged app is unsigned: macOS gatekeeps the first launch (right-click,
   Open). Signing and notarization are P5.
+
+### P3-DATA-009 contract
+
+```
+TASK ID: P3-DATA-009
+MILESTONE: P3 V1
+CAPABILITY: Dataset lifecycle
+GOAL: Walk a case backwards - remove one dataset without destroying the case -
+      so a wrong file can be dropped and replaced.
+
+CONTEXT: Cases can be created, duplicated, and deleted wholesale, and runs can
+         be deleted... but nothing can remove a single dataset. An analyst who
+         attaches the wrong CSV has to throw the whole case away and rebuild
+         it. P3-FLOW-004 derives the workflow stage from the artifacts a case
+         has, so removing a dataset is also the only way to observe the stage
+         moving backwards.
+INPUTS: an existing case with at least one attached dataset.
+RELEVANT FILES: server/app/main.py (the endpoint + the run-touches check),
+                server/tests/test_dataset_delete.py (NEW)
+REQUIRED CHANGE:
+  - DELETE /cases/{case_id}/datasets/{dataset_id} removes the dataset row, its
+    profile, its plans, and its on-disk file; the case, other datasets and
+    every unrelated artifact survive. 204 on success, 404 for an unknown case
+    or dataset.
+  - It REFUSES with 400 while any run still touches the dataset - a run is the
+    evidence a finding and a chart stand on (the evidence chain is
+    finding -> run -> dataset), so removing a dataset that a run binds would
+    leave a dangling trace. The refusal names how many runs block it. The check
+    covers both runs.dataset_id and runs.dataset_ids_json, because a
+    multi-dataset run (P3-DATA-003) binds several datasets at once.
+  - Deleting the last dataset is allowed and leaves an empty-but-valid case.
+NON-GOALS: cascade deletion of runs/findings/charts (that is what
+           DELETE /cases/{id} is for - silently destroying evidence is not
+           this endpoint's job), a soft-delete/trash bin, undo, batch delete.
+CONSTRAINTS: no schema change, no change to any existing endpoint or response;
+             the on-disk file must go with the row, so no orphaned storage.
+ACCEPTANCE CRITERIA:
+- [x] the dataset row, its profile and its plans are gone; the file on disk is
+      gone; the case and every other dataset and artifact are byte-identical
+- [x] a run touching the dataset (single-dataset or multi-dataset) blocks
+      deletion with a 400 that names the blocker count; deleting the run frees
+      it
+- [x] deleting the last dataset leaves a valid empty case that still accepts a
+      new dataset and a fresh profile
+- [x] 404 for an unknown case and for an unknown dataset; a dataset in another
+      case is not reachable through this endpoint
+- [x] full suite and the P2 gate still pass
+TESTS: 8 tests - happy path with a sibling dataset untouched, profile + plans
+       removed, file removed, blocked by a single-dataset run, blocked by a
+       multi-dataset run, unblocked after the run goes, last-dataset case,
+       404s (unknown case, unknown dataset, cross-case dataset).
+VERIFICATION: pytest green + verification/p2/verify_p2.py PASS.
+STATE UPDATE: mark P3-DATA-009 done on pass.
+```

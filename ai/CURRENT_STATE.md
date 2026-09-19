@@ -7,15 +7,15 @@
 case management - rename, duplicate, delete (P2-CASE-010);
 AI planning with structured output (P2-AI-011); case export as a self-contained
 JSON package with import round trip (P2-CASE-012)**
-- **Active task:** P3 V1 - P3-SEC-001, P3-CHART-002, P3-DATA-003, P3-FLOW-004, P3-ANALYSIS-005, P3-EVIDENCE-006, P3-CASE-007, P3-SHELL-008 all DONE. Remaining P3 item: 7, the contextual AI assistant (code generation, result interpretation, finding drafting). The planner backend exists and is live via DAH_LLM_API_KEY, but the assistant surface is not built.
+- **Active task:** P3 V1 - P3-SEC-001, P3-CHART-002, P3-DATA-003, P3-FLOW-004, P3-ANALYSIS-005, P3-EVIDENCE-006, P3-CASE-007, P3-SHELL-008, P3-DATA-009 all DONE. Remaining P3 item: 7, the contextual AI assistant (code generation, result interpretation, finding drafting). The planner backend exists and is live via DAH_LLM_API_KEY, but the assistant surface is not built.
 - **Known issues:** none
-- **Test status:** server 155 passed; web 2 passed; desktop shell 7 Rust tests (5 unit + 2 e2e, `cd desktop/src-tauri && cargo test [--features e2e]`)
+- **Test status:** server 163 passed; web 2 passed; desktop shell 7 Rust tests (5 unit + 2 e2e, `cd desktop/src-tauri && cargo test [--features e2e]`)
 - **Next task:** P3 item 7, the contextual AI assistant. DAH_LLM_API_KEY is
   already configured in server/.env (the P2 gate's plan step reports source=llm),
   so this is an agent task now, not a user action.
   Carried: validation of Python runs (the one place the trust loop answers
-  "not supported" - now unblocked by the hard sandbox) and a single-dataset
-  delete endpoint
+  "not supported" - now unblocked by the hard sandbox, and the next task,
+  P3-VALID-010)
 - **Blockers:** none
 
 ## P2 progress
@@ -53,6 +53,7 @@ JSON package with import round trip (P2-CASE-012)**
 - P1 verification: `server/.venv/bin/python verification/p1/verify_p1.py` (in-process)
 - P2 verification: `server/.venv/bin/python verification/p2/verify_p2.py` (in-process)
 - Python analysis run: `POST /cases/{id}/datasets/{id}/runs/python` with `{"code": "..."}`
+- Delete a dataset: `DELETE /cases/{id}/datasets/{id}` (removes the row, profile, plans and file; 400 while a run still binds it)
 - Export: `GET /cases/{id}/export` (self-contained JSON package); `POST /cases/import`
   reconstructs it with fresh IDs
 - Plan: `POST /cases/{id}/datasets/{id}/plan` (structured plan from question + profile; deterministic by default, LLM when DAH_LLM_API_KEY is set, source field records which); latest at `GET .../plan`, history at `GET .../plans`
