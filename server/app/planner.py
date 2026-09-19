@@ -1,0 +1,344 @@
+"""Analysis Planner (P2-AI-011).
+
+Turns a case question plus a dataset profile into a structured analysis plan:
+an objective, a primary question, sub-questions, hypotheses, data requirements,
+and concrete analysis steps. The plan is persisted state against the case, and
+is what the rest of the loop (runs, findings, validation) is organised around.
+
+Two engines sit behind one interface:
+
+- `plan_analysis` is deterministic and always available. It derives the plan
+  from the profile's actual structure - nulls, types, spreads, duplicates - so
+  it bootstraps a real analysis loop without any external dependency.
+- `LLMPlanner` calls an OpenAI-compatible endpoint when `DAH_LLM_API_KEY` is
+  set. Its output is schema-validated by this module, and any failure - bad
+  JSON, a schema violation, a network error - falls back to the deterministic
+  plan rather than producing nothing. Per the Master Spec, critical state never
+  depends on LLM output, so the persisted plan records which engine made it.
+
+The LLM is an external engine the harness controls, not the other way round;
+swapping it for another provider means implementing `plan(question, profile)`.
+"""
+
+import json
+import os
+from typing import Any
+
+_MAX_SUB_QUESTIONS = 6
+_MAX_HYPOTHESES = 5
+_MAX_STEPS = 6
+_MAX_LLM_CHARS = 12_000
+
+SOURCE_DETERMINISTIC = "deterministic"
+SOURCE_LLM = "llm"
+
+
+def _column_names(profile: dict) -> list[str]:
+    return list(profile.get("columns") or [])
+
+
+def _stats(profile: dict) -> dict:
+    return profile.get("stats") or {}
+
+
+def _numeric_columns(profile: dict) -> list[str]:
+    return [name for name in _column_names(profile) if _stats(profile).get(name, {}).get("type") == "numeric"]
+
+
+def _temporal_columns(profile: dict) -> list[str]:
+    return [name for name in _column_names(profile) if _stats(profile).get(name, {}).get("type") == "temporal"]
+
+
+def _categorical_columns(profile: dict) -> list[str]:
+    return [
+        name
+        for name in _column_names(profile)
+        if _stats(profile).get(name, {}).get("type") == "other"
+    ]
+
+
+def _null_columns(profile: dict) -> list[tuple[str, float]]:
+    """Columns with any nulls, most-null first."""
+    return sorted(
+        (
+            (name, float(stat.get("null_percentage") or 0))
+            for name, stat in _stats(profile).items()
+            if (stat.get("null_count") or 0) > 0
+        ),
+        key=lambda pair: pair[1],
+        reverse=True,
+    )
+
+
+def plan_analysis(question: str, profile: dict) -> dict:
+    """Derive a structured plan from a question and a dataset profile.
+
+    Deterministic and dependency-free: the same inputs always yield the same
+    plan. Every item references real columns from the profile, so the plan is
+    immediately actionable rather than generic advice.
+    """
+    question = (question or "").strip()
+    stats = _stats(profile)
+    numeric = _numeric_columns(profile)
+    temporal = _temporal_columns(profile)
+    categorical = _categorical_columns(profile)
+    nulls = _null_columns(profile)
+    rows = int(profile.get("rows") or 0)
+    duplicates = int(profile.get("duplicate_rows") or 0)
+
+    sub_questions: list[str] = []
+    hypotheses: list[dict] = []
+    steps: list[dict] = []
+
+    def add_sub_question(text: str) -> None:
+        if len(sub_questions) < _MAX_SUB_QUESTIONS and text not in sub_questions:
+            sub_questions.append(text)
+
+    def add_hypothesis(statement: str, rationale: str, check: str) -> None:
+        if len(hypotheses) < _MAX_HYPOTHESES:
+            hypotheses.append(
+                {"statement": statement, "rationale": rationale, "check": check}
+            )
+
+    def add_step(action: str, detail: str) -> None:
+        if len(steps) < _MAX_STEPS:
+            steps.append({"action": action, "detail": detail})
+
+    # Missingness: the most common reason an analysis of this data would lie.
+    for column, percentage in nulls[:2]:
+        add_sub_question(
+            f"How does missingness in {column} affect the answer, and is it random?"
+        )
+        add_hypothesis(
+            f"Missing values in {column} are concentrated in particular rows rather "
+            f"than spread evenly ({percentage}% null)",
+            f"{column} is {percentage}% null; non-random missingness biases any "
+            "aggregate that ignores it",
+            f"Compare the distribution of other columns between rows where {column} "
+            "is null and rows where it is not",
+        )
+
+    # Numeric columns: spread and outliers drive aggregates.
+    for column in numeric[:2]:
+        stat = stats.get(column) or {}
+        add_sub_question(f"What is the distribution of {column}, and does it contain outliers?")
+        add_hypothesis(
+            f"A small number of extreme values in {column} dominate its aggregate",
+            f"{column} spans {stat.get('min')} to {stat.get('max')} with an average of "
+            f"{stat.get('avg')}",
+            f"Rank rows by {column} and report the share of the total held by the "
+            "top few rows",
+        )
+        add_step("distribution", f"Profile {column}: histogram, percentiles, top contributors")
+
+    # A categorical split is the natural dimension for a "why did X change" question.
+    if categorical:
+        column = categorical[0]
+        distinct = (stats.get(column) or {}).get("distinct_count") or 0
+        add_sub_question(f"How does the answer differ across {column}?")
+        add_hypothesis(
+            f"The effect behind the question is not uniform across {column}",
+            f"{column} has {distinct} distinct value(s) and rows totalling {rows}",
+            f"Group the rows by {column} and compare the measure of interest per group",
+        )
+        add_step("grouped comparison", f"Aggregate the measure per {column} and rank the groups")
+
+    # A date column makes a trend the strongest first hypothesis.
+    if temporal:
+        column = temporal[0]
+        add_sub_question(f"How does the measure move over time by {column}?")
+        add_hypothesis(
+            f"The change behind the question is a trend in {column} rather than a "
+            "one-off shift",
+            f"{column} is a temporal column spanning {(stats.get(column) or {}).get('min')}"
+            f" to {(stats.get(column) or {}).get('max')}",
+            f"Sort by {column} and plot the measure per period",
+        )
+        add_step("trend", f"Sort by {column} and compare the measure across periods")
+
+    if len(numeric) >= 2:
+        first, second = numeric[0], numeric[1]
+        add_sub_question(f"How are {first} and {second} related?")
+        add_hypothesis(
+            f"{first} and {second} move together, but the link may be confounded",
+            "Both are numeric; correlation is cheap to compute and easy to over-read",
+            f"Compute the correlation of {first} and {second}, then check whether a "
+            "third column explains it",
+        )
+
+    if duplicates:
+        add_hypothesis(
+            f"{duplicates} duplicate row(s) inflate the totals",
+            f"{duplicates} of {rows} row(s) are exact duplicates of an earlier row",
+            "Deduplicate on all columns and recompute the headline aggregate",
+        )
+        add_step("deduplicate", f"Recompute the headline aggregate on distinct rows only")
+
+    # The plan always proposes the direct measurement of the question itself.
+    add_step(
+        "answer the primary question",
+        "Compute the headline measure directly, then decompose it by the "
+        "dimension that varies most",
+    )
+
+    data_requirements = [
+        {"requirement": "columns", "detail": ", ".join(_column_names(profile)) or "none profiled"},
+        {"requirement": "rows", "detail": f"{rows} row(s), {duplicates} duplicate row(s)"},
+    ]
+    for column, percentage in nulls[:3]:
+        data_requirements.append(
+            {"requirement": "completeness", "detail": f"{column}: {percentage}% null"}
+        )
+
+    return {
+        "objective": question or "Analyse the attached dataset",
+        "primary_question": question or "What does this dataset say?",
+        "sub_questions": sub_questions
+        or ["What does the profiled data contain, and what is its overall shape?"],
+        "hypotheses": hypotheses
+        or [
+            {
+                "statement": "The answer is concentrated in a small subset of the data",
+                "rationale": "No specific structure surfaced in the profile to anchor a "
+                "stronger hypothesis",
+                "check": "Rank rows by the measure of interest and report the share held "
+                "by the top few",
+            }
+        ],
+        "data_requirements": data_requirements,
+        "analysis_steps": steps,
+    }
+
+
+def validate_plan(plan: Any) -> list[str]:
+    """Check a plan (from any engine) against the contract before persisting.
+
+    Returns the list of problems; empty means the plan is fit to persist. This
+    is the harness-validation step in the AI context strategy - an LLM that
+    returns malformed output never reaches the database.
+    """
+    problems: list[str] = []
+    if not isinstance(plan, dict):
+        return ["plan must be a JSON object"]
+
+    for field in ("objective", "primary_question"):
+        if not isinstance(plan.get(field), str) or not plan[field].strip():
+            problems.append(f"'{field}' must be a non-empty string")
+
+    for field in ("sub_questions", "hypotheses", "data_requirements", "analysis_steps"):
+        value = plan.get(field)
+        if not isinstance(value, list):
+            problems.append(f"'{field}' must be a list")
+            continue
+        if field == "sub_questions":
+            for item in value:
+                if not isinstance(item, str) or not item.strip():
+                    problems.append("every sub-question must be a non-empty string")
+        else:
+            for item in value:
+                if not isinstance(item, dict):
+                    problems.append(f"every entry in '{field}' must be an object")
+
+    for hypothesis in plan.get("hypotheses") or []:
+        if isinstance(hypothesis, dict):
+            for field in ("statement", "rationale", "check"):
+                if not isinstance(hypothesis.get(field), str) or not hypothesis[field].strip():
+                    problems.append(f"every hypothesis must have a non-empty '{field}'")
+
+    for step in plan.get("analysis_steps") or []:
+        if isinstance(step, dict):
+            for field in ("action", "detail"):
+                if not isinstance(step.get(field), str) or not step[field].strip():
+                    problems.append(f"every analysis step must have a non-empty '{field}'")
+
+    return problems
+
+
+class LLMPlanner:
+    """OpenAI-compatible planner; dormant without configuration.
+
+    Implemented on httpx so no SDK dependency is added. The response is expected
+    to be the plan object itself; anything else is a validation failure and the
+    caller falls back to the deterministic plan.
+    """
+
+    def __init__(self, api_key: str, base_url: str, model: str) -> None:
+        self._api_key = api_key
+        self._base_url = base_url.rstrip("/")
+        self._model = model
+
+    def plan(self, question: str, profile: dict) -> dict:
+        import httpx
+
+        prompt = (
+            "You are an analysis planner. Given a question and a dataset profile, "
+            "return ONLY a JSON object with this exact schema:\n"
+            "{\n"
+            '  "objective": string,\n'
+            '  "primary_question": string,\n'
+            '  "sub_questions": [string],\n'
+            '  "hypotheses": [{"statement": string, "rationale": string, "check": string}],\n'
+            '  "data_requirements": [{"requirement": string, "detail": string}],\n'
+            '  "analysis_steps": [{"action": string, "detail": string}]\n'
+            "}\n"
+            "Reference real column names from the profile. Do not add fields or "
+            "commentary.\n\n"
+            f"Question: {question}\n\n"
+            f"Profile (truncated): {json.dumps(profile)[:_MAX_LLM_CHARS]}\n"
+        )
+        response = httpx.post(
+            f"{self._base_url}/chat/completions",
+            headers={
+                "authorization": f"Bearer {self._api_key}",
+                "content-type": "application/json",
+            },
+            json={
+                "model": self._model,
+                "messages": [
+                    {"role": "system", "content": "Return valid JSON only, no prose."},
+                    {"role": "user", "content": prompt},
+                ],
+                "temperature": 0.2,
+                "response_format": {"type": "json_object"},
+            },
+            timeout=60.0,
+        )
+        response.raise_for_status()
+        content = response.json()["choices"][0]["message"]["content"]
+        return json.loads(content)
+
+
+def _configured_llm() -> LLMPlanner | None:
+    """The configured planner, or None when no key is present."""
+    api_key = os.environ.get("DAH_LLM_API_KEY") or os.environ.get("OPENAI_API_KEY")
+    if not api_key:
+        return None
+    return LLMPlanner(
+        api_key=api_key,
+        base_url=os.environ.get("DAH_LLM_BASE_URL", "https://api.openai.com/v1"),
+        model=os.environ.get("DAH_LLM_MODEL", "gpt-4o-mini"),
+    )
+
+
+def create_plan(question: str, profile: dict) -> tuple[dict, str]:
+    """Produce a validated plan and the engine that made it.
+
+    Prefers the LLM when configured; falls back to the deterministic planner on
+    any failure, so a plan is always returned. The source is reported alongside
+    so callers and reviewers know how much trust the plan earns.
+    """
+    deterministic = plan_analysis(question, profile)
+    llm = _configured_llm()
+    if llm is None:
+        return deterministic, SOURCE_DETERMINISTIC
+
+    try:
+        candidate = llm.plan(question, profile)
+        problems = validate_plan(candidate)
+        if problems:
+            raise ValueError(f"LLM plan failed validation: {'; '.join(problems[:3])}")
+        return candidate, SOURCE_LLM
+    except Exception:
+        # An unavailable or misbehaving LLM degrades to the deterministic plan
+        # rather than blocking the analysis loop.
+        return deterministic, SOURCE_DETERMINISTIC

@@ -1,30 +1,46 @@
+import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterator
 from uuid import uuid4
 
+
 from fastapi import Depends, FastAPI, HTTPException, UploadFile
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 import json
 
 from app.analysis import profile_csv, run_query
+from app.python_exec import run_python
+from app.charts import render_chart, CHART_KINDS
+from app.charts import DEFAULT_WIDTH, DEFAULT_HEIGHT
+from app.planner import create_plan as create_plan_module, validate_plan
+from app.exporter import export_case, import_package, PACKAGE_FORMAT, PACKAGE_VERSION
 import app.db as db_module
 from app.db import get_connection
 from app.models import (
     Case,
     CaseCreate,
+    CaseUpdate,
     Dataset,
     Profile,
     Run,
     RunCreate,
+    PythonRunCreate,
     RunSummary,
+    RUN_KINDS,
     VALIDATION_STATUSES,
     EvidenceChain,
     Finding,
     FindingCreate,
     ValidationCheck,
     ValidationResult,
+    Chart,
+    ChartSummary,
+    ChartCreate,
+    Plan,
+    PlanSummary,
 )
 
 app = FastAPI(
@@ -105,6 +121,211 @@ async def list_cases(db=Depends(get_db)) -> list[Case]:
         )
         for row in rows
     ]
+
+
+@app.patch("/cases/{case_id}", response_model=Case)
+async def update_case(
+    case_id: str,
+    payload: CaseUpdate,
+    db=Depends(get_db),
+) -> Case:
+    """Rename a case: its question and/or dataset label.
+
+    Omitted fields are left as they are. `updated_at` moves so a rename is
+    visible as case activity.
+    """
+    row = db.execute(
+        "SELECT id, question, dataset, created_at, updated_at FROM cases WHERE id = ?",
+        (case_id,),
+    ).fetchone()
+    if row is None:
+        raise HTTPException(status_code=404, detail="case not found")
+
+    question = payload.question if payload.question is not None else row["question"]
+    dataset = payload.dataset if payload.dataset is not None else row["dataset"]
+    now = datetime.now(timezone.utc)
+    db.execute(
+        "UPDATE cases SET question = ?, dataset = ?, updated_at = ? WHERE id = ?",
+        (question, dataset, now.isoformat(), case_id),
+    )
+    return Case(
+        id=row["id"],
+        question=question,
+        dataset=dataset,
+        created_at=row["created_at"],
+        updated_at=now,
+    )
+
+
+@app.post(
+    "/cases/{case_id}/duplicate",
+    status_code=201,
+    response_model=Case,
+)
+async def duplicate_case(
+    case_id: str,
+    db=Depends(get_db),
+) -> Case:
+    """Deep-copy a case with new IDs throughout.
+
+    Copies datasets (bytes on disk), profiles, runs, findings and charts, so the
+    duplicate is a self-contained case in its own right and mutations to it
+    never touch the original (P2-CASE-010).
+    """
+    source = db.execute(
+        "SELECT id, question, dataset, created_at, updated_at FROM cases WHERE id = ?",
+        (case_id,),
+    ).fetchone()
+    if source is None:
+        raise HTTPException(status_code=404, detail="case not found")
+
+    new_case_id = str(uuid4())
+    now = datetime.now(timezone.utc)
+    new_case = Case(
+        id=new_case_id,
+        question=source["question"],
+        dataset=source["dataset"],
+        created_at=now,
+        updated_at=now,
+    )
+    db.execute(
+        "INSERT INTO cases (id, question, dataset, created_at, updated_at) "
+        "VALUES (?, ?, ?, ?, ?)",
+        (new_case.id, new_case.question, new_case.dataset,
+         new_case.created_at.isoformat(), new_case.updated_at.isoformat()),
+    )
+
+    case_dir = db_module.DATA_DIR / new_case_id
+    case_dir.mkdir(parents=True, exist_ok=True)
+
+    # Datasets: copy the stored bytes, keep an old->new id map for the children
+    # that reference a dataset (profiles and runs).
+    dataset_ids: dict[str, str] = {}
+    for dataset in db.execute(
+        "SELECT id, filename, stored_path, format, created_at FROM datasets "
+        "WHERE case_id = ? ORDER BY created_at",
+        (case_id,),
+    ).fetchall():
+        new_dataset_id = str(uuid4())
+        dataset_ids[dataset["id"]] = new_dataset_id
+        source_path = Path(dataset["stored_path"])
+        stored_path = case_dir / f"{new_dataset_id}.{dataset['format']}"
+        if source_path.is_file():
+            stored_path.write_bytes(source_path.read_bytes())
+        db.execute(
+            "INSERT INTO datasets (id, case_id, filename, stored_path, format, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            (new_dataset_id, new_case_id, dataset["filename"], str(stored_path),
+             dataset["format"], now.isoformat()),
+        )
+
+    for profile in db.execute(
+        "SELECT dataset_id, rows, columns_json, stats_json, duplicate_rows, profiled_at "
+        "FROM profiles WHERE dataset_id IN (SELECT id FROM datasets WHERE case_id = ?)",
+        (case_id,),
+    ).fetchall():
+        db.execute(
+            "INSERT OR REPLACE INTO profiles (dataset_id, rows, columns_json, stats_json, "
+            "duplicate_rows, profiled_at) VALUES (?, ?, ?, ?, ?, ?)",
+            (dataset_ids.get(profile["dataset_id"]), profile["rows"],
+             profile["columns_json"], profile["stats_json"],
+             profile["duplicate_rows"], profile["profiled_at"]),
+        )
+
+    # Runs: remap dataset; keep an old->new id map for findings and charts.
+    run_ids: dict[str, str] = {}
+    for run in db.execute(
+        "SELECT id, dataset_id, kind, sql, code, columns_json, rows_json, row_count, "
+        "truncated, executed_at FROM runs WHERE case_id = ? ORDER BY executed_at",
+        (case_id,),
+    ).fetchall():
+        new_run_id = str(uuid4())
+        run_ids[run["id"]] = new_run_id
+        db.execute(
+            "INSERT INTO runs (id, case_id, dataset_id, kind, sql, code, columns_json, "
+            "rows_json, row_count, truncated, executed_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (new_run_id, new_case_id, dataset_ids.get(run["dataset_id"]), run["kind"],
+             run["sql"], run["code"], run["columns_json"], run["rows_json"],
+             run["row_count"], run["truncated"], run["executed_at"]),
+        )
+
+    for finding in db.execute(
+        "SELECT id, run_id, statement, interpretation, caveat, validation_status, created_at "
+        "FROM findings WHERE case_id = ? ORDER BY created_at",
+        (case_id,),
+    ).fetchall():
+        db.execute(
+            "INSERT INTO findings (id, case_id, run_id, statement, interpretation, "
+            "caveat, validation_status, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            (str(uuid4()), new_case_id, run_ids.get(finding["run_id"]),
+             finding["statement"], finding["interpretation"], finding["caveat"],
+             finding["validation_status"], finding["created_at"]),
+        )
+
+    for chart in db.execute(
+        "SELECT id, run_id, kind, x, y, series, title, stored_path, width, height, created_at "
+        "FROM charts WHERE case_id = ? ORDER BY created_at",
+        (case_id,),
+    ).fetchall():
+        new_chart_id = str(uuid4())
+        source_path = Path(chart["stored_path"])
+        stored_path = case_dir / f"chart_{new_chart_id}.svg"
+        if source_path.is_file():
+            stored_path.write_bytes(source_path.read_bytes())
+        db.execute(
+            "INSERT INTO charts (id, case_id, run_id, kind, x, y, series, title, "
+            "stored_path, width, height, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (new_chart_id, new_case_id, run_ids.get(chart["run_id"]), chart["kind"],
+             chart["x"], chart["y"], chart["series"], chart["title"],
+             str(stored_path), chart["width"], chart["height"], chart["created_at"]),
+        )
+
+    for plan in db.execute(
+        "SELECT id, dataset_id, question, plan_json, source, created_at FROM plans "
+        "WHERE case_id = ? ORDER BY created_at",
+        (case_id,),
+    ).fetchall():
+        db.execute(
+            "INSERT INTO plans (id, case_id, dataset_id, question, plan_json, source, "
+            "created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (str(uuid4()), new_case_id, dataset_ids.get(plan["dataset_id"]),
+             plan["question"], plan["plan_json"], plan["source"], plan["created_at"]),
+        )
+
+    return new_case
+
+
+@app.delete("/cases/{case_id}", status_code=204)
+async def delete_case(case_id: str, db=Depends(get_db)) -> None:
+    """Delete a case and everything attached to it.
+
+    Children are removed before the case row, and the case's on-disk directory
+    goes with it, so a deleted case leaves no orphaned state behind.
+    """
+    row = db.execute("SELECT 1 FROM cases WHERE id = ?", (case_id,)).fetchone()
+    if row is None:
+        raise HTTPException(status_code=404, detail="case not found")
+
+    # Order matters for the declared foreign keys: charts and findings
+    # reference runs; profiles are keyed by dataset, not by case.
+    db.execute("DELETE FROM charts WHERE case_id = ?", (case_id,))
+    db.execute("DELETE FROM findings WHERE case_id = ?", (case_id,))
+    db.execute("DELETE FROM runs WHERE case_id = ?", (case_id,))
+    db.execute(
+        "DELETE FROM profiles WHERE dataset_id IN "
+        "(SELECT id FROM datasets WHERE case_id = ?)",
+        (case_id,),
+    )
+    db.execute("DELETE FROM plans WHERE case_id = ?", (case_id,))
+    db.execute("DELETE FROM datasets WHERE case_id = ?", (case_id,))
+    db.execute("DELETE FROM cases WHERE id = ?", (case_id,))
+
+    case_dir = db_module.DATA_DIR / case_id
+    if case_dir.is_dir():
+        shutil.rmtree(case_dir)
 
 
 SUPPORTED_FORMATS = (".csv", ".parquet", ".xlsx")
@@ -314,6 +535,7 @@ async def create_run(
         id=str(uuid4()),
         case_id=case_id,
         dataset_id=dataset_id,
+        kind="sql",
         sql=payload.sql,
         columns=result["columns"],
         rows=result["rows"],
@@ -322,13 +544,76 @@ async def create_run(
         executed_at=datetime.now(timezone.utc),
     )
     db.execute(
-        "INSERT INTO runs (id, case_id, dataset_id, sql, columns_json, rows_json, "
-        "row_count, truncated, executed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO runs (id, case_id, dataset_id, kind, sql, code, columns_json, "
+        "rows_json, row_count, truncated, executed_at) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         (
             run.id,
             run.case_id,
             run.dataset_id,
+            run.kind,
             run.sql,
+            run.code,
+            json.dumps(run.columns),
+            json.dumps(run.rows),
+            run.row_count,
+            1 if run.truncated else 0,
+            run.executed_at.isoformat(),
+        ),
+    )
+    return run
+
+
+@app.post(
+    "/cases/{case_id}/datasets/{dataset_id}/runs/python",
+    status_code=201,
+    response_model=Run,
+)
+async def create_python_run(
+    case_id: str,
+    dataset_id: str,
+    payload: PythonRunCreate,
+    db=Depends(get_db),
+) -> Run:
+    """Run user Python against an attached dataset and persist the result.
+
+    The code executes in a restricted read-only workspace (no filesystem
+    writes, no imports outside the allowlist, bounded CPU and memory) with a
+    `dataset` handle for read-only access. Its `result` becomes the run's
+    columns and rows, persisted exactly like a SQL run (P2-ANALYSIS-008).
+    """
+    dataset = _require_dataset(db, case_id, dataset_id)
+
+    try:
+        result = run_python(dataset.stored_path, payload.code)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error))
+    except Exception as error:
+        raise HTTPException(status_code=400, detail=f"analysis failed: {error}")
+
+    run = Run(
+        id=str(uuid4()),
+        case_id=case_id,
+        dataset_id=dataset_id,
+        kind="python",
+        code=payload.code,
+        columns=result["columns"],
+        rows=result["rows"],
+        row_count=result["row_count"],
+        truncated=result["truncated"],
+        executed_at=datetime.now(timezone.utc),
+    )
+    db.execute(
+        "INSERT INTO runs (id, case_id, dataset_id, kind, sql, code, columns_json, "
+        "rows_json, row_count, truncated, executed_at) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (
+            run.id,
+            run.case_id,
+            run.dataset_id,
+            run.kind,
+            run.sql,
+            run.code,
             json.dumps(run.columns),
             json.dumps(run.rows),
             run.row_count,
@@ -344,8 +629,8 @@ async def list_runs(case_id: str, db=Depends(get_db)) -> list[RunSummary]:
     """List analysis runs for a case, without the heavy result rows."""
     _require_case(db, case_id)
     rows = db.execute(
-        "SELECT id, case_id, dataset_id, sql, row_count, truncated, executed_at "
-        "FROM runs WHERE case_id = ? ORDER BY executed_at DESC",
+        "SELECT id, case_id, dataset_id, kind, sql, code, row_count, truncated, "
+        "executed_at FROM runs WHERE case_id = ? ORDER BY executed_at DESC",
         (case_id,),
     ).fetchall()
     return [
@@ -353,7 +638,9 @@ async def list_runs(case_id: str, db=Depends(get_db)) -> list[RunSummary]:
             id=row["id"],
             case_id=row["case_id"],
             dataset_id=row["dataset_id"],
+            kind=row["kind"],
             sql=row["sql"],
+            code=row["code"],
             row_count=row["row_count"],
             truncated=bool(row["truncated"]),
             executed_at=row["executed_at"],
@@ -367,8 +654,8 @@ async def get_run(case_id: str, run_id: str, db=Depends(get_db)) -> Run:
     """Reopen a persisted analysis run, including its result rows."""
     _require_case(db, case_id)
     row = db.execute(
-        "SELECT id, case_id, dataset_id, sql, columns_json, rows_json, row_count, "
-        "truncated, executed_at FROM runs WHERE id = ? AND case_id = ?",
+        "SELECT id, case_id, dataset_id, kind, sql, code, columns_json, rows_json, "
+        "row_count, truncated, executed_at FROM runs WHERE id = ? AND case_id = ?",
         (run_id, case_id),
     ).fetchone()
     if row is None:
@@ -377,7 +664,9 @@ async def get_run(case_id: str, run_id: str, db=Depends(get_db)) -> Run:
         id=row["id"],
         case_id=row["case_id"],
         dataset_id=row["dataset_id"],
+        kind=row["kind"],
         sql=row["sql"],
+        code=row["code"],
         columns=json.loads(row["columns_json"]),
         rows=json.loads(row["rows_json"]),
         row_count=row["row_count"],
@@ -505,8 +794,8 @@ async def get_evidence_chain(
     finding = await get_finding(case_id, finding_id, db)
 
     run_row = db.execute(
-        "SELECT id, case_id, dataset_id, sql, columns_json, rows_json, row_count, "
-        "truncated, executed_at FROM runs WHERE id = ?",
+        "SELECT id, case_id, dataset_id, kind, sql, code, columns_json, rows_json, "
+        "row_count, truncated, executed_at FROM runs WHERE id = ?",
         (finding.run_id,),
     ).fetchone()
     if run_row is None:
@@ -520,7 +809,9 @@ async def get_evidence_chain(
 
     return EvidenceChain(
         finding=finding,
+        kind=run_row["kind"],
         sql=run_row["sql"],
+        code=run_row["code"],
         columns=json.loads(run_row["columns_json"]),
         rows=json.loads(run_row["rows_json"]),
         row_count=run_row["row_count"],
@@ -573,12 +864,20 @@ async def validate_finding(
     finding = await get_finding(case_id, finding_id, db)
 
     run_row = db.execute(
-        "SELECT id, case_id, dataset_id, sql, columns_json, rows_json, "
+        "SELECT id, case_id, dataset_id, kind, sql, columns_json, rows_json, "
         "row_count, truncated FROM runs WHERE id = ?",
         (finding.run_id,),
     ).fetchone()
     if run_row is None:
         raise HTTPException(status_code=500, detail="referenced run is missing")
+
+    if run_row["kind"] != "sql":
+        # Reproducing a Python run means re-executing its script; that gate is
+        # not part of this task, so it is reported rather than faked.
+        raise HTTPException(
+            status_code=400,
+            detail="validation of Python runs is not supported yet",
+        )
 
     dataset_row = db.execute(
         "SELECT id, stored_path FROM datasets WHERE id = ?",
@@ -660,4 +959,333 @@ async def validate_finding(
         status=status,
         checks=checks,
         validated_at=datetime.now(timezone.utc),
+    )
+
+
+@app.post(
+    "/cases/{case_id}/runs/{run_id}/charts",
+    status_code=201,
+    response_model=Chart,
+)
+async def create_chart(
+    case_id: str,
+    run_id: str,
+    payload: ChartCreate,
+    db=Depends(get_db),
+) -> Chart:
+    """Render a chart from a persisted run result and store it with the case.
+
+    The chart is an evidence artifact: it is rendered from the stored result,
+    not from a live query, so it stays reproducible after the run. SVG is
+    written to the case directory and its metadata to SQLite (P2-ANALYSIS-009).
+    """
+    _require_run(db, case_id, run_id)
+    row = db.execute(
+        "SELECT columns_json, rows_json FROM runs WHERE id = ? AND case_id = ?",
+        (run_id, case_id),
+    ).fetchone()
+    if row is None:
+        raise HTTPException(status_code=404, detail="run not found")
+
+    columns = json.loads(row["columns_json"])
+    rows = json.loads(row["rows_json"])
+
+    try:
+        svg = render_chart(
+            payload.kind,
+            columns,
+            rows,
+            payload.x,
+            payload.y,
+            payload.series,
+            payload.title,
+        )
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error))
+    except Exception as error:
+        raise HTTPException(status_code=400, detail=f"chart failed: {error}")
+
+    chart_id = str(uuid4())
+    case_dir = db_module.DATA_DIR / case_id
+    case_dir.mkdir(parents=True, exist_ok=True)
+    stored_path = case_dir / f"chart_{chart_id}.svg"
+    stored_path.write_bytes(svg)
+
+    chart = Chart(
+        id=chart_id,
+        case_id=case_id,
+        run_id=run_id,
+        kind=payload.kind,
+        x=payload.x,
+        y=payload.y,
+        series=payload.series,
+        title=payload.title,
+        stored_path=str(stored_path),
+        width=DEFAULT_WIDTH,
+        height=DEFAULT_HEIGHT,
+        created_at=datetime.now(timezone.utc),
+    )
+    db.execute(
+        "INSERT INTO charts (id, case_id, run_id, kind, x, y, series, title, "
+        "stored_path, width, height, created_at) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (
+            chart.id,
+            chart.case_id,
+            chart.run_id,
+            chart.kind,
+            chart.x,
+            chart.y,
+            chart.series,
+            chart.title,
+            chart.stored_path,
+            chart.width,
+            chart.height,
+            chart.created_at.isoformat(),
+        ),
+    )
+    return chart
+
+
+def _chart_row_to_summary(row) -> ChartSummary:
+    return ChartSummary(
+        id=row["id"],
+        case_id=row["case_id"],
+        run_id=row["run_id"],
+        kind=row["kind"],
+        x=row["x"],
+        y=row["y"],
+        series=row["series"],
+        title=row["title"],
+        created_at=row["created_at"],
+    )
+
+
+@app.get(
+    "/cases/{case_id}/runs/{run_id}/charts",
+    response_model=list[ChartSummary],
+)
+async def list_charts(case_id: str, run_id: str, db=Depends(get_db)) -> list[ChartSummary]:
+    """List the charts rendered from one run, without the image bytes."""
+    _require_run(db, case_id, run_id)
+    rows = db.execute(
+        "SELECT id, case_id, run_id, kind, x, y, series, title, created_at "
+        "FROM charts WHERE case_id = ? AND run_id = ? ORDER BY created_at DESC",
+        (case_id, run_id),
+    ).fetchall()
+    return [_chart_row_to_summary(row) for row in rows]
+
+
+def _require_chart(db, case_id: str, chart_id: str):
+    row = db.execute(
+        "SELECT id, case_id, run_id, kind, x, y, series, title, stored_path, "
+        "width, height, created_at FROM charts WHERE id = ? AND case_id = ?",
+        (chart_id, case_id),
+    ).fetchone()
+    if row is None:
+        raise HTTPException(status_code=404, detail="chart not found")
+    return row
+
+
+@app.get("/cases/{case_id}/charts/{chart_id}", response_model=Chart)
+async def get_chart(case_id: str, chart_id: str, db=Depends(get_db)) -> Chart:
+    """Retrieve a chart's metadata."""
+    row = _require_chart(db, case_id, chart_id)
+    return Chart(
+        id=row["id"],
+        case_id=row["case_id"],
+        run_id=row["run_id"],
+        kind=row["kind"],
+        x=row["x"],
+        y=row["y"],
+        series=row["series"],
+        title=row["title"],
+        stored_path=row["stored_path"],
+        width=row["width"],
+        height=row["height"],
+        created_at=row["created_at"],
+    )
+
+
+@app.get(
+    "/cases/{case_id}/charts/{chart_id}/image",
+    response_class=FileResponse,
+)
+async def get_chart_image(case_id: str, chart_id: str, db=Depends(get_db)) -> FileResponse:
+    """Serve the persisted chart image itself."""
+    row = _require_chart(db, case_id, chart_id)
+    path = Path(row["stored_path"])
+    if not path.is_file():
+        raise HTTPException(status_code=404, detail="chart image is missing from disk")
+    return FileResponse(path, media_type="image/svg+xml", filename=path.name)
+
+
+@app.post(
+    "/cases/{case_id}/datasets/{dataset_id}/plan",
+    status_code=201,
+    response_model=Plan,
+)
+async def create_plan(
+    case_id: str,
+    dataset_id: str,
+    db=Depends(get_db),
+) -> Plan:
+    """Plan an analysis from the case question and the dataset profile.
+
+    The plan is context-specific, not a whole-case dump (Master Spec section
+    18): question plus profile in, structured plan out. The LLM is preferred
+    when configured and its output is schema-validated here; otherwise the
+    deterministic planner derives the plan from the profile's structure. The
+    `source` field records which engine produced it (P2-AI-011).
+    """
+    dataset = _require_dataset(db, case_id, dataset_id)
+
+    case_row = db.execute(
+        "SELECT question FROM cases WHERE id = ?", (case_id,)
+    ).fetchone()
+    if case_row is None:
+        raise HTTPException(status_code=404, detail="case not found")
+
+    profile_row = db.execute(
+        "SELECT rows, columns_json, stats_json, duplicate_rows FROM profiles "
+        "WHERE dataset_id = ?",
+        (dataset_id,),
+    ).fetchone()
+    # Without a profile there is nothing structural to plan from, so the call
+    # names the missing step rather than planning against an empty dataset.
+    if profile_row is None:
+        raise HTTPException(
+            status_code=400,
+            detail="profile the dataset before planning",
+        )
+
+    profile = {
+        "rows": profile_row["rows"],
+        "columns": json.loads(profile_row["columns_json"]),
+        "stats": json.loads(profile_row["stats_json"]),
+        "duplicate_rows": profile_row["duplicate_rows"],
+    }
+
+    plan_body, source = create_plan_module(case_row["question"], profile)
+    # An LLM plan is re-validated on the way in; schema violations never reach
+    # the database.
+    problems = validate_plan(plan_body)
+    if problems:
+        raise HTTPException(
+            status_code=500,
+            detail=f"plan failed validation: {'; '.join(problems[:3])}",
+        )
+
+    plan = Plan(
+        id=str(uuid4()),
+        case_id=case_id,
+        dataset_id=dataset_id,
+        question=case_row["question"],
+        plan=plan_body,
+        source=source,
+        created_at=datetime.now(timezone.utc),
+    )
+    db.execute(
+        "INSERT INTO plans (id, case_id, dataset_id, question, plan_json, source, "
+        "created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        (plan.id, plan.case_id, plan.dataset_id, plan.question,
+         json.dumps(plan.plan), plan.source, plan.created_at.isoformat()),
+    )
+    return plan
+
+
+@app.get(
+    "/cases/{case_id}/datasets/{dataset_id}/plan",
+    response_model=Plan,
+)
+async def get_plan(case_id: str, dataset_id: str, db=Depends(get_db)) -> Plan:
+    """Retrieve the latest plan for a case's dataset."""
+    _require_dataset(db, case_id, dataset_id)
+    row = db.execute(
+        "SELECT id, case_id, dataset_id, question, plan_json, source, created_at "
+        "FROM plans WHERE case_id = ? AND dataset_id = ? "
+        "ORDER BY created_at DESC LIMIT 1",
+        (case_id, dataset_id),
+    ).fetchone()
+    if row is None:
+        raise HTTPException(status_code=404, detail="plan not found")
+    return Plan(
+        id=row["id"],
+        case_id=row["case_id"],
+        dataset_id=row["dataset_id"],
+        question=row["question"],
+        plan=json.loads(row["plan_json"]),
+        source=row["source"],
+        created_at=row["created_at"],
+    )
+
+
+@app.get(
+    "/cases/{case_id}/datasets/{dataset_id}/plans",
+    response_model=list[PlanSummary],
+)
+async def list_plans(
+    case_id: str, dataset_id: str, db=Depends(get_db)
+) -> list[PlanSummary]:
+    """Every plan recorded for a case's dataset, newest first."""
+    _require_dataset(db, case_id, dataset_id)
+    rows = db.execute(
+        "SELECT id, case_id, dataset_id, question, source, created_at FROM plans "
+        "WHERE case_id = ? AND dataset_id = ? ORDER BY created_at DESC",
+        (case_id, dataset_id),
+    ).fetchall()
+    return [
+        PlanSummary(
+            id=row["id"],
+            case_id=row["case_id"],
+            dataset_id=row["dataset_id"],
+            question=row["question"],
+            source=row["source"],
+            created_at=row["created_at"],
+        )
+        for row in rows
+    ]
+
+
+@app.get(
+    "/cases/{case_id}/export",
+    response_model=dict,
+)
+async def export_case_package(case_id: str, db=Depends(get_db)) -> dict:
+    """Export a case as one self-contained JSON package.
+
+    The package carries the datasets' bytes, the runs' results, the chart
+    artifacts, and every finding and plan, so it needs neither the database nor
+    the data directory to be understood or restored (P2-CASE-012).
+    """
+    package = export_case(db, case_id)
+    if package is None:
+        raise HTTPException(status_code=404, detail="case not found")
+    return package
+
+
+@app.post(
+    "/cases/import",
+    status_code=201,
+    response_model=Case,
+)
+async def import_case_package(payload: dict, db=Depends(get_db)) -> Case:
+    """Reconstruct a case from an exported package.
+
+    The inverse of export: entities are recreated with fresh IDs and remapped
+    references, so a restored package stands on its own and never collides with
+    existing IDs.
+    """
+    if len(json.dumps(payload)) > 100 * 1024 * 1024:
+        raise HTTPException(status_code=413, detail="package is too large")
+    try:
+        case = import_package(db, payload, db_module.DATA_DIR)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error))
+    return Case(
+        id=case["id"],
+        question=case["question"],
+        dataset=case["dataset"],
+        created_at=case["created_at"],
+        updated_at=case["updated_at"],
     )

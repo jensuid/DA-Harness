@@ -61,12 +61,43 @@ CREATE TABLE IF NOT EXISTS runs (
     id TEXT PRIMARY KEY,
     case_id TEXT NOT NULL,
     dataset_id TEXT NOT NULL,
-    sql TEXT NOT NULL,
+    kind TEXT NOT NULL DEFAULT 'sql',
+    sql TEXT,
+    code TEXT,
     columns_json TEXT NOT NULL,
     rows_json TEXT NOT NULL,
     row_count INTEGER NOT NULL,
     truncated INTEGER NOT NULL,
     executed_at TEXT NOT NULL,
+        FOREIGN KEY (case_id) REFERENCES cases(id),
+        FOREIGN KEY (dataset_id) REFERENCES datasets(id)
+    );
+
+CREATE TABLE IF NOT EXISTS charts (
+    id TEXT PRIMARY KEY,
+    case_id TEXT NOT NULL,
+    run_id TEXT NOT NULL,
+    kind TEXT NOT NULL,
+    x TEXT NOT NULL,
+    y TEXT NOT NULL,
+    series TEXT,
+    title TEXT NOT NULL DEFAULT '',
+    stored_path TEXT NOT NULL,
+    width INTEGER NOT NULL,
+    height INTEGER NOT NULL,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (case_id) REFERENCES cases(id),
+    FOREIGN KEY (run_id) REFERENCES runs(id)
+);
+
+CREATE TABLE IF NOT EXISTS plans (
+    id TEXT PRIMARY KEY,
+    case_id TEXT NOT NULL,
+    dataset_id TEXT NOT NULL,
+    question TEXT NOT NULL,
+    plan_json TEXT NOT NULL,
+    source TEXT NOT NULL,
+    created_at TEXT NOT NULL,
     FOREIGN KEY (case_id) REFERENCES cases(id),
     FOREIGN KEY (dataset_id) REFERENCES datasets(id)
 );
@@ -97,6 +128,9 @@ def get_connection(db_path: Path = DB_PATH) -> Iterator[sqlite3.Connection]:
         # Guarded so it is a no-op on current schemas.
         _ensure_column(conn, "datasets", "format", "TEXT")
         _ensure_column(conn, "profiles", "duplicate_rows", "INTEGER DEFAULT 0")
+        # Runs created before P2-ANALYSIS-008 were SQL-only.
+        _ensure_column(conn, "runs", "kind", "TEXT NOT NULL DEFAULT 'sql'")
+        _ensure_column(conn, "runs", "code", "TEXT")
         yield conn
         conn.commit()
     finally:
