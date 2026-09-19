@@ -34,7 +34,9 @@ JSON package with import round trip (P2-CASE-012)**
   a once-per-machine cost that degrades gracefully. Consequence: nothing in P4
   depends on the app being signed, and the README documents the right-click >
   Open workaround in plain language.
-- **Known issues:** none
+- **Known issues:** none. CI runs green on GitHub's own runners after five
+  local-state bugs it exposed were fixed (see ai/HANDOFF.md, "What the first
+  CI runs caught").
 - **Test status:** server 231 passed (211 + 12 error semantics + 2 validation
   determinism + 6 large-dataset); web 17 passed (CaseList 5, CaseCreation 3,
   CaseWorkspace 9);

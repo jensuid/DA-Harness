@@ -1,10 +1,10 @@
 # DAH - Handoff
 
 ## What was completed
-- P4-CI-007 PASSED (and it closes P4): CI exists, and the app-signing question
-  is answered in writing. There was no `.github` directory at all - 231 server
-  tests, 17 web tests and 7 Rust tests were green only because a developer
-  happened to run them. `.github/workflows/ci.yml` runs four macOS jobs: the
+- P4-CI-007 PASSED (and it closes P4): CI exists, runs green on GitHub's own
+  runners, and the app-signing question is answered in writing. There was no
+  `.github` directory at all - 231 server tests, 17 web tests and 7 Rust tests
+  were green only because a developer happened to run them. `.github/workflows/ci.yml` runs four macOS jobs: the
   server suite plus the P2 and P3 gates (reports uploaded as an artifact), the
   web suite plus a tsc-then-vite build, the desktop shell's two live-core
   lifecycle tests (spawn uvicorn, wait on /health, assert the core stops and
@@ -277,6 +277,41 @@
 Create Case -> Question -> Load CSV -> Profile -> SQL Analysis
 -> Finding -> Evidence chain -> Validation (rerun) -> Save -> Reopen
 ```
+
+## What the first CI runs caught (P4-CI-007, follow-up)
+
+Five separate failures across five pushes, each a case of local state hiding a
+gap that only a clean machine could see. All are fixed and the run is green;
+this list is the reason the workflow was worth building, and it is the pattern
+to expect whenever something "works on my machine":
+
+1. **The gate scripts were invoked from the wrong directory.** They resolve
+   the repo root from `__file__` and live at the repo root, but the server job
+   runs with `working-directory: server`. `verification/p2/...` did not exist
+   from there.
+2. **The packaging job had no Rust toolchain.** `build_sidecar.sh` derives the
+   target triple from `rustc -vV`, which macOS runners do not ship, so the
+   triple came out empty and the sidecar would have landed under the wrong
+   name.
+3. **`@testing-library/jest-dom` was declared in the wrong package.json.**
+   `setup-tests.ts` imports it, but it lived in the *root* package.json while
+   the web job runs `npm ci` in `web/`. Locally the hoisted root node_modules
+   resolved it; on the runner all three suites failed on the import.
+4. **The shell could not compile at all.** `tauri::generate_context!()` embeds
+   `web/dist-desktop` at compile time and `tauri-build` validates the
+   `externalBin` resource - neither exists on a clean checkout. Two fixes: the
+   desktop job builds the desktop web bundle, and it consumes the sidecar the
+   packaging job builds (uploaded as an artifact) instead of each job building
+   its own.
+5. **The artifact transport dropped the executable bit.** The downloaded
+   sidecar arrived without +x and `spawn()` failed with PermissionDenied. The
+   workflow chmods it back rather than making the Rust test tolerant of a
+   binary it could not run - that test's purpose is a real packaged sidecar.
+
+The lesson carried forward: **anything that "works locally" but was never run
+from a clean directory is suspect.** The stale egg-info, the hoisted
+node_modules, the prebuilt dist-desktop and the local sidecar were all the same
+bug in four costumes.
 
 ## What changed (P4-CI-007)
 
@@ -787,6 +822,10 @@ reported as unsupported (clear 400) rather than faked; that gate is future work.
 
 - server pytest: 231 passed (verified again on a clean venv built
   from pyproject - the install path CI uses)
+- CI on GitHub's own runners: ALL FOUR JOBS GREEN
+  (https://github.com/jensuid/DA-Harness/actions) - server suite + P2/P3 gates,
+  web suite + build, sidecar packaging + /health smoke, desktop shell lifecycle
+  (7 Rust tests, both e2e tests running against the real sidecar)
 - web: 17 passed (CaseList 5, CaseCreation 3, CaseWorkspace 9); `cd web && npm test`
 - desktop shell: 7 Rust tests - `cd desktop/src-tauri && cargo test` (5 unit)
   and `cargo test --features e2e` (+2 live-core tests)
