@@ -775,19 +775,6 @@
       "source_location": "L174"
     },
     {
-      "id": "web_src_api_draftfinding",
-      "label": "draftFinding",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 55,
-      "community_name": "RunRow",
-      "file_type": "code",
-      "norm_label": "draftfinding",
-      "source_file": "web/src/api.ts",
-      "source_location": "L258"
-    },
-    {
       "id": "server_app_models_casehistory",
       "label": "CaseHistory",
       "_callable": true,
@@ -918,6 +905,32 @@
       "source_location": "L69"
     },
     {
+      "id": "web_src_api_apierror",
+      "label": "ApiError",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 71,
+      "community_name": "CaseWorkspace.tsx",
+      "file_type": "code",
+      "norm_label": "apierror",
+      "source_file": "web/src/api.ts",
+      "source_location": "L131"
+    },
+    {
+      "id": "web_src_api_case",
+      "label": "Case",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 71,
+      "community_name": "CaseWorkspace.tsx",
+      "file_type": "code",
+      "norm_label": "case",
+      "source_file": "web/src/api.ts",
+      "source_location": "L9"
+    },
+    {
       "id": "web_src_api_caseprogress",
       "label": "CaseProgress",
       "_callable": true,
@@ -955,6 +968,19 @@
       "norm_label": "dataset",
       "source_file": "web/src/api.ts",
       "source_location": "L22"
+    },
+    {
+      "id": "web_src_api_draftfinding",
+      "label": "draftFinding",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 71,
+      "community_name": "CaseWorkspace.tsx",
+      "file_type": "code",
+      "norm_label": "draftfinding",
+      "source_file": "web/src/api.ts",
+      "source_location": "L258"
     },
     {
       "id": "web_src_api_finding",
@@ -1074,6 +1100,19 @@
       "source_location": "L42"
     },
     {
+      "id": "web_src_app_view",
+      "label": "View",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 71,
+      "community_name": "CaseWorkspace.tsx",
+      "file_type": "code",
+      "norm_label": "view",
+      "source_file": "web/src/App.tsx",
+      "source_location": "L8"
+    },
+    {
       "id": "server_app_models_evidencechain",
       "label": "EvidenceChain",
       "_callable": true,
@@ -1085,45 +1124,6 @@
       "norm_label": "evidencechain",
       "source_file": "server/app/models.py",
       "source_location": "L216"
-    },
-    {
-      "id": "web_src_api_apierror",
-      "label": "ApiError",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 74,
-      "community_name": "CaseList.tsx",
-      "file_type": "code",
-      "norm_label": "apierror",
-      "source_file": "web/src/api.ts",
-      "source_location": "L131"
-    },
-    {
-      "id": "web_src_api_case",
-      "label": "Case",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 74,
-      "community_name": "CaseList.tsx",
-      "file_type": "code",
-      "norm_label": "case",
-      "source_file": "web/src/api.ts",
-      "source_location": "L9"
-    },
-    {
-      "id": "web_src_app_view",
-      "label": "View",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 74,
-      "community_name": "CaseList.tsx",
-      "file_type": "code",
-      "norm_label": "view",
-      "source_file": "web/src/App.tsx",
-      "source_location": "L8"
     },
     {
       "id": "server_app_models_template",
@@ -1307,6 +1307,18 @@
       "source_location": "L18"
     },
     {
+      "id": "server_tests_test_case_history_temp_env_override",
+      "label": "override()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 13,
+      "community_name": "test_case_history.py",
+      "file_type": "code",
+      "norm_label": "override()",
+      "source_file": "server/tests/test_case_history.py",
+      "source_location": "L23"
+    },
+    {
       "id": "server_tests_test_case_history_test_events_carry_their_own_artifact_ids_and_details",
       "label": "test_events_carry_their_own_artifact_ids_and_details()",
       "_callable": true,
@@ -1413,18 +1425,6 @@
       "norm_label": "_temp_env()",
       "source_file": "server/tests/test_python_runs.py",
       "source_location": "L10"
-    },
-    {
-      "id": "server_tests_test_python_runs_temp_env_override",
-      "label": "override()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 18,
-      "community_name": "test_python_runs.py",
-      "file_type": "code",
-      "norm_label": "override()",
-      "source_file": "server/tests/test_python_runs.py",
-      "source_location": "L15"
     },
     {
       "id": "server_tests_test_python_runs_test_evidence_chain_works_for_python_run",
@@ -1928,7 +1928,7 @@
       "file_type": "code",
       "norm_label": "run_query_multi()",
       "source_file": "server/app/analysis.py",
-      "source_location": "L303"
+      "source_location": "L305"
     },
     {
       "id": "server_app_main_create_multi_dataset_run",
@@ -3443,18 +3443,6 @@
       "source_location": "L24"
     },
     {
-      "id": "server_tests_test_conversation_temp_env_override",
-      "label": "override()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 27,
-      "community_name": "test_conversation.py",
-      "file_type": "code",
-      "norm_label": "override()",
-      "source_file": "server/tests/test_conversation.py",
-      "source_location": "L29"
-    },
-    {
       "id": "server_tests_test_conversation_test_404_for_an_unknown_case",
       "label": "test_404_for_an_unknown_case()",
       "_callable": true,
@@ -4451,18 +4439,6 @@
       "source_location": "L616"
     },
     {
-      "id": "server_app_db_ensure_column",
-      "label": "_ensure_column()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 34,
-      "community_name": "get_connection",
-      "file_type": "code",
-      "norm_label": "_ensure_column()",
-      "source_file": "server/app/db.py",
-      "source_location": "L140"
-    },
-    {
       "id": "server_app_db_get_connection",
       "label": "get_connection()",
       "_callable": true,
@@ -4475,7 +4451,7 @@
       "source_location": "L151"
     },
     {
-      "id": "server_tests_test_case_history_temp_env_override",
+      "id": "server_tests_test_case_templates_temp_db_override",
       "label": "override()",
       "_callable": true,
       "_origin": "ast",
@@ -4483,8 +4459,8 @@
       "community_name": "get_connection",
       "file_type": "code",
       "norm_label": "override()",
-      "source_file": "server/tests/test_case_history.py",
-      "source_location": "L23"
+      "source_file": "server/tests/test_case_templates.py",
+      "source_location": "L18"
     },
     {
       "id": "server_tests_test_cases_client_override",
@@ -4499,7 +4475,7 @@
       "source_location": "L70"
     },
     {
-      "id": "server_tests_test_profiles_temp_env_override",
+      "id": "server_tests_test_code_generation_temp_env_override",
       "label": "override()",
       "_callable": true,
       "_origin": "ast",
@@ -4507,7 +4483,31 @@
       "community_name": "get_connection",
       "file_type": "code",
       "norm_label": "override()",
-      "source_file": "server/tests/test_profiles.py",
+      "source_file": "server/tests/test_code_generation.py",
+      "source_location": "L27"
+    },
+    {
+      "id": "server_tests_test_conversation_temp_env_override",
+      "label": "override()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 34,
+      "community_name": "get_connection",
+      "file_type": "code",
+      "norm_label": "override()",
+      "source_file": "server/tests/test_conversation.py",
+      "source_location": "L29"
+    },
+    {
+      "id": "server_tests_test_python_runs_temp_env_override",
+      "label": "override()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 34,
+      "community_name": "get_connection",
+      "file_type": "code",
+      "norm_label": "override()",
+      "source_file": "server/tests/test_python_runs.py",
       "source_location": "L15"
     },
     {
@@ -4991,160 +4991,124 @@
       "source_location": "L37"
     },
     {
-      "id": "web_src_api_attachdataset",
-      "label": "attachDataset()",
+      "id": "server_tests_test_large_datasets_attach",
+      "label": "_attach()",
       "_callable": true,
       "_origin": "ast",
       "community": 40,
-      "community_name": "request",
+      "community_name": "test_large_datasets.py",
       "file_type": "code",
-      "norm_label": "attachdataset()",
-      "source_file": "web/src/api.ts",
-      "source_location": "L207"
+      "norm_label": "_attach()",
+      "source_file": "server/tests/test_large_datasets.py",
+      "source_location": "L57"
     },
     {
-      "id": "web_src_api_getcase",
-      "label": "getCase()",
+      "id": "server_tests_test_large_datasets_generated_csv",
+      "label": "_generated_csv()",
       "_callable": true,
       "_origin": "ast",
       "community": 40,
-      "community_name": "request",
+      "community_name": "test_large_datasets.py",
       "file_type": "code",
-      "norm_label": "getcase()",
-      "source_file": "web/src/api.ts",
-      "source_location": "L177"
+      "norm_label": "_generated_csv()",
+      "source_file": "server/tests/test_large_datasets.py",
+      "source_location": "L36"
     },
     {
-      "id": "web_src_api_getprogress",
-      "label": "getProgress()",
+      "id": "server_tests_test_large_datasets_temp_env",
+      "label": "_temp_env()",
       "_callable": true,
       "_origin": "ast",
       "community": 40,
-      "community_name": "request",
+      "community_name": "test_large_datasets.py",
       "file_type": "code",
-      "norm_label": "getprogress()",
-      "source_file": "web/src/api.ts",
-      "source_location": "L181"
+      "norm_label": "_temp_env()",
+      "source_file": "server/tests/test_large_datasets.py",
+      "source_location": "L24"
     },
     {
-      "id": "web_src_api_listchat",
-      "label": "listChat()",
+      "id": "server_tests_test_large_datasets_temp_env_override",
+      "label": "override()",
       "_callable": true,
       "_origin": "ast",
       "community": 40,
-      "community_name": "request",
+      "community_name": "test_large_datasets.py",
       "file_type": "code",
-      "norm_label": "listchat()",
-      "source_file": "web/src/api.ts",
-      "source_location": "L201"
+      "norm_label": "override()",
+      "source_file": "server/tests/test_large_datasets.py",
+      "source_location": "L29"
     },
     {
-      "id": "web_src_api_listdatasets",
-      "label": "listDatasets()",
+      "id": "server_tests_test_large_datasets_test_aggregation_across_a_large_dataset_is_exact",
+      "label": "test_aggregation_across_a_large_dataset_is_exact()",
       "_callable": true,
       "_origin": "ast",
       "community": 40,
-      "community_name": "request",
+      "community_name": "test_large_datasets.py",
       "file_type": "code",
-      "norm_label": "listdatasets()",
-      "source_file": "web/src/api.ts",
-      "source_location": "L185"
+      "norm_label": "test_aggregation_across_a_large_dataset_is_exact()",
+      "source_file": "server/tests/test_large_datasets.py",
+      "source_location": "L138"
     },
     {
-      "id": "web_src_api_listfindings",
-      "label": "listFindings()",
+      "id": "server_tests_test_large_datasets_test_duplicate_rows_are_counted_at_scale",
+      "label": "test_duplicate_rows_are_counted_at_scale()",
       "_callable": true,
       "_origin": "ast",
       "community": 40,
-      "community_name": "request",
+      "community_name": "test_large_datasets.py",
       "file_type": "code",
-      "norm_label": "listfindings()",
-      "source_file": "web/src/api.ts",
-      "source_location": "L293"
+      "norm_label": "test_duplicate_rows_are_counted_at_scale()",
+      "source_file": "server/tests/test_large_datasets.py",
+      "source_location": "L197"
     },
     {
-      "id": "web_src_api_listruns",
-      "label": "listRuns()",
+      "id": "server_tests_test_large_datasets_test_large_case_exports_and_round_trips",
+      "label": "test_large_case_exports_and_round_trips()",
       "_callable": true,
       "_origin": "ast",
       "community": 40,
-      "community_name": "request",
+      "community_name": "test_large_datasets.py",
       "file_type": "code",
-      "norm_label": "listruns()",
-      "source_file": "web/src/api.ts",
-      "source_location": "L189"
+      "norm_label": "test_large_case_exports_and_round_trips()",
+      "source_file": "server/tests/test_large_datasets.py",
+      "source_location": "L226"
     },
     {
-      "id": "web_src_api_profiledataset",
-      "label": "profileDataset()",
+      "id": "server_tests_test_large_datasets_test_profile_is_correct_at_scale",
+      "label": "test_profile_is_correct_at_scale()",
       "_callable": true,
       "_origin": "ast",
       "community": 40,
-      "community_name": "request",
+      "community_name": "test_large_datasets.py",
       "file_type": "code",
-      "norm_label": "profiledataset()",
-      "source_file": "web/src/api.ts",
-      "source_location": "L216"
+      "norm_label": "test_profile_is_correct_at_scale()",
+      "source_file": "server/tests/test_large_datasets.py",
+      "source_location": "L66"
     },
     {
-      "id": "web_src_api_request",
-      "label": "request()",
+      "id": "server_tests_test_large_datasets_test_result_cap_truncates_a_full_table_query",
+      "label": "test_result_cap_truncates_a_full_table_query()",
       "_callable": true,
       "_origin": "ast",
       "community": 40,
-      "community_name": "request",
+      "community_name": "test_large_datasets.py",
       "file_type": "code",
-      "norm_label": "request()",
-      "source_file": "web/src/api.ts",
-      "source_location": "L141"
+      "norm_label": "test_result_cap_truncates_a_full_table_query()",
+      "source_file": "server/tests/test_large_datasets.py",
+      "source_location": "L114"
     },
     {
-      "id": "web_src_caseworkspace_caseworkspace",
-      "label": "CaseWorkspace()",
+      "id": "server_tests_test_large_datasets_test_wide_table_profiles_correctly",
+      "label": "test_wide_table_profiles_correctly()",
       "_callable": true,
       "_origin": "ast",
       "community": 40,
-      "community_name": "request",
+      "community_name": "test_large_datasets.py",
       "file_type": "code",
-      "norm_label": "caseworkspace()",
-      "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L38"
-    },
-    {
-      "id": "web_src_caseworkspace_caseworkspace_load",
-      "label": "load()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 40,
-      "community_name": "request",
-      "file_type": "code",
-      "norm_label": "load()",
-      "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L48"
-    },
-    {
-      "id": "web_src_caseworkspace_datapanel",
-      "label": "DataPanel()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 40,
-      "community_name": "request",
-      "file_type": "code",
-      "norm_label": "datapanel()",
-      "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L166"
-    },
-    {
-      "id": "web_src_caseworkspace_datapanel_attach",
-      "label": "attach()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 40,
-      "community_name": "request",
-      "file_type": "code",
-      "norm_label": "attach()",
-      "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L180"
+      "norm_label": "test_wide_table_profiles_correctly()",
+      "source_file": "server/tests/test_large_datasets.py",
+      "source_location": "L162"
     },
     {
       "id": "server_tests_test_case_management_counts",
@@ -5397,18 +5361,6 @@
       "norm_label": "_temp_env()",
       "source_file": "server/tests/test_code_generation.py",
       "source_location": "L22"
-    },
-    {
-      "id": "server_tests_test_code_generation_temp_env_override",
-      "label": "override()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 42,
-      "community_name": "test_code_generation.py",
-      "file_type": "code",
-      "norm_label": "override()",
-      "source_file": "server/tests/test_code_generation.py",
-      "source_location": "L27"
     },
     {
       "id": "server_tests_test_code_generation_test_404s_for_unknown_and_cross_case_datasets",
@@ -6263,42 +6215,6 @@
       "source_location": "L248"
     },
     {
-      "id": "server_app_python_exec_child_env",
-      "label": "_child_env()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 48,
-      "community_name": "test_python_hard_sandbox.py",
-      "file_type": "code",
-      "norm_label": "_child_env()",
-      "source_file": "server/app/python_exec.py",
-      "source_location": "L358"
-    },
-    {
-      "id": "server_app_python_exec_kill_group",
-      "label": "_kill_group()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 48,
-      "community_name": "test_python_hard_sandbox.py",
-      "file_type": "code",
-      "norm_label": "_kill_group()",
-      "source_file": "server/app/python_exec.py",
-      "source_location": "L375"
-    },
-    {
-      "id": "server_app_python_exec_seatbelt_profile",
-      "label": "_seatbelt_profile()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 48,
-      "community_name": "test_python_hard_sandbox.py",
-      "file_type": "code",
-      "norm_label": "_seatbelt_profile()",
-      "source_file": "server/app/python_exec.py",
-      "source_location": "L340"
-    },
-    {
       "id": "server_tests_test_python_hard_sandbox_case_with_dataset",
       "label": "_case_with_dataset()",
       "_callable": true,
@@ -6347,18 +6263,6 @@
       "source_location": "L64"
     },
     {
-      "id": "server_tests_test_python_hard_sandbox_test_child_env_scrubs_api_secrets",
-      "label": "test_child_env_scrubs_api_secrets()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 48,
-      "community_name": "test_python_hard_sandbox.py",
-      "file_type": "code",
-      "norm_label": "test_child_env_scrubs_api_secrets()",
-      "source_file": "server/tests/test_python_hard_sandbox.py",
-      "source_location": "L132"
-    },
-    {
       "id": "server_tests_test_python_hard_sandbox_test_contract_violation_is_reported_not_crashed",
       "label": "test_contract_violation_is_reported_not_crashed()",
       "_callable": true,
@@ -6383,18 +6287,6 @@
       "source_location": "L188"
     },
     {
-      "id": "server_tests_test_python_hard_sandbox_test_kill_group_terminates_the_tree",
-      "label": "test_kill_group_terminates_the_tree()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 48,
-      "community_name": "test_python_hard_sandbox.py",
-      "file_type": "code",
-      "norm_label": "test_kill_group_terminates_the_tree()",
-      "source_file": "server/tests/test_python_hard_sandbox.py",
-      "source_location": "L146"
-    },
-    {
       "id": "server_tests_test_python_hard_sandbox_test_runaway_loop_is_bounded_and_reported",
       "label": "test_runaway_loop_is_bounded_and_reported()",
       "_callable": true,
@@ -6405,18 +6297,6 @@
       "norm_label": "test_runaway_loop_is_bounded_and_reported()",
       "source_file": "server/tests/test_python_hard_sandbox.py",
       "source_location": "L163"
-    },
-    {
-      "id": "server_tests_test_python_hard_sandbox_test_seatbelt_profile_denies_writes_and_network",
-      "label": "test_seatbelt_profile_denies_writes_and_network()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 48,
-      "community_name": "test_python_hard_sandbox.py",
-      "file_type": "code",
-      "norm_label": "test_seatbelt_profile_denies_writes_and_network()",
-      "source_file": "server/tests/test_python_hard_sandbox.py",
-      "source_location": "L89"
     },
     {
       "id": "server_app_python_exec_dataset_columns",
@@ -6513,18 +6393,6 @@
       "norm_label": "_temp_db()",
       "source_file": "server/tests/test_case_templates.py",
       "source_location": "L15"
-    },
-    {
-      "id": "server_tests_test_case_templates_temp_db_override",
-      "label": "override()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 5,
-      "community_name": "test_case_templates.py",
-      "file_type": "code",
-      "norm_label": "override()",
-      "source_file": "server/tests/test_case_templates.py",
-      "source_location": "L18"
     },
     {
       "id": "server_tests_test_case_templates_test_case_from_template_allows_overrides",
@@ -6669,6 +6537,18 @@
       "norm_label": "_temp_env()",
       "source_file": "server/tests/test_profiles.py",
       "source_location": "L10"
+    },
+    {
+      "id": "server_tests_test_profiles_temp_env_override",
+      "label": "override()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 51,
+      "community_name": "test_profiles.py",
+      "file_type": "code",
+      "norm_label": "override()",
+      "source_file": "server/tests/test_profiles.py",
+      "source_location": "L15"
     },
     {
       "id": "server_tests_test_profiles_test_deep_profile_stats",
@@ -6839,12 +6719,24 @@
       "source_location": "L105"
     },
     {
+      "id": "server_app_db_ensure_column",
+      "label": "_ensure_column()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 53,
+      "community_name": "db.py",
+      "file_type": "code",
+      "norm_label": "_ensure_column()",
+      "source_file": "server/app/db.py",
+      "source_location": "L140"
+    },
+    {
       "id": "server_tests_test_export_full_case",
       "label": "_full_case()",
       "_callable": true,
       "_origin": "ast",
       "community": 53,
-      "community_name": "test_export.py",
+      "community_name": "db.py",
       "file_type": "code",
       "norm_label": "_full_case()",
       "source_file": "server/tests/test_export.py",
@@ -6856,7 +6748,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 53,
-      "community_name": "test_export.py",
+      "community_name": "db.py",
       "file_type": "code",
       "norm_label": "_temp_env()",
       "source_file": "server/tests/test_export.py",
@@ -6868,7 +6760,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 53,
-      "community_name": "test_export.py",
+      "community_name": "db.py",
       "file_type": "code",
       "norm_label": "override()",
       "source_file": "server/tests/test_export.py",
@@ -6880,7 +6772,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 53,
-      "community_name": "test_export.py",
+      "community_name": "db.py",
       "file_type": "code",
       "norm_label": "test_export_contains_every_section()",
       "source_file": "server/tests/test_export.py",
@@ -6892,7 +6784,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 53,
-      "community_name": "test_export.py",
+      "community_name": "db.py",
       "file_type": "code",
       "norm_label": "test_export_unknown_case_returns_404()",
       "source_file": "server/tests/test_export.py",
@@ -6904,7 +6796,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 53,
-      "community_name": "test_export.py",
+      "community_name": "db.py",
       "file_type": "code",
       "norm_label": "test_import_rejects_bad_package()",
       "source_file": "server/tests/test_export.py",
@@ -6916,7 +6808,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 53,
-      "community_name": "test_export.py",
+      "community_name": "db.py",
       "file_type": "code",
       "norm_label": "test_round_trip_relinks_references_and_serves_artifacts()",
       "source_file": "server/tests/test_export.py",
@@ -6928,7 +6820,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 53,
-      "community_name": "test_export.py",
+      "community_name": "db.py",
       "file_type": "code",
       "norm_label": "test_round_trip_restores_the_case()",
       "source_file": "server/tests/test_export.py",
@@ -7031,52 +6923,52 @@
       "source_location": "L101"
     },
     {
-      "id": "web_src_api_interpretrun",
-      "label": "interpretRun()",
+      "id": "server_app_python_exec_child_env",
+      "label": "_child_env()",
       "_callable": true,
       "_origin": "ast",
       "community": 55,
-      "community_name": "RunRow",
+      "community_name": "_child_env",
       "file_type": "code",
-      "norm_label": "interpretrun()",
-      "source_file": "web/src/api.ts",
-      "source_location": "L252"
+      "norm_label": "_child_env()",
+      "source_file": "server/app/python_exec.py",
+      "source_location": "L358"
     },
     {
-      "id": "web_src_caseworkspace_runrow",
-      "label": "RunRow()",
+      "id": "server_app_python_exec_seatbelt_profile",
+      "label": "_seatbelt_profile()",
       "_callable": true,
       "_origin": "ast",
       "community": 55,
-      "community_name": "RunRow",
+      "community_name": "_child_env",
       "file_type": "code",
-      "norm_label": "runrow()",
-      "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L365"
+      "norm_label": "_seatbelt_profile()",
+      "source_file": "server/app/python_exec.py",
+      "source_location": "L340"
     },
     {
-      "id": "web_src_caseworkspace_runrow_draftit",
-      "label": "draftIt()",
+      "id": "server_tests_test_python_hard_sandbox_test_child_env_scrubs_api_secrets",
+      "label": "test_child_env_scrubs_api_secrets()",
       "_callable": true,
       "_origin": "ast",
       "community": 55,
-      "community_name": "RunRow",
+      "community_name": "_child_env",
       "file_type": "code",
-      "norm_label": "draftit()",
-      "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L394"
+      "norm_label": "test_child_env_scrubs_api_secrets()",
+      "source_file": "server/tests/test_python_hard_sandbox.py",
+      "source_location": "L132"
     },
     {
-      "id": "web_src_caseworkspace_runrow_read",
-      "label": "read()",
+      "id": "server_tests_test_python_hard_sandbox_test_seatbelt_profile_denies_writes_and_network",
+      "label": "test_seatbelt_profile_denies_writes_and_network()",
       "_callable": true,
       "_origin": "ast",
       "community": 55,
-      "community_name": "RunRow",
+      "community_name": "_child_env",
       "file_type": "code",
-      "norm_label": "read()",
-      "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L381"
+      "norm_label": "test_seatbelt_profile_denies_writes_and_network()",
+      "source_file": "server/tests/test_python_hard_sandbox.py",
+      "source_location": "L89"
     },
     {
       "id": "server_app_analysis_bind_dataset",
@@ -7100,7 +6992,7 @@
       "file_type": "code",
       "norm_label": "_bind_datasets()",
       "source_file": "server/app/analysis.py",
-      "source_location": "L238"
+      "source_location": "L240"
     },
     {
       "id": "server_app_analysis_coerce",
@@ -7112,7 +7004,7 @@
       "file_type": "code",
       "norm_label": "_coerce()",
       "source_file": "server/app/analysis.py",
-      "source_location": "L193"
+      "source_location": "L198"
     },
     {
       "id": "server_app_analysis_column_stat",
@@ -7124,7 +7016,7 @@
       "file_type": "code",
       "norm_label": "_column_stat()",
       "source_file": "server/app/analysis.py",
-      "source_location": "L202"
+      "source_location": "L207"
     },
     {
       "id": "server_app_analysis_column_stat_expr",
@@ -7136,7 +7028,7 @@
       "file_type": "code",
       "norm_label": "_column_stat_expr()",
       "source_file": "server/app/analysis.py",
-      "source_location": "L170"
+      "source_location": "L175"
     },
     {
       "id": "server_app_analysis_duplicate_row_count",
@@ -7148,7 +7040,31 @@
       "file_type": "code",
       "norm_label": "_duplicate_row_count()",
       "source_file": "server/app/analysis.py",
-      "source_location": "L220"
+      "source_location": "L225"
+    },
+    {
+      "id": "server_app_analysis_execute_read_only",
+      "label": "_execute_read_only()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 6,
+      "community_name": "analysis.py",
+      "file_type": "code",
+      "norm_label": "_execute_read_only()",
+      "source_file": "server/app/analysis.py",
+      "source_location": "L272"
+    },
+    {
+      "id": "server_app_analysis_is_read_only",
+      "label": "_is_read_only()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 6,
+      "community_name": "analysis.py",
+      "file_type": "code",
+      "norm_label": "_is_read_only()",
+      "source_file": "server/app/analysis.py",
+      "source_location": "L82"
     },
     {
       "id": "server_app_analysis_profile_csv",
@@ -7184,7 +7100,7 @@
       "file_type": "code",
       "norm_label": "_stat_width()",
       "source_file": "server/app/analysis.py",
-      "source_location": "L184"
+      "source_location": "L189"
     },
     {
       "id": "server_app_analysis_type_family",
@@ -7415,64 +7331,28 @@
       "source_location": "L236"
     },
     {
-      "id": "web_src_api_generatecode",
-      "label": "generateCode()",
+      "id": "server_app_python_exec_kill_group",
+      "label": "_kill_group()",
       "_callable": true,
       "_origin": "ast",
       "community": 67,
-      "community_name": "GeneratePanel",
+      "community_name": "_kill_group",
       "file_type": "code",
-      "norm_label": "generatecode()",
-      "source_file": "web/src/api.ts",
-      "source_location": "L236"
+      "norm_label": "_kill_group()",
+      "source_file": "server/app/python_exec.py",
+      "source_location": "L375"
     },
     {
-      "id": "web_src_api_runsql",
-      "label": "runSql()",
+      "id": "server_tests_test_python_hard_sandbox_test_kill_group_terminates_the_tree",
+      "label": "test_kill_group_terminates_the_tree()",
       "_callable": true,
       "_origin": "ast",
       "community": 67,
-      "community_name": "GeneratePanel",
+      "community_name": "_kill_group",
       "file_type": "code",
-      "norm_label": "runsql()",
-      "source_file": "web/src/api.ts",
-      "source_location": "L222"
-    },
-    {
-      "id": "web_src_caseworkspace_generatepanel",
-      "label": "GeneratePanel()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 67,
-      "community_name": "GeneratePanel",
-      "file_type": "code",
-      "norm_label": "generatepanel()",
-      "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L245"
-    },
-    {
-      "id": "web_src_caseworkspace_generatepanel_propose",
-      "label": "propose()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 67,
-      "community_name": "GeneratePanel",
-      "file_type": "code",
-      "norm_label": "propose()",
-      "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L260"
-    },
-    {
-      "id": "web_src_caseworkspace_generatepanel_run",
-      "label": "run()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 67,
-      "community_name": "GeneratePanel",
-      "file_type": "code",
-      "norm_label": "run()",
-      "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L275"
+      "norm_label": "test_kill_group_terminates_the_tree()",
+      "source_file": "server/tests/test_python_hard_sandbox.py",
+      "source_location": "L146"
     },
     {
       "id": "server_app_main_chat_about_case",
@@ -8048,7 +7928,7 @@
       "file_type": "code",
       "norm_label": "run_query()",
       "source_file": "server/app/analysis.py",
-      "source_location": "L291"
+      "source_location": "L293"
     },
     {
       "id": "server_app_eda_column_types",
@@ -8159,6 +8039,222 @@
       "source_location": "L47"
     },
     {
+      "id": "web_src_api_acceptfinding",
+      "label": "acceptFinding()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 71,
+      "community_name": "CaseWorkspace.tsx",
+      "file_type": "code",
+      "norm_label": "acceptfinding()",
+      "source_file": "web/src/api.ts",
+      "source_location": "L270"
+    },
+    {
+      "id": "web_src_api_apierror_constructor",
+      "label": ".constructor()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 71,
+      "community_name": "CaseWorkspace.tsx",
+      "file_type": "code",
+      "norm_label": ".constructor()",
+      "source_file": "web/src/api.ts",
+      "source_location": "L132"
+    },
+    {
+      "id": "web_src_api_attachdataset",
+      "label": "attachDataset()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 71,
+      "community_name": "CaseWorkspace.tsx",
+      "file_type": "code",
+      "norm_label": "attachdataset()",
+      "source_file": "web/src/api.ts",
+      "source_location": "L207"
+    },
+    {
+      "id": "web_src_api_createcase",
+      "label": "createCase()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 71,
+      "community_name": "CaseWorkspace.tsx",
+      "file_type": "code",
+      "norm_label": "createcase()",
+      "source_file": "web/src/api.ts",
+      "source_location": "L164"
+    },
+    {
+      "id": "web_src_api_generatecode",
+      "label": "generateCode()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 71,
+      "community_name": "CaseWorkspace.tsx",
+      "file_type": "code",
+      "norm_label": "generatecode()",
+      "source_file": "web/src/api.ts",
+      "source_location": "L236"
+    },
+    {
+      "id": "web_src_api_getcase",
+      "label": "getCase()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 71,
+      "community_name": "CaseWorkspace.tsx",
+      "file_type": "code",
+      "norm_label": "getcase()",
+      "source_file": "web/src/api.ts",
+      "source_location": "L177"
+    },
+    {
+      "id": "web_src_api_gethealth",
+      "label": "getHealth()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 71,
+      "community_name": "CaseWorkspace.tsx",
+      "file_type": "code",
+      "norm_label": "gethealth()",
+      "source_file": "web/src/api.ts",
+      "source_location": "L160"
+    },
+    {
+      "id": "web_src_api_getprogress",
+      "label": "getProgress()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 71,
+      "community_name": "CaseWorkspace.tsx",
+      "file_type": "code",
+      "norm_label": "getprogress()",
+      "source_file": "web/src/api.ts",
+      "source_location": "L181"
+    },
+    {
+      "id": "web_src_api_interpretrun",
+      "label": "interpretRun()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 71,
+      "community_name": "CaseWorkspace.tsx",
+      "file_type": "code",
+      "norm_label": "interpretrun()",
+      "source_file": "web/src/api.ts",
+      "source_location": "L252"
+    },
+    {
+      "id": "web_src_api_listcases",
+      "label": "listCases()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 71,
+      "community_name": "CaseWorkspace.tsx",
+      "file_type": "code",
+      "norm_label": "listcases()",
+      "source_file": "web/src/api.ts",
+      "source_location": "L172"
+    },
+    {
+      "id": "web_src_api_listchat",
+      "label": "listChat()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 71,
+      "community_name": "CaseWorkspace.tsx",
+      "file_type": "code",
+      "norm_label": "listchat()",
+      "source_file": "web/src/api.ts",
+      "source_location": "L201"
+    },
+    {
+      "id": "web_src_api_listdatasets",
+      "label": "listDatasets()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 71,
+      "community_name": "CaseWorkspace.tsx",
+      "file_type": "code",
+      "norm_label": "listdatasets()",
+      "source_file": "web/src/api.ts",
+      "source_location": "L185"
+    },
+    {
+      "id": "web_src_api_listfindings",
+      "label": "listFindings()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 71,
+      "community_name": "CaseWorkspace.tsx",
+      "file_type": "code",
+      "norm_label": "listfindings()",
+      "source_file": "web/src/api.ts",
+      "source_location": "L293"
+    },
+    {
+      "id": "web_src_api_listruns",
+      "label": "listRuns()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 71,
+      "community_name": "CaseWorkspace.tsx",
+      "file_type": "code",
+      "norm_label": "listruns()",
+      "source_file": "web/src/api.ts",
+      "source_location": "L189"
+    },
+    {
+      "id": "web_src_api_postchat",
+      "label": "postChat()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 71,
+      "community_name": "CaseWorkspace.tsx",
+      "file_type": "code",
+      "norm_label": "postchat()",
+      "source_file": "web/src/api.ts",
+      "source_location": "L193"
+    },
+    {
+      "id": "web_src_api_profiledataset",
+      "label": "profileDataset()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 71,
+      "community_name": "CaseWorkspace.tsx",
+      "file_type": "code",
+      "norm_label": "profiledataset()",
+      "source_file": "web/src/api.ts",
+      "source_location": "L216"
+    },
+    {
+      "id": "web_src_api_request",
+      "label": "request()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 71,
+      "community_name": "CaseWorkspace.tsx",
+      "file_type": "code",
+      "norm_label": "request()",
+      "source_file": "web/src/api.ts",
+      "source_location": "L141"
+    },
+    {
+      "id": "web_src_api_runsql",
+      "label": "runSql()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 71,
+      "community_name": "CaseWorkspace.tsx",
+      "file_type": "code",
+      "norm_label": "runsql()",
+      "source_file": "web/src/api.ts",
+      "source_location": "L222"
+    },
+    {
       "id": "web_src_api_validatefinding",
       "label": "validateFinding()",
       "_callable": true,
@@ -8169,6 +8265,162 @@
       "norm_label": "validatefinding()",
       "source_file": "web/src/api.ts",
       "source_location": "L287"
+    },
+    {
+      "id": "web_src_app_app",
+      "label": "App()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 71,
+      "community_name": "CaseWorkspace.tsx",
+      "file_type": "code",
+      "norm_label": "app()",
+      "source_file": "web/src/App.tsx",
+      "source_location": "L13"
+    },
+    {
+      "id": "web_src_casecreation_casecreation",
+      "label": "CaseCreation()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 71,
+      "community_name": "CaseWorkspace.tsx",
+      "file_type": "code",
+      "norm_label": "casecreation()",
+      "source_file": "web/src/CaseCreation.tsx",
+      "source_location": "L5"
+    },
+    {
+      "id": "web_src_casecreation_casecreation_handlesubmit",
+      "label": "handleSubmit()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 71,
+      "community_name": "CaseWorkspace.tsx",
+      "file_type": "code",
+      "norm_label": "handlesubmit()",
+      "source_file": "web/src/CaseCreation.tsx",
+      "source_location": "L24"
+    },
+    {
+      "id": "web_src_caselist_caselist",
+      "label": "CaseList()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 71,
+      "community_name": "CaseWorkspace.tsx",
+      "file_type": "code",
+      "norm_label": "caselist()",
+      "source_file": "web/src/CaseList.tsx",
+      "source_location": "L6"
+    },
+    {
+      "id": "web_src_caselist_messageof",
+      "label": "messageOf()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 71,
+      "community_name": "CaseWorkspace.tsx",
+      "file_type": "code",
+      "norm_label": "messageof()",
+      "source_file": "web/src/CaseList.tsx",
+      "source_location": "L60"
+    },
+    {
+      "id": "web_src_caseworkspace_caseworkspace",
+      "label": "CaseWorkspace()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 71,
+      "community_name": "CaseWorkspace.tsx",
+      "file_type": "code",
+      "norm_label": "caseworkspace()",
+      "source_file": "web/src/CaseWorkspace.tsx",
+      "source_location": "L38"
+    },
+    {
+      "id": "web_src_caseworkspace_caseworkspace_load",
+      "label": "load()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 71,
+      "community_name": "CaseWorkspace.tsx",
+      "file_type": "code",
+      "norm_label": "load()",
+      "source_file": "web/src/CaseWorkspace.tsx",
+      "source_location": "L48"
+    },
+    {
+      "id": "web_src_caseworkspace_chat",
+      "label": "Chat()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 71,
+      "community_name": "CaseWorkspace.tsx",
+      "file_type": "code",
+      "norm_label": "chat()",
+      "source_file": "web/src/CaseWorkspace.tsx",
+      "source_location": "L603"
+    },
+    {
+      "id": "web_src_caseworkspace_chat_send",
+      "label": "send()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 71,
+      "community_name": "CaseWorkspace.tsx",
+      "file_type": "code",
+      "norm_label": "send()",
+      "source_file": "web/src/CaseWorkspace.tsx",
+      "source_location": "L616"
+    },
+    {
+      "id": "web_src_caseworkspace_datapanel",
+      "label": "DataPanel()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 71,
+      "community_name": "CaseWorkspace.tsx",
+      "file_type": "code",
+      "norm_label": "datapanel()",
+      "source_file": "web/src/CaseWorkspace.tsx",
+      "source_location": "L166"
+    },
+    {
+      "id": "web_src_caseworkspace_datapanel_attach",
+      "label": "attach()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 71,
+      "community_name": "CaseWorkspace.tsx",
+      "file_type": "code",
+      "norm_label": "attach()",
+      "source_file": "web/src/CaseWorkspace.tsx",
+      "source_location": "L180"
+    },
+    {
+      "id": "web_src_caseworkspace_draftpanel",
+      "label": "DraftPanel()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 71,
+      "community_name": "CaseWorkspace.tsx",
+      "file_type": "code",
+      "norm_label": "draftpanel()",
+      "source_file": "web/src/CaseWorkspace.tsx",
+      "source_location": "L463"
+    },
+    {
+      "id": "web_src_caseworkspace_draftpanel_accept",
+      "label": "accept()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 71,
+      "community_name": "CaseWorkspace.tsx",
+      "file_type": "code",
+      "norm_label": "accept()",
+      "source_file": "web/src/CaseWorkspace.tsx",
+      "source_location": "L477"
     },
     {
       "id": "web_src_caseworkspace_findingrow",
@@ -8207,6 +8459,78 @@
       "source_location": "L516"
     },
     {
+      "id": "web_src_caseworkspace_generatepanel",
+      "label": "GeneratePanel()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 71,
+      "community_name": "CaseWorkspace.tsx",
+      "file_type": "code",
+      "norm_label": "generatepanel()",
+      "source_file": "web/src/CaseWorkspace.tsx",
+      "source_location": "L245"
+    },
+    {
+      "id": "web_src_caseworkspace_generatepanel_propose",
+      "label": "propose()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 71,
+      "community_name": "CaseWorkspace.tsx",
+      "file_type": "code",
+      "norm_label": "propose()",
+      "source_file": "web/src/CaseWorkspace.tsx",
+      "source_location": "L260"
+    },
+    {
+      "id": "web_src_caseworkspace_generatepanel_run",
+      "label": "run()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 71,
+      "community_name": "CaseWorkspace.tsx",
+      "file_type": "code",
+      "norm_label": "run()",
+      "source_file": "web/src/CaseWorkspace.tsx",
+      "source_location": "L275"
+    },
+    {
+      "id": "web_src_caseworkspace_runrow",
+      "label": "RunRow()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 71,
+      "community_name": "CaseWorkspace.tsx",
+      "file_type": "code",
+      "norm_label": "runrow()",
+      "source_file": "web/src/CaseWorkspace.tsx",
+      "source_location": "L365"
+    },
+    {
+      "id": "web_src_caseworkspace_runrow_draftit",
+      "label": "draftIt()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 71,
+      "community_name": "CaseWorkspace.tsx",
+      "file_type": "code",
+      "norm_label": "draftit()",
+      "source_file": "web/src/CaseWorkspace.tsx",
+      "source_location": "L394"
+    },
+    {
+      "id": "web_src_caseworkspace_runrow_read",
+      "label": "read()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 71,
+      "community_name": "CaseWorkspace.tsx",
+      "file_type": "code",
+      "norm_label": "read()",
+      "source_file": "web/src/CaseWorkspace.tsx",
+      "source_location": "L381"
+    },
+    {
       "id": "web_src_caseworkspace_runspanel",
       "label": "RunsPanel()",
       "_callable": true,
@@ -8217,6 +8541,30 @@
       "norm_label": "runspanel()",
       "source_file": "web/src/CaseWorkspace.tsx",
       "source_location": "L327"
+    },
+    {
+      "id": "web_src_caseworkspace_test_mockemptycase",
+      "label": "mockEmptyCase()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 71,
+      "community_name": "CaseWorkspace.tsx",
+      "file_type": "code",
+      "norm_label": "mockemptycase()",
+      "source_file": "web/src/CaseWorkspace.test.tsx",
+      "source_location": "L63"
+    },
+    {
+      "id": "web_src_caseworkspace_test_runfixture",
+      "label": "runFixture()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 71,
+      "community_name": "CaseWorkspace.tsx",
+      "file_type": "code",
+      "norm_label": "runfixture()",
+      "source_file": "web/src/CaseWorkspace.test.tsx",
+      "source_location": "L56"
     },
     {
       "id": "web_src_caseworkspace_workflow",
@@ -8265,102 +8613,6 @@
       "norm_label": "get_evidence_chain()",
       "source_file": "server/app/main.py",
       "source_location": "L1140"
-    },
-    {
-      "id": "web_src_api_apierror_constructor",
-      "label": ".constructor()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 74,
-      "community_name": "CaseList.tsx",
-      "file_type": "code",
-      "norm_label": ".constructor()",
-      "source_file": "web/src/api.ts",
-      "source_location": "L132"
-    },
-    {
-      "id": "web_src_api_listcases",
-      "label": "listCases()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 74,
-      "community_name": "CaseList.tsx",
-      "file_type": "code",
-      "norm_label": "listcases()",
-      "source_file": "web/src/api.ts",
-      "source_location": "L172"
-    },
-    {
-      "id": "web_src_app_app",
-      "label": "App()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 74,
-      "community_name": "CaseList.tsx",
-      "file_type": "code",
-      "norm_label": "app()",
-      "source_file": "web/src/App.tsx",
-      "source_location": "L13"
-    },
-    {
-      "id": "web_src_caselist_caselist",
-      "label": "CaseList()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 74,
-      "community_name": "CaseList.tsx",
-      "file_type": "code",
-      "norm_label": "caselist()",
-      "source_file": "web/src/CaseList.tsx",
-      "source_location": "L6"
-    },
-    {
-      "id": "web_src_caseworkspace_test_mockemptycase",
-      "label": "mockEmptyCase()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 76,
-      "community_name": "CaseWorkspace.test.tsx",
-      "file_type": "code",
-      "norm_label": "mockemptycase()",
-      "source_file": "web/src/CaseWorkspace.test.tsx",
-      "source_location": "L63"
-    },
-    {
-      "id": "web_src_caseworkspace_test_runfixture",
-      "label": "runFixture()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 76,
-      "community_name": "CaseWorkspace.test.tsx",
-      "file_type": "code",
-      "norm_label": "runfixture()",
-      "source_file": "web/src/CaseWorkspace.test.tsx",
-      "source_location": "L56"
-    },
-    {
-      "id": "server_app_analysis_execute_read_only",
-      "label": "_execute_read_only()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 77,
-      "community_name": "_execute_read_only",
-      "file_type": "code",
-      "norm_label": "_execute_read_only()",
-      "source_file": "server/app/analysis.py",
-      "source_location": "L270"
-    },
-    {
-      "id": "server_app_analysis_is_read_only",
-      "label": "_is_read_only()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 78,
-      "community_name": "_is_read_only",
-      "file_type": "code",
-      "norm_label": "_is_read_only()",
-      "source_file": "server/app/analysis.py",
-      "source_location": "L82"
     },
     {
       "id": "server_app_main_list_templates",
@@ -8649,138 +8901,6 @@
       "norm_label": "record()",
       "source_file": "verification/p3/verify_p3.py",
       "source_location": "L127"
-    },
-    {
-      "id": "web_src_api_acceptfinding",
-      "label": "acceptFinding()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 81,
-      "community_name": "messageOf",
-      "file_type": "code",
-      "norm_label": "acceptfinding()",
-      "source_file": "web/src/api.ts",
-      "source_location": "L270"
-    },
-    {
-      "id": "web_src_api_createcase",
-      "label": "createCase()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 81,
-      "community_name": "messageOf",
-      "file_type": "code",
-      "norm_label": "createcase()",
-      "source_file": "web/src/api.ts",
-      "source_location": "L164"
-    },
-    {
-      "id": "web_src_api_gethealth",
-      "label": "getHealth()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 81,
-      "community_name": "messageOf",
-      "file_type": "code",
-      "norm_label": "gethealth()",
-      "source_file": "web/src/api.ts",
-      "source_location": "L160"
-    },
-    {
-      "id": "web_src_api_postchat",
-      "label": "postChat()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 81,
-      "community_name": "messageOf",
-      "file_type": "code",
-      "norm_label": "postchat()",
-      "source_file": "web/src/api.ts",
-      "source_location": "L193"
-    },
-    {
-      "id": "web_src_casecreation_casecreation",
-      "label": "CaseCreation()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 81,
-      "community_name": "messageOf",
-      "file_type": "code",
-      "norm_label": "casecreation()",
-      "source_file": "web/src/CaseCreation.tsx",
-      "source_location": "L5"
-    },
-    {
-      "id": "web_src_casecreation_casecreation_handlesubmit",
-      "label": "handleSubmit()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 81,
-      "community_name": "messageOf",
-      "file_type": "code",
-      "norm_label": "handlesubmit()",
-      "source_file": "web/src/CaseCreation.tsx",
-      "source_location": "L24"
-    },
-    {
-      "id": "web_src_caselist_messageof",
-      "label": "messageOf()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 81,
-      "community_name": "messageOf",
-      "file_type": "code",
-      "norm_label": "messageof()",
-      "source_file": "web/src/CaseList.tsx",
-      "source_location": "L60"
-    },
-    {
-      "id": "web_src_caseworkspace_chat",
-      "label": "Chat()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 81,
-      "community_name": "messageOf",
-      "file_type": "code",
-      "norm_label": "chat()",
-      "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L603"
-    },
-    {
-      "id": "web_src_caseworkspace_chat_send",
-      "label": "send()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 81,
-      "community_name": "messageOf",
-      "file_type": "code",
-      "norm_label": "send()",
-      "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L616"
-    },
-    {
-      "id": "web_src_caseworkspace_draftpanel",
-      "label": "DraftPanel()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 81,
-      "community_name": "messageOf",
-      "file_type": "code",
-      "norm_label": "draftpanel()",
-      "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L463"
-    },
-    {
-      "id": "web_src_caseworkspace_draftpanel_accept",
-      "label": "accept()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 81,
-      "community_name": "messageOf",
-      "file_type": "code",
-      "norm_label": "accept()",
-      "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L477"
     },
     {
       "id": "basemodel",
@@ -9342,6 +9462,116 @@
       "source_location": "L16"
     },
     {
+      "id": "web_package_devdependencies",
+      "label": "devDependencies",
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "web/package.json",
+      "file_type": "code",
+      "norm_label": "devdependencies",
+      "source_file": "web/package.json",
+      "source_location": "L18"
+    },
+    {
+      "id": "web_package_devdependencies_jsdom",
+      "label": "jsdom",
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "web/package.json",
+      "file_type": "code",
+      "norm_label": "jsdom",
+      "source_file": "web/package.json",
+      "source_location": "L24"
+    },
+    {
+      "id": "web_package_devdependencies_testing_library_react",
+      "label": "@testing-library/react",
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "web/package.json",
+      "file_type": "code",
+      "norm_label": "@testing-library/react",
+      "source_file": "web/package.json",
+      "source_location": "L19"
+    },
+    {
+      "id": "web_package_devdependencies_testing_library_user_event",
+      "label": "@testing-library/user-event",
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "web/package.json",
+      "file_type": "code",
+      "norm_label": "@testing-library/user-event",
+      "source_file": "web/package.json",
+      "source_location": "L20"
+    },
+    {
+      "id": "web_package_devdependencies_types_react",
+      "label": "@types/react",
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "web/package.json",
+      "file_type": "code",
+      "norm_label": "@types/react",
+      "source_file": "web/package.json",
+      "source_location": "L21"
+    },
+    {
+      "id": "web_package_devdependencies_types_react_dom",
+      "label": "@types/react-dom",
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "web/package.json",
+      "file_type": "code",
+      "norm_label": "@types/react-dom",
+      "source_file": "web/package.json",
+      "source_location": "L22"
+    },
+    {
+      "id": "web_package_devdependencies_typescript",
+      "label": "typescript",
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "web/package.json",
+      "file_type": "code",
+      "norm_label": "typescript",
+      "source_file": "web/package.json",
+      "source_location": "L25"
+    },
+    {
+      "id": "web_package_devdependencies_vite",
+      "label": "vite",
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "web/package.json",
+      "file_type": "code",
+      "norm_label": "vite",
+      "source_file": "web/package.json",
+      "source_location": "L26"
+    },
+    {
+      "id": "web_package_devdependencies_vitejs_plugin_react",
+      "label": "@vitejs/plugin-react",
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "web/package.json",
+      "file_type": "code",
+      "norm_label": "@vitejs/plugin-react",
+      "source_file": "web/package.json",
+      "source_location": "L23"
+    },
+    {
+      "id": "web_package_devdependencies_vitest",
+      "label": "vitest",
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "web/package.json",
+      "file_type": "code",
+      "norm_label": "vitest",
+      "source_file": "web/package.json",
+      "source_location": "L27"
+    },
+    {
       "id": "web_package_name",
       "label": "name",
       "_origin": "ast",
@@ -9859,7 +10089,7 @@
       "source_location": ""
     },
     {
-      "id": "server_app_analysis_rationale_304",
+      "id": "server_app_analysis_rationale_306",
       "label": "Run a read-only SQL query across several attached files (P3-DATA-003).\u2026",
       "_origin": "ast",
       "community": 23,
@@ -9867,7 +10097,7 @@
       "file_type": "rationale",
       "norm_label": "run a read-only sql query across several attached files (p3-data-003)....",
       "source_file": "server/app/analysis.py",
-      "source_location": "L304"
+      "source_location": "L306"
     },
     {
       "id": "server_app_main_rationale_1255",
@@ -11729,17 +11959,6 @@
       "source_location": ""
     },
     {
-      "id": "server_app_db",
-      "label": "db.py",
-      "_origin": "ast",
-      "community": 34,
-      "community_name": "get_connection",
-      "file_type": "code",
-      "norm_label": "db.py",
-      "source_file": "server/app/db.py",
-      "source_location": "L1"
-    },
-    {
       "id": "server_app_db_py_path",
       "label": "Path",
       "_origin": "ast",
@@ -11749,28 +11968,6 @@
       "norm_label": "path",
       "source_file": "",
       "source_location": ""
-    },
-    {
-      "id": "server_app_db_rationale_1",
-      "label": "SQLite persistence for Analysis Cases, datasets, and profiles. Owns case STATE\u2026",
-      "_origin": "ast",
-      "community": 34,
-      "community_name": "get_connection",
-      "file_type": "rationale",
-      "norm_label": "sqlite persistence for analysis cases, datasets, and profiles. owns case state...",
-      "source_file": "server/app/db.py",
-      "source_location": "L1"
-    },
-    {
-      "id": "server_app_db_rationale_141",
-      "label": "Add a column to an older schema; a no-op on current ones.",
-      "_origin": "ast",
-      "community": 34,
-      "community_name": "get_connection",
-      "file_type": "rationale",
-      "norm_label": "add a column to an older schema; a no-op on current ones.",
-      "source_file": "server/app/db.py",
-      "source_location": "L141"
     },
     {
       "id": "server_app_db_rationale_152",
@@ -11989,7 +12186,7 @@
       "node_kind": "heading",
       "norm_label": "p3 v1 \u2014 entry checklist (complete)",
       "source_file": "ai/ROADMAP.md",
-      "source_location": "L72"
+      "source_location": "L75"
     },
     {
       "id": "ai_roadmap_p4_production_candidate_entry_checklist_proposed_not_started",
@@ -12001,7 +12198,7 @@
       "node_kind": "heading",
       "norm_label": "p4 production candidate \u2014 entry checklist (proposed, not started)",
       "source_file": "ai/ROADMAP.md",
-      "source_location": "L97"
+      "source_location": "L100"
     },
     {
       "id": "ai_roadmap_phase_gate_definitions_what_done_means",
@@ -12037,7 +12234,7 @@
       "node_kind": "heading",
       "norm_label": "rules this file enforces",
       "source_file": "ai/ROADMAP.md",
-      "source_location": "L113"
+      "source_location": "L116"
     },
     {
       "id": "server_tests_test_dataset_delete",
@@ -12225,6 +12422,105 @@
       "norm_label": "no stored stage: every call recomputes from the artifacts, per case.",
       "source_file": "server/tests/test_workflow.py",
       "source_location": "L128"
+    },
+    {
+      "id": "server_tests_test_large_datasets",
+      "label": "test_large_datasets.py",
+      "_origin": "ast",
+      "community": 40,
+      "community_name": "test_large_datasets.py",
+      "file_type": "code",
+      "norm_label": "test_large_datasets.py",
+      "source_file": "server/tests/test_large_datasets.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "server_tests_test_large_datasets_rationale_1",
+      "label": "Large-dataset behaviour (P4-PERF-006). The 1000-row result cap had existed\u2026",
+      "_origin": "ast",
+      "community": 40,
+      "community_name": "test_large_datasets.py",
+      "file_type": "rationale",
+      "norm_label": "large-dataset behaviour (p4-perf-006). the 1000-row result cap had existed...",
+      "source_file": "server/tests/test_large_datasets.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "server_tests_test_large_datasets_rationale_115",
+      "label": "A full-table scan at scale is capped and flagged, never unbounded.",
+      "_origin": "ast",
+      "community": 40,
+      "community_name": "test_large_datasets.py",
+      "file_type": "rationale",
+      "norm_label": "a full-table scan at scale is capped and flagged, never unbounded.",
+      "source_file": "server/tests/test_large_datasets.py",
+      "source_location": "L115"
+    },
+    {
+      "id": "server_tests_test_large_datasets_rationale_139",
+      "label": "An aggregation over the full set sees every row, not just the capped page.",
+      "_origin": "ast",
+      "community": 40,
+      "community_name": "test_large_datasets.py",
+      "file_type": "rationale",
+      "norm_label": "an aggregation over the full set sees every row, not just the capped page.",
+      "source_file": "server/tests/test_large_datasets.py",
+      "source_location": "L139"
+    },
+    {
+      "id": "server_tests_test_large_datasets_rationale_163",
+      "label": "A table with many columns still reports one stat block per column. The\u2026",
+      "_origin": "ast",
+      "community": 40,
+      "community_name": "test_large_datasets.py",
+      "file_type": "rationale",
+      "norm_label": "a table with many columns still reports one stat block per column. the...",
+      "source_file": "server/tests/test_large_datasets.py",
+      "source_location": "L163"
+    },
+    {
+      "id": "server_tests_test_large_datasets_rationale_198",
+      "label": "The duplicate count is exact over a large set with known repeats.",
+      "_origin": "ast",
+      "community": 40,
+      "community_name": "test_large_datasets.py",
+      "file_type": "rationale",
+      "norm_label": "the duplicate count is exact over a large set with known repeats.",
+      "source_file": "server/tests/test_large_datasets.py",
+      "source_location": "L198"
+    },
+    {
+      "id": "server_tests_test_large_datasets_rationale_227",
+      "label": "A case carrying a large dataset exports and restores intact.",
+      "_origin": "ast",
+      "community": 40,
+      "community_name": "test_large_datasets.py",
+      "file_type": "rationale",
+      "norm_label": "a case carrying a large dataset exports and restores intact.",
+      "source_file": "server/tests/test_large_datasets.py",
+      "source_location": "L227"
+    },
+    {
+      "id": "server_tests_test_large_datasets_rationale_37",
+      "label": "A deterministic wide-enough dataset whose stats are analytically known. Every\u2026",
+      "_origin": "ast",
+      "community": 40,
+      "community_name": "test_large_datasets.py",
+      "file_type": "rationale",
+      "norm_label": "a deterministic wide-enough dataset whose stats are analytically known. every...",
+      "source_file": "server/tests/test_large_datasets.py",
+      "source_location": "L37"
+    },
+    {
+      "id": "server_tests_test_large_datasets_rationale_67",
+      "label": "The profile over 50k rows matches the values the data defines. This is the\u2026",
+      "_origin": "ast",
+      "community": 40,
+      "community_name": "test_large_datasets.py",
+      "file_type": "rationale",
+      "norm_label": "the profile over 50k rows matches the values the data defines. this is the...",
+      "source_file": "server/tests/test_large_datasets.py",
+      "source_location": "L67"
     },
     {
       "id": "server_tests_test_case_management",
@@ -12766,17 +13062,6 @@
       "source_location": "L1"
     },
     {
-      "id": "server_app_python_exec_py_popen",
-      "label": "Popen",
-      "_origin": "ast",
-      "community": 48,
-      "community_name": "test_python_hard_sandbox.py",
-      "file_type": "code",
-      "norm_label": "popen",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
       "id": "server_tests_test_python_hard_sandbox",
       "label": "test_python_hard_sandbox.py",
       "_origin": "ast",
@@ -12788,39 +13073,6 @@
       "source_location": "L1"
     },
     {
-      "id": "server_app_python_exec_rationale_341",
-      "label": "The macOS sandbox-exec profile for one run. Reads are unrestricted (the\u2026",
-      "_origin": "ast",
-      "community": 48,
-      "community_name": "test_python_hard_sandbox.py",
-      "file_type": "rationale",
-      "norm_label": "the macos sandbox-exec profile for one run. reads are unrestricted (the...",
-      "source_file": "server/app/python_exec.py",
-      "source_location": "L341"
-    },
-    {
-      "id": "server_app_python_exec_rationale_359",
-      "label": "The minimal environment the worker inherits. The API process may carry\u2026",
-      "_origin": "ast",
-      "community": 48,
-      "community_name": "test_python_hard_sandbox.py",
-      "file_type": "rationale",
-      "norm_label": "the minimal environment the worker inherits. the api process may carry...",
-      "source_file": "server/app/python_exec.py",
-      "source_location": "L359"
-    },
-    {
-      "id": "server_app_python_exec_rationale_376",
-      "label": "Kill the worker and anything it spawned (sandbox-exec sits in between).",
-      "_origin": "ast",
-      "community": 48,
-      "community_name": "test_python_hard_sandbox.py",
-      "file_type": "rationale",
-      "norm_label": "kill the worker and anything it spawned (sandbox-exec sits in between).",
-      "source_file": "server/app/python_exec.py",
-      "source_location": "L376"
-    },
-    {
       "id": "server_tests_test_python_hard_sandbox_rationale_1",
       "label": "Hard-sandbox tests for P3-SEC-001. The inner guards (import allowlist,\u2026",
       "_origin": "ast",
@@ -12830,28 +13082,6 @@
       "norm_label": "hard-sandbox tests for p3-sec-001. the inner guards (import allowlist,...",
       "source_file": "server/tests/test_python_hard_sandbox.py",
       "source_location": "L1"
-    },
-    {
-      "id": "server_tests_test_python_hard_sandbox_rationale_133",
-      "label": "Secrets held by the API process never reach the worker.",
-      "_origin": "ast",
-      "community": 48,
-      "community_name": "test_python_hard_sandbox.py",
-      "file_type": "rationale",
-      "norm_label": "secrets held by the api process never reach the worker.",
-      "source_file": "server/tests/test_python_hard_sandbox.py",
-      "source_location": "L133"
-    },
-    {
-      "id": "server_tests_test_python_hard_sandbox_rationale_147",
-      "label": "A timeout kills the worker and anything it spawned, not just the shell.",
-      "_origin": "ast",
-      "community": 48,
-      "community_name": "test_python_hard_sandbox.py",
-      "file_type": "rationale",
-      "norm_label": "a timeout kills the worker and anything it spawned, not just the shell.",
-      "source_file": "server/tests/test_python_hard_sandbox.py",
-      "source_location": "L147"
     },
     {
       "id": "server_tests_test_python_hard_sandbox_rationale_164",
@@ -12885,17 +13115,6 @@
       "norm_label": "a rejected contract is a 400 with a message, not a dead process.",
       "source_file": "server/tests/test_python_hard_sandbox.py",
       "source_location": "L201"
-    },
-    {
-      "id": "server_tests_test_python_hard_sandbox_rationale_90",
-      "label": "The profile production emits is enforced by the kernel, not by Python.",
-      "_origin": "ast",
-      "community": 48,
-      "community_name": "test_python_hard_sandbox.py",
-      "file_type": "rationale",
-      "norm_label": "the profile production emits is enforced by the kernel, not by python.",
-      "source_file": "server/tests/test_python_hard_sandbox.py",
-      "source_location": "L90"
     },
     {
       "id": "server_app_python_worker",
@@ -13127,15 +13346,48 @@
       "source_location": "L1"
     },
     {
+      "id": "server_app_db",
+      "label": "db.py",
+      "_origin": "ast",
+      "community": 53,
+      "community_name": "db.py",
+      "file_type": "code",
+      "norm_label": "db.py",
+      "source_file": "server/app/db.py",
+      "source_location": "L1"
+    },
+    {
       "id": "server_tests_test_export",
       "label": "test_export.py",
       "_origin": "ast",
       "community": 53,
-      "community_name": "test_export.py",
+      "community_name": "db.py",
       "file_type": "code",
       "norm_label": "test_export.py",
       "source_file": "server/tests/test_export.py",
       "source_location": "L1"
+    },
+    {
+      "id": "server_app_db_rationale_1",
+      "label": "SQLite persistence for Analysis Cases, datasets, and profiles. Owns case STATE\u2026",
+      "_origin": "ast",
+      "community": 53,
+      "community_name": "db.py",
+      "file_type": "rationale",
+      "norm_label": "sqlite persistence for analysis cases, datasets, and profiles. owns case state...",
+      "source_file": "server/app/db.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "server_app_db_rationale_141",
+      "label": "Add a column to an older schema; a no-op on current ones.",
+      "_origin": "ast",
+      "community": 53,
+      "community_name": "db.py",
+      "file_type": "rationale",
+      "norm_label": "add a column to an older schema; a no-op on current ones.",
+      "source_file": "server/app/db.py",
+      "source_location": "L141"
     },
     {
       "id": "server_tests_test_runs",
@@ -13147,6 +13399,50 @@
       "norm_label": "test_runs.py",
       "source_file": "server/tests/test_runs.py",
       "source_location": "L1"
+    },
+    {
+      "id": "server_app_python_exec_rationale_341",
+      "label": "The macOS sandbox-exec profile for one run. Reads are unrestricted (the\u2026",
+      "_origin": "ast",
+      "community": 55,
+      "community_name": "_child_env",
+      "file_type": "rationale",
+      "norm_label": "the macos sandbox-exec profile for one run. reads are unrestricted (the...",
+      "source_file": "server/app/python_exec.py",
+      "source_location": "L341"
+    },
+    {
+      "id": "server_app_python_exec_rationale_359",
+      "label": "The minimal environment the worker inherits. The API process may carry\u2026",
+      "_origin": "ast",
+      "community": 55,
+      "community_name": "_child_env",
+      "file_type": "rationale",
+      "norm_label": "the minimal environment the worker inherits. the api process may carry...",
+      "source_file": "server/app/python_exec.py",
+      "source_location": "L359"
+    },
+    {
+      "id": "server_tests_test_python_hard_sandbox_rationale_133",
+      "label": "Secrets held by the API process never reach the worker.",
+      "_origin": "ast",
+      "community": 55,
+      "community_name": "_child_env",
+      "file_type": "rationale",
+      "norm_label": "secrets held by the api process never reach the worker.",
+      "source_file": "server/tests/test_python_hard_sandbox.py",
+      "source_location": "L133"
+    },
+    {
+      "id": "server_tests_test_python_hard_sandbox_rationale_90",
+      "label": "The profile production emits is enforced by the kernel, not by Python.",
+      "_origin": "ast",
+      "community": 55,
+      "community_name": "_child_env",
+      "file_type": "rationale",
+      "norm_label": "the profile production emits is enforced by the kernel, not by python.",
+      "source_file": "server/tests/test_python_hard_sandbox.py",
+      "source_location": "L90"
     },
     {
       "id": "desktop_src_tauri_tauri_conf",
@@ -13746,7 +14042,7 @@
       "source_location": "L114"
     },
     {
-      "id": "server_app_analysis_rationale_171",
+      "id": "server_app_analysis_rationale_176",
       "label": "Build the per-column aggregate expression for a profiling pass.",
       "_origin": "ast",
       "community": 6,
@@ -13754,18 +14050,7 @@
       "file_type": "rationale",
       "norm_label": "build the per-column aggregate expression for a profiling pass.",
       "source_file": "server/app/analysis.py",
-      "source_location": "L171"
-    },
-    {
-      "id": "server_app_analysis_rationale_185",
-      "label": "Aggregates _column_stat_expr emits for a column of this family.",
-      "_origin": "ast",
-      "community": 6,
-      "community_name": "analysis.py",
-      "file_type": "rationale",
-      "norm_label": "aggregates _column_stat_expr emits for a column of this family.",
-      "source_file": "server/app/analysis.py",
-      "source_location": "L185"
+      "source_location": "L176"
     },
     {
       "id": "server_app_analysis_rationale_19",
@@ -13779,7 +14064,18 @@
       "source_location": "L19"
     },
     {
-      "id": "server_app_analysis_rationale_194",
+      "id": "server_app_analysis_rationale_190",
+      "label": "Aggregates _column_stat_expr emits for a column of this family.",
+      "_origin": "ast",
+      "community": 6,
+      "community_name": "analysis.py",
+      "file_type": "rationale",
+      "norm_label": "aggregates _column_stat_expr emits for a column of this family.",
+      "source_file": "server/app/analysis.py",
+      "source_location": "L190"
+    },
+    {
+      "id": "server_app_analysis_rationale_199",
       "label": "Make a DuckDB scalar JSON-safe (dates and decimals are not).",
       "_origin": "ast",
       "community": 6,
@@ -13787,10 +14083,10 @@
       "file_type": "rationale",
       "norm_label": "make a duckdb scalar json-safe (dates and decimals are not).",
       "source_file": "server/app/analysis.py",
-      "source_location": "L194"
+      "source_location": "L199"
     },
     {
-      "id": "server_app_analysis_rationale_203",
+      "id": "server_app_analysis_rationale_208",
       "label": "Assemble one column's stat dict from its aggregate row.",
       "_origin": "ast",
       "community": 6,
@@ -13798,10 +14094,10 @@
       "file_type": "rationale",
       "norm_label": "assemble one column's stat dict from its aggregate row.",
       "source_file": "server/app/analysis.py",
-      "source_location": "L203"
+      "source_location": "L208"
     },
     {
-      "id": "server_app_analysis_rationale_221",
+      "id": "server_app_analysis_rationale_226",
       "label": "Count rows that are exact duplicates of an earlier row. Total rows minus\u2026",
       "_origin": "ast",
       "community": 6,
@@ -13809,10 +14105,10 @@
       "file_type": "rationale",
       "norm_label": "count rows that are exact duplicates of an earlier row. total rows minus...",
       "source_file": "server/app/analysis.py",
-      "source_location": "L221"
+      "source_location": "L226"
     },
     {
-      "id": "server_app_analysis_rationale_239",
+      "id": "server_app_analysis_rationale_241",
       "label": "Bind the k-th dataset placeholder in user SQL to the k-th file. The natural\u2026",
       "_origin": "ast",
       "community": 6,
@@ -13820,7 +14116,18 @@
       "file_type": "rationale",
       "norm_label": "bind the k-th dataset placeholder in user sql to the k-th file. the natural...",
       "source_file": "server/app/analysis.py",
-      "source_location": "L239"
+      "source_location": "L241"
+    },
+    {
+      "id": "server_app_analysis_rationale_273",
+      "label": "Run an already-bound read-only query and cap its result.",
+      "_origin": "ast",
+      "community": 6,
+      "community_name": "analysis.py",
+      "file_type": "rationale",
+      "norm_label": "run an already-bound read-only query and cap its result.",
+      "source_file": "server/app/analysis.py",
+      "source_location": "L273"
     },
     {
       "id": "server_app_analysis_rationale_68",
@@ -13832,6 +14139,17 @@
       "norm_label": "swap the dataset placeholder(s) in user sql for this file's reader. either...",
       "source_file": "server/app/analysis.py",
       "source_location": "L68"
+    },
+    {
+      "id": "server_app_analysis_rationale_83",
+      "label": "Reject anything that is not a single read-only statement.",
+      "_origin": "ast",
+      "community": 6,
+      "community_name": "analysis.py",
+      "file_type": "rationale",
+      "norm_label": "reject anything that is not a single read-only statement.",
+      "source_file": "server/app/analysis.py",
+      "source_location": "L83"
     },
     {
       "id": "desktop_src_tauri_capabilities_default",
@@ -14219,6 +14537,39 @@
       "source_location": "L83"
     },
     {
+      "id": "server_app_python_exec_py_popen",
+      "label": "Popen",
+      "_origin": "ast",
+      "community": 67,
+      "community_name": "_kill_group",
+      "file_type": "code",
+      "norm_label": "popen",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "server_app_python_exec_rationale_376",
+      "label": "Kill the worker and anything it spawned (sandbox-exec sits in between).",
+      "_origin": "ast",
+      "community": 67,
+      "community_name": "_kill_group",
+      "file_type": "rationale",
+      "norm_label": "kill the worker and anything it spawned (sandbox-exec sits in between).",
+      "source_file": "server/app/python_exec.py",
+      "source_location": "L376"
+    },
+    {
+      "id": "server_tests_test_python_hard_sandbox_rationale_147",
+      "label": "A timeout kills the worker and anything it spawned, not just the shell.",
+      "_origin": "ast",
+      "community": 67,
+      "community_name": "_kill_group",
+      "file_type": "rationale",
+      "norm_label": "a timeout kills the worker and anything it spawned, not just the shell.",
+      "source_file": "server/tests/test_python_hard_sandbox.py",
+      "source_location": "L147"
+    },
+    {
       "id": "caseprogress",
       "label": "CaseProgress",
       "_origin": "ast",
@@ -14582,7 +14933,7 @@
       "source_location": ""
     },
     {
-      "id": "server_app_analysis_rationale_292",
+      "id": "server_app_analysis_rationale_294",
       "label": "Run a read-only SQL query against one attached file. The dataset path is bound\u2026",
       "_origin": "ast",
       "community": 70,
@@ -14590,7 +14941,7 @@
       "file_type": "rationale",
       "norm_label": "run a read-only sql query against one attached file. the dataset path is bound...",
       "source_file": "server/app/analysis.py",
-      "source_location": "L292"
+      "source_location": "L294"
     },
     {
       "id": "server_app_eda_rationale_1",
@@ -14681,6 +15032,72 @@
       "source_location": "L1"
     },
     {
+      "id": "web_src_app",
+      "label": "App.tsx",
+      "_origin": "ast",
+      "community": 71,
+      "community_name": "CaseWorkspace.tsx",
+      "file_type": "code",
+      "norm_label": "app.tsx",
+      "source_file": "web/src/App.tsx",
+      "source_location": "L1"
+    },
+    {
+      "id": "web_src_casecreation",
+      "label": "CaseCreation.tsx",
+      "_origin": "ast",
+      "community": 71,
+      "community_name": "CaseWorkspace.tsx",
+      "file_type": "code",
+      "norm_label": "casecreation.tsx",
+      "source_file": "web/src/CaseCreation.tsx",
+      "source_location": "L1"
+    },
+    {
+      "id": "web_src_casecreation_test",
+      "label": "CaseCreation.test.tsx",
+      "_origin": "ast",
+      "community": 71,
+      "community_name": "CaseWorkspace.tsx",
+      "file_type": "code",
+      "norm_label": "casecreation.test.tsx",
+      "source_file": "web/src/CaseCreation.test.tsx",
+      "source_location": "L1"
+    },
+    {
+      "id": "web_src_caselist",
+      "label": "CaseList.tsx",
+      "_origin": "ast",
+      "community": 71,
+      "community_name": "CaseWorkspace.tsx",
+      "file_type": "code",
+      "norm_label": "caselist.tsx",
+      "source_file": "web/src/CaseList.tsx",
+      "source_location": "L1"
+    },
+    {
+      "id": "web_src_caselist_test",
+      "label": "CaseList.test.tsx",
+      "_origin": "ast",
+      "community": 71,
+      "community_name": "CaseWorkspace.tsx",
+      "file_type": "code",
+      "norm_label": "caselist.test.tsx",
+      "source_file": "web/src/CaseList.test.tsx",
+      "source_location": "L1"
+    },
+    {
+      "id": "web_src_caselist_test_cases",
+      "label": "cases",
+      "_origin": "ast",
+      "community": 71,
+      "community_name": "CaseWorkspace.tsx",
+      "file_type": "code",
+      "norm_label": "cases",
+      "source_file": "web/src/CaseList.test.tsx",
+      "source_location": "L14"
+    },
+    {
       "id": "web_src_caseworkspace",
       "label": "CaseWorkspace.tsx",
       "_origin": "ast",
@@ -14690,6 +15107,105 @@
       "norm_label": "caseworkspace.tsx",
       "source_file": "web/src/CaseWorkspace.tsx",
       "source_location": "L1"
+    },
+    {
+      "id": "web_src_caseworkspace_test",
+      "label": "CaseWorkspace.test.tsx",
+      "_origin": "ast",
+      "community": 71,
+      "community_name": "CaseWorkspace.tsx",
+      "file_type": "code",
+      "norm_label": "caseworkspace.test.tsx",
+      "source_file": "web/src/CaseWorkspace.test.tsx",
+      "source_location": "L1"
+    },
+    {
+      "id": "web_src_caseworkspace_test_dataset",
+      "label": "dataset",
+      "_origin": "ast",
+      "community": 71,
+      "community_name": "CaseWorkspace.tsx",
+      "file_type": "code",
+      "norm_label": "dataset",
+      "source_file": "web/src/CaseWorkspace.test.tsx",
+      "source_location": "L46"
+    },
+    {
+      "id": "web_src_caseworkspace_test_profile",
+      "label": "profile",
+      "_origin": "ast",
+      "community": 71,
+      "community_name": "CaseWorkspace.tsx",
+      "file_type": "code",
+      "norm_label": "profile",
+      "source_file": "web/src/CaseWorkspace.test.tsx",
+      "source_location": "L47"
+    },
+    {
+      "id": "web_src_caseworkspace_test_progress",
+      "label": "progress",
+      "_origin": "ast",
+      "community": 71,
+      "community_name": "CaseWorkspace.tsx",
+      "file_type": "code",
+      "norm_label": "progress",
+      "source_file": "web/src/CaseWorkspace.test.tsx",
+      "source_location": "L29"
+    },
+    {
+      "id": "web_src_main",
+      "label": "main.tsx",
+      "_origin": "ast",
+      "community": 71,
+      "community_name": "CaseWorkspace.tsx",
+      "file_type": "code",
+      "norm_label": "main.tsx",
+      "source_file": "web/src/main.tsx",
+      "source_location": "L1"
+    },
+    {
+      "id": "ref_react",
+      "label": "react",
+      "_origin": "ast",
+      "community": 71,
+      "community_name": "CaseWorkspace.tsx",
+      "file_type": "concept",
+      "norm_label": "react",
+      "source_file": "web/package.json",
+      "source_location": "L15"
+    },
+    {
+      "id": "ref_testing_library_react",
+      "label": "@testing-library/react",
+      "_origin": "ast",
+      "community": 71,
+      "community_name": "CaseWorkspace.tsx",
+      "file_type": "concept",
+      "norm_label": "@testing-library/react",
+      "source_file": "web/package.json",
+      "source_location": "L19"
+    },
+    {
+      "id": "ref_testing_library_user_event",
+      "label": "@testing-library/user-event",
+      "_origin": "ast",
+      "community": 71,
+      "community_name": "CaseWorkspace.tsx",
+      "file_type": "concept",
+      "norm_label": "@testing-library/user-event",
+      "source_file": "web/package.json",
+      "source_location": "L20"
+    },
+    {
+      "id": "ref_vitest",
+      "label": "vitest",
+      "_origin": "ast",
+      "community": 71,
+      "community_name": "CaseWorkspace.tsx",
+      "file_type": "concept",
+      "norm_label": "vitest",
+      "source_file": "web/package.json",
+      "source_location": "L27"
     },
     {
       "id": "server_app_evidence",
@@ -14767,292 +15283,6 @@
       "norm_label": "the trust chain a reviewer walks to verify a finding.",
       "source_file": "server/app/models.py",
       "source_location": "L217"
-    },
-    {
-      "id": "web_src_app",
-      "label": "App.tsx",
-      "_origin": "ast",
-      "community": 74,
-      "community_name": "CaseList.tsx",
-      "file_type": "code",
-      "norm_label": "app.tsx",
-      "source_file": "web/src/App.tsx",
-      "source_location": "L1"
-    },
-    {
-      "id": "web_src_caselist",
-      "label": "CaseList.tsx",
-      "_origin": "ast",
-      "community": 74,
-      "community_name": "CaseList.tsx",
-      "file_type": "code",
-      "norm_label": "caselist.tsx",
-      "source_file": "web/src/CaseList.tsx",
-      "source_location": "L1"
-    },
-    {
-      "id": "web_src_main",
-      "label": "main.tsx",
-      "_origin": "ast",
-      "community": 74,
-      "community_name": "CaseList.tsx",
-      "file_type": "code",
-      "norm_label": "main.tsx",
-      "source_file": "web/src/main.tsx",
-      "source_location": "L1"
-    },
-    {
-      "id": "ref_react",
-      "label": "react",
-      "_origin": "ast",
-      "community": 74,
-      "community_name": "CaseList.tsx",
-      "file_type": "concept",
-      "norm_label": "react",
-      "source_file": "web/package.json",
-      "source_location": "L15"
-    },
-    {
-      "id": "web_package_devdependencies",
-      "label": "devDependencies",
-      "_origin": "ast",
-      "community": 75,
-      "community_name": "devDependencies",
-      "file_type": "code",
-      "norm_label": "devdependencies",
-      "source_file": "web/package.json",
-      "source_location": "L18"
-    },
-    {
-      "id": "web_package_devdependencies_jsdom",
-      "label": "jsdom",
-      "_origin": "ast",
-      "community": 75,
-      "community_name": "devDependencies",
-      "file_type": "code",
-      "norm_label": "jsdom",
-      "source_file": "web/package.json",
-      "source_location": "L24"
-    },
-    {
-      "id": "web_package_devdependencies_testing_library_react",
-      "label": "@testing-library/react",
-      "_origin": "ast",
-      "community": 75,
-      "community_name": "devDependencies",
-      "file_type": "code",
-      "norm_label": "@testing-library/react",
-      "source_file": "web/package.json",
-      "source_location": "L19"
-    },
-    {
-      "id": "web_package_devdependencies_testing_library_user_event",
-      "label": "@testing-library/user-event",
-      "_origin": "ast",
-      "community": 75,
-      "community_name": "devDependencies",
-      "file_type": "code",
-      "norm_label": "@testing-library/user-event",
-      "source_file": "web/package.json",
-      "source_location": "L20"
-    },
-    {
-      "id": "web_package_devdependencies_types_react",
-      "label": "@types/react",
-      "_origin": "ast",
-      "community": 75,
-      "community_name": "devDependencies",
-      "file_type": "code",
-      "norm_label": "@types/react",
-      "source_file": "web/package.json",
-      "source_location": "L21"
-    },
-    {
-      "id": "web_package_devdependencies_types_react_dom",
-      "label": "@types/react-dom",
-      "_origin": "ast",
-      "community": 75,
-      "community_name": "devDependencies",
-      "file_type": "code",
-      "norm_label": "@types/react-dom",
-      "source_file": "web/package.json",
-      "source_location": "L22"
-    },
-    {
-      "id": "web_package_devdependencies_typescript",
-      "label": "typescript",
-      "_origin": "ast",
-      "community": 75,
-      "community_name": "devDependencies",
-      "file_type": "code",
-      "norm_label": "typescript",
-      "source_file": "web/package.json",
-      "source_location": "L25"
-    },
-    {
-      "id": "web_package_devdependencies_vite",
-      "label": "vite",
-      "_origin": "ast",
-      "community": 75,
-      "community_name": "devDependencies",
-      "file_type": "code",
-      "norm_label": "vite",
-      "source_file": "web/package.json",
-      "source_location": "L26"
-    },
-    {
-      "id": "web_package_devdependencies_vitejs_plugin_react",
-      "label": "@vitejs/plugin-react",
-      "_origin": "ast",
-      "community": 75,
-      "community_name": "devDependencies",
-      "file_type": "code",
-      "norm_label": "@vitejs/plugin-react",
-      "source_file": "web/package.json",
-      "source_location": "L23"
-    },
-    {
-      "id": "web_package_devdependencies_vitest",
-      "label": "vitest",
-      "_origin": "ast",
-      "community": 75,
-      "community_name": "devDependencies",
-      "file_type": "code",
-      "norm_label": "vitest",
-      "source_file": "web/package.json",
-      "source_location": "L27"
-    },
-    {
-      "id": "web_src_casecreation_test",
-      "label": "CaseCreation.test.tsx",
-      "_origin": "ast",
-      "community": 76,
-      "community_name": "CaseWorkspace.test.tsx",
-      "file_type": "code",
-      "norm_label": "casecreation.test.tsx",
-      "source_file": "web/src/CaseCreation.test.tsx",
-      "source_location": "L1"
-    },
-    {
-      "id": "web_src_caselist_test",
-      "label": "CaseList.test.tsx",
-      "_origin": "ast",
-      "community": 76,
-      "community_name": "CaseWorkspace.test.tsx",
-      "file_type": "code",
-      "norm_label": "caselist.test.tsx",
-      "source_file": "web/src/CaseList.test.tsx",
-      "source_location": "L1"
-    },
-    {
-      "id": "web_src_caselist_test_cases",
-      "label": "cases",
-      "_origin": "ast",
-      "community": 76,
-      "community_name": "CaseWorkspace.test.tsx",
-      "file_type": "code",
-      "norm_label": "cases",
-      "source_file": "web/src/CaseList.test.tsx",
-      "source_location": "L14"
-    },
-    {
-      "id": "web_src_caseworkspace_test",
-      "label": "CaseWorkspace.test.tsx",
-      "_origin": "ast",
-      "community": 76,
-      "community_name": "CaseWorkspace.test.tsx",
-      "file_type": "code",
-      "norm_label": "caseworkspace.test.tsx",
-      "source_file": "web/src/CaseWorkspace.test.tsx",
-      "source_location": "L1"
-    },
-    {
-      "id": "web_src_caseworkspace_test_dataset",
-      "label": "dataset",
-      "_origin": "ast",
-      "community": 76,
-      "community_name": "CaseWorkspace.test.tsx",
-      "file_type": "code",
-      "norm_label": "dataset",
-      "source_file": "web/src/CaseWorkspace.test.tsx",
-      "source_location": "L46"
-    },
-    {
-      "id": "web_src_caseworkspace_test_profile",
-      "label": "profile",
-      "_origin": "ast",
-      "community": 76,
-      "community_name": "CaseWorkspace.test.tsx",
-      "file_type": "code",
-      "norm_label": "profile",
-      "source_file": "web/src/CaseWorkspace.test.tsx",
-      "source_location": "L47"
-    },
-    {
-      "id": "web_src_caseworkspace_test_progress",
-      "label": "progress",
-      "_origin": "ast",
-      "community": 76,
-      "community_name": "CaseWorkspace.test.tsx",
-      "file_type": "code",
-      "norm_label": "progress",
-      "source_file": "web/src/CaseWorkspace.test.tsx",
-      "source_location": "L29"
-    },
-    {
-      "id": "ref_testing_library_react",
-      "label": "@testing-library/react",
-      "_origin": "ast",
-      "community": 76,
-      "community_name": "CaseWorkspace.test.tsx",
-      "file_type": "concept",
-      "norm_label": "@testing-library/react",
-      "source_file": "web/package.json",
-      "source_location": "L19"
-    },
-    {
-      "id": "ref_testing_library_user_event",
-      "label": "@testing-library/user-event",
-      "_origin": "ast",
-      "community": 76,
-      "community_name": "CaseWorkspace.test.tsx",
-      "file_type": "concept",
-      "norm_label": "@testing-library/user-event",
-      "source_file": "web/package.json",
-      "source_location": "L20"
-    },
-    {
-      "id": "ref_vitest",
-      "label": "vitest",
-      "_origin": "ast",
-      "community": 76,
-      "community_name": "CaseWorkspace.test.tsx",
-      "file_type": "concept",
-      "norm_label": "vitest",
-      "source_file": "web/package.json",
-      "source_location": "L27"
-    },
-    {
-      "id": "server_app_analysis_rationale_271",
-      "label": "Run an already-bound read-only query and cap its result.",
-      "_origin": "ast",
-      "community": 77,
-      "community_name": "_execute_read_only",
-      "file_type": "rationale",
-      "norm_label": "run an already-bound read-only query and cap its result.",
-      "source_file": "server/app/analysis.py",
-      "source_location": "L271"
-    },
-    {
-      "id": "server_app_analysis_rationale_83",
-      "label": "Reject anything that is not a single read-only statement.",
-      "_origin": "ast",
-      "community": 78,
-      "community_name": "_is_read_only",
-      "file_type": "rationale",
-      "norm_label": "reject anything that is not a single read-only statement.",
-      "source_file": "server/app/analysis.py",
-      "source_location": "L83"
     },
     {
       "id": "server_app_main_rationale_2143",
@@ -15273,17 +15503,6 @@
       "norm_label": "write the targets table as parquet, so the join mixes formats.",
       "source_file": "verification/p3/verify_p3.py",
       "source_location": "L102"
-    },
-    {
-      "id": "web_src_casecreation",
-      "label": "CaseCreation.tsx",
-      "_origin": "ast",
-      "community": 81,
-      "community_name": "messageOf",
-      "file_type": "code",
-      "norm_label": "casecreation.tsx",
-      "source_file": "web/src/CaseCreation.tsx",
-      "source_location": "L1"
     },
     {
       "id": "docs_product___engineering_master_specification_analysis_case",
@@ -16544,7 +16763,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/app/analysis.py",
-      "source_location": "L261",
+      "source_location": "L263",
       "weight": 1.0
     },
     {
@@ -16556,7 +16775,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/app/analysis.py",
-      "source_location": "L213",
+      "source_location": "L218",
       "weight": 1.0
     },
     {
@@ -16568,7 +16787,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/app/analysis.py",
-      "source_location": "L226",
+      "source_location": "L232",
       "weight": 1.0
     },
     {
@@ -16592,7 +16811,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/app/analysis.py",
-      "source_location": "L131",
+      "source_location": "L136",
       "weight": 1.0
     },
     {
@@ -16604,7 +16823,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/app/analysis.py",
-      "source_location": "L142",
+      "source_location": "L149",
       "weight": 1.0
     },
     {
@@ -16616,7 +16835,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/app/analysis.py",
-      "source_location": "L143",
+      "source_location": "L151",
       "weight": 1.0
     },
     {
@@ -16628,7 +16847,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/app/analysis.py",
-      "source_location": "L154",
+      "source_location": "L159",
       "weight": 1.0
     },
     {
@@ -16640,24 +16859,12 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/app/analysis.py",
-      "source_location": "L158",
+      "source_location": "L163",
       "weight": 1.0
     },
     {
       "source": "server_app_analysis_run_query",
       "target": "server_app_analysis_is_read_only",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "server/app/analysis.py",
-      "source_location": "L297",
-      "weight": 1.0
-    },
-    {
-      "source": "server_app_analysis_run_query",
-      "target": "server_app_analysis_bind_dataset",
       "relation": "calls",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -16669,6 +16876,18 @@
     },
     {
       "source": "server_app_analysis_run_query",
+      "target": "server_app_analysis_bind_dataset",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "server/app/analysis.py",
+      "source_location": "L301",
+      "weight": 1.0
+    },
+    {
+      "source": "server_app_analysis_run_query",
       "target": "server_app_analysis_execute_read_only",
       "relation": "calls",
       "_origin": "ast",
@@ -16676,7 +16895,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/app/analysis.py",
-      "source_location": "L300",
+      "source_location": "L302",
       "weight": 1.0
     },
     {
@@ -16688,7 +16907,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/app/analysis.py",
-      "source_location": "L310",
+      "source_location": "L312",
       "weight": 1.0
     },
     {
@@ -16700,7 +16919,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/app/analysis.py",
-      "source_location": "L312",
+      "source_location": "L314",
       "weight": 1.0
     },
     {
@@ -16712,7 +16931,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/app/analysis.py",
-      "source_location": "L313",
+      "source_location": "L315",
       "weight": 1.0
     },
     {
@@ -24612,6 +24831,222 @@
       "weight": 1.0
     },
     {
+      "source": "server_tests_test_large_datasets_temp_env",
+      "target": "server_app_db_get_connection",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "server/tests/test_large_datasets.py",
+      "source_location": "L30",
+      "weight": 1.0
+    },
+    {
+      "source": "server_tests_test_large_datasets_temp_env_override",
+      "target": "server_app_db_get_connection",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "server/tests/test_large_datasets.py",
+      "source_location": "L30",
+      "weight": 1.0
+    },
+    {
+      "source": "server_tests_test_large_datasets_test_aggregation_across_a_large_dataset_is_exact",
+      "target": "server_tests_test_large_datasets_temp_env",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "server/tests/test_large_datasets.py",
+      "source_location": "L140",
+      "weight": 1.0
+    },
+    {
+      "source": "server_tests_test_large_datasets_test_aggregation_across_a_large_dataset_is_exact",
+      "target": "server_tests_test_large_datasets_attach",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "server/tests/test_large_datasets.py",
+      "source_location": "L146",
+      "weight": 1.0
+    },
+    {
+      "source": "server_tests_test_large_datasets_test_aggregation_across_a_large_dataset_is_exact",
+      "target": "server_tests_test_large_datasets_generated_csv",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "server/tests/test_large_datasets.py",
+      "source_location": "L146",
+      "weight": 1.0
+    },
+    {
+      "source": "server_tests_test_large_datasets_test_duplicate_rows_are_counted_at_scale",
+      "target": "server_tests_test_large_datasets_temp_env",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "server/tests/test_large_datasets.py",
+      "source_location": "L199",
+      "weight": 1.0
+    },
+    {
+      "source": "server_tests_test_large_datasets_test_duplicate_rows_are_counted_at_scale",
+      "target": "server_tests_test_large_datasets_attach",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "server/tests/test_large_datasets.py",
+      "source_location": "L215",
+      "weight": 1.0
+    },
+    {
+      "source": "server_tests_test_large_datasets_test_large_case_exports_and_round_trips",
+      "target": "server_tests_test_large_datasets_temp_env",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "server/tests/test_large_datasets.py",
+      "source_location": "L228",
+      "weight": 1.0
+    },
+    {
+      "source": "server_tests_test_large_datasets_test_large_case_exports_and_round_trips",
+      "target": "server_tests_test_large_datasets_attach",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "server/tests/test_large_datasets.py",
+      "source_location": "L234",
+      "weight": 1.0
+    },
+    {
+      "source": "server_tests_test_large_datasets_test_large_case_exports_and_round_trips",
+      "target": "server_tests_test_large_datasets_generated_csv",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "server/tests/test_large_datasets.py",
+      "source_location": "L234",
+      "weight": 1.0
+    },
+    {
+      "source": "server_tests_test_large_datasets_test_profile_is_correct_at_scale",
+      "target": "server_tests_test_large_datasets_temp_env",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "server/tests/test_large_datasets.py",
+      "source_location": "L74",
+      "weight": 1.0
+    },
+    {
+      "source": "server_tests_test_large_datasets_test_profile_is_correct_at_scale",
+      "target": "server_tests_test_large_datasets_attach",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "server/tests/test_large_datasets.py",
+      "source_location": "L80",
+      "weight": 1.0
+    },
+    {
+      "source": "server_tests_test_large_datasets_test_profile_is_correct_at_scale",
+      "target": "server_tests_test_large_datasets_generated_csv",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "server/tests/test_large_datasets.py",
+      "source_location": "L80",
+      "weight": 1.0
+    },
+    {
+      "source": "server_tests_test_large_datasets_test_result_cap_truncates_a_full_table_query",
+      "target": "server_tests_test_large_datasets_temp_env",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "server/tests/test_large_datasets.py",
+      "source_location": "L116",
+      "weight": 1.0
+    },
+    {
+      "source": "server_tests_test_large_datasets_test_result_cap_truncates_a_full_table_query",
+      "target": "server_tests_test_large_datasets_attach",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "server/tests/test_large_datasets.py",
+      "source_location": "L122",
+      "weight": 1.0
+    },
+    {
+      "source": "server_tests_test_large_datasets_test_result_cap_truncates_a_full_table_query",
+      "target": "server_tests_test_large_datasets_generated_csv",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "server/tests/test_large_datasets.py",
+      "source_location": "L122",
+      "weight": 1.0
+    },
+    {
+      "source": "server_tests_test_large_datasets_test_wide_table_profiles_correctly",
+      "target": "server_tests_test_large_datasets_temp_env",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "server/tests/test_large_datasets.py",
+      "source_location": "L169",
+      "weight": 1.0
+    },
+    {
+      "source": "server_tests_test_large_datasets_test_wide_table_profiles_correctly",
+      "target": "server_tests_test_large_datasets_attach",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "server/tests/test_large_datasets.py",
+      "source_location": "L183",
+      "weight": 1.0
+    },
+    {
       "source": "server_tests_test_multi_dataset_runs_temp_env",
       "target": "server_app_db_get_connection",
       "relation": "calls",
@@ -30192,6 +30627,30 @@
       "weight": 1.0
     },
     {
+      "source": "server_tests_test_large_datasets",
+      "target": "server_app_main_get_db",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "server/tests/test_large_datasets.py",
+      "source_location": "L16",
+      "weight": 1.0
+    },
+    {
+      "source": "server_tests_test_large_datasets",
+      "target": "server_app_db_get_connection",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "server/tests/test_large_datasets.py",
+      "source_location": "L17",
+      "weight": 1.0
+    },
+    {
       "source": "server_tests_test_multi_dataset_runs",
       "target": "server_app_db_get_connection",
       "relation": "imports",
@@ -31836,6 +32295,30 @@
       "weight": 1.0
     },
     {
+      "source": "server_tests_test_large_datasets",
+      "target": "server_app_main",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "server/tests/test_large_datasets.py",
+      "source_location": "L16",
+      "weight": 1.0
+    },
+    {
+      "source": "server_tests_test_large_datasets",
+      "target": "server_app_db",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "server/tests/test_large_datasets.py",
+      "source_location": "L17",
+      "weight": 1.0
+    },
+    {
       "source": "server_tests_test_multi_dataset_runs",
       "target": "server_app_db",
       "relation": "imports_from",
@@ -33048,13 +33531,24 @@
     },
     {
       "source": "ai_roadmap_dah_global_roadmap_status",
+      "target": "ai_roadmap_p4_production_candidate_entry_checklist_proposed_not_started",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "ai/ROADMAP.md",
+      "source_location": "L100",
+      "weight": 1.0
+    },
+    {
+      "source": "ai_roadmap_dah_global_roadmap_status",
       "target": "ai_roadmap_rules_this_file_enforces",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "ai/ROADMAP.md",
-      "source_location": "L113",
+      "source_location": "L116",
       "weight": 1.0
     },
     {
@@ -33098,18 +33592,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "ai/ROADMAP.md",
-      "source_location": "L72",
-      "weight": 1.0
-    },
-    {
-      "source": "ai_roadmap_dah_global_roadmap_status",
-      "target": "ai_roadmap_p4_production_candidate_entry_checklist_proposed_not_started",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "ai/ROADMAP.md",
-      "source_location": "L97",
+      "source_location": "L75",
       "weight": 1.0
     },
     {
@@ -33989,7 +34472,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/analysis.py",
-      "source_location": "L170",
+      "source_location": "L175",
       "weight": 1.0
     },
     {
@@ -34011,7 +34494,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/analysis.py",
-      "source_location": "L184",
+      "source_location": "L189",
       "weight": 1.0
     },
     {
@@ -34022,7 +34505,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/analysis.py",
-      "source_location": "L193",
+      "source_location": "L198",
       "weight": 1.0
     },
     {
@@ -34033,7 +34516,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/analysis.py",
-      "source_location": "L202",
+      "source_location": "L207",
       "weight": 1.0
     },
     {
@@ -34044,7 +34527,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/analysis.py",
-      "source_location": "L220",
+      "source_location": "L225",
       "weight": 1.0
     },
     {
@@ -34055,7 +34538,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/analysis.py",
-      "source_location": "L238",
+      "source_location": "L240",
       "weight": 1.0
     },
     {
@@ -34066,7 +34549,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/analysis.py",
-      "source_location": "L270",
+      "source_location": "L272",
       "weight": 1.0
     },
     {
@@ -34077,7 +34560,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/analysis.py",
-      "source_location": "L291",
+      "source_location": "L293",
       "weight": 1.0
     },
     {
@@ -34088,7 +34571,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/analysis.py",
-      "source_location": "L303",
+      "source_location": "L305",
       "weight": 1.0
     },
     {
@@ -39097,6 +39580,105 @@
       "weight": 1.0
     },
     {
+      "source": "server_tests_test_large_datasets",
+      "target": "server_tests_test_large_datasets_test_result_cap_truncates_a_full_table_query",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "server/tests/test_large_datasets.py",
+      "source_location": "L114",
+      "weight": 1.0
+    },
+    {
+      "source": "server_tests_test_large_datasets",
+      "target": "server_tests_test_large_datasets_test_aggregation_across_a_large_dataset_is_exact",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "server/tests/test_large_datasets.py",
+      "source_location": "L138",
+      "weight": 1.0
+    },
+    {
+      "source": "server_tests_test_large_datasets",
+      "target": "server_tests_test_large_datasets_test_wide_table_profiles_correctly",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "server/tests/test_large_datasets.py",
+      "source_location": "L162",
+      "weight": 1.0
+    },
+    {
+      "source": "server_tests_test_large_datasets",
+      "target": "server_tests_test_large_datasets_test_duplicate_rows_are_counted_at_scale",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "server/tests/test_large_datasets.py",
+      "source_location": "L197",
+      "weight": 1.0
+    },
+    {
+      "source": "server_tests_test_large_datasets",
+      "target": "server_tests_test_large_datasets_test_large_case_exports_and_round_trips",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "server/tests/test_large_datasets.py",
+      "source_location": "L226",
+      "weight": 1.0
+    },
+    {
+      "source": "server_tests_test_large_datasets",
+      "target": "server_tests_test_large_datasets_temp_env",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "server/tests/test_large_datasets.py",
+      "source_location": "L24",
+      "weight": 1.0
+    },
+    {
+      "source": "server_tests_test_large_datasets",
+      "target": "server_tests_test_large_datasets_generated_csv",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "server/tests/test_large_datasets.py",
+      "source_location": "L36",
+      "weight": 1.0
+    },
+    {
+      "source": "server_tests_test_large_datasets",
+      "target": "server_tests_test_large_datasets_attach",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "server/tests/test_large_datasets.py",
+      "source_location": "L57",
+      "weight": 1.0
+    },
+    {
+      "source": "server_tests_test_large_datasets",
+      "target": "server_tests_test_large_datasets_test_profile_is_correct_at_scale",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "server/tests/test_large_datasets.py",
+      "source_location": "L66",
+      "weight": 1.0
+    },
+    {
       "source": "server_tests_test_multi_dataset_runs",
       "target": "server_tests_test_multi_dataset_runs_test_unknown_dataset_is_404",
       "relation": "contains",
@@ -42683,25 +43265,14 @@
       "weight": 1.0
     },
     {
-      "source": "server_app_analysis_rationale_171",
+      "source": "server_app_analysis_rationale_176",
       "target": "server_app_analysis_column_stat_expr",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/analysis.py",
-      "source_location": "L171",
-      "weight": 1.0
-    },
-    {
-      "source": "server_app_analysis_rationale_185",
-      "target": "server_app_analysis_stat_width",
-      "relation": "rationale_for",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "server/app/analysis.py",
-      "source_location": "L185",
+      "source_location": "L176",
       "weight": 1.0
     },
     {
@@ -42716,80 +43287,91 @@
       "weight": 1.0
     },
     {
-      "source": "server_app_analysis_rationale_194",
+      "source": "server_app_analysis_rationale_190",
+      "target": "server_app_analysis_stat_width",
+      "relation": "rationale_for",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "server/app/analysis.py",
+      "source_location": "L190",
+      "weight": 1.0
+    },
+    {
+      "source": "server_app_analysis_rationale_199",
       "target": "server_app_analysis_coerce",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/analysis.py",
-      "source_location": "L194",
+      "source_location": "L199",
       "weight": 1.0
     },
     {
-      "source": "server_app_analysis_rationale_203",
+      "source": "server_app_analysis_rationale_208",
       "target": "server_app_analysis_column_stat",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/analysis.py",
-      "source_location": "L203",
+      "source_location": "L208",
       "weight": 1.0
     },
     {
-      "source": "server_app_analysis_rationale_221",
+      "source": "server_app_analysis_rationale_226",
       "target": "server_app_analysis_duplicate_row_count",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/analysis.py",
-      "source_location": "L221",
+      "source_location": "L226",
       "weight": 1.0
     },
     {
-      "source": "server_app_analysis_rationale_239",
+      "source": "server_app_analysis_rationale_241",
       "target": "server_app_analysis_bind_datasets",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/analysis.py",
-      "source_location": "L239",
+      "source_location": "L241",
       "weight": 1.0
     },
     {
-      "source": "server_app_analysis_rationale_271",
+      "source": "server_app_analysis_rationale_273",
       "target": "server_app_analysis_execute_read_only",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/analysis.py",
-      "source_location": "L271",
+      "source_location": "L273",
       "weight": 1.0
     },
     {
-      "source": "server_app_analysis_rationale_292",
+      "source": "server_app_analysis_rationale_294",
       "target": "server_app_analysis_run_query",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/analysis.py",
-      "source_location": "L292",
+      "source_location": "L294",
       "weight": 1.0
     },
     {
-      "source": "server_app_analysis_rationale_304",
+      "source": "server_app_analysis_rationale_306",
       "target": "server_app_analysis_run_query_multi",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/analysis.py",
-      "source_location": "L304",
+      "source_location": "L306",
       "weight": 1.0
     },
     {
@@ -45455,6 +46037,94 @@
       "weight": 1.0
     },
     {
+      "source": "server_tests_test_large_datasets_rationale_1",
+      "target": "server_tests_test_large_datasets",
+      "relation": "rationale_for",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "server/tests/test_large_datasets.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "server_tests_test_large_datasets_rationale_115",
+      "target": "server_tests_test_large_datasets_test_result_cap_truncates_a_full_table_query",
+      "relation": "rationale_for",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "server/tests/test_large_datasets.py",
+      "source_location": "L115",
+      "weight": 1.0
+    },
+    {
+      "source": "server_tests_test_large_datasets_rationale_139",
+      "target": "server_tests_test_large_datasets_test_aggregation_across_a_large_dataset_is_exact",
+      "relation": "rationale_for",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "server/tests/test_large_datasets.py",
+      "source_location": "L139",
+      "weight": 1.0
+    },
+    {
+      "source": "server_tests_test_large_datasets_rationale_163",
+      "target": "server_tests_test_large_datasets_test_wide_table_profiles_correctly",
+      "relation": "rationale_for",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "server/tests/test_large_datasets.py",
+      "source_location": "L163",
+      "weight": 1.0
+    },
+    {
+      "source": "server_tests_test_large_datasets_rationale_198",
+      "target": "server_tests_test_large_datasets_test_duplicate_rows_are_counted_at_scale",
+      "relation": "rationale_for",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "server/tests/test_large_datasets.py",
+      "source_location": "L198",
+      "weight": 1.0
+    },
+    {
+      "source": "server_tests_test_large_datasets_rationale_227",
+      "target": "server_tests_test_large_datasets_test_large_case_exports_and_round_trips",
+      "relation": "rationale_for",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "server/tests/test_large_datasets.py",
+      "source_location": "L227",
+      "weight": 1.0
+    },
+    {
+      "source": "server_tests_test_large_datasets_rationale_37",
+      "target": "server_tests_test_large_datasets_generated_csv",
+      "relation": "rationale_for",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "server/tests/test_large_datasets.py",
+      "source_location": "L37",
+      "weight": 1.0
+    },
+    {
+      "source": "server_tests_test_large_datasets_rationale_67",
+      "target": "server_tests_test_large_datasets_test_profile_is_correct_at_scale",
+      "relation": "rationale_for",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "server/tests/test_large_datasets.py",
+      "source_location": "L67",
+      "weight": 1.0
+    },
+    {
       "source": "server_tests_test_multi_dataset_runs_rationale_1",
       "target": "server_tests_test_multi_dataset_runs",
       "relation": "rationale_for",
@@ -46016,6 +46686,18 @@
       "weight": 1.0
     },
     {
+      "source": "server_tests_test_large_datasets_temp_env",
+      "target": "server_tests_test_large_datasets_temp_env_override",
+      "relation": "indirect_call",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "context": "assignment",
+      "source_file": "server/tests/test_large_datasets.py",
+      "source_location": "L33",
+      "weight": 1.0
+    },
+    {
       "source": "server_tests_test_multi_dataset_runs_temp_env",
       "target": "server_tests_test_multi_dataset_runs_temp_env_override",
       "relation": "indirect_call",
@@ -46192,7 +46874,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "server/app/analysis.py",
-      "source_location": "L250",
+      "source_location": "L252",
       "weight": 1.0
     },
     {
@@ -46204,7 +46886,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "server/app/analysis.py",
-      "source_location": "L298",
+      "source_location": "L300",
       "weight": 1.0
     },
     {
@@ -46216,7 +46898,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "server/app/analysis.py",
-      "source_location": "L311",
+      "source_location": "L313",
       "weight": 1.0
     },
     {
@@ -48042,5 +48724,5 @@
       "source_file": "verification/p0/REPORT.md"
     }
   ],
-  "built_at_commit": "d67c4ca55c6e831ccfb09291653a61464f7af963"
+  "built_at_commit": "8c74bc23c4935a7f2bcf8361eece9505c989fe4c"
 }

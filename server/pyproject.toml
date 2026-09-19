@@ -21,6 +21,18 @@ dev = [
     "pytest>=8",
     "httpx>=0.27",
 ]
+# The PyInstaller one-file sidecar the desktop shell spawns. Not needed to run
+# the server or its tests - only to produce a distributable app.
+packaging = [
+    "pyinstaller>=6",
+]
+
+[tool.setuptools]
+# Flat-layout discovery sees `app` and `tests` as competing top-level packages
+# and fails on a clean checkout (a stale egg-info masks it locally). `app` is
+# the only importable package; the test suite is collected by pytest, not
+# installed.
+packages = ["app"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

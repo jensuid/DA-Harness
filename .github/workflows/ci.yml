@@ -1,0 +1,174 @@
+# CI for DAH (P4-CI-007).
+#
+# Three jobs, one per layer, mirroring exactly what a developer runs locally:
+# the server suite plus its gates, the web suite plus a build, and the desktop
+# shell's Rust tests including the two live-core lifecycle tests.
+#
+# macOS only, on purpose. The Python engine's hard sandbox is macOS seatbelt
+# (P3-SEC-001), the packaged app is a macOS .app, and the sidecar is a macOS
+# PyInstaller build - running this elsewhere would test a platform DAH does
+# not target and would skip the sandbox paths that most need exercising.
+#
+# Hermeticity: no LLM credentials are ever set. Every assistant engine reads
+# DAH_LLM_API_KEY at call time and degrades to its deterministic one, so the
+# suite and both gates run fully offline with source=deterministic. The gates
+# also scrub those variables from the pytest subprocesses they spawn.
+
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # uv installs into a cache key shared across jobs; a stable python pin keeps
+  # it reproducible.
+  PYTHON_VERSION: "3.14"
+
+jobs:
+  server:
+    name: Server suite + gates
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Create the virtualenv
+        run: uv venv .venv --python ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        # dev (pytest, httpx) and charts (pillow, for the raster backend).
+        # The gates and the suite need both.
+        run: uv pip install --python .venv/bin/python -e ".[dev,charts]"
+
+      - name: Run the suite
+        run: .venv/bin/python -m pytest -q
+
+      - name: P2 gate
+        run: .venv/bin/python verification/p2/verify_p2.py
+
+      - name: P3 gate
+        run: .venv/bin/python verification/p3/verify_p3.py
+
+      - name: Upload gate reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-reports
+          path: |
+            server/verification/p2/REPORT.md
+            server/verification/p3/REPORT.md
+
+  web:
+    name: Web suite + build
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run the suite
+        run: npm test
+
+      - name: Build the browser bundle
+        # A typecheck + build, not just a bundling pass: tsc -b runs first, so
+        # a type error the jsdom tests can't see still fails CI.
+        run: npm run build
+
+  desktop:
+    name: Desktop shell lifecycle
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Create the server virtualenv
+        # The dev-path e2e test resolves server/.venv/bin/python and spawns
+        # uvicorn from it, so the venv must be at that exact path.
+        working-directory: server
+        run: |
+          uv venv .venv --python ${{ env.PYTHON_VERSION }}
+          uv pip install --python .venv/bin/python -e ".[dev,charts]"
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache the Cargo build
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: desktop/src-tauri
+
+      - name: Unit tests (no live core)
+        working-directory: desktop/src-tauri
+        run: cargo test
+
+      - name: Lifecycle tests against a live core
+        # --features e2e spawns the real uvicorn and waits on /health, then
+        # asserts the core is stopped and the port is freed afterwards.
+        working-directory: desktop/src-tauri
+        run: cargo test --features e2e
+
+  packaging:
+    name: Sidecar build
+    runs-on: macos-latest
+    # The sidecar is a release artifact, not a test. Building it in CI proves
+    # the packaging path still works on a clean machine - locally it is easy to
+    # carry a stale build and never notice a regression in the spec.
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Create the virtualenv
+        run: uv venv .venv --python ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies including PyInstaller
+        run: uv pip install --python .venv/bin/python -e ".[dev,charts,packaging]"
+
+      - name: Build the sidecar
+        run: ./build_sidecar.sh
+
+      - name: Smoke the packaged core
+        # The binary must actually serve, not merely build.
+        run: |
+          BINARY="$(rustc -vV | awk '/^host:/ {print $2}')"
+          ARTIFACT="desktop/src-tauri/binaries/dah-core-${BINARY}"
+          test -x "$ARTIFACT" || { echo "missing $ARTIFACT"; exit 1; }
+          DATA="$(mktemp -d)"
+          DAH_DATA_DIR="$DATA" DAH_DB_PATH="$DATA/dah.db" \
+            "$ARTIFACT" --port 8124 &
+          CORE_PID=$!
+          for _ in $(seq 1 120); do
+            curl -fsS http://127.0.0.1:8124/health >/dev/null 2>&1 && break
+            sleep 0.5
+          done
+          curl -fsS http://127.0.0.1:8124/health
+          kill "$CORE_PID"
+          wait "$CORE_PID" 2>/dev/null || true

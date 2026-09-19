@@ -47,6 +47,19 @@
       "source_location": "L324"
     },
     {
+      "id": "server_app_models_casehistory",
+      "label": "CaseHistory",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 1,
+      "community_name": "models.py",
+      "file_type": "code",
+      "norm_label": "casehistory",
+      "source_file": "server/app/models.py",
+      "source_location": "L343"
+    },
+    {
       "id": "server_app_models_caseprogress",
       "label": "CaseProgress",
       "_callable": true,
@@ -112,19 +125,6 @@
       "source_location": "L192"
     },
     {
-      "id": "server_app_models_draftfinding",
-      "label": "DraftFinding",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 1,
-      "community_name": "models.py",
-      "file_type": "code",
-      "norm_label": "draftfinding",
-      "source_file": "server/app/models.py",
-      "source_location": "L374"
-    },
-    {
       "id": "server_app_models_edacreate",
       "label": "EdaCreate",
       "_callable": true,
@@ -136,19 +136,6 @@
       "norm_label": "edacreate",
       "source_file": "server/app/models.py",
       "source_location": "L69"
-    },
-    {
-      "id": "server_app_models_edaresult",
-      "label": "EdaResult",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 1,
-      "community_name": "models.py",
-      "file_type": "code",
-      "norm_label": "edaresult",
-      "source_file": "server/app/models.py",
-      "source_location": "L86"
     },
     {
       "id": "server_app_models_evidenceedge",
@@ -320,19 +307,6 @@
       "source_location": "L294"
     },
     {
-      "id": "server_app_models_workflowstage",
-      "label": "WorkflowStage",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 1,
-      "community_name": "models.py",
-      "file_type": "code",
-      "norm_label": "workflowstage",
-      "source_file": "server/app/models.py",
-      "source_location": "L14"
-    },
-    {
       "id": "server_app_python_exec_datasethandle",
       "label": "_DatasetHandle",
       "_callable": true,
@@ -372,17 +346,17 @@
       "source_location": "L51"
     },
     {
-      "id": "server_app_models_plan",
-      "label": "Plan",
+      "id": "server_app_models_edaresult",
+      "label": "EdaResult",
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
       "community": 20,
       "community_name": "_require_dataset",
       "file_type": "code",
-      "norm_label": "plan",
+      "norm_label": "edaresult",
       "source_file": "server/app/models.py",
-      "source_location": "L266"
+      "source_location": "L86"
     },
     {
       "id": "server_app_models_profile",
@@ -398,6 +372,19 @@
       "source_location": "L60"
     },
     {
+      "id": "server_app_models_run",
+      "label": "Run",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 20,
+      "community_name": "_require_dataset",
+      "file_type": "code",
+      "norm_label": "run",
+      "source_file": "server/app/models.py",
+      "source_location": "L116"
+    },
+    {
       "id": "server_app_models_case",
       "label": "Case",
       "_callable": true,
@@ -409,19 +396,6 @@
       "norm_label": "case",
       "source_file": "server/app/models.py",
       "source_location": "L43"
-    },
-    {
-      "id": "server_app_models_run",
-      "label": "Run",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 23,
-      "community_name": "validate_finding",
-      "file_type": "code",
-      "norm_label": "run",
-      "source_file": "server/app/models.py",
-      "source_location": "L116"
     },
     {
       "id": "server_app_models_validationcheck",
@@ -736,6 +710,19 @@
       "source_location": "L253"
     },
     {
+      "id": "server_app_models_draftfinding",
+      "label": "DraftFinding",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 44,
+      "community_name": "main.py",
+      "file_type": "code",
+      "norm_label": "draftfinding",
+      "source_file": "server/app/models.py",
+      "source_location": "L374"
+    },
+    {
       "id": "server_app_models_interpretation",
       "label": "Interpretation",
       "_callable": true,
@@ -775,17 +762,69 @@
       "source_location": "L174"
     },
     {
-      "id": "server_app_models_casehistory",
-      "label": "CaseHistory",
+      "id": "server_tests_test_interpretations_failinginterpreter",
+      "label": "_FailingInterpreter",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 48,
+      "community_name": "test_interpretations.py",
+      "file_type": "code",
+      "norm_label": "_failinginterpreter",
+      "source_file": "server/tests/test_interpretations.py",
+      "source_location": "L64"
+    },
+    {
+      "id": "server_tests_test_interpretations_goodinterpreter",
+      "label": "_GoodInterpreter",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 48,
+      "community_name": "test_interpretations.py",
+      "file_type": "code",
+      "norm_label": "_goodinterpreter",
+      "source_file": "server/tests/test_interpretations.py",
+      "source_location": "L55"
+    },
+    {
+      "id": "server_tests_test_interpretations_malformedinterpreter",
+      "label": "_MalformedInterpreter",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 48,
+      "community_name": "test_interpretations.py",
+      "file_type": "code",
+      "norm_label": "_malformedinterpreter",
+      "source_file": "server/tests/test_interpretations.py",
+      "source_location": "L69"
+    },
+    {
+      "id": "server_app_models_plan",
+      "label": "Plan",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 55,
+      "community_name": "create_plan",
+      "file_type": "code",
+      "norm_label": "plan",
+      "source_file": "server/app/models.py",
+      "source_location": "L266"
+    },
+    {
+      "id": "server_app_models_evidencechain",
+      "label": "EvidenceChain",
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
       "community": 61,
       "community_name": "get",
       "file_type": "code",
-      "norm_label": "casehistory",
+      "norm_label": "evidencechain",
       "source_file": "server/app/models.py",
-      "source_location": "L343"
+      "source_location": "L216"
     },
     {
       "id": "server_app_models_plansummary",
@@ -840,6 +879,19 @@
       "source_location": "L165"
     },
     {
+      "id": "server_app_models_workflowstage",
+      "label": "WorkflowStage",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 68,
+      "community_name": "_require_case",
+      "file_type": "code",
+      "norm_label": "workflowstage",
+      "source_file": "server/app/models.py",
+      "source_location": "L14"
+    },
+    {
       "id": "server_tests_test_error_semantics_boom",
       "label": "_Boom",
       "_callable": true,
@@ -859,50 +911,11 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 7,
-      "community_name": "test_interpretations.py",
+      "community_name": "interpreter.py",
       "file_type": "code",
       "norm_label": "llminterpreter",
       "source_file": "server/app/interpreter.py",
       "source_location": "L182"
-    },
-    {
-      "id": "server_tests_test_interpretations_failinginterpreter",
-      "label": "_FailingInterpreter",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 7,
-      "community_name": "test_interpretations.py",
-      "file_type": "code",
-      "norm_label": "_failinginterpreter",
-      "source_file": "server/tests/test_interpretations.py",
-      "source_location": "L64"
-    },
-    {
-      "id": "server_tests_test_interpretations_goodinterpreter",
-      "label": "_GoodInterpreter",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 7,
-      "community_name": "test_interpretations.py",
-      "file_type": "code",
-      "norm_label": "_goodinterpreter",
-      "source_file": "server/tests/test_interpretations.py",
-      "source_location": "L55"
-    },
-    {
-      "id": "server_tests_test_interpretations_malformedinterpreter",
-      "label": "_MalformedInterpreter",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 7,
-      "community_name": "test_interpretations.py",
-      "file_type": "code",
-      "norm_label": "_malformedinterpreter",
-      "source_file": "server/tests/test_interpretations.py",
-      "source_location": "L69"
     },
     {
       "id": "web_src_api_apierror",
@@ -1113,19 +1126,6 @@
       "source_location": "L8"
     },
     {
-      "id": "server_app_models_evidencechain",
-      "label": "EvidenceChain",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 73,
-      "community_name": "get_evidence_chain",
-      "file_type": "code",
-      "norm_label": "evidencechain",
-      "source_file": "server/app/models.py",
-      "source_location": "L216"
-    },
-    {
       "id": "server_app_models_template",
       "label": "Template",
       "_callable": true,
@@ -1161,18 +1161,6 @@
       "norm_label": "node()",
       "source_file": "server/app/main.py",
       "source_location": "L1196"
-    },
-    {
-      "id": "server_app_main_run_exploratory_analysis",
-      "label": "run_exploratory_analysis()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 1,
-      "community_name": "models.py",
-      "file_type": "code",
-      "norm_label": "run_exploratory_analysis()",
-      "source_file": "server/app/main.py",
-      "source_location": "L826"
     },
     {
       "id": "server_app_python_exec_datasethandle_getattribute",
@@ -1305,18 +1293,6 @@
       "norm_label": "_temp_env()",
       "source_file": "server/tests/test_case_history.py",
       "source_location": "L18"
-    },
-    {
-      "id": "server_tests_test_case_history_temp_env_override",
-      "label": "override()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 13,
-      "community_name": "test_case_history.py",
-      "file_type": "code",
-      "norm_label": "override()",
-      "source_file": "server/tests/test_case_history.py",
-      "source_location": "L23"
     },
     {
       "id": "server_tests_test_case_history_test_events_carry_their_own_artifact_ids_and_details",
@@ -1583,16 +1559,28 @@
       "source_location": "L497"
     },
     {
-      "id": "server_app_main_create_plan",
-      "label": "create_plan()",
+      "id": "server_app_main_create_python_run",
+      "label": "create_python_run()",
       "_callable": true,
       "_origin": "ast",
       "community": 20,
       "community_name": "_require_dataset",
       "file_type": "code",
-      "norm_label": "create_plan()",
+      "norm_label": "create_python_run()",
       "source_file": "server/app/main.py",
-      "source_location": "L1948"
+      "source_location": "L922"
+    },
+    {
+      "id": "server_app_main_create_run",
+      "label": "create_run()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 20,
+      "community_name": "_require_dataset",
+      "file_type": "code",
+      "norm_label": "create_run()",
+      "source_file": "server/app/main.py",
+      "source_location": "L860"
     },
     {
       "id": "server_app_main_generate_code",
@@ -1605,18 +1593,6 @@
       "norm_label": "generate_code()",
       "source_file": "server/app/main.py",
       "source_location": "L1889"
-    },
-    {
-      "id": "server_app_main_get_plan",
-      "label": "get_plan()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 20,
-      "community_name": "_require_dataset",
-      "file_type": "code",
-      "norm_label": "get_plan()",
-      "source_file": "server/app/main.py",
-      "source_location": "L2021"
     },
     {
       "id": "server_app_main_get_profile",
@@ -1665,6 +1641,18 @@
       "norm_label": "_require_dataset()",
       "source_file": "server/app/main.py",
       "source_location": "L735"
+    },
+    {
+      "id": "server_app_main_run_exploratory_analysis",
+      "label": "run_exploratory_analysis()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 20,
+      "community_name": "_require_dataset",
+      "file_type": "code",
+      "norm_label": "run_exploratory_analysis()",
+      "source_file": "server/app/main.py",
+      "source_location": "L826"
     },
     {
       "id": "server_tests_test_evidence_graph_full_case",
@@ -1943,30 +1931,6 @@
       "source_location": "L644"
     },
     {
-      "id": "server_app_main_create_python_run",
-      "label": "create_python_run()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 23,
-      "community_name": "validate_finding",
-      "file_type": "code",
-      "norm_label": "create_python_run()",
-      "source_file": "server/app/main.py",
-      "source_location": "L922"
-    },
-    {
-      "id": "server_app_main_create_run",
-      "label": "create_run()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 23,
-      "community_name": "validate_finding",
-      "file_type": "code",
-      "norm_label": "create_run()",
-      "source_file": "server/app/main.py",
-      "source_location": "L860"
-    },
-    {
       "id": "server_app_main_record_repro",
       "label": "_record_repro()",
       "_callable": true,
@@ -2025,18 +1989,6 @@
       "norm_label": "validate_finding()",
       "source_file": "server/app/main.py",
       "source_location": "L1328"
-    },
-    {
-      "id": "server_app_python_exec_run_python",
-      "label": "run_python()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 23,
-      "community_name": "validate_finding",
-      "file_type": "code",
-      "norm_label": "run_python()",
-      "source_file": "server/app/python_exec.py",
-      "source_location": "L389"
     },
     {
       "id": "server_tests_test_multi_dataset_runs_case_with_datasets",
@@ -4427,6 +4379,18 @@
       "source_location": "L1775"
     },
     {
+      "id": "server_app_main_require_chart",
+      "label": "_require_chart()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 33,
+      "community_name": "get_chart_image",
+      "file_type": "code",
+      "norm_label": "_require_chart()",
+      "source_file": "server/app/main.py",
+      "source_location": "L1740"
+    },
+    {
       "id": "server_app_main_runs_touching_dataset",
       "label": "_runs_touching_dataset()",
       "_callable": true,
@@ -4437,6 +4401,18 @@
       "norm_label": "_runs_touching_dataset()",
       "source_file": "server/app/main.py",
       "source_location": "L616"
+    },
+    {
+      "id": "server_app_db_ensure_column",
+      "label": "_ensure_column()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 34,
+      "community_name": "get_connection",
+      "file_type": "code",
+      "norm_label": "_ensure_column()",
+      "source_file": "server/app/db.py",
+      "source_location": "L140"
     },
     {
       "id": "server_app_db_get_connection",
@@ -4451,7 +4427,7 @@
       "source_location": "L151"
     },
     {
-      "id": "server_tests_test_case_templates_temp_db_override",
+      "id": "server_tests_test_case_history_temp_env_override",
       "label": "override()",
       "_callable": true,
       "_origin": "ast",
@@ -4459,8 +4435,8 @@
       "community_name": "get_connection",
       "file_type": "code",
       "norm_label": "override()",
-      "source_file": "server/tests/test_case_templates.py",
-      "source_location": "L18"
+      "source_file": "server/tests/test_case_history.py",
+      "source_location": "L23"
     },
     {
       "id": "server_tests_test_cases_client_override",
@@ -5747,18 +5723,6 @@
       "source_location": "L1541"
     },
     {
-      "id": "server_app_main_require_chart",
-      "label": "_require_chart()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 44,
-      "community_name": "main.py",
-      "file_type": "code",
-      "norm_label": "_require_chart()",
-      "source_file": "server/app/main.py",
-      "source_location": "L1740"
-    },
-    {
       "id": "server_app_main_require_run",
       "label": "_require_run()",
       "_callable": true,
@@ -5783,12 +5747,24 @@
       "source_location": "L6"
     },
     {
+      "id": "server_app_main_get_db",
+      "label": "get_db()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "get_db",
+      "file_type": "code",
+      "norm_label": "get_db()",
+      "source_file": "server/app/main.py",
+      "source_location": "L114"
+    },
+    {
       "id": "server_tests_test_datasets_attach",
       "label": "_attach()",
       "_callable": true,
       "_origin": "ast",
       "community": 45,
-      "community_name": "test_datasets.py",
+      "community_name": "get_db",
       "file_type": "code",
       "norm_label": "_attach()",
       "source_file": "server/tests/test_datasets.py",
@@ -5800,7 +5776,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 45,
-      "community_name": "test_datasets.py",
+      "community_name": "get_db",
       "file_type": "code",
       "norm_label": "_golden_parquet()",
       "source_file": "server/tests/test_datasets.py",
@@ -5812,7 +5788,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 45,
-      "community_name": "test_datasets.py",
+      "community_name": "get_db",
       "file_type": "code",
       "norm_label": "_golden_xlsx()",
       "source_file": "server/tests/test_datasets.py",
@@ -5824,7 +5800,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 45,
-      "community_name": "test_datasets.py",
+      "community_name": "get_db",
       "file_type": "code",
       "norm_label": "_make_case()",
       "source_file": "server/tests/test_datasets.py",
@@ -5836,7 +5812,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 45,
-      "community_name": "test_datasets.py",
+      "community_name": "get_db",
       "file_type": "code",
       "norm_label": "_profile()",
       "source_file": "server/tests/test_datasets.py",
@@ -5848,7 +5824,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 45,
-      "community_name": "test_datasets.py",
+      "community_name": "get_db",
       "file_type": "code",
       "norm_label": "_temp_env()",
       "source_file": "server/tests/test_datasets.py",
@@ -5860,7 +5836,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 45,
-      "community_name": "test_datasets.py",
+      "community_name": "get_db",
       "file_type": "code",
       "norm_label": "override()",
       "source_file": "server/tests/test_datasets.py",
@@ -5872,7 +5848,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 45,
-      "community_name": "test_datasets.py",
+      "community_name": "get_db",
       "file_type": "code",
       "norm_label": "test_attach_and_profile_parquet()",
       "source_file": "server/tests/test_datasets.py",
@@ -5884,7 +5860,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 45,
-      "community_name": "test_datasets.py",
+      "community_name": "get_db",
       "file_type": "code",
       "norm_label": "test_attach_and_profile_xlsx()",
       "source_file": "server/tests/test_datasets.py",
@@ -5896,7 +5872,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 45,
-      "community_name": "test_datasets.py",
+      "community_name": "get_db",
       "file_type": "code",
       "norm_label": "test_attach_and_reopen_dataset()",
       "source_file": "server/tests/test_datasets.py",
@@ -5908,7 +5884,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 45,
-      "community_name": "test_datasets.py",
+      "community_name": "get_db",
       "file_type": "code",
       "norm_label": "test_attach_rejects_empty_file()",
       "source_file": "server/tests/test_datasets.py",
@@ -5920,7 +5896,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 45,
-      "community_name": "test_datasets.py",
+      "community_name": "get_db",
       "file_type": "code",
       "norm_label": "test_attach_rejects_non_csv()",
       "source_file": "server/tests/test_datasets.py",
@@ -5932,7 +5908,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 45,
-      "community_name": "test_datasets.py",
+      "community_name": "get_db",
       "file_type": "code",
       "norm_label": "test_attach_to_unknown_case_returns_404()",
       "source_file": "server/tests/test_datasets.py",
@@ -5944,7 +5920,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 45,
-      "community_name": "test_datasets.py",
+      "community_name": "get_db",
       "file_type": "code",
       "norm_label": "test_parquet_placeholder_form_is_accepted()",
       "source_file": "server/tests/test_datasets.py",
@@ -5956,11 +5932,119 @@
       "_callable": true,
       "_origin": "ast",
       "community": 45,
-      "community_name": "test_datasets.py",
+      "community_name": "get_db",
       "file_type": "code",
       "norm_label": "test_query_across_each_format()",
       "source_file": "server/tests/test_datasets.py",
       "source_location": "L136"
+    },
+    {
+      "id": "server_tests_test_python_hard_sandbox_case_with_dataset",
+      "label": "_case_with_dataset()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "get_db",
+      "file_type": "code",
+      "norm_label": "_case_with_dataset()",
+      "source_file": "server/tests/test_python_hard_sandbox.py",
+      "source_location": "L71"
+    },
+    {
+      "id": "server_tests_test_python_hard_sandbox_python",
+      "label": "_python()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "get_db",
+      "file_type": "code",
+      "norm_label": "_python()",
+      "source_file": "server/tests/test_python_hard_sandbox.py",
+      "source_location": "L82"
+    },
+    {
+      "id": "server_tests_test_python_hard_sandbox_temp_env",
+      "label": "_temp_env()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "get_db",
+      "file_type": "code",
+      "norm_label": "_temp_env()",
+      "source_file": "server/tests/test_python_hard_sandbox.py",
+      "source_location": "L59"
+    },
+    {
+      "id": "server_tests_test_python_hard_sandbox_temp_env_override",
+      "label": "override()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "get_db",
+      "file_type": "code",
+      "norm_label": "override()",
+      "source_file": "server/tests/test_python_hard_sandbox.py",
+      "source_location": "L64"
+    },
+    {
+      "id": "server_tests_test_python_hard_sandbox_test_child_env_scrubs_api_secrets",
+      "label": "test_child_env_scrubs_api_secrets()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "get_db",
+      "file_type": "code",
+      "norm_label": "test_child_env_scrubs_api_secrets()",
+      "source_file": "server/tests/test_python_hard_sandbox.py",
+      "source_location": "L132"
+    },
+    {
+      "id": "server_tests_test_python_hard_sandbox_test_contract_violation_is_reported_not_crashed",
+      "label": "test_contract_violation_is_reported_not_crashed()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "get_db",
+      "file_type": "code",
+      "norm_label": "test_contract_violation_is_reported_not_crashed()",
+      "source_file": "server/tests/test_python_hard_sandbox.py",
+      "source_location": "L200"
+    },
+    {
+      "id": "server_tests_test_python_hard_sandbox_test_dead_worker_is_reported_not_raised",
+      "label": "test_dead_worker_is_reported_not_raised()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "get_db",
+      "file_type": "code",
+      "norm_label": "test_dead_worker_is_reported_not_raised()",
+      "source_file": "server/tests/test_python_hard_sandbox.py",
+      "source_location": "L188"
+    },
+    {
+      "id": "server_tests_test_python_hard_sandbox_test_kill_group_terminates_the_tree",
+      "label": "test_kill_group_terminates_the_tree()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "get_db",
+      "file_type": "code",
+      "norm_label": "test_kill_group_terminates_the_tree()",
+      "source_file": "server/tests/test_python_hard_sandbox.py",
+      "source_location": "L146"
+    },
+    {
+      "id": "server_tests_test_python_hard_sandbox_test_runaway_loop_is_bounded_and_reported",
+      "label": "test_runaway_loop_is_bounded_and_reported()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "get_db",
+      "file_type": "code",
+      "norm_label": "test_runaway_loop_is_bounded_and_reported()",
+      "source_file": "server/tests/test_python_hard_sandbox.py",
+      "source_location": "L163"
     },
     {
       "id": "server_app_supervisor_parent_pid",
@@ -6155,6 +6239,18 @@
       "source_location": "L178"
     },
     {
+      "id": "server_app_python_exec_child_env",
+      "label": "_child_env()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 47,
+      "community_name": "python_exec.py",
+      "file_type": "code",
+      "norm_label": "_child_env()",
+      "source_file": "server/app/python_exec.py",
+      "source_location": "L358"
+    },
+    {
       "id": "server_app_python_exec_failure",
       "label": "_failure()",
       "_callable": true,
@@ -6191,6 +6287,18 @@
       "source_location": "L189"
     },
     {
+      "id": "server_app_python_exec_kill_group",
+      "label": "_kill_group()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 47,
+      "community_name": "python_exec.py",
+      "file_type": "code",
+      "norm_label": "_kill_group()",
+      "source_file": "server/app/python_exec.py",
+      "source_location": "L375"
+    },
+    {
       "id": "server_app_python_exec_resource_limits",
       "label": "_resource_limits()",
       "_callable": true,
@@ -6215,88 +6323,220 @@
       "source_location": "L248"
     },
     {
-      "id": "server_tests_test_python_hard_sandbox_case_with_dataset",
-      "label": "_case_with_dataset()",
+      "id": "server_app_python_exec_run_python",
+      "label": "run_python()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 47,
+      "community_name": "python_exec.py",
+      "file_type": "code",
+      "norm_label": "run_python()",
+      "source_file": "server/app/python_exec.py",
+      "source_location": "L389"
+    },
+    {
+      "id": "server_app_python_exec_seatbelt_profile",
+      "label": "_seatbelt_profile()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 47,
+      "community_name": "python_exec.py",
+      "file_type": "code",
+      "norm_label": "_seatbelt_profile()",
+      "source_file": "server/app/python_exec.py",
+      "source_location": "L340"
+    },
+    {
+      "id": "server_tests_test_python_hard_sandbox_test_seatbelt_profile_denies_writes_and_network",
+      "label": "test_seatbelt_profile_denies_writes_and_network()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 47,
+      "community_name": "python_exec.py",
+      "file_type": "code",
+      "norm_label": "test_seatbelt_profile_denies_writes_and_network()",
+      "source_file": "server/tests/test_python_hard_sandbox.py",
+      "source_location": "L89"
+    },
+    {
+      "id": "server_tests_test_interpretations_case_with_sql_run",
+      "label": "_case_with_sql_run()",
       "_callable": true,
       "_origin": "ast",
       "community": 48,
-      "community_name": "test_python_hard_sandbox.py",
+      "community_name": "test_interpretations.py",
       "file_type": "code",
-      "norm_label": "_case_with_dataset()",
-      "source_file": "server/tests/test_python_hard_sandbox.py",
-      "source_location": "L71"
+      "norm_label": "_case_with_sql_run()",
+      "source_file": "server/tests/test_interpretations.py",
+      "source_location": "L40"
     },
     {
-      "id": "server_tests_test_python_hard_sandbox_python",
-      "label": "_python()",
+      "id": "server_tests_test_interpretations_failinginterpreter_interpret",
+      "label": ".interpret()",
       "_callable": true,
       "_origin": "ast",
       "community": 48,
-      "community_name": "test_python_hard_sandbox.py",
+      "community_name": "test_interpretations.py",
       "file_type": "code",
-      "norm_label": "_python()",
-      "source_file": "server/tests/test_python_hard_sandbox.py",
-      "source_location": "L82"
+      "norm_label": ".interpret()",
+      "source_file": "server/tests/test_interpretations.py",
+      "source_location": "L65"
     },
     {
-      "id": "server_tests_test_python_hard_sandbox_temp_env",
+      "id": "server_tests_test_interpretations_goodinterpreter_interpret",
+      "label": ".interpret()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 48,
+      "community_name": "test_interpretations.py",
+      "file_type": "code",
+      "norm_label": ".interpret()",
+      "source_file": "server/tests/test_interpretations.py",
+      "source_location": "L56"
+    },
+    {
+      "id": "server_tests_test_interpretations_malformedinterpreter_interpret",
+      "label": ".interpret()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 48,
+      "community_name": "test_interpretations.py",
+      "file_type": "code",
+      "norm_label": ".interpret()",
+      "source_file": "server/tests/test_interpretations.py",
+      "source_location": "L70"
+    },
+    {
+      "id": "server_tests_test_interpretations_temp_env",
       "label": "_temp_env()",
       "_callable": true,
       "_origin": "ast",
       "community": 48,
-      "community_name": "test_python_hard_sandbox.py",
+      "community_name": "test_interpretations.py",
       "file_type": "code",
       "norm_label": "_temp_env()",
-      "source_file": "server/tests/test_python_hard_sandbox.py",
-      "source_location": "L59"
+      "source_file": "server/tests/test_interpretations.py",
+      "source_location": "L24"
     },
     {
-      "id": "server_tests_test_python_hard_sandbox_temp_env_override",
+      "id": "server_tests_test_interpretations_temp_env_override",
       "label": "override()",
       "_callable": true,
       "_origin": "ast",
       "community": 48,
-      "community_name": "test_python_hard_sandbox.py",
+      "community_name": "test_interpretations.py",
       "file_type": "code",
       "norm_label": "override()",
-      "source_file": "server/tests/test_python_hard_sandbox.py",
-      "source_location": "L64"
+      "source_file": "server/tests/test_interpretations.py",
+      "source_location": "L29"
     },
     {
-      "id": "server_tests_test_python_hard_sandbox_test_contract_violation_is_reported_not_crashed",
-      "label": "test_contract_violation_is_reported_not_crashed()",
+      "id": "server_tests_test_interpretations_test_404s_for_unknown_and_cross_case_runs",
+      "label": "test_404s_for_unknown_and_cross_case_runs()",
       "_callable": true,
       "_origin": "ast",
       "community": 48,
-      "community_name": "test_python_hard_sandbox.py",
+      "community_name": "test_interpretations.py",
       "file_type": "code",
-      "norm_label": "test_contract_violation_is_reported_not_crashed()",
-      "source_file": "server/tests/test_python_hard_sandbox.py",
-      "source_location": "L200"
+      "norm_label": "test_404s_for_unknown_and_cross_case_runs()",
+      "source_file": "server/tests/test_interpretations.py",
+      "source_location": "L190"
     },
     {
-      "id": "server_tests_test_python_hard_sandbox_test_dead_worker_is_reported_not_raised",
-      "label": "test_dead_worker_is_reported_not_raised()",
+      "id": "server_tests_test_interpretations_test_a_python_run_can_be_interpreted",
+      "label": "test_a_python_run_can_be_interpreted()",
       "_callable": true,
       "_origin": "ast",
       "community": 48,
-      "community_name": "test_python_hard_sandbox.py",
+      "community_name": "test_interpretations.py",
       "file_type": "code",
-      "norm_label": "test_dead_worker_is_reported_not_raised()",
-      "source_file": "server/tests/test_python_hard_sandbox.py",
-      "source_location": "L188"
+      "norm_label": "test_a_python_run_can_be_interpreted()",
+      "source_file": "server/tests/test_interpretations.py",
+      "source_location": "L102"
     },
     {
-      "id": "server_tests_test_python_hard_sandbox_test_runaway_loop_is_bounded_and_reported",
-      "label": "test_runaway_loop_is_bounded_and_reported()",
+      "id": "server_tests_test_interpretations_test_deterministic_interpretation_is_created",
+      "label": "test_deterministic_interpretation_is_created()",
       "_callable": true,
       "_origin": "ast",
       "community": 48,
-      "community_name": "test_python_hard_sandbox.py",
+      "community_name": "test_interpretations.py",
       "file_type": "code",
-      "norm_label": "test_runaway_loop_is_bounded_and_reported()",
-      "source_file": "server/tests/test_python_hard_sandbox.py",
-      "source_location": "L163"
+      "norm_label": "test_deterministic_interpretation_is_created()",
+      "source_file": "server/tests/test_interpretations.py",
+      "source_location": "L74"
+    },
+    {
+      "id": "server_tests_test_interpretations_test_interpretation_survives_a_restart_and_lists_newest_first",
+      "label": "test_interpretation_survives_a_restart_and_lists_newest_first()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 48,
+      "community_name": "test_interpretations.py",
+      "file_type": "code",
+      "norm_label": "test_interpretation_survives_a_restart_and_lists_newest_first()",
+      "source_file": "server/tests/test_interpretations.py",
+      "source_location": "L164"
+    },
+    {
+      "id": "server_tests_test_interpretations_test_interpretations_survive_duplicate_and_delete",
+      "label": "test_interpretations_survive_duplicate_and_delete()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 48,
+      "community_name": "test_interpretations.py",
+      "file_type": "code",
+      "norm_label": "test_interpretations_survive_duplicate_and_delete()",
+      "source_file": "server/tests/test_interpretations.py",
+      "source_location": "L206"
+    },
+    {
+      "id": "server_tests_test_interpretations_test_llm_failure_falls_back",
+      "label": "test_llm_failure_falls_back()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 48,
+      "community_name": "test_interpretations.py",
+      "file_type": "code",
+      "norm_label": "test_llm_failure_falls_back()",
+      "source_file": "server/tests/test_interpretations.py",
+      "source_location": "L138"
+    },
+    {
+      "id": "server_tests_test_interpretations_test_llm_interpretation_is_persisted",
+      "label": "test_llm_interpretation_is_persisted()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 48,
+      "community_name": "test_interpretations.py",
+      "file_type": "code",
+      "norm_label": "test_llm_interpretation_is_persisted()",
+      "source_file": "server/tests/test_interpretations.py",
+      "source_location": "L122"
+    },
+    {
+      "id": "server_tests_test_interpretations_test_malformed_llm_output_falls_back",
+      "label": "test_malformed_llm_output_falls_back()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 48,
+      "community_name": "test_interpretations.py",
+      "file_type": "code",
+      "norm_label": "test_malformed_llm_output_falls_back()",
+      "source_file": "server/tests/test_interpretations.py",
+      "source_location": "L151"
+    },
+    {
+      "id": "server_tests_test_interpretations_test_observations_reference_values_the_result_actually_contains",
+      "label": "test_observations_reference_values_the_result_actually_contains()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 48,
+      "community_name": "test_interpretations.py",
+      "file_type": "code",
+      "norm_label": "test_observations_reference_values_the_result_actually_contains()",
+      "source_file": "server/tests/test_interpretations.py",
+      "source_location": "L88"
     },
     {
       "id": "server_app_python_exec_dataset_columns",
@@ -6393,6 +6633,18 @@
       "norm_label": "_temp_db()",
       "source_file": "server/tests/test_case_templates.py",
       "source_location": "L15"
+    },
+    {
+      "id": "server_tests_test_case_templates_temp_db_override",
+      "label": "override()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 5,
+      "community_name": "test_case_templates.py",
+      "file_type": "code",
+      "norm_label": "override()",
+      "source_file": "server/tests/test_case_templates.py",
+      "source_location": "L18"
     },
     {
       "id": "server_tests_test_case_templates_test_case_from_template_allows_overrides",
@@ -6623,24 +6875,12 @@
       "source_location": "L57"
     },
     {
-      "id": "server_app_main_get_db",
-      "label": "get_db()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 52,
-      "community_name": "get_db",
-      "file_type": "code",
-      "norm_label": "get_db()",
-      "source_file": "server/app/main.py",
-      "source_location": "L114"
-    },
-    {
       "id": "server_tests_test_findings_case_with_run",
       "label": "_case_with_run()",
       "_callable": true,
       "_origin": "ast",
       "community": 52,
-      "community_name": "get_db",
+      "community_name": "test_findings.py",
       "file_type": "code",
       "norm_label": "_case_with_run()",
       "source_file": "server/tests/test_findings.py",
@@ -6652,7 +6892,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 52,
-      "community_name": "get_db",
+      "community_name": "test_findings.py",
       "file_type": "code",
       "norm_label": "_temp_env()",
       "source_file": "server/tests/test_findings.py",
@@ -6664,7 +6904,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 52,
-      "community_name": "get_db",
+      "community_name": "test_findings.py",
       "file_type": "code",
       "norm_label": "override()",
       "source_file": "server/tests/test_findings.py",
@@ -6676,7 +6916,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 52,
-      "community_name": "get_db",
+      "community_name": "test_findings.py",
       "file_type": "code",
       "norm_label": "test_create_finding_and_trace_evidence()",
       "source_file": "server/tests/test_findings.py",
@@ -6688,7 +6928,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 52,
-      "community_name": "get_db",
+      "community_name": "test_findings.py",
       "file_type": "code",
       "norm_label": "test_finding_unknown_run_returns_404()",
       "source_file": "server/tests/test_findings.py",
@@ -6700,7 +6940,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 52,
-      "community_name": "get_db",
+      "community_name": "test_findings.py",
       "file_type": "code",
       "norm_label": "test_findings_survive_reopen()",
       "source_file": "server/tests/test_findings.py",
@@ -6712,23 +6952,11 @@
       "_callable": true,
       "_origin": "ast",
       "community": 52,
-      "community_name": "get_db",
+      "community_name": "test_findings.py",
       "file_type": "code",
       "norm_label": "test_set_validation_status()",
       "source_file": "server/tests/test_findings.py",
       "source_location": "L105"
-    },
-    {
-      "id": "server_app_db_ensure_column",
-      "label": "_ensure_column()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 53,
-      "community_name": "db.py",
-      "file_type": "code",
-      "norm_label": "_ensure_column()",
-      "source_file": "server/app/db.py",
-      "source_location": "L140"
     },
     {
       "id": "server_tests_test_export_full_case",
@@ -6736,7 +6964,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 53,
-      "community_name": "db.py",
+      "community_name": "test_export.py",
       "file_type": "code",
       "norm_label": "_full_case()",
       "source_file": "server/tests/test_export.py",
@@ -6748,7 +6976,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 53,
-      "community_name": "db.py",
+      "community_name": "test_export.py",
       "file_type": "code",
       "norm_label": "_temp_env()",
       "source_file": "server/tests/test_export.py",
@@ -6760,7 +6988,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 53,
-      "community_name": "db.py",
+      "community_name": "test_export.py",
       "file_type": "code",
       "norm_label": "override()",
       "source_file": "server/tests/test_export.py",
@@ -6772,7 +7000,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 53,
-      "community_name": "db.py",
+      "community_name": "test_export.py",
       "file_type": "code",
       "norm_label": "test_export_contains_every_section()",
       "source_file": "server/tests/test_export.py",
@@ -6784,7 +7012,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 53,
-      "community_name": "db.py",
+      "community_name": "test_export.py",
       "file_type": "code",
       "norm_label": "test_export_unknown_case_returns_404()",
       "source_file": "server/tests/test_export.py",
@@ -6796,7 +7024,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 53,
-      "community_name": "db.py",
+      "community_name": "test_export.py",
       "file_type": "code",
       "norm_label": "test_import_rejects_bad_package()",
       "source_file": "server/tests/test_export.py",
@@ -6808,7 +7036,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 53,
-      "community_name": "db.py",
+      "community_name": "test_export.py",
       "file_type": "code",
       "norm_label": "test_round_trip_relinks_references_and_serves_artifacts()",
       "source_file": "server/tests/test_export.py",
@@ -6820,7 +7048,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 53,
-      "community_name": "db.py",
+      "community_name": "test_export.py",
       "file_type": "code",
       "norm_label": "test_round_trip_restores_the_case()",
       "source_file": "server/tests/test_export.py",
@@ -6923,52 +7151,28 @@
       "source_location": "L101"
     },
     {
-      "id": "server_app_python_exec_child_env",
-      "label": "_child_env()",
+      "id": "server_app_main_create_plan",
+      "label": "create_plan()",
       "_callable": true,
       "_origin": "ast",
       "community": 55,
-      "community_name": "_child_env",
+      "community_name": "create_plan",
       "file_type": "code",
-      "norm_label": "_child_env()",
-      "source_file": "server/app/python_exec.py",
-      "source_location": "L358"
+      "norm_label": "create_plan()",
+      "source_file": "server/app/main.py",
+      "source_location": "L1948"
     },
     {
-      "id": "server_app_python_exec_seatbelt_profile",
-      "label": "_seatbelt_profile()",
+      "id": "server_app_main_get_plan",
+      "label": "get_plan()",
       "_callable": true,
       "_origin": "ast",
       "community": 55,
-      "community_name": "_child_env",
+      "community_name": "create_plan",
       "file_type": "code",
-      "norm_label": "_seatbelt_profile()",
-      "source_file": "server/app/python_exec.py",
-      "source_location": "L340"
-    },
-    {
-      "id": "server_tests_test_python_hard_sandbox_test_child_env_scrubs_api_secrets",
-      "label": "test_child_env_scrubs_api_secrets()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 55,
-      "community_name": "_child_env",
-      "file_type": "code",
-      "norm_label": "test_child_env_scrubs_api_secrets()",
-      "source_file": "server/tests/test_python_hard_sandbox.py",
-      "source_location": "L132"
-    },
-    {
-      "id": "server_tests_test_python_hard_sandbox_test_seatbelt_profile_denies_writes_and_network",
-      "label": "test_seatbelt_profile_denies_writes_and_network()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 55,
-      "community_name": "_child_env",
-      "file_type": "code",
-      "norm_label": "test_seatbelt_profile_denies_writes_and_network()",
-      "source_file": "server/tests/test_python_hard_sandbox.py",
-      "source_location": "L89"
+      "norm_label": "get_plan()",
+      "source_file": "server/app/main.py",
+      "source_location": "L2021"
     },
     {
       "id": "server_app_analysis_bind_dataset",
@@ -7175,6 +7379,18 @@
       "source_location": "L2118"
     },
     {
+      "id": "server_app_main_get_evidence_chain",
+      "label": "get_evidence_chain()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 61,
+      "community_name": "get",
+      "file_type": "code",
+      "norm_label": "get_evidence_chain()",
+      "source_file": "server/app/main.py",
+      "source_location": "L1140"
+    },
+    {
       "id": "server_app_main_get_run",
       "label": "get_run()",
       "_callable": true,
@@ -7329,30 +7545,6 @@
       "norm_label": "_require_keys()",
       "source_file": "server/app/exporter.py",
       "source_location": "L236"
-    },
-    {
-      "id": "server_app_python_exec_kill_group",
-      "label": "_kill_group()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 67,
-      "community_name": "_kill_group",
-      "file_type": "code",
-      "norm_label": "_kill_group()",
-      "source_file": "server/app/python_exec.py",
-      "source_location": "L375"
-    },
-    {
-      "id": "server_tests_test_python_hard_sandbox_test_kill_group_terminates_the_tree",
-      "label": "test_kill_group_terminates_the_tree()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 67,
-      "community_name": "_kill_group",
-      "file_type": "code",
-      "norm_label": "test_kill_group_terminates_the_tree()",
-      "source_file": "server/tests/test_python_hard_sandbox.py",
-      "source_location": "L146"
     },
     {
       "id": "server_app_main_chat_about_case",
@@ -7636,7 +7828,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 7,
-      "community_name": "test_interpretations.py",
+      "community_name": "interpreter.py",
       "file_type": "code",
       "norm_label": "_column_stats()",
       "source_file": "server/app/interpreter.py",
@@ -7648,7 +7840,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 7,
-      "community_name": "test_interpretations.py",
+      "community_name": "interpreter.py",
       "file_type": "code",
       "norm_label": "_configured_llm()",
       "source_file": "server/app/interpreter.py",
@@ -7660,7 +7852,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 7,
-      "community_name": "test_interpretations.py",
+      "community_name": "interpreter.py",
       "file_type": "code",
       "norm_label": "create_interpretation()",
       "source_file": "server/app/interpreter.py",
@@ -7672,7 +7864,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 7,
-      "community_name": "test_interpretations.py",
+      "community_name": "interpreter.py",
       "file_type": "code",
       "norm_label": "_fmt()",
       "source_file": "server/app/interpreter.py",
@@ -7684,7 +7876,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 7,
-      "community_name": "test_interpretations.py",
+      "community_name": "interpreter.py",
       "file_type": "code",
       "norm_label": "interpret_result()",
       "source_file": "server/app/interpreter.py",
@@ -7696,7 +7888,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 7,
-      "community_name": "test_interpretations.py",
+      "community_name": "interpreter.py",
       "file_type": "code",
       "norm_label": "_is_number()",
       "source_file": "server/app/interpreter.py",
@@ -7708,7 +7900,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 7,
-      "community_name": "test_interpretations.py",
+      "community_name": "interpreter.py",
       "file_type": "code",
       "norm_label": ".__init__()",
       "source_file": "server/app/interpreter.py",
@@ -7720,7 +7912,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 7,
-      "community_name": "test_interpretations.py",
+      "community_name": "interpreter.py",
       "file_type": "code",
       "norm_label": ".interpret()",
       "source_file": "server/app/interpreter.py",
@@ -7732,191 +7924,11 @@
       "_callable": true,
       "_origin": "ast",
       "community": 7,
-      "community_name": "test_interpretations.py",
+      "community_name": "interpreter.py",
       "file_type": "code",
       "norm_label": "validate_interpretation()",
       "source_file": "server/app/interpreter.py",
       "source_location": "L160"
-    },
-    {
-      "id": "server_tests_test_interpretations_case_with_sql_run",
-      "label": "_case_with_sql_run()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 7,
-      "community_name": "test_interpretations.py",
-      "file_type": "code",
-      "norm_label": "_case_with_sql_run()",
-      "source_file": "server/tests/test_interpretations.py",
-      "source_location": "L40"
-    },
-    {
-      "id": "server_tests_test_interpretations_failinginterpreter_interpret",
-      "label": ".interpret()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 7,
-      "community_name": "test_interpretations.py",
-      "file_type": "code",
-      "norm_label": ".interpret()",
-      "source_file": "server/tests/test_interpretations.py",
-      "source_location": "L65"
-    },
-    {
-      "id": "server_tests_test_interpretations_goodinterpreter_interpret",
-      "label": ".interpret()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 7,
-      "community_name": "test_interpretations.py",
-      "file_type": "code",
-      "norm_label": ".interpret()",
-      "source_file": "server/tests/test_interpretations.py",
-      "source_location": "L56"
-    },
-    {
-      "id": "server_tests_test_interpretations_malformedinterpreter_interpret",
-      "label": ".interpret()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 7,
-      "community_name": "test_interpretations.py",
-      "file_type": "code",
-      "norm_label": ".interpret()",
-      "source_file": "server/tests/test_interpretations.py",
-      "source_location": "L70"
-    },
-    {
-      "id": "server_tests_test_interpretations_temp_env",
-      "label": "_temp_env()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 7,
-      "community_name": "test_interpretations.py",
-      "file_type": "code",
-      "norm_label": "_temp_env()",
-      "source_file": "server/tests/test_interpretations.py",
-      "source_location": "L24"
-    },
-    {
-      "id": "server_tests_test_interpretations_temp_env_override",
-      "label": "override()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 7,
-      "community_name": "test_interpretations.py",
-      "file_type": "code",
-      "norm_label": "override()",
-      "source_file": "server/tests/test_interpretations.py",
-      "source_location": "L29"
-    },
-    {
-      "id": "server_tests_test_interpretations_test_404s_for_unknown_and_cross_case_runs",
-      "label": "test_404s_for_unknown_and_cross_case_runs()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 7,
-      "community_name": "test_interpretations.py",
-      "file_type": "code",
-      "norm_label": "test_404s_for_unknown_and_cross_case_runs()",
-      "source_file": "server/tests/test_interpretations.py",
-      "source_location": "L190"
-    },
-    {
-      "id": "server_tests_test_interpretations_test_a_python_run_can_be_interpreted",
-      "label": "test_a_python_run_can_be_interpreted()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 7,
-      "community_name": "test_interpretations.py",
-      "file_type": "code",
-      "norm_label": "test_a_python_run_can_be_interpreted()",
-      "source_file": "server/tests/test_interpretations.py",
-      "source_location": "L102"
-    },
-    {
-      "id": "server_tests_test_interpretations_test_deterministic_interpretation_is_created",
-      "label": "test_deterministic_interpretation_is_created()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 7,
-      "community_name": "test_interpretations.py",
-      "file_type": "code",
-      "norm_label": "test_deterministic_interpretation_is_created()",
-      "source_file": "server/tests/test_interpretations.py",
-      "source_location": "L74"
-    },
-    {
-      "id": "server_tests_test_interpretations_test_interpretation_survives_a_restart_and_lists_newest_first",
-      "label": "test_interpretation_survives_a_restart_and_lists_newest_first()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 7,
-      "community_name": "test_interpretations.py",
-      "file_type": "code",
-      "norm_label": "test_interpretation_survives_a_restart_and_lists_newest_first()",
-      "source_file": "server/tests/test_interpretations.py",
-      "source_location": "L164"
-    },
-    {
-      "id": "server_tests_test_interpretations_test_interpretations_survive_duplicate_and_delete",
-      "label": "test_interpretations_survive_duplicate_and_delete()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 7,
-      "community_name": "test_interpretations.py",
-      "file_type": "code",
-      "norm_label": "test_interpretations_survive_duplicate_and_delete()",
-      "source_file": "server/tests/test_interpretations.py",
-      "source_location": "L206"
-    },
-    {
-      "id": "server_tests_test_interpretations_test_llm_failure_falls_back",
-      "label": "test_llm_failure_falls_back()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 7,
-      "community_name": "test_interpretations.py",
-      "file_type": "code",
-      "norm_label": "test_llm_failure_falls_back()",
-      "source_file": "server/tests/test_interpretations.py",
-      "source_location": "L138"
-    },
-    {
-      "id": "server_tests_test_interpretations_test_llm_interpretation_is_persisted",
-      "label": "test_llm_interpretation_is_persisted()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 7,
-      "community_name": "test_interpretations.py",
-      "file_type": "code",
-      "norm_label": "test_llm_interpretation_is_persisted()",
-      "source_file": "server/tests/test_interpretations.py",
-      "source_location": "L122"
-    },
-    {
-      "id": "server_tests_test_interpretations_test_malformed_llm_output_falls_back",
-      "label": "test_malformed_llm_output_falls_back()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 7,
-      "community_name": "test_interpretations.py",
-      "file_type": "code",
-      "norm_label": "test_malformed_llm_output_falls_back()",
-      "source_file": "server/tests/test_interpretations.py",
-      "source_location": "L151"
-    },
-    {
-      "id": "server_tests_test_interpretations_test_observations_reference_values_the_result_actually_contains",
-      "label": "test_observations_reference_values_the_result_actually_contains()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 7,
-      "community_name": "test_interpretations.py",
-      "file_type": "code",
-      "norm_label": "test_observations_reference_values_the_result_actually_contains()",
-      "source_file": "server/tests/test_interpretations.py",
-      "source_location": "L88"
     },
     {
       "id": "server_app_analysis_run_query",
@@ -8603,18 +8615,6 @@
       "source_location": "L32"
     },
     {
-      "id": "server_app_main_get_evidence_chain",
-      "label": "get_evidence_chain()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 73,
-      "community_name": "get_evidence_chain",
-      "file_type": "code",
-      "norm_label": "get_evidence_chain()",
-      "source_file": "server/app/main.py",
-      "source_location": "L1140"
-    },
-    {
       "id": "server_app_main_list_templates",
       "label": "list_templates()",
       "_callable": true,
@@ -8936,17 +8936,6 @@
       "source_location": "L1184"
     },
     {
-      "id": "server_app_main_rationale_832",
-      "label": "Run one exploratory operation over an attached dataset (P3-ANALYSIS-005).\u2026",
-      "_origin": "ast",
-      "community": 1,
-      "community_name": "models.py",
-      "file_type": "rationale",
-      "norm_label": "run one exploratory operation over an attached dataset (p3-analysis-005)....",
-      "source_file": "server/app/main.py",
-      "source_location": "L832"
-    },
-    {
       "id": "server_app_models_rationale_1",
       "label": "Request/response models for Analysis Cases, datasets, profiles, and runs.",
       "_origin": "ast",
@@ -8956,17 +8945,6 @@
       "norm_label": "request/response models for analysis cases, datasets, profiles, and runs.",
       "source_file": "server/app/models.py",
       "source_location": "L1"
-    },
-    {
-      "id": "server_app_models_rationale_15",
-      "label": "One stage of the analysis loop: what it asks for and where it stands.",
-      "_origin": "ast",
-      "community": 1,
-      "community_name": "models.py",
-      "file_type": "rationale",
-      "norm_label": "one stage of the analysis loop: what it asks for and where it stands.",
-      "source_file": "server/app/models.py",
-      "source_location": "L15"
     },
     {
       "id": "server_app_models_rationale_177",
@@ -9057,15 +9035,15 @@
       "source_location": "L332"
     },
     {
-      "id": "server_app_models_rationale_375",
-      "label": "The candidate finding a result would support (P3-AI-012). A proposal, not an\u2026",
+      "id": "server_app_models_rationale_344",
+      "label": "Everything that happened in a case, in the order it happened. A read-side\u2026",
       "_origin": "ast",
       "community": 1,
       "community_name": "models.py",
       "file_type": "rationale",
-      "norm_label": "the candidate finding a result would support (p3-ai-012). a proposal, not an...",
+      "norm_label": "everything that happened in a case, in the order it happened. a read-side...",
       "source_file": "server/app/models.py",
-      "source_location": "L375"
+      "source_location": "L344"
     },
     {
       "id": "server_app_models_rationale_38",
@@ -9836,28 +9814,6 @@
       "source_location": "L1895"
     },
     {
-      "id": "server_app_main_rationale_1953",
-      "label": "Plan an analysis from the case question and the dataset profile. The plan is\u2026",
-      "_origin": "ast",
-      "community": 20,
-      "community_name": "_require_dataset",
-      "file_type": "rationale",
-      "norm_label": "plan an analysis from the case question and the dataset profile. the plan is...",
-      "source_file": "server/app/main.py",
-      "source_location": "L1953"
-    },
-    {
-      "id": "server_app_main_rationale_2022",
-      "label": "Retrieve the latest plan for a case's dataset.",
-      "_origin": "ast",
-      "community": 20,
-      "community_name": "_require_dataset",
-      "file_type": "rationale",
-      "norm_label": "retrieve the latest plan for a case's dataset.",
-      "source_file": "server/app/main.py",
-      "source_location": "L2022"
-    },
-    {
       "id": "server_app_main_rationale_502",
       "label": "Attach a CSV dataset to an Analysis Case. The file is written to disk by the\u2026",
       "_origin": "ast",
@@ -9902,15 +9858,37 @@
       "source_location": "L803"
     },
     {
-      "id": "server_app_models_rationale_267",
-      "label": "A structured analysis plan, persisted against a case and dataset.",
+      "id": "server_app_main_rationale_832",
+      "label": "Run one exploratory operation over an attached dataset (P3-ANALYSIS-005).\u2026",
       "_origin": "ast",
       "community": 20,
       "community_name": "_require_dataset",
       "file_type": "rationale",
-      "norm_label": "a structured analysis plan, persisted against a case and dataset.",
-      "source_file": "server/app/models.py",
-      "source_location": "L267"
+      "norm_label": "run one exploratory operation over an attached dataset (p3-analysis-005)....",
+      "source_file": "server/app/main.py",
+      "source_location": "L832"
+    },
+    {
+      "id": "server_app_main_rationale_866",
+      "label": "Run user SQL against an attached dataset and persist the result. The query is a\u2026",
+      "_origin": "ast",
+      "community": 20,
+      "community_name": "_require_dataset",
+      "file_type": "rationale",
+      "norm_label": "run user sql against an attached dataset and persist the result. the query is a...",
+      "source_file": "server/app/main.py",
+      "source_location": "L866"
+    },
+    {
+      "id": "server_app_main_rationale_928",
+      "label": "Run user Python against an attached dataset and persist the result. The code\u2026",
+      "_origin": "ast",
+      "community": 20,
+      "community_name": "_require_dataset",
+      "file_type": "rationale",
+      "norm_label": "run user python against an attached dataset and persist the result. the code...",
+      "source_file": "server/app/main.py",
+      "source_location": "L928"
     },
     {
       "id": "server_tests_test_evidence_graph",
@@ -9953,6 +9931,17 @@
       "community_name": "post",
       "file_type": "code",
       "norm_label": "case",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "patch",
+      "label": "patch",
+      "_origin": "ast",
+      "community": 22,
+      "community_name": "post",
+      "file_type": "code",
+      "norm_label": "patch",
       "source_file": "",
       "source_location": ""
     },
@@ -10166,28 +10155,6 @@
       "source_location": "L649"
     },
     {
-      "id": "server_app_main_rationale_866",
-      "label": "Run user SQL against an attached dataset and persist the result. The query is a\u2026",
-      "_origin": "ast",
-      "community": 23,
-      "community_name": "validate_finding",
-      "file_type": "rationale",
-      "norm_label": "run user sql against an attached dataset and persist the result. the query is a...",
-      "source_file": "server/app/main.py",
-      "source_location": "L866"
-    },
-    {
-      "id": "server_app_main_rationale_928",
-      "label": "Run user Python against an attached dataset and persist the result. The code\u2026",
-      "_origin": "ast",
-      "community": 23,
-      "community_name": "validate_finding",
-      "file_type": "rationale",
-      "norm_label": "run user python against an attached dataset and persist the result. the code...",
-      "source_file": "server/app/main.py",
-      "source_location": "L928"
-    },
-    {
       "id": "server_app_models_rationale_288",
       "label": "One check from the validation pass.",
       "_origin": "ast",
@@ -10197,17 +10164,6 @@
       "norm_label": "one check from the validation pass.",
       "source_file": "server/app/models.py",
       "source_location": "L288"
-    },
-    {
-      "id": "server_app_python_exec_rationale_394",
-      "label": "Execute user Python in a separate, OS-sandboxed process and tabulate it. Raises\u2026",
-      "_origin": "ast",
-      "community": 23,
-      "community_name": "validate_finding",
-      "file_type": "rationale",
-      "norm_label": "execute user python in a separate, os-sandboxed process and tabulate it. raises...",
-      "source_file": "server/app/python_exec.py",
-      "source_location": "L394"
     },
     {
       "id": "server_tests_test_multi_dataset_runs",
@@ -11959,6 +11915,17 @@
       "source_location": ""
     },
     {
+      "id": "server_app_db",
+      "label": "db.py",
+      "_origin": "ast",
+      "community": 34,
+      "community_name": "get_connection",
+      "file_type": "code",
+      "norm_label": "db.py",
+      "source_file": "server/app/db.py",
+      "source_location": "L1"
+    },
+    {
       "id": "server_app_db_py_path",
       "label": "Path",
       "_origin": "ast",
@@ -11968,6 +11935,28 @@
       "norm_label": "path",
       "source_file": "",
       "source_location": ""
+    },
+    {
+      "id": "server_app_db_rationale_1",
+      "label": "SQLite persistence for Analysis Cases, datasets, and profiles. Owns case STATE\u2026",
+      "_origin": "ast",
+      "community": 34,
+      "community_name": "get_connection",
+      "file_type": "rationale",
+      "norm_label": "sqlite persistence for analysis cases, datasets, and profiles. owns case state...",
+      "source_file": "server/app/db.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "server_app_db_rationale_141",
+      "label": "Add a column to an older schema; a no-op on current ones.",
+      "_origin": "ast",
+      "community": 34,
+      "community_name": "get_connection",
+      "file_type": "rationale",
+      "norm_label": "add a column to an older schema; a no-op on current ones.",
+      "source_file": "server/app/db.py",
+      "source_location": "L141"
     },
     {
       "id": "server_app_db_rationale_152",
@@ -12186,19 +12175,31 @@
       "node_kind": "heading",
       "norm_label": "p3 v1 \u2014 entry checklist (complete)",
       "source_file": "ai/ROADMAP.md",
-      "source_location": "L75"
+      "source_location": "L88"
     },
     {
-      "id": "ai_roadmap_p4_production_candidate_entry_checklist_proposed_not_started",
-      "label": "P4 Production Candidate \u2014 entry checklist (proposed, not started)",
+      "id": "ai_roadmap_p4_production_candidate_entry_checklist_complete",
+      "label": "P4 Production Candidate \u2014 entry checklist (COMPLETE)",
       "_origin": "ast",
       "community": 37,
       "community_name": "DAH - Global Roadmap Status",
       "file_type": "document",
       "node_kind": "heading",
-      "norm_label": "p4 production candidate \u2014 entry checklist (proposed, not started)",
+      "norm_label": "p4 production candidate \u2014 entry checklist (complete)",
       "source_file": "ai/ROADMAP.md",
-      "source_location": "L100"
+      "source_location": "L113"
+    },
+    {
+      "id": "ai_roadmap_p5_production_grade_entry_checklist_proposed_not_started",
+      "label": "P5 Production Grade \u2014 entry checklist (proposed, not started)",
+      "_origin": "ast",
+      "community": 37,
+      "community_name": "DAH - Global Roadmap Status",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "p5 production grade \u2014 entry checklist (proposed, not started)",
+      "source_file": "ai/ROADMAP.md",
+      "source_location": "L145"
     },
     {
       "id": "ai_roadmap_phase_gate_definitions_what_done_means",
@@ -12234,7 +12235,7 @@
       "node_kind": "heading",
       "norm_label": "rules this file enforces",
       "source_file": "ai/ROADMAP.md",
-      "source_location": "L116"
+      "source_location": "L132"
     },
     {
       "id": "server_tests_test_dataset_delete",
@@ -12809,14 +12810,47 @@
       "source_location": "L356"
     },
     {
+      "id": "server_app_models_rationale_375",
+      "label": "The candidate finding a result would support (P3-AI-012). A proposal, not an\u2026",
+      "_origin": "ast",
+      "community": 44,
+      "community_name": "main.py",
+      "file_type": "rationale",
+      "norm_label": "the candidate finding a result would support (p3-ai-012). a proposal, not an...",
+      "source_file": "server/app/models.py",
+      "source_location": "L375"
+    },
+    {
+      "id": "server_app_init",
+      "label": "app/__init__.py",
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "get_db",
+      "file_type": "code",
+      "norm_label": "app/__init__.py",
+      "source_file": "server/app/__init__.py",
+      "source_location": "L1"
+    },
+    {
       "id": "server_tests_test_datasets",
       "label": "test_datasets.py",
       "_origin": "ast",
       "community": 45,
-      "community_name": "test_datasets.py",
+      "community_name": "get_db",
       "file_type": "code",
       "norm_label": "test_datasets.py",
       "source_file": "server/tests/test_datasets.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "server_tests_test_python_hard_sandbox",
+      "label": "test_python_hard_sandbox.py",
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "get_db",
+      "file_type": "code",
+      "norm_label": "test_python_hard_sandbox.py",
+      "source_file": "server/tests/test_python_hard_sandbox.py",
       "source_location": "L1"
     },
     {
@@ -12824,7 +12858,7 @@
       "label": "The same SQL runs against csv, parquet, and xlsx datasets.",
       "_origin": "ast",
       "community": 45,
-      "community_name": "test_datasets.py",
+      "community_name": "get_db",
       "file_type": "rationale",
       "norm_label": "the same sql runs against csv, parquet, and xlsx datasets.",
       "source_file": "server/tests/test_datasets.py",
@@ -12835,7 +12869,7 @@
       "label": "Writing the natural read_parquet(?) placeholder works on a parquet file.",
       "_origin": "ast",
       "community": 45,
-      "community_name": "test_datasets.py",
+      "community_name": "get_db",
       "file_type": "rationale",
       "norm_label": "writing the natural read_parquet(?) placeholder works on a parquet file.",
       "source_file": "server/tests/test_datasets.py",
@@ -12846,7 +12880,7 @@
       "label": "Build a two-row parquet file from the golden CSV content.",
       "_origin": "ast",
       "community": 45,
-      "community_name": "test_datasets.py",
+      "community_name": "get_db",
       "file_type": "rationale",
       "norm_label": "build a two-row parquet file from the golden csv content.",
       "source_file": "server/tests/test_datasets.py",
@@ -12857,7 +12891,7 @@
       "label": "Build a two-row xlsx file from the golden CSV content.",
       "_origin": "ast",
       "community": 45,
-      "community_name": "test_datasets.py",
+      "community_name": "get_db",
       "file_type": "rationale",
       "norm_label": "build a two-row xlsx file from the golden csv content.",
       "source_file": "server/tests/test_datasets.py",
@@ -12868,11 +12902,77 @@
       "label": "Point the app at a fresh DB and on-disk data dir for this test.",
       "_origin": "ast",
       "community": 45,
-      "community_name": "test_datasets.py",
+      "community_name": "get_db",
       "file_type": "rationale",
       "norm_label": "point the app at a fresh db and on-disk data dir for this test.",
       "source_file": "server/tests/test_datasets.py",
       "source_location": "L8"
+    },
+    {
+      "id": "server_tests_test_python_hard_sandbox_rationale_1",
+      "label": "Hard-sandbox tests for P3-SEC-001. The inner guards (import allowlist,\u2026",
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "get_db",
+      "file_type": "rationale",
+      "norm_label": "hard-sandbox tests for p3-sec-001. the inner guards (import allowlist,...",
+      "source_file": "server/tests/test_python_hard_sandbox.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "server_tests_test_python_hard_sandbox_rationale_133",
+      "label": "Secrets held by the API process never reach the worker.",
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "get_db",
+      "file_type": "rationale",
+      "norm_label": "secrets held by the api process never reach the worker.",
+      "source_file": "server/tests/test_python_hard_sandbox.py",
+      "source_location": "L133"
+    },
+    {
+      "id": "server_tests_test_python_hard_sandbox_rationale_147",
+      "label": "A timeout kills the worker and anything it spawned, not just the shell.",
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "get_db",
+      "file_type": "rationale",
+      "norm_label": "a timeout kills the worker and anything it spawned, not just the shell.",
+      "source_file": "server/tests/test_python_hard_sandbox.py",
+      "source_location": "L147"
+    },
+    {
+      "id": "server_tests_test_python_hard_sandbox_rationale_164",
+      "label": "An unbounded loop ends at the time limit and the API answers 400.",
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "get_db",
+      "file_type": "rationale",
+      "norm_label": "an unbounded loop ends at the time limit and the api answers 400.",
+      "source_file": "server/tests/test_python_hard_sandbox.py",
+      "source_location": "L164"
+    },
+    {
+      "id": "server_tests_test_python_hard_sandbox_rationale_189",
+      "label": "A worker that dies on startup surfaces as a 400, never as an API crash.",
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "get_db",
+      "file_type": "rationale",
+      "norm_label": "a worker that dies on startup surfaces as a 400, never as an api crash.",
+      "source_file": "server/tests/test_python_hard_sandbox.py",
+      "source_location": "L189"
+    },
+    {
+      "id": "server_tests_test_python_hard_sandbox_rationale_201",
+      "label": "A rejected contract is a 400 with a message, not a dead process.",
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "get_db",
+      "file_type": "rationale",
+      "norm_label": "a rejected contract is a 400 with a message, not a dead process.",
+      "source_file": "server/tests/test_python_hard_sandbox.py",
+      "source_location": "L201"
     },
     {
       "id": "server_app_supervisor",
@@ -12985,6 +13085,17 @@
       "source_location": "L1"
     },
     {
+      "id": "server_app_python_exec_py_popen",
+      "label": "Popen",
+      "_origin": "ast",
+      "community": 47,
+      "community_name": "python_exec.py",
+      "file_type": "code",
+      "norm_label": "popen",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
       "id": "server_app_python_exec_rationale_1",
       "label": "Restricted Python execution engine for the Analysis Workspace. The Python\u2026",
       "_origin": "ast",
@@ -13040,6 +13151,50 @@
       "source_location": "L249"
     },
     {
+      "id": "server_app_python_exec_rationale_341",
+      "label": "The macOS sandbox-exec profile for one run. Reads are unrestricted (the\u2026",
+      "_origin": "ast",
+      "community": 47,
+      "community_name": "python_exec.py",
+      "file_type": "rationale",
+      "norm_label": "the macos sandbox-exec profile for one run. reads are unrestricted (the...",
+      "source_file": "server/app/python_exec.py",
+      "source_location": "L341"
+    },
+    {
+      "id": "server_app_python_exec_rationale_359",
+      "label": "The minimal environment the worker inherits. The API process may carry\u2026",
+      "_origin": "ast",
+      "community": 47,
+      "community_name": "python_exec.py",
+      "file_type": "rationale",
+      "norm_label": "the minimal environment the worker inherits. the api process may carry...",
+      "source_file": "server/app/python_exec.py",
+      "source_location": "L359"
+    },
+    {
+      "id": "server_app_python_exec_rationale_376",
+      "label": "Kill the worker and anything it spawned (sandbox-exec sits in between).",
+      "_origin": "ast",
+      "community": 47,
+      "community_name": "python_exec.py",
+      "file_type": "rationale",
+      "norm_label": "kill the worker and anything it spawned (sandbox-exec sits in between).",
+      "source_file": "server/app/python_exec.py",
+      "source_location": "L376"
+    },
+    {
+      "id": "server_app_python_exec_rationale_394",
+      "label": "Execute user Python in a separate, OS-sandboxed process and tabulate it. Raises\u2026",
+      "_origin": "ast",
+      "community": 47,
+      "community_name": "python_exec.py",
+      "file_type": "rationale",
+      "norm_label": "execute user python in a separate, os-sandboxed process and tabulate it. raises...",
+      "source_file": "server/app/python_exec.py",
+      "source_location": "L394"
+    },
+    {
       "id": "server_app_python_exec_rationale_469",
       "label": "Turn a sandbox-layer rejection into the ValueError the API answers 400.",
       "_origin": "ast",
@@ -13051,70 +13206,37 @@
       "source_location": "L469"
     },
     {
-      "id": "server_app_init",
-      "label": "app/__init__.py",
+      "id": "server_tests_test_python_hard_sandbox_rationale_90",
+      "label": "The profile production emits is enforced by the kernel, not by Python.",
+      "_origin": "ast",
+      "community": 47,
+      "community_name": "python_exec.py",
+      "file_type": "rationale",
+      "norm_label": "the profile production emits is enforced by the kernel, not by python.",
+      "source_file": "server/tests/test_python_hard_sandbox.py",
+      "source_location": "L90"
+    },
+    {
+      "id": "server_tests_test_interpretations",
+      "label": "test_interpretations.py",
       "_origin": "ast",
       "community": 48,
-      "community_name": "test_python_hard_sandbox.py",
+      "community_name": "test_interpretations.py",
       "file_type": "code",
-      "norm_label": "app/__init__.py",
-      "source_file": "server/app/__init__.py",
+      "norm_label": "test_interpretations.py",
+      "source_file": "server/tests/test_interpretations.py",
       "source_location": "L1"
     },
     {
-      "id": "server_tests_test_python_hard_sandbox",
-      "label": "test_python_hard_sandbox.py",
+      "id": "server_tests_test_interpretations_rationale_1",
+      "label": "Result interpretation tests for P3-AI-011. The loop could run, chart, validate\u2026",
       "_origin": "ast",
       "community": 48,
-      "community_name": "test_python_hard_sandbox.py",
-      "file_type": "code",
-      "norm_label": "test_python_hard_sandbox.py",
-      "source_file": "server/tests/test_python_hard_sandbox.py",
+      "community_name": "test_interpretations.py",
+      "file_type": "rationale",
+      "norm_label": "result interpretation tests for p3-ai-011. the loop could run, chart, validate...",
+      "source_file": "server/tests/test_interpretations.py",
       "source_location": "L1"
-    },
-    {
-      "id": "server_tests_test_python_hard_sandbox_rationale_1",
-      "label": "Hard-sandbox tests for P3-SEC-001. The inner guards (import allowlist,\u2026",
-      "_origin": "ast",
-      "community": 48,
-      "community_name": "test_python_hard_sandbox.py",
-      "file_type": "rationale",
-      "norm_label": "hard-sandbox tests for p3-sec-001. the inner guards (import allowlist,...",
-      "source_file": "server/tests/test_python_hard_sandbox.py",
-      "source_location": "L1"
-    },
-    {
-      "id": "server_tests_test_python_hard_sandbox_rationale_164",
-      "label": "An unbounded loop ends at the time limit and the API answers 400.",
-      "_origin": "ast",
-      "community": 48,
-      "community_name": "test_python_hard_sandbox.py",
-      "file_type": "rationale",
-      "norm_label": "an unbounded loop ends at the time limit and the api answers 400.",
-      "source_file": "server/tests/test_python_hard_sandbox.py",
-      "source_location": "L164"
-    },
-    {
-      "id": "server_tests_test_python_hard_sandbox_rationale_189",
-      "label": "A worker that dies on startup surfaces as a 400, never as an API crash.",
-      "_origin": "ast",
-      "community": 48,
-      "community_name": "test_python_hard_sandbox.py",
-      "file_type": "rationale",
-      "norm_label": "a worker that dies on startup surfaces as a 400, never as an api crash.",
-      "source_file": "server/tests/test_python_hard_sandbox.py",
-      "source_location": "L189"
-    },
-    {
-      "id": "server_tests_test_python_hard_sandbox_rationale_201",
-      "label": "A rejected contract is a 400 with a message, not a dead process.",
-      "_origin": "ast",
-      "community": 48,
-      "community_name": "test_python_hard_sandbox.py",
-      "file_type": "rationale",
-      "norm_label": "a rejected contract is a 400 with a message, not a dead process.",
-      "source_file": "server/tests/test_python_hard_sandbox.py",
-      "source_location": "L201"
     },
     {
       "id": "server_app_python_worker",
@@ -13339,21 +13461,10 @@
       "label": "test_findings.py",
       "_origin": "ast",
       "community": 52,
-      "community_name": "get_db",
+      "community_name": "test_findings.py",
       "file_type": "code",
       "norm_label": "test_findings.py",
       "source_file": "server/tests/test_findings.py",
-      "source_location": "L1"
-    },
-    {
-      "id": "server_app_db",
-      "label": "db.py",
-      "_origin": "ast",
-      "community": 53,
-      "community_name": "db.py",
-      "file_type": "code",
-      "norm_label": "db.py",
-      "source_file": "server/app/db.py",
       "source_location": "L1"
     },
     {
@@ -13361,33 +13472,11 @@
       "label": "test_export.py",
       "_origin": "ast",
       "community": 53,
-      "community_name": "db.py",
+      "community_name": "test_export.py",
       "file_type": "code",
       "norm_label": "test_export.py",
       "source_file": "server/tests/test_export.py",
       "source_location": "L1"
-    },
-    {
-      "id": "server_app_db_rationale_1",
-      "label": "SQLite persistence for Analysis Cases, datasets, and profiles. Owns case STATE\u2026",
-      "_origin": "ast",
-      "community": 53,
-      "community_name": "db.py",
-      "file_type": "rationale",
-      "norm_label": "sqlite persistence for analysis cases, datasets, and profiles. owns case state...",
-      "source_file": "server/app/db.py",
-      "source_location": "L1"
-    },
-    {
-      "id": "server_app_db_rationale_141",
-      "label": "Add a column to an older schema; a no-op on current ones.",
-      "_origin": "ast",
-      "community": 53,
-      "community_name": "db.py",
-      "file_type": "rationale",
-      "norm_label": "add a column to an older schema; a no-op on current ones.",
-      "source_file": "server/app/db.py",
-      "source_location": "L141"
     },
     {
       "id": "server_tests_test_runs",
@@ -13401,48 +13490,37 @@
       "source_location": "L1"
     },
     {
-      "id": "server_app_python_exec_rationale_341",
-      "label": "The macOS sandbox-exec profile for one run. Reads are unrestricted (the\u2026",
+      "id": "server_app_main_rationale_1953",
+      "label": "Plan an analysis from the case question and the dataset profile. The plan is\u2026",
       "_origin": "ast",
       "community": 55,
-      "community_name": "_child_env",
+      "community_name": "create_plan",
       "file_type": "rationale",
-      "norm_label": "the macos sandbox-exec profile for one run. reads are unrestricted (the...",
-      "source_file": "server/app/python_exec.py",
-      "source_location": "L341"
+      "norm_label": "plan an analysis from the case question and the dataset profile. the plan is...",
+      "source_file": "server/app/main.py",
+      "source_location": "L1953"
     },
     {
-      "id": "server_app_python_exec_rationale_359",
-      "label": "The minimal environment the worker inherits. The API process may carry\u2026",
+      "id": "server_app_main_rationale_2022",
+      "label": "Retrieve the latest plan for a case's dataset.",
       "_origin": "ast",
       "community": 55,
-      "community_name": "_child_env",
+      "community_name": "create_plan",
       "file_type": "rationale",
-      "norm_label": "the minimal environment the worker inherits. the api process may carry...",
-      "source_file": "server/app/python_exec.py",
-      "source_location": "L359"
+      "norm_label": "retrieve the latest plan for a case's dataset.",
+      "source_file": "server/app/main.py",
+      "source_location": "L2022"
     },
     {
-      "id": "server_tests_test_python_hard_sandbox_rationale_133",
-      "label": "Secrets held by the API process never reach the worker.",
+      "id": "server_app_models_rationale_267",
+      "label": "A structured analysis plan, persisted against a case and dataset.",
       "_origin": "ast",
       "community": 55,
-      "community_name": "_child_env",
+      "community_name": "create_plan",
       "file_type": "rationale",
-      "norm_label": "secrets held by the api process never reach the worker.",
-      "source_file": "server/tests/test_python_hard_sandbox.py",
-      "source_location": "L133"
-    },
-    {
-      "id": "server_tests_test_python_hard_sandbox_rationale_90",
-      "label": "The profile production emits is enforced by the kernel, not by Python.",
-      "_origin": "ast",
-      "community": 55,
-      "community_name": "_child_env",
-      "file_type": "rationale",
-      "norm_label": "the profile production emits is enforced by the kernel, not by python.",
-      "source_file": "server/tests/test_python_hard_sandbox.py",
-      "source_location": "L90"
+      "norm_label": "a structured analysis plan, persisted against a case and dataset.",
+      "source_file": "server/app/models.py",
+      "source_location": "L267"
     },
     {
       "id": "desktop_src_tauri_tauri_conf",
@@ -13820,13 +13898,13 @@
     },
     {
       "id": "desktop_readme",
-      "label": "README.md",
+      "label": "desktop/README.md",
       "_origin": "ast",
       "community": 58,
       "community_name": "DAH desktop shell",
       "file_type": "document",
       "node_kind": "page",
-      "norm_label": "readme.md",
+      "norm_label": "desktop/readme.md",
       "source_file": "desktop/README.md",
       "source_location": "L1"
     },
@@ -14262,6 +14340,17 @@
       "source_location": "L110"
     },
     {
+      "id": "server_app_main_rationale_1145",
+      "label": "Trace a finding back to its computation and dataset. Walks finding -> run ->\u2026",
+      "_origin": "ast",
+      "community": 61,
+      "community_name": "get",
+      "file_type": "rationale",
+      "norm_label": "trace a finding back to its computation and dataset. walks finding -> run ->...",
+      "source_file": "server/app/main.py",
+      "source_location": "L1145"
+    },
+    {
       "id": "server_app_main_rationale_2050",
       "label": "Every plan recorded for a case's dataset, newest first.",
       "_origin": "ast",
@@ -14317,6 +14406,17 @@
       "source_location": "L981"
     },
     {
+      "id": "server_app_models_rationale_217",
+      "label": "The trust chain a reviewer walks to verify a finding.",
+      "_origin": "ast",
+      "community": 61,
+      "community_name": "get",
+      "file_type": "rationale",
+      "norm_label": "the trust chain a reviewer walks to verify a finding.",
+      "source_file": "server/app/models.py",
+      "source_location": "L217"
+    },
+    {
       "id": "server_app_models_rationale_278",
       "label": "Plan metadata without the plan body.",
       "_origin": "ast",
@@ -14326,17 +14426,6 @@
       "norm_label": "plan metadata without the plan body.",
       "source_file": "server/app/models.py",
       "source_location": "L278"
-    },
-    {
-      "id": "server_app_models_rationale_344",
-      "label": "Everything that happened in a case, in the order it happened. A read-side\u2026",
-      "_origin": "ast",
-      "community": 61,
-      "community_name": "get",
-      "file_type": "rationale",
-      "norm_label": "everything that happened in a case, in the order it happened. a read-side...",
-      "source_file": "server/app/models.py",
-      "source_location": "L344"
     },
     {
       "id": "server_dah_core_main",
@@ -14537,37 +14626,64 @@
       "source_location": "L83"
     },
     {
-      "id": "server_app_python_exec_py_popen",
-      "label": "Popen",
+      "id": "readme",
+      "label": "README.md",
       "_origin": "ast",
       "community": 67,
-      "community_name": "_kill_group",
-      "file_type": "code",
-      "norm_label": "popen",
-      "source_file": "",
-      "source_location": ""
+      "community_name": "DAH \u2014 Data Analysis Harness",
+      "file_type": "document",
+      "node_kind": "page",
+      "norm_label": "readme.md",
+      "source_file": "README.md",
+      "source_location": "L1"
     },
     {
-      "id": "server_app_python_exec_rationale_376",
-      "label": "Kill the worker and anything it spawned (sandbox-exec sits in between).",
+      "id": "readme_building_the_packaged_app",
+      "label": "Building the packaged app",
       "_origin": "ast",
       "community": 67,
-      "community_name": "_kill_group",
-      "file_type": "rationale",
-      "norm_label": "kill the worker and anything it spawned (sandbox-exec sits in between).",
-      "source_file": "server/app/python_exec.py",
-      "source_location": "L376"
+      "community_name": "DAH \u2014 Data Analysis Harness",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "building the packaged app",
+      "source_file": "README.md",
+      "source_location": "L44"
     },
     {
-      "id": "server_tests_test_python_hard_sandbox_rationale_147",
-      "label": "A timeout kills the worker and anything it spawned, not just the shell.",
+      "id": "readme_dah_data_analysis_harness",
+      "label": "DAH \u2014 Data Analysis Harness",
       "_origin": "ast",
       "community": 67,
-      "community_name": "_kill_group",
-      "file_type": "rationale",
-      "norm_label": "a timeout kills the worker and anything it spawned, not just the shell.",
-      "source_file": "server/tests/test_python_hard_sandbox.py",
-      "source_location": "L147"
+      "community_name": "DAH \u2014 Data Analysis Harness",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "dah \u2014 data analysis harness",
+      "source_file": "README.md",
+      "source_location": "L1"
+    },
+    {
+      "id": "readme_installing_the_app",
+      "label": "Installing the app",
+      "_origin": "ast",
+      "community": 67,
+      "community_name": "DAH \u2014 Data Analysis Harness",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "installing the app",
+      "source_file": "README.md",
+      "source_location": "L31"
+    },
+    {
+      "id": "readme_layers",
+      "label": "Layers",
+      "_origin": "ast",
+      "community": 67,
+      "community_name": "DAH \u2014 Data Analysis Harness",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "layers",
+      "source_file": "README.md",
+      "source_location": "L10"
     },
     {
       "id": "caseprogress",
@@ -14599,17 +14715,6 @@
       "community_name": "_require_case",
       "file_type": "code",
       "norm_label": "finding",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
-      "id": "patch",
-      "label": "patch",
-      "_origin": "ast",
-      "community": 68,
-      "community_name": "_require_case",
-      "file_type": "code",
-      "norm_label": "patch",
       "source_file": "",
       "source_location": ""
     },
@@ -14689,6 +14794,17 @@
       "norm_label": "the case's conversation, oldest first, so a reopened case resumes.",
       "source_file": "server/app/main.py",
       "source_location": "L1863"
+    },
+    {
+      "id": "server_app_models_rationale_15",
+      "label": "One stage of the analysis loop: what it asks for and where it stands.",
+      "_origin": "ast",
+      "community": 68,
+      "community_name": "_require_case",
+      "file_type": "rationale",
+      "norm_label": "one stage of the analysis loop: what it asks for and where it stands.",
+      "source_file": "server/app/models.py",
+      "source_location": "L15"
     },
     {
       "id": "server_app_models_rationale_428",
@@ -14783,7 +14899,7 @@
       "label": "interpreter.py",
       "_origin": "ast",
       "community": 7,
-      "community_name": "test_interpretations.py",
+      "community_name": "interpreter.py",
       "file_type": "code",
       "norm_label": "interpreter.py",
       "source_file": "server/app/interpreter.py",
@@ -14794,29 +14910,18 @@
       "label": "Any",
       "_origin": "ast",
       "community": 7,
-      "community_name": "test_interpretations.py",
+      "community_name": "interpreter.py",
       "file_type": "code",
       "norm_label": "any",
       "source_file": "",
       "source_location": ""
     },
     {
-      "id": "server_tests_test_interpretations",
-      "label": "test_interpretations.py",
-      "_origin": "ast",
-      "community": 7,
-      "community_name": "test_interpretations.py",
-      "file_type": "code",
-      "norm_label": "test_interpretations.py",
-      "source_file": "server/tests/test_interpretations.py",
-      "source_location": "L1"
-    },
-    {
       "id": "server_app_interpreter_rationale_1",
       "label": "Result interpreter (P3-AI-011, contextual AI slice 1). Turns a persisted run\u2026",
       "_origin": "ast",
       "community": 7,
-      "community_name": "test_interpretations.py",
+      "community_name": "interpreter.py",
       "file_type": "rationale",
       "norm_label": "result interpreter (p3-ai-011, contextual ai slice 1). turns a persisted run...",
       "source_file": "server/app/interpreter.py",
@@ -14827,7 +14932,7 @@
       "label": "Problems with an LLM interpretation, as a list. Empty means acceptable.",
       "_origin": "ast",
       "community": 7,
-      "community_name": "test_interpretations.py",
+      "community_name": "interpreter.py",
       "file_type": "rationale",
       "norm_label": "problems with an llm interpretation, as a list. empty means acceptable.",
       "source_file": "server/app/interpreter.py",
@@ -14838,7 +14943,7 @@
       "label": "OpenAI-compatible interpreter; dormant without configuration. Implemented on\u2026",
       "_origin": "ast",
       "community": 7,
-      "community_name": "test_interpretations.py",
+      "community_name": "interpreter.py",
       "file_type": "rationale",
       "norm_label": "openai-compatible interpreter; dormant without configuration. implemented on...",
       "source_file": "server/app/interpreter.py",
@@ -14849,7 +14954,7 @@
       "label": "The configured interpreter, or None when no key is present.",
       "_origin": "ast",
       "community": 7,
-      "community_name": "test_interpretations.py",
+      "community_name": "interpreter.py",
       "file_type": "rationale",
       "norm_label": "the configured interpreter, or none when no key is present.",
       "source_file": "server/app/interpreter.py",
@@ -14860,7 +14965,7 @@
       "label": "Produce a validated interpretation and the engine that made it. Prefers the LLM\u2026",
       "_origin": "ast",
       "community": 7,
-      "community_name": "test_interpretations.py",
+      "community_name": "interpreter.py",
       "file_type": "rationale",
       "norm_label": "produce a validated interpretation and the engine that made it. prefers the llm...",
       "source_file": "server/app/interpreter.py",
@@ -14871,7 +14976,7 @@
       "label": "Per-column summary computed from the result's own rows. Numbers get\u2026",
       "_origin": "ast",
       "community": 7,
-      "community_name": "test_interpretations.py",
+      "community_name": "interpreter.py",
       "file_type": "rationale",
       "norm_label": "per-column summary computed from the result's own rows. numbers get...",
       "source_file": "server/app/interpreter.py",
@@ -14882,7 +14987,7 @@
       "label": "Render a value the way it appears in the result.",
       "_origin": "ast",
       "community": 7,
-      "community_name": "test_interpretations.py",
+      "community_name": "interpreter.py",
       "file_type": "rationale",
       "norm_label": "render a value the way it appears in the result.",
       "source_file": "server/app/interpreter.py",
@@ -14893,22 +14998,11 @@
       "label": "Read a persisted result deterministically. The same inputs always yield the\u2026",
       "_origin": "ast",
       "community": 7,
-      "community_name": "test_interpretations.py",
+      "community_name": "interpreter.py",
       "file_type": "rationale",
       "norm_label": "read a persisted result deterministically. the same inputs always yield the...",
       "source_file": "server/app/interpreter.py",
       "source_location": "L94"
-    },
-    {
-      "id": "server_tests_test_interpretations_rationale_1",
-      "label": "Result interpretation tests for P3-AI-011. The loop could run, chart, validate\u2026",
-      "_origin": "ast",
-      "community": 7,
-      "community_name": "test_interpretations.py",
-      "file_type": "rationale",
-      "norm_label": "result interpretation tests for p3-ai-011. the loop could run, chart, validate...",
-      "source_file": "server/tests/test_interpretations.py",
-      "source_location": "L1"
     },
     {
       "id": "server_app_eda",
@@ -15261,28 +15355,6 @@
       "norm_label": "project a case into its evidence graph. raises valueerror when the case has no...",
       "source_file": "server/app/evidence.py",
       "source_location": "L46"
-    },
-    {
-      "id": "server_app_main_rationale_1145",
-      "label": "Trace a finding back to its computation and dataset. Walks finding -> run ->\u2026",
-      "_origin": "ast",
-      "community": 73,
-      "community_name": "get_evidence_chain",
-      "file_type": "rationale",
-      "norm_label": "trace a finding back to its computation and dataset. walks finding -> run ->...",
-      "source_file": "server/app/main.py",
-      "source_location": "L1145"
-    },
-    {
-      "id": "server_app_models_rationale_217",
-      "label": "The trust chain a reviewer walks to verify a finding.",
-      "_origin": "ast",
-      "community": 73,
-      "community_name": "get_evidence_chain",
-      "file_type": "rationale",
-      "norm_label": "the trust chain a reviewer walks to verify a finding.",
-      "source_file": "server/app/models.py",
-      "source_location": "L217"
     },
     {
       "id": "server_app_main_rationale_2143",
@@ -33531,13 +33603,13 @@
     },
     {
       "source": "ai_roadmap_dah_global_roadmap_status",
-      "target": "ai_roadmap_p4_production_candidate_entry_checklist_proposed_not_started",
+      "target": "ai_roadmap_p4_production_candidate_entry_checklist_complete",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "ai/ROADMAP.md",
-      "source_location": "L100",
+      "source_location": "L113",
       "weight": 1.0
     },
     {
@@ -33548,7 +33620,18 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "ai/ROADMAP.md",
-      "source_location": "L116",
+      "source_location": "L132",
+      "weight": 1.0
+    },
+    {
+      "source": "ai_roadmap_dah_global_roadmap_status",
+      "target": "ai_roadmap_p5_production_grade_entry_checklist_proposed_not_started",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "ai/ROADMAP.md",
+      "source_location": "L145",
       "weight": 1.0
     },
     {
@@ -33592,7 +33675,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "ai/ROADMAP.md",
-      "source_location": "L75",
+      "source_location": "L88",
       "weight": 1.0
     },
     {
@@ -34440,6 +34523,50 @@
       "confidence_score": 1.0,
       "source_file": "package.json",
       "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "readme",
+      "target": "readme_dah_data_analysis_harness",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "README.md",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "readme_dah_data_analysis_harness",
+      "target": "readme_layers",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "README.md",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "readme_dah_data_analysis_harness",
+      "target": "readme_installing_the_app",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "README.md",
+      "source_location": "L31",
+      "weight": 1.0
+    },
+    {
+      "source": "readme_dah_data_analysis_harness",
+      "target": "readme_building_the_packaged_app",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "README.md",
+      "source_location": "L44",
       "weight": 1.0
     },
     {
@@ -48724,5 +48851,5 @@
       "source_file": "verification/p0/REPORT.md"
     }
   ],
-  "built_at_commit": "8c74bc23c4935a7f2bcf8361eece9505c989fe4c"
+  "built_at_commit": "b1e2fbcaec2376091f644b604aaf5ca7ff516dee"
 }

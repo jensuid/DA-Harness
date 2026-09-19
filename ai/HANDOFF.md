@@ -1,6 +1,25 @@
 # DAH - Handoff
 
 ## What was completed
+- P4-CI-007 PASSED (and it closes P4): CI exists, and the app-signing question
+  is answered in writing. There was no `.github` directory at all - 231 server
+  tests, 17 web tests and 7 Rust tests were green only because a developer
+  happened to run them. `.github/workflows/ci.yml` runs four macOS jobs: the
+  server suite plus the P2 and P3 gates (reports uploaded as an artifact), the
+  web suite plus a tsc-then-vite build, the desktop shell's two live-core
+  lifecycle tests (spawn uvicorn, wait on /health, assert the core stops and
+  frees port 8123), and a sidecar packaging build that smokes the built
+  binary's /health. macOS-only on purpose - the hard sandbox is seatbelt, the
+  sidecar and the .app are macOS builds - and no job needs a single secret: no
+  LLM key is ever set, so every assistant step is deterministic and no run
+  makes a network call. Validating the install path on a clean venv found two
+  reproducibility bugs local state had been masking, both fixed (below).
+  Signing is DECIDED rather than carried: DEC-004 defers it to P5, on the
+  reasoning that the cost is the pipeline (identity as a CI secret, rotation,
+  re-signing an in-flight bundle) rather than the fee, that P4 had no secret
+  store to put an identity into, and that Gatekeeper's prompt is a
+  once-per-machine cost that degrades gracefully.
+
 - P4-PERF-006 PASSED: large-dataset behaviour is now measured rather than
   assumed, and the one real cost is fixed. A benchmark on a 200k-row / 13.4MB
   CSV showed attach 0.2s, GROUP BY 0.8s, capped SELECT * 0.8s (row_count=1000,
@@ -258,6 +277,33 @@
 Create Case -> Question -> Load CSV -> Profile -> SQL Analysis
 -> Finding -> Evidence chain -> Validation (rerun) -> Save -> Reopen
 ```
+
+## What changed (P4-CI-007)
+
+- .github/workflows/ci.yml (NEW): four jobs - `server` (uv venv from pyproject,
+  pytest, P2 and P3 gates, reports uploaded), `web` (npm ci, npm test,
+  npm run build - tsc -b runs first, so a type error the jsdom tests cannot see
+  fails CI), `desktop` (the server venv at the exact path the resolver looks
+  for, then `cargo test` and `cargo test --features e2e`), `packaging`
+  (build_sidecar.sh plus a /health smoke against the built binary). Every
+  command was validated by running it locally in the order the job runs it.
+- server/pyproject.toml: two fixes found by validating the install path on a
+  clean venv. `[tool.setuptools] packages = ["app"]` - flat-layout discovery
+  saw `app` and `tests` as competing top-level packages and failed on a fresh
+  checkout; a stale egg-info was masking it locally, which is exactly the kind
+  of bug CI exists to catch. And a `packaging` extra declares PyInstaller,
+  which was installed ad-hoc and was not reproducible.
+- README.md (NEW): the layers and their test commands, the gates, and the
+  unsigned-app first-launch workaround in plain language - DEC-004's
+  consequence is that this is a documented user-facing behaviour, not an
+  omission.
+- ai/DECISIONS.md DEC-004: signing deferred to P5, with the reason, the
+  alternatives considered (ad-hoc/self-signed, `xattr -cr` bypass) and why each
+  is worse, and the consequences - chiefly that nothing in P4 may depend on the
+  app being signed.
+- ai/ROADMAP.md: P4 marked COMPLETE, the stage marker moved to P5, and a P5
+  entry checklist proposed (signing first, then a P4 gate, observability, the
+  carried 500 JSON envelope, release automation).
 
 ## What changed (P4-PERF-006)
 
@@ -739,7 +785,8 @@ reported as unsupported (clear 400) rather than faked; that gate is future work.
 
 ## Tests performed (current)
 
-- server pytest: 231 passed (was 225; +6 large-dataset)
+- server pytest: 231 passed (verified again on a clean venv built
+  from pyproject - the install path CI uses)
 - web: 17 passed (CaseList 5, CaseCreation 3, CaseWorkspace 9); `cd web && npm test`
 - desktop shell: 7 Rust tests - `cd desktop/src-tauri && cargo test` (5 unit)
   and `cargo test --features e2e` (+2 live-core tests)
@@ -752,8 +799,8 @@ reported as unsupported (clear 400) rather than faked; that gate is future work.
 
 - Every P3 task is one atomic commit, all pushed to `origin/master`
   (github.com/jensuid/DA-Harness), plus the phase close; P4 opens with
-  P4-VERIFY-001, P4-RELIABILITY-002, P4-UX-003, P4-UX-004, P4-VALID-005 and
-  P4-PERF-006 as their own commits.
+  P4-VERIFY-001, P4-RELIABILITY-002, P4-UX-003, P4-UX-004, P4-VALID-005,
+  P4-PERF-006 and P4-CI-007 as their own commits, then the P4 phase close.
   `dfb115b` P3-SEC-001, `2c7b11f` P3-CHART-002, `f5df5d1` P3-DATA-003,
   `967544b` P3-FLOW-004, `7b7e49f` P3-ANALYSIS-005, `ebaa30e` P3-EVIDENCE-006,
   P3-CASE-007, P3-SHELL-008, P3-DATA-009, P3-VALID-010, P3-AI-011,
@@ -781,21 +828,29 @@ reported as unsupported (clear 400) rather than faked; that gate is future work.
 
 ## Next action
 
-P4 is five tasks in and only its distribution item remains. The performance
-item is closed with a number behind it (P4-PERF-006): profiling went
-~6.0s -> ~2.4s on 200k rows and the result cap is pinned at scale. What's left:
+**P4 is complete.** All five checklist items are done and the phase is closed:
+the P3 gate (P4-VERIFY-001), error semantics (P4-RELIABILITY-002), the
+assistant surfaces in the shell (P4-UX-003 + P4-UX-004), validation determinism
+(P4-VALID-005), large-dataset performance (P4-PERF-006), and CI plus the
+signing decision (P4-CI-007). Everything runs in CI now; signing is a written
+deferral rather than an open question.
 
-- the desktop shell lifecycle under CI - the Rust unit tests and the two
-  live-core e2e tests (`cd desktop/src-tauri && cargo test --features e2e`) run
-  locally, nothing runs them in CI yet - plus the app-signing decision: sign
-  now, or formally defer to P5.
+P5 Production Grade is proposed in ai/ROADMAP.md, not started. Oldest-risk
+first:
+
+- macOS code signing + notarization - formally deferred here by DEC-004. The
+  identity becomes a CI secret in the `packaging` job; the unsigned build stays
+  as a fallback target.
+- a P4 gate (`verification/p4/verify_p4.py`) - every earlier phase has a gate
+  that walks one journey; P4 relied on the P3 gate plus CI, which is honest but
+  not a P4-specific journey.
+- observability: a 500 is honest and logged with a traceback, but in a
+  packaged app a non-developer has nowhere to read that output.
 - carried: a 500 still answers with Starlette's plain-text "Internal Server
-  Error". The client handles it, but giving the 500 a JSON envelope remains
-  worth doing.
+  Error". The client handles it; giving it a JSON envelope is the last rough
+  edge of the error contract.
 
-Nothing is unblocked-but-undone. The one remaining carried item is not agent
-work: the packaged app is unsigned, so macOS gatekeeps the first launch
-(right-click, Open); signing and notarization are P5.
+Nothing is unblocked-but-undone.
 
 ## Important context
 

@@ -1,49 +1,54 @@
 # DAH - Current State
 
- - **Phase:** P4 Production Candidate - IN PROGRESS (P4-VERIFY-001,
-  P4-RELIABILITY-002, P4-UX-003, P4-UX-004, P4-VALID-005 and P4-PERF-006
-  done). P3 V1 is COMPLETE: all 10 entry-checklist items, 231 server tests,
-  and a P3 gate of its own.
+ - **Phase:** P4 Production Candidate - COMPLETE (all 5 checklist items:
+  P4-VERIFY-001, P4-RELIABILITY-002, P4-UX-003 + P4-UX-004, P4-VALID-005,
+  P4-PERF-006, P4-CI-007). P3 V1 is COMPLETE: all 10 entry-checklist items,
+  231 server tests, and a P3 gate of its own. P5 Production Grade is proposed,
+  not started.
 - **Global roadmap status:** ai/ROADMAP.md (phase tracker - current stage, phase table, next-phase entry checklist)
 - **Milestone status:** P1 Vertical Slice PASSED (verification/p1/REPORT.md); P0 PASSED
 - **Completed capabilities:** FastAPI core; SQLite case persistence; DuckDB engine; Vite/React shell; P0 verification harness; CSV dataset attachment; deterministic dataset profiling; read-only SQL analysis runs with persisted results; findings with evidence chain; validation via rerun; parquet + xlsx ingest; deep profiling; **read-only Python execution with persisted results (P2-ANALYSIS-008); chart images rendered and persisted from run results (P2-ANALYSIS-009);
 case management - rename, duplicate, delete (P2-CASE-010);
 AI planning with structured output (P2-AI-011); case export as a self-contained
 JSON package with import round trip (P2-CASE-012)**
-- **Active task:** P4-PERF-006 DONE - large-dataset behaviour measured and the
-  profiling hot path fixed. Nothing had ever been measured at scale, so a
-  benchmark on a 200k-row / 13.4MB CSV established where the cost actually was:
-  attaching 0.2s, a GROUP BY query 0.8s, a capped SELECT * 0.8s (row_count=1000,
-  truncated=true - the cap has held since P1), and export 0.4s producing a
-  17.8MB package (dominated by the dataset bytes; the 100MB guard is far off).
-  The outlier was profiling at ~6.0s, and instrumenting it found pure waste: a
-  `SELECT *` + `fetchall()` of every row just to read the column description
-  (2.7s of rows materialised then discarded) followed by four separate full
-  scans (aggregates, COUNT(*), and the duplicate count's own COUNT(*) plus
-  DISTINCT). The description now comes from `LIMIT 0` - verified to give
-  identical names *and* inferred types - the row total is folded into the one
-  aggregate pass as a leading COUNT(*), and the duplicate count reuses that
-  total. Result: ~6.0s -> ~2.4s for the profile (~6.0s -> ~1.6s for the
-  endpoint), peak RSS 147MB -> 111MB, profile output unchanged.
-  Before it: P4-VALID-005 (validation determinism), P4-UX-004 (the run-scoped
-  assistant surfaces), P4-UX-003 (case workspace + chat), P4-RELIABILITY-002
-  (error semantics) and P4-VERIFY-001 (the P3 gate).
+- **Active task:** P4-CI-007 DONE - CI exists and the signing question is
+  answered, which closes P4. There was no `.github` directory at all: 231
+  server tests, 17 web tests and 7 Rust tests were green only because a
+  developer happened to run them. `.github/workflows/ci.yml` now runs four
+  macOS jobs - the server suite plus the P2 and P3 gates (reports uploaded as
+  an artifact), the web suite plus a tsc-then-vite build, the desktop shell's
+  two live-core lifecycle tests, and a sidecar packaging build that smokes the
+  built binary's /health. macOS-only on purpose (the hard sandbox is seatbelt
+  and the sidecar and .app are macOS builds), and no job needs a single secret
+  - no LLM key is ever set, so every assistant step is deterministic and no
+  run makes a network call.
+  Validating the install path on a clean venv found two reproducibility bugs
+  that local state had been masking: flat-layout package discovery failed
+  without the stale egg-info (`[tool.setuptools] packages = ["app"]` fixes it),
+  and PyInstaller was installed ad-hoc and undeclared (now a `packaging`
+  extra). Every command in the workflow was run locally in the order the
+  workflow runs it before the file was written.
+  Signing is DECIDED, not carried: DEC-004 defers it to P5. The cost is the
+  pipeline (identity as a CI secret, rotation, re-signing an in-flight bundle)
+  rather than the fee, P4 had no secret store yet, and Gatekeeper's prompt is
+  a once-per-machine cost that degrades gracefully. Consequence: nothing in P4
+  depends on the app being signed, and the README documents the right-click >
+  Open workaround in plain language.
 - **Known issues:** none
 - **Test status:** server 231 passed (211 + 12 error semantics + 2 validation
   determinism + 6 large-dataset); web 17 passed (CaseList 5, CaseCreation 3,
   CaseWorkspace 9);
   desktop shell 7 Rust tests (5 unit + 2 e2e, `cd desktop/src-tauri && cargo test [--features e2e]`);
   P2 and P3 gates PASS
-- **Next task:** the last item of the P4 checklist - the desktop shell
-  lifecycle under CI and the app-signing decision (sign now, or formally defer
-  to P5). The Rust unit tests and the two live-core e2e tests run locally;
-  nothing runs them in CI yet.
-  Carried: a 500 still answers with Starlette's plain-text "Internal Server
-  Error"; the client handles it (parses JSON only when the core sent it), but
-  the core giving it a JSON envelope remains worth doing.
+- **Next task:** P5 Production Grade is proposed in ai/ROADMAP.md, not
+  started - oldest-risk first: macOS signing + notarization (formally deferred
+  by DEC-004, with the identity landing as a CI secret in the `packaging`
+  job), a P4 gate script so a phase is done when a gate says so, observability
+  (there is nowhere for a packaged app's logs to go), the carried 500 JSON
+  envelope, and release automation.
   Carried (not agent work): the packaged app is unsigned, so macOS
-  gatekeeps the first launch (right-click, Open); signing and notarization
-  are P5.
+  gatekeeps the first launch (right-click, Open - documented in README.md);
+  signing and notarization are P5.
 - **Blockers:** none
 
 ## P2 progress
@@ -108,6 +113,7 @@ JSON package with import round trip (P2-CASE-012)**
 | P4-UX-004 run-scoped assistant surfaces | DONE |
 | P4-VALID-005 validation rerun determinism | DONE |
 | P4-PERF-006 large-dataset performance | DONE |
+| P4-CI-007 CI + signing decision | DONE |
 
 ## How to run (P4)
 

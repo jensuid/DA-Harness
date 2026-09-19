@@ -12,18 +12,18 @@ P1 Vertical Slice      DONE  ✓
 P2 MVP                 DONE  ✓   (all gates green)
 P3 V1                  DONE  ✓   (all 10 entry-checklist items, 211 tests;
                               verification/p3/REPORT.md PASS)
-P4 Production Candidate IN PROGRESS  ← we are here
-                              (P4-VERIFY-001, P4-RELIABILITY-002,
-                              P4-UX-003, P4-UX-004, P4-VALID-005 and
-                              P4-PERF-006 done; distribution remains)
+P4 Production Candidate DONE  ✓   (all 6 checklist items; CI runs every
+                              layer, signing formally deferred to P5 by
+                              DEC-004)
+P5 Production Grade    NOT STARTED  ← we are here
 P5 Production Grade    NOT STARTED
 P6 Evolution           NOT STARTED
 ```
 
 North-star progression: prove the loop → make it useful → make it repeatable
 → make it reliable → make it production-grade → make it intelligent →
-make it scale. We are at the **make it useful** stage; P3 is **make it
-repeatable**.
+make it scale. P4 was **make it reliable**; P5 is **make it
+production-grade**.
 
 ## Phase status
 
@@ -33,7 +33,7 @@ repeatable**.
 | P1 Vertical Slice | One complete analytical case end to end | DONE | PASS | `verification/p1/REPORT.md` |
 | P2 MVP | Usable analytical application; inspectable, reproducible case | DONE | PASS | `verification/p2/REPORT.md` (16 steps, 10 exit criteria) |
 | P3 V1 | Repeated real-world use: multi-dataset, joins, richer EDA, contextual AI | DONE | P2 gate PASS (re-verified during close, 211 tests) | hard sandbox, raster charts, multi-dataset joins, workflow, EDA, evidence graph, case reuse, desktop shell and all four contextual AI slices DONE |
-| P4 Production Candidate | Serious software: reliability, security, performance, UX, observability | IN PROGRESS | P3 gate PASS | `verification/p3/REPORT.md` (23 journey steps, 15 exit criteria, all PASS) |
+| P4 Production Candidate | Serious software: reliability, security, performance, UX, observability | DONE | P3 gate PASS | `verification/p3/REPORT.md` (23 journey steps, 15 exit criteria, all PASS); CI runs every layer (P4-CI-007); signing deferred to P5 by DEC-004 |
 | P5 Production Grade | Maintainable, distributable, secure product | NOT STARTED | — | — |
 | P6 Post-Launch Evolution | Scale and intelligence | NOT STARTED | — | — |
 
@@ -55,20 +55,33 @@ repeatable**.
   case management (rename/duplicate/delete); structured AI planning
   (deterministic default, LLM behind `DAH_LLM_API_KEY`); case export/import
   round trip.
-- **Test status:** server 231 passed (was 225 - +6 large-dataset tests);
-  web 17 passed (was 2 - the shell now covers the case list, the workspace and
-  the run-scoped assistant surfaces); desktop shell 7 Rust tests (5 unit
-  + 2 e2e); P2 and P3 gates PASS.
-- **Active task:** P4-PERF-006 DONE - large-dataset behaviour measured and
-  the profiling hot path fixed. A benchmark on a 200k-row / 13.4MB CSV showed
-  profiling cost ~6.0s while attaching (0.2s), querying (0.8s) and export
-  (0.4s, 17.8MB package) were all fine; the profile was spending 2.7s on a
-  `SELECT *` + `fetchall()` of every row purely to read the column
-  description, plus four separate full scans. The description now comes from
-  `LIMIT 0`, the row total is folded into the single aggregate pass, and the
-  duplicate count reuses that total: ~6.0s -> ~2.4s, peak RSS 147MB -> 111MB,
-  with profile output unchanged. The 1000-row result cap is now pinned at
-  scale rather than assumed.
+- **Test status:** server 231 passed; web 17 passed; desktop shell 7 Rust
+  tests (5 unit + 2 e2e, the two spawning a real core and asserting it stops
+  and frees the port); P2 and P3 gates PASS. All of it now runs in CI
+  (`.github/workflows/ci.yml`, P4-CI-007) - before that, every test was green
+  only because a developer happened to run it.
+- **Active task:** P4-CI-007 DONE - CI exists, and the signing question is
+  answered. There was no `.github` at all: 231 server tests, 17 web tests and 7
+  Rust tests were green only because someone ran them. `.github/workflows/ci.yml`
+  now runs four macOS jobs - the server suite plus the P2 and P3 gates, the web
+  suite plus a tsc-then-vite build, the desktop shell's two live-core lifecycle
+  tests (spawn uvicorn, wait on /health, assert the core stops and frees port
+  8123), and a sidecar packaging build that smokes the built binary's /health.
+  Validating the install path on a clean venv found two real reproducibility
+  bugs: flat-layout package discovery failed without the stale egg-info that
+  masked it locally, and PyInstaller was installed ad-hoc and undeclared.
+  macOS-only on purpose (seatbelt sandbox, macOS sidecar and .app), and no job
+  needs a single secret - no LLM key is ever set, so every assistant step is
+  deterministic and no run makes a network call.
+  Signing is DECIDED, not carried: DEC-004 defers it to P5. The cost is the
+  pipeline (identity as a CI secret, rotation, re-signing an in-flight bundle)
+  not the fee, P4 has no secret store yet, and Gatekeeper's prompt is a single
+  once-per-machine cost that degrades gracefully. Consequence: nothing in P4 may
+  depend on the app being signed, and the README documents the right-click >
+  Open workaround in plain language.
+  Before it: P4-PERF-006 (large-dataset profiling), P4-VALID-005 (validation
+  determinism), P4-UX-004 (run-scoped assistant surfaces), P4-UX-003 (workspace
+  + chat), P4-RELIABILITY-002 (error semantics), P4-VERIFY-001 (the P3 gate).
 - **Known issues / blockers:** none.
 - **Repository:** private, `master` tracks `origin/master`.
 
@@ -97,10 +110,13 @@ come first because P3 code generation multiplies the risk.
 | 9 | Case templates, search, case history — **DONE (P3-CASE-007)** | Repeatability and reuse | P3 Case management |
 | 10 | Tauri desktop shell — **DONE (P3-SHELL-008)** | Wraps the existing React bundle; post-MVP as planned | Platform decision |
 
-## P4 Production Candidate — entry checklist (proposed, not started)
+## P4 Production Candidate — entry checklist (COMPLETE)
 
-Ordered oldest-risk first; a proposal for the user to reorder before work
-starts. P3 has no gate of its own yet, so that comes first.
+All six items delivered. The last one closes the phase: the desktop shell's
+lifecycle is now verified by CI rather than by a developer remembering to run
+it, and signing is a written decision instead of an open question.
+
+Ordered oldest-risk first.
 
 | # | Capability | Why now | Roadmap section |
 |---|-----------|---------|-----------------|
@@ -108,7 +124,7 @@ starts. P3 has no gate of its own yet, so that comes first.
 | 2 | Error semantics - **DONE (P4-RELIABILITY-002)**: input errors answer 400 with the engine's own message; a harness fault answers 500 instead of the old broad `except Exception -> 400` that blamed the analyst for our own bugs. The five LLM fallbacks stay broad (degradation is the contract) but now log the reason | P3 added four LLM fallback paths, each intentionally broad; P4 is where that breadth stops hiding real bugs | P4 Reliability |
 | 3 | Assistant surfaces in the React shell - **DONE (P4-UX-003 + P4-UX-004)**: the case workspace plus chat (each citation a chip, the engine that spoke badged), and the run-scoped slices - attach+profile, generate code, run, interpret, draft, accept, validate - one panel per step with every write posted to the endpoint that owns it. The live smoke of P4-UX-004 exposed a validation flake, fixed as **P4-VALID-005**: DuckDB returns an unordered GROUP BY's groups in either order across connections, so reproduction now compares rows as a multiset and a verdict no longer depends on which connection answered | The widest gap between what DAH can do and what it shows; the backend is complete, the UI was the P0/P1 surface | P4 UX |
 | 4 | Large-dataset behaviour - **DONE (P4-PERF-006)**: benchmarked at 200k rows - attach 0.2s, query 0.8s, export 0.4s / 17.8MB, but profiling ~6.0s. Fixed: the description is read with `LIMIT 0` instead of a full `fetchall()` (2.7s of rows materialised then discarded), the row total is folded into the one aggregate pass, and the duplicate count reuses it - ~6.0s -> ~2.4s, peak RSS 147 -> 111MB, profile output unchanged. Six tests pin profile correctness, the wide-table width slicing, duplicate counts and the result cap at scale | P3 caps results at 1000 rows and nothing had been measured at scale | P4 Performance |
-| 5 | Desktop shell lifecycle under CI; app signing decision (sign now, or formally defer to P5) | The shell is tested locally; the unsigned first launch is the carried P3 item | P4 Distribution |
+| 5 | Desktop shell lifecycle under CI + app signing - **DONE (P4-CI-007)**: `.github/workflows/ci.yml` runs the server suite and both gates, the web suite and build, the desktop lifecycle tests against a live core, and a sidecar packaging build with a /health smoke. macOS-only (seatbelt sandbox, macOS sidecar and .app); no job needs any secret. Signing **deferred to P5 by DEC-004** - the cost is the pipeline, not the fee, and Gatekeeper's prompt is a once-per-machine cost that degrades gracefully; the README documents the workaround | The shell was tested locally only; the unsigned first launch was a carried item with no decision behind it | P4 Distribution |
 
 
 
@@ -125,3 +141,18 @@ starts. P3 has no gate of its own yet, so that comes first.
 - Commit and push continuously: one atomic commit per task and one per phase
   close, green state only, pushed to origin/master before work is called done
   (see the commit and push discipline section of AGENTS.md).
+
+## P5 Production Grade — entry checklist (proposed, not started)
+
+Ordered oldest-risk first; a proposal for the user to reorder before work
+starts. P4 closed with the signing question decided rather than open
+(DEC-004), so the distribution items below carry a written rationale instead
+of a shrug.
+
+| # | Capability | Why now | Roadmap section |
+|---|-----------|---------|-----------------|
+| 1 | macOS code signing + notarization — **formally deferred here by DEC-004**: provision a Developer ID identity, store it as a CI secret in the `packaging` job, notarize the bundle, and keep the unsigned build as a fallback target | P4 shipped unsigned with a documented right-click > Open workaround; the pipeline cost (identity, rotation, re-signing an in-flight bundle) is the reason it waited, and P5 is where the bundle becomes final | P5 Distribution |
+| 2 | The P4 gate — a `verification/p4/verify_p4.py` walking one journey through the P4 capabilities, as each earlier phase has | A phase is done when a gate says so; P4 relied on the P3 gate plus CI, which is honest but not a P4-specific journey | P5 Verification |
+| 3 | Observability: structured logs and a way to read them when a user hits a problem, beyond uvicorn's stderr | P4 made a 500 honest and logged with a traceback, but there is nowhere for that output to go in a packaged app a non-developer is running | P5 Observability |
+| 4 | Give the 500 a JSON envelope — **carried from P4-RELIABILITY-002**: the core still answers Starlette's plain-text "Internal Server Error", which the client already tolerates but which is the one remaining rough edge in the error contract | Small, self-contained, and it closes the last item the reliability task explicitly declined to expand into | P5 Reliability |
+| 5 | Release automation: versioned, notarized artifacts published from CI rather than built by hand | The `packaging` job already builds and smokes the sidecar on a clean machine; publishing is the step after signing lands | P5 Distribution |

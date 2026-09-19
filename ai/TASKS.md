@@ -890,6 +890,7 @@ checklist; the gate comes first because a phase is done when a gate says so.
 | P4-UX-004 | UX (run-scoped assistant surfaces) | M | DONE | P4-UX-003 | The workspace walks the loop one panel per step - attach+profile, generate code, run, interpret, draft, accept, validate - and every write posts to the endpoint that owns it |
 | P4-VALID-005 | Validation (rerun determinism) | M | DONE | P4-UX-004 | Reproduction compares SQL rows as a multiset, so an unordered GROUP BY answering in a different order is a match, not a drift |
 | P4-PERF-006 | Performance (large datasets) | M | DONE | P4-VALID-005 | Profiling no longer materialises every row to read a description; the result cap and profile correctness are pinned at scale |
+| P4-CI-007 | Distribution (CI + signing decision) | M | DONE | P4-PERF-006 | macOS CI runs the server suite and both gates, the web suite and build, the desktop lifecycle tests against a live core, and a sidecar packaging build; signing deferred to P5 by DEC-004 |
 
 ### P4-VERIFY-001 contract
 
@@ -1283,4 +1284,87 @@ VERIFICATION: pytest green + P2/P3 gates PASS; the benchmark numbers above
               measured against a number, not a feeling.
 STATE UPDATE: mark P4-PERF-006 done on pass; roadmap item 4 is measured and
               the profiling hot path is fixed.
+```
+
+### P4-CI-007 contract
+
+```
+TASK ID: P4-CI-007
+MILESTONE: P4 Production Candidate
+CAPABILITY: Distribution (CI + signing decision)
+GOAL: Every layer is verified by CI on a clean machine, including the desktop
+      shell's core lifecycle and the sidecar build, and the app-signing
+      question is answered in writing rather than left open.
+
+CONTEXT: P3-SHELL-008 shipped a desktop shell whose lifecycle was only ever
+         tested locally - `cargo test --features e2e` spawns the real uvicorn
+         and asserts the core answers and then stops, but nothing ran it on a
+         fresh checkout. There was also no CI of any kind in the repo: no
+         workflow file existed, so the 231 server tests, 17 web tests and 7
+         Rust tests were green only because a developer happened to run them.
+         Separately, the packaged app is unsigned and the question of when to
+         sign was carried from P3 without a decision.
+INPUTS: the repo as cloned (no local venv, no built sidecar, no LLM keys).
+RELEVANT FILES: .github/workflows/ci.yml (NEW), README.md (NEW),
+                ai/DECISIONS.md, server/pyproject.toml, ai/ROADMAP.md,
+                ai/CURRENT_STATE.md, ai/HANDOFF.md
+REQUIRED CHANGE:
+  - .github/workflows/ci.yml: four jobs.
+      * server - uv venv from pyproject, pytest, then the P2 and P3 gates
+        in-process, with the gate reports uploaded as an artifact.
+      * web - npm ci, npm test, npm run build (tsc -b runs first, so a type
+        error the jsdom tests cannot see still fails CI).
+      * desktop - the server venv at the exact path the resolver looks for,
+        then cargo test (unit) and cargo test --features e2e (lifecycle:
+        spawn a real core, wait on /health, assert the port is freed).
+      * packaging - build the sidecar from declared extras and smoke it: the
+        binary must actually serve /health, not merely build.
+    macOS-only on purpose: the hard sandbox is macOS seatbelt and the packaged
+    app and sidecar are macOS builds; another platform would skip the paths
+    that most need exercising. No LLM credentials are ever set, so every
+    assistant step is deterministic and the run makes no network call.
+  - server/pyproject.toml: two fixes found by validating the install path on a
+    clean venv. (1) `[tool.setuptools] packages = ["app"]` - flat-layout
+    discovery saw `app` and `tests` as competing top-level packages and failed
+    on a fresh checkout; a stale egg-info masked it locally. (2) a `packaging`
+    extra declares PyInstaller, which was previously installed ad-hoc and was
+    not reproducible.
+  - README.md (NEW): the layers and their test commands, and the unsigned-app
+    first-launch workaround in plain language.
+  - ai/DECISIONS.md DEC-004: signing deferred to P5, with the reason, the
+    alternatives considered (ad-hoc signing, xattr bypass), and the
+    consequences - including that nothing in P4 may depend on the app being
+    signed.
+NON-GOALS: the P0 gate in CI (it binds a port and duplicates the later
+           gates); Windows/Linux runners; release automation or artifact
+           publishing; actually signing or notarizing the app (DEC-004 defers
+           it); load/performance testing in CI.
+CONSTRAINTS: every command in the workflow was validated by running it
+             locally in the order the workflow runs it - the venv install on a
+             clean directory, the suite and both gates, npm ci and the build,
+             the cargo lifecycle tests, and the sidecar build plus a health
+             smoke against the freshly built binary. The workflow must never
+             need an LLM key or any other secret (DEC-004 keeps signing out,
+             so no identity is required either).
+ACCEPTANCE CRITERIA:
+- [x] a workflow file exists and is valid YAML, covering server, web, desktop
+      and packaging
+- [x] the server job installs from pyproject on a clean venv and the suite
+      plus both gates pass (231 tests)
+- [x] the desktop job runs the two live-core lifecycle tests (7 Rust tests)
+- [x] the packaging job builds the sidecar from declared extras and the built
+      binary answers /health
+- [x] no secret, key or credential is required for any job to pass
+- [x] the signing question has a written decision with consequences, and the
+      user-facing workaround is documented in the README
+- [x] the local suite and both gates still pass on this machine
+TESTS: none new - this task's verification is that the existing 231 + 17 + 7
+       tests run under the CI it creates, plus a health smoke on the built
+       sidecar.
+VERIFICATION: validated step by step locally (venv install on a clean
+              directory, suite + P2/P3 gates, npm ci + build, cargo test
+              --features e2e, build_sidecar.sh + /health smoke); pytest 231
+              passed, web 17 passed, cargo 7 passed, both gates PASS.
+STATE UPDATE: mark P4-CI-007 done on pass; the P4 checklist's distribution
+              item is closed (signing formally deferred to P5 by DEC-004).
 ```
