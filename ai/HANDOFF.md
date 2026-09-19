@@ -2,6 +2,13 @@
 
 ## What was completed
 
+- P3-CHART-002 PASSED: charts can now render as PNG behind the same interface.
+  charts.py is now a shared ChartModel plus SVG and PNG backends, so the two
+  cannot drift apart; the PNG path draws at 2x and downscales with LANCZOS.
+  The `format` field threads through the API (artifact extension, sniffed media
+  type) and the export package carries chart bytes as base64 with an explicit
+  format, keeping the legacy `svg` text field for older consumers.
+
 - P3-SEC-001 PASSED: Python analysis runs now execute in a separate process
   under an OS-level sandbox (macOS sandbox-exec / seatbelt). Writes outside
   the per-run scratch directory and all network access are denied by the
@@ -32,6 +39,24 @@
 Create Case -> Question -> Load CSV -> Profile -> SQL Analysis
 -> Finding -> Evidence chain -> Validation (rerun) -> Save -> Reopen
 ```
+
+## What changed (P3-CHART-002)
+
+- server/app/charts.py: `render_chart(..., fmt="svg"|"png")` dispatches to
+  `_render_svg` / `_render_png` after building a `ChartModel` that owns all
+  geometry (scale, ticks, category order, bar geometry). Pillow is imported
+  lazily; a missing install is a clear ValueError, not a crash.
+- server/app/main.py: `ChartCreate.format`; artifact named `chart_<id>.<fmt>`;
+  `_chart_media_type` sniffs PNG/SVG from stored bytes; duplicate preserves
+  the source chart extension.
+- server/app/exporter.py: charts exported with `format` + base64 `image_b64`
+  (legacy `svg` text kept); import accepts both shapes.
+- server/pyproject.toml: `charts` optional dependency (`pillow>=10`).
+- server/tests/test_charts_raster.py (NEW): 9 tests, including a pixel scan of
+  bar geometry and PNG export round trip.
+- A refactor bug was caught here: the grouped-bar x-offset must use the series
+  index, not the point index, or later bars slide off-canvas. Fixed in both
+  backends and pinned by the new pixel test.
 
 ## What changed (P3-SEC-001)
 

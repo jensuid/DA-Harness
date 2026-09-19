@@ -13,7 +13,7 @@ import json
 
 from app.analysis import profile_csv, run_query
 from app.python_exec import run_python
-from app.charts import render_chart, CHART_KINDS
+from app.charts import render_chart, CHART_KINDS, CHART_FORMATS
 from app.charts import DEFAULT_WIDTH, DEFAULT_HEIGHT
 from app.planner import create_plan as create_plan_module, validate_plan
 from app.exporter import export_case, import_package, PACKAGE_FORMAT, PACKAGE_VERSION
@@ -271,7 +271,8 @@ async def duplicate_case(
     ).fetchall():
         new_chart_id = str(uuid4())
         source_path = Path(chart["stored_path"])
-        stored_path = case_dir / f"chart_{new_chart_id}.svg"
+        chart_suffix = Path(chart["stored_path"]).suffix or ".svg"
+        stored_path = case_dir / f"chart_{new_chart_id}{chart_suffix}"
         if source_path.is_file():
             stored_path.write_bytes(source_path.read_bytes())
         db.execute(
@@ -990,8 +991,9 @@ async def create_chart(
     columns = json.loads(row["columns_json"])
     rows = json.loads(row["rows_json"])
 
+    fmt = payload.format if payload.format in CHART_FORMATS else "svg"
     try:
-        svg = render_chart(
+        image = render_chart(
             payload.kind,
             columns,
             rows,
@@ -999,6 +1001,7 @@ async def create_chart(
             payload.y,
             payload.series,
             payload.title,
+            fmt=fmt,
         )
     except ValueError as error:
         raise HTTPException(status_code=400, detail=str(error))
@@ -1008,8 +1011,8 @@ async def create_chart(
     chart_id = str(uuid4())
     case_dir = db_module.DATA_DIR / case_id
     case_dir.mkdir(parents=True, exist_ok=True)
-    stored_path = case_dir / f"chart_{chart_id}.svg"
-    stored_path.write_bytes(svg)
+    stored_path = case_dir / f"chart_{chart_id}.{fmt}"
+    stored_path.write_bytes(image)
 
     chart = Chart(
         id=chart_id,
@@ -1117,7 +1120,21 @@ async def get_chart_image(case_id: str, chart_id: str, db=Depends(get_db)) -> Fi
     path = Path(row["stored_path"])
     if not path.is_file():
         raise HTTPException(status_code=404, detail="chart image is missing from disk")
-    return FileResponse(path, media_type="image/svg+xml", filename=path.name)
+    return FileResponse(path, media_type=_chart_media_type(path), filename=path.name)
+
+
+def _chart_media_type(path: Path) -> str:
+    """The artifact's content type, sniffed from its stored bytes.
+
+    Charts created before P3-CHART-002 are SVG; newer ones may be PNG. Sniffing
+    keeps old rows correct without a schema migration.
+    """
+    try:
+        with path.open("rb") as handle:
+            head = handle.read(8)
+    except OSError:
+        return "image/svg+xml"
+    return "image/png" if head.startswith(b"\x89PNG\r\n\x1a\n") else "image/svg+xml"
 
 
 @app.post(

@@ -129,6 +129,7 @@ class ChartCreate(BaseModel):
     y: str
     series: str | None = None
     title: str = ""
+    format: str = "svg"
 
 
 class Chart(BaseModel):

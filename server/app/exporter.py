@@ -48,6 +48,16 @@ def _read_bytes(path: str) -> str:
         return ""
 
 
+def _chart_format(path: Path) -> str:
+    """The artifact format, sniffed from its bytes (PNG magic, else SVG)."""
+    try:
+        with path.open("rb") as handle:
+            head = handle.read(8)
+    except OSError:
+        return "svg"
+    return "png" if head.startswith(b"\x89PNG\r\n\x1a\n") else "svg"
+
+
 def export_case(db, case_id: str) -> dict | None:
     """Assemble a case into a self-contained package, or None if it is missing."""
     case_row = db.execute(
@@ -140,8 +150,17 @@ def export_case(db, case_id: str) -> dict | None:
             "width": row["width"],
             "height": row["height"],
             "created_at": row["created_at"],
-            "svg": Path(row["stored_path"]).read_text(encoding="utf-8")
+            "format": _chart_format(Path(row["stored_path"])),
+            "image_b64": base64.b64encode(
+                Path(row["stored_path"]).read_bytes()
+            ).decode("ascii")
             if Path(row["stored_path"]).is_file()
+            else "",
+            # Legacy text field: older consumers read SVG from "svg". Kept for
+            # charts rendered as SVG (an empty string for PNG ones).
+            "svg": Path(row["stored_path"]).read_text(encoding="utf-8")
+            if _chart_format(Path(row["stored_path"])) == "svg"
+            and Path(row["stored_path"]).is_file()
             else "",
         }
         for row in db.execute(
@@ -311,10 +330,16 @@ def import_package(db, package: dict, data_dir: Path) -> dict:
 
     for chart in package["charts"]:
         new_chart_id = str(uuid4())
-        stored_path = case_dir / f"chart_{new_chart_id}.svg"
-        svg = chart.get("svg") or ""
-        if svg:
-            stored_path.write_text(svg, encoding="utf-8")
+        # Newer packages carry the artifact as base64 with an explicit format;
+        # older ones carry the SVG as text under "svg".
+        encoded = chart.get("image_b64") or ""
+        legacy_svg = chart.get("svg") or ""
+        fmt = chart.get("format") or ("svg" if legacy_svg else "svg")
+        stored_path = case_dir / f"chart_{new_chart_id}.{fmt}"
+        if encoded:
+            stored_path.write_bytes(base64.b64decode(encoded))
+        elif legacy_svg:
+            stored_path.write_text(legacy_svg, encoding="utf-8")
         db.execute(
             "INSERT INTO charts (id, case_id, run_id, kind, x, y, series, title, "
             "stored_path, width, height, created_at) "

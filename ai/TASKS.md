@@ -107,7 +107,7 @@ AI code-generation work multiplies the risk of the P2 soft sandbox.
 | Task ID | Capability | Priority | Status | Dependencies | Verification |
 |---------|-----------|----------|--------|--------------|--------------|
 | P3-SEC-001 | Analysis Workspace (hardening) | M | DONE | P2-ANALYSIS-008 | Python runs in a separate process under an OS sandbox; writes outside scratch, network, and runaway CPU are bounded and reported as 400 |
-| P3-CHART-002 | Analysis Workspace (raster charts) | M | TODO | P3-SEC-001 | PNG/high-DPI rendering behind the same chart interface |
+| P3-CHART-002 | Analysis Workspace (raster charts) | M | DONE | P3-SEC-001 | PNG rendering behind the same interface; bar geometry and export round trip verified |
 | P3-DATA-003 | Data Layer (multi-dataset) | M | TODO | P2 done | Multiple datasets per case with joins |
 
 ### P3-SEC-001 contract
@@ -151,4 +151,47 @@ TESTS: seatbelt enforcement probe (scratch write allowed, outside write and
        dead worker, contract violation.
 VERIFICATION: pytest + verification/p2/verify_p2.py regression.
 STATE UPDATE: mark P3-SEC-001 done on pass.
+```
+
+### P3-CHART-002 contract
+
+```
+TASK ID: P3-CHART-002
+MILESTONE: P3 V1
+CAPABILITY: Analysis Workspace (raster charts)
+GOAL: Render charts as PNG behind the same interface, for consumers that need
+      a bitmap rather than vector markup.
+
+CONTEXT: P2-ANALYSIS-009 renders deterministic, dependency-free SVG. SVG stays
+         the default; raster is an opt-in format on the same endpoint.
+INPUTS: a persisted run result plus chart parameters, now including `format`.
+RELEVANT FILES: server/app/charts.py, server/app/main.py, server/app/models.py,
+                server/app/exporter.py, server/pyproject.toml,
+                server/tests/test_charts_raster.py (NEW)
+REQUIRED CHANGE: split render_chart into a shared ChartModel (one geometry, one
+         category order, one bar geometry) plus two backends; add the PNG
+         backend with Pillow, drawn at 2x and LANCZOS-downscaled; thread
+         `format` through ChartCreate, the create endpoint, the artifact
+         extension, and the served media type (sniffed from stored bytes so old
+         rows stay correct); carry binary artifacts through the export/import
+         package as base64 with an explicit format (legacy `svg` text field
+         kept for older consumers); declare the `charts` optional dependency.
+NON-GOALS: new chart kinds, interactive charts, font/vector improvements, a
+           Linux-only raster path.
+CONSTRAINTS: the SVG path stays dependency-free and byte-identical to before;
+             the PNG path is deterministic (same input -> identical bytes).
+ACCEPTANCE CRITERIA:
+- [x] `format=png` yields a real, decodable PNG of the requested size
+- [x] the same input renders byte-identical PNGs across calls
+- [x] bar geometry carries over: taller bars top out higher, bars sit on the
+      zero baseline, every category gets a bar on canvas
+- [x] multi-series charts draw in more than one series colour
+- [x] unknown format and unknown kind are both 400s
+- [x] the API stores a .png artifact and serves it as image/png
+- [x] export/import round trips PNG bytes losslessly and serves them again
+- [x] SVG charts are unchanged; full suite and the P2 gate still pass
+TESTS: 9 raster tests - real image, determinism, bar geometry by pixel scan,
+       multi-series, rejections, SVG default, PNG and SVG API round trips.
+VERIFICATION: pytest (94 passed) + verification/p2/verify_p2.py PASS.
+STATE UPDATE: mark P3-CHART-002 done on pass.
 ```

@@ -13,6 +13,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+charts = [
+    "pillow>=10",
+]
 dev = [
     "pytest>=8",
     "httpx>=0.27",
