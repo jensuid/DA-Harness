@@ -886,6 +886,7 @@ checklist; the gate comes first because a phase is done when a gate says so.
 |---------|-----------|----------|--------|--------------|--------------|
 | P4-VERIFY-001 | Verification (P3 gate) | M | DONE | P3 complete | One journey exercises multi-dataset joins, the hard sandbox and all four assistant slices end to end |
 | P4-RELIABILITY-002 | Reliability | M | DONE | P4-VERIFY-001 | Input errors answer 400 with the engine's message; a harness fault answers 500 instead of a 400 that blamed the analyst |
+| P4-UX-003 | UX (case workspace + chat) | M | DONE | P4-RELIABILITY-002 | Cases can be searched and opened; the workspace shows the derived stage, datasets and runs, and the case answers questions with visible citations |
 
 ### P4-VERIFY-001 contract
 
@@ -1024,4 +1025,70 @@ TESTS: server/tests/test_error_semantics.py - bad SQL (syntax and unknown
 VERIFICATION: pytest green + verification/p2/verify_p2.py PASS +
               verification/p3/verify_p3.py PASS.
 STATE UPDATE: mark P4-RELIABILITY-002 done on pass.
+```
+
+### P4-UX-003 contract
+
+```
+TASK ID: P4-UX-003
+MILESTONE: P4 Production Candidate
+CAPABILITY: UX (case workspace + chat)
+GOAL: DAH can be *used* from the shell, not only from curl: find a case, open
+      it, see where it stands, and ask it a question.
+
+CONTEXT: the React bundle still shows the P0/P1 surface - one case-creation
+         form. Every P3 capability - the derived workflow, the evidence graph,
+         the four assistant slices - is reachable only through the API. The
+         assistant surfaces need somewhere to live, so the workspace comes
+         first; chat is the one assistant slice that needs nothing but a case,
+         and its citations are the honesty property the UI should make visible.
+         The run-scoped slices (interpret, draft-finding, generate-code) need a
+         run-selection surface and are P4-UX-004.
+INPUTS: a case id; a chat message.
+RELEVANT FILES: web/src/api.ts, web/src/App.tsx, web/src/CaseList.tsx (NEW),
+                web/src/CaseWorkspace.tsx (NEW), web/src/CaseCreation.tsx,
+                web/src/index.css, web/src/CaseList.test.tsx (NEW),
+                web/src/CaseWorkspace.test.tsx (NEW)
+REQUIRED CHANGE:
+  - api.ts becomes a typed client over the real contracts: GET /cases (with
+    q), GET /cases/{id}, GET .../progress, GET .../datasets, GET .../runs,
+    POST + GET .../chat. One shared request() throws an ApiError carrying the
+    status and a message parsed from the body only when the body is JSON - a
+    500 answers plain text (P4-RELIABILITY-002), and res.json() on it must not
+    become a second, hiding failure.
+  - CaseList lists cases with a literal-substring search box; opening one
+    navigates to the workspace. CaseCreation survives as the way a new case
+    starts, and creating one opens it.
+  - CaseWorkspace shows the question, the derived stage and single next action
+    (progress is recomputed on open, so the UI can never show a stage the data
+    does not support), the attached datasets, the runs with their kind and row
+    counts, and the chat panel: a message box, the answer, each ground rendered
+    as a citation chip, and a badge for which engine spoke (source). Prior
+    turns load oldest-first, so a reopened case resumes mid-thought.
+  - App.tsx owns state-based navigation - list, workspace, create - with no
+    router dependency, keeping the bundle dependency-free as DEC-001 intends.
+NON-GOALS: the run-scoped assistant surfaces (P4-UX-004); running queries or
+           accepting drafts from the UI (those still belong to the endpoints
+           that write); charts and evidence-graph rendering; styling beyond
+           readable; a router or state-management library.
+CONSTRAINTS: every screen reads its own data from the API on mount - nothing
+             is cached across navigation, so the UI cannot go stale against
+             the core; the existing two web tests keep passing; the bundle
+             gains no dependency.
+ACCEPTANCE CRITERIA:
+- [x] cases list, and the search box filters them by the API's q parameter
+- [x] opening a case shows its question, its derived stage and next action,
+      its datasets and its runs
+- [x] a chat message is posted and the answer renders with its grounds as
+      citation chips and the engine that spoke
+- [x] prior turns load on open, oldest-first
+- [x] an API failure renders as readable text and never as a crash; a
+      plain-text 500 body does not break the client
+- [x] creating a case lands in its workspace
+- [x] web tests pass; the server suite and both gates stay green
+TESTS: web/src/CaseList.test.tsx and CaseWorkspace.test.tsx - render from
+       mocked api responses, search, open, chat round trip with grounds and
+       source badge, and an error rendered rather than thrown.
+VERIFICATION: cd web && npm test green + the P2/P3 gates as regression.
+STATE UPDATE: mark P4-UX-003 done on pass; the run-scoped slices are next.
 ```

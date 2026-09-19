@@ -102,34 +102,34 @@
     "semantic_hash": "12e71bf0aec1b1b4536961acb417457e"
   },
   "web/package.json": {
-    "mtime": 1789801472.4873695,
-    "seen": 1789804396.010539,
-    "ast_hash": "0c79ea3ea132d93b4ec5c2b0f216eedd",
+    "mtime": 1789818295.1197653,
+    "seen": 1789819874.839126,
+    "ast_hash": "5895b4fac227bacacf54a25a8a9ea37f",
     "semantic_hash": ""
   },
   "web/src/App.tsx": {
-    "mtime": 1789747024.5083187,
-    "seen": 1789749080.4218109,
-    "ast_hash": "5895195a2d5fe0302155b4c74b547d8a",
-    "semantic_hash": "5895195a2d5fe0302155b4c74b547d8a"
+    "mtime": 1789818086.2928522,
+    "seen": 1789819874.839134,
+    "ast_hash": "cb6b63740de1b9b1788ae73d893acfda",
+    "semantic_hash": ""
   },
   "web/src/CaseCreation.test.tsx": {
-    "mtime": 1789747024.5094423,
-    "seen": 1789749080.4218152,
-    "ast_hash": "bb05929841b03e6c6dadc4e65f62eaa5",
-    "semantic_hash": "bb05929841b03e6c6dadc4e65f62eaa5"
+    "mtime": 1789818231.0605633,
+    "seen": 1789819874.839138,
+    "ast_hash": "3c27cf2bf2bfbefdaf9287244704defb",
+    "semantic_hash": ""
   },
   "web/src/CaseCreation.tsx": {
-    "mtime": 1789747381.370237,
-    "seen": 1789749080.421818,
-    "ast_hash": "6182790ec37ce2e487b3d8e9c31fcbbc",
-    "semantic_hash": "6182790ec37ce2e487b3d8e9c31fcbbc"
+    "mtime": 1789818086.3272603,
+    "seen": 1789819874.8391428,
+    "ast_hash": "636364dab7f301282a3c8bf3a21eb022",
+    "semantic_hash": ""
   },
   "web/src/api.ts": {
-    "mtime": 1789747024.472802,
-    "seen": 1789749080.421822,
-    "ast_hash": "3c3f97991e0b287953af6b87432f583e",
-    "semantic_hash": "3c3f97991e0b287953af6b87432f583e"
+    "mtime": 1789818032.0140843,
+    "seen": 1789819874.839165,
+    "ast_hash": "8bed5a42f89816ee6d29d1c7e0c51c46",
+    "semantic_hash": ""
   },
   "web/src/main.tsx": {
     "mtime": 1789747024.4717739,
@@ -168,9 +168,9 @@
     "semantic_hash": ""
   },
   "ai/CURRENT_STATE.md": {
-    "mtime": 1789817458.051752,
-    "seen": 1789817840.296912,
-    "ast_hash": "695d655031e5c5301544e222f7de1fc4",
+    "mtime": 1789819858.673694,
+    "seen": 1789819874.839199,
+    "ast_hash": "73e3bbff6da61edab38a35bae5ff2d03",
     "semantic_hash": ""
   },
   "ai/DECISIONS.md": {
@@ -180,15 +180,15 @@
     "semantic_hash": "25b5adff030d3b2aab676170e54ca24e"
   },
   "ai/HANDOFF.md": {
-    "mtime": 1789817479.991489,
-    "seen": 1789817840.296923,
-    "ast_hash": "c149ed6d14a97ac36ce087e2c545f0e7",
+    "mtime": 1789819858.676335,
+    "seen": 1789819874.839208,
+    "ast_hash": "3758a79dfbb3749fd806bfa2301944c9",
     "semantic_hash": ""
   },
   "ai/TASKS.md": {
-    "mtime": 1789817505.259365,
-    "seen": 1789817840.2969332,
-    "ast_hash": "8fb240d11c3a0bb755bcca7d640cdb40",
+    "mtime": 1789819654.9333472,
+    "seen": 1789819874.839218,
+    "ast_hash": "77caa4f40701a0b8c237fc6fef04ae6b",
     "semantic_hash": ""
   },
   "verification/p0/REPORT.md": {
@@ -324,9 +324,9 @@
     "semantic_hash": ""
   },
   "ai/ROADMAP.md": {
-    "mtime": 1789817458.0504797,
-    "seen": 1789817840.296928,
-    "ast_hash": "fcc93d7d890292d7f04d12d4b417686e",
+    "mtime": 1789819654.9358604,
+    "seen": 1789819874.8392131,
+    "ast_hash": "0f6a2bc23af76b2b9ed20e207abff5e3",
     "semantic_hash": ""
   },
   "server/tests/test_charts_raster.py": {
@@ -561,6 +561,30 @@
     "mtime": 1789817188.3643076,
     "seen": 1789817840.296742,
     "ast_hash": "8f479387ed4995c1947ac226b9a82d49",
+    "semantic_hash": ""
+  },
+  "web/src/CaseList.test.tsx": {
+    "mtime": 1789818580.2731476,
+    "seen": 1789819874.839148,
+    "ast_hash": "9c7aaab830987def3b6e320b47cfbb3d",
+    "semantic_hash": ""
+  },
+  "web/src/CaseList.tsx": {
+    "mtime": 1789818061.2129467,
+    "seen": 1789819874.839152,
+    "ast_hash": "8a0b55f8d26282fe519a80eb57c7230b",
+    "semantic_hash": ""
+  },
+  "web/src/CaseWorkspace.test.tsx": {
+    "mtime": 1789819010.5670593,
+    "seen": 1789819874.839156,
+    "ast_hash": "280f7de677ac7ebfb8ab1456af5a03f3",
+    "semantic_hash": ""
+  },
+  "web/src/CaseWorkspace.tsx": {
+    "mtime": 1789819010.5658138,
+    "seen": 1789819874.83916,
+    "ast_hash": "d359d09c3ba089a025ca0e99c3bf5547",
     "semantic_hash": ""
   }
 }

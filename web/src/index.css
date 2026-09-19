@@ -32,3 +32,127 @@ button {
   font: inherit;
   cursor: pointer;
 }
+
+.row {
+  display: flex;
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+
+.row input {
+  flex: 1;
+}
+
+button.link {
+  margin: 0 0 0.5rem;
+  padding: 0;
+  border: none;
+  background: none;
+  color: #4a6fa5;
+  text-decoration: underline;
+  cursor: pointer;
+  font: inherit;
+}
+
+.case-list {
+  list-style: none;
+  padding: 0;
+}
+
+.case-list li {
+  margin: 0.5rem 0;
+}
+
+button.case {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  text-align: left;
+  border: 1px solid #ddd;
+  border-radius: 0.4rem;
+  background: #fff;
+  padding: 0.75rem;
+  cursor: pointer;
+  font: inherit;
+}
+
+.case-question {
+  font-weight: 600;
+}
+
+.case-dataset {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.panel {
+  border: 1px solid #ddd;
+  border-radius: 0.4rem;
+  background: #fff;
+  padding: 1rem;
+  margin: 1rem 0;
+}
+
+.panel h2 {
+  font-size: 1.1rem;
+  margin: 0 0 0.5rem;
+}
+
+.panel h3 {
+  font-size: 1rem;
+  margin: 1rem 0 0.25rem;
+}
+
+.muted {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.stages,
+.items,
+.chat,
+.grounds {
+  list-style: none;
+  padding: 0;
+  margin: 0.5rem 0;
+}
+
+.stage.done {
+  color: #2a7a2a;
+}
+
+.chat {
+  margin-top: 0.75rem;
+}
+
+.turn {
+  border-top: 1px solid #eee;
+  padding: 0.75rem 0;
+}
+
+.turn .question {
+  font-weight: 600;
+}
+
+.chip {
+  display: inline-block;
+  margin: 0.15rem 0.3rem 0.15rem 0;
+  padding: 0.1rem 0.5rem;
+  border: 1px solid #bbb;
+  border-radius: 1rem;
+  background: #f4f4f4;
+  font-size: 0.8rem;
+  font-family: ui-monospace, monospace;
+}
+
+.grounds {
+  margin-top: 0.4rem;
+}
+
+code {
+  font-family: ui-monospace, monospace;
+  font-size: 0.85em;
+  background: #f0f0f0;
+  padding: 0.1rem 0.3rem;
+  border-radius: 0.25rem;
+}

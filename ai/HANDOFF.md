@@ -2,6 +2,22 @@
 
 ## What was completed
 
+- P4-UX-003 PASSED: DAH can be used from the shell instead of curl. The React
+  bundle was still the P0/P1 surface - one case-creation form and no way to
+  open a case - so the assistant surfaces had nowhere to live. Now cases list
+  with a literal-substring search, creating one opens its workspace, and the
+  workspace shows the question, the *derived* stage and the single next action
+  (recomputed from the core on open, so the UI cannot show a stage the data
+  does not support), the attached datasets and the runs, and the chat panel.
+  Chat is the assistant slice that needs nothing but a case, and it is where
+  the honesty property becomes visible: each ground renders as a citation chip
+  and a badge says which engine spoke. Prior turns load oldest-first. api.ts is
+  a typed client whose request() parses a JSON detail only when the core sent
+  JSON - a 500 answers plain text, and res.json() on it would have thrown a
+  second, hiding the failure. 13 web tests (was 2: CaseList 5, CaseCreation 3, CaseWorkspace 5), and the API contract was
+  verified field-for-field against the live core rather than only against
+  mocks.
+
 - P4-RELIABILITY-002 PASSED: an input error now answers 400 with the engine's
   own message, and a fault in the harness answers 500 - before this, five
   engine endpoints ended in `except Exception as error: raise 400`, which did
@@ -195,6 +211,35 @@
 Create Case -> Question -> Load CSV -> Profile -> SQL Analysis
 -> Finding -> Evidence chain -> Validation (rerun) -> Save -> Reopen
 ```
+
+## What changed (P4-UX-003)
+
+- web/src/api.ts: rewritten as a typed client over the real contracts - GET
+  /cases (with q), GET /cases/{id}, .../progress, .../datasets, .../runs,
+  POST + GET .../chat. One shared request() throws ApiError carrying the status
+  and a message parsed from the body only when the body is JSON.
+- web/src/CaseList.tsx (NEW): the front door - list, search, open, or create.
+  Exports messageOf(), the one place an error becomes readable text.
+- web/src/CaseWorkspace.tsx (NEW): the question, the Workflow panel (stage,
+  next action, per-stage completion), the Artifacts panel (datasets, runs), and
+  the Chat panel with citation chips and an engine badge.
+- web/src/CaseCreation.tsx: unchanged form, now navigates into the created
+  case; takes onCreated/onCancel.
+- web/src/App.tsx: state-based navigation (list | workspace | create) - no
+  router, so the bundle gains no runtime dependency.
+- web/src/index.css: panel, list, chip and stage styles.
+- web/src/CaseList.test.tsx, CaseWorkspace.test.tsx (NEW), CaseCreation.test.tsx
+  (+1 test).
+- One real markup lesson, caught by the tests: React Testing Library's text
+  matcher sees only an element's *direct* text nodes, so `Stage:
+  <strong>analyze</strong>` could not be matched by any regex or function
+  matcher. The sentences are now single text nodes - better for a screen
+  reader and for translation too.
+- No browser is registered with the computer-use surface on this machine, so
+  the visual check is a data-path smoke: the exact calls the components make,
+  run against the live core (create, list, search, progress, datasets, runs,
+  chat round trip, 404 detail). The rendering is covered by vitest against the
+  real response shapes, and the vite proxy was confirmed serving the bundle.
 
 ## What changed (P4-RELIABILITY-002)
 
@@ -588,6 +633,7 @@ reported as unsupported (clear 400) rather than faked; that gate is future work.
 ## Tests performed (current)
 
 - server pytest: 223 passed (199 + 12 conversation + 12 error semantics)
+- web: 13 passed (CaseList 5, CaseCreation 3, CaseWorkspace 5); `cd web && npm test`
 - desktop shell: 7 Rust tests - `cd desktop/src-tauri && cargo test` (5 unit)
   and `cargo test --features e2e` (+2 live-core tests)
 - web: 2 passed
@@ -600,7 +646,7 @@ reported as unsupported (clear 400) rather than faked; that gate is future work.
 
 - Every P3 task is one atomic commit, all pushed to `origin/master`
   (github.com/jensuid/DA-Harness), plus the phase close; P4 opens with
-  P4-VERIFY-001 and P4-RELIABILITY-002 as their own commits.
+  P4-VERIFY-001, P4-RELIABILITY-002 and P4-UX-003 as their own commits.
   `dfb115b` P3-SEC-001, `2c7b11f` P3-CHART-002, `f5df5d1` P3-DATA-003,
   `967544b` P3-FLOW-004, `7b7e49f` P3-ANALYSIS-005, `ebaa30e` P3-EVIDENCE-006,
   P3-CASE-007, P3-SHELL-008, P3-DATA-009, P3-VALID-010, P3-AI-011,
@@ -637,9 +683,9 @@ a case answers questions about itself with citations (P3-AI-014). Each assistant
 slice stops one step short of writing state - the human runs, accepts or rejects
 - so the assistant proposes and never decides.
 
-Two of P4's checklist items are done - the P3 gate (P4-VERIFY-001) and error
-semantics (P4-RELIABILITY-002). What remains of the checklist, oldest risk
-first:
+Three of P4's checklist items are done - the P3 gate (P4-VERIFY-001), error
+semantics (P4-RELIABILITY-002) and the case workspace with chat (P4-UX-003).
+What remains, oldest risk first:
 
 - error handling and resilience: every broad `except` narrowed where it still
   swallows, and a 500 that is never the answer to bad input;

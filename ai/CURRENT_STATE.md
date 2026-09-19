@@ -1,15 +1,28 @@
 # DAH - Current State
 
- - **Phase:** P4 Production Candidate - IN PROGRESS (P4-VERIFY-001 and
-  P4-RELIABILITY-002 done). P3 V1 is COMPLETE: all 10 entry-checklist items,
-  223 tests, and a P3 gate of its own (`verification/p3/verify_p3.py` -> PASS).
+ - **Phase:** P4 Production Candidate - IN PROGRESS (P4-VERIFY-001,
+  P4-RELIABILITY-002, P4-UX-003 done). P3 V1 is COMPLETE: all 10 entry-checklist
+  items, 223 server tests, and a P3 gate of its own.
 - **Global roadmap status:** ai/ROADMAP.md (phase tracker - current stage, phase table, next-phase entry checklist)
 - **Milestone status:** P1 Vertical Slice PASSED (verification/p1/REPORT.md); P0 PASSED
 - **Completed capabilities:** FastAPI core; SQLite case persistence; DuckDB engine; Vite/React shell; P0 verification harness; CSV dataset attachment; deterministic dataset profiling; read-only SQL analysis runs with persisted results; findings with evidence chain; validation via rerun; parquet + xlsx ingest; deep profiling; **read-only Python execution with persisted results (P2-ANALYSIS-008); chart images rendered and persisted from run results (P2-ANALYSIS-009);
 case management - rename, duplicate, delete (P2-CASE-010);
 AI planning with structured output (P2-AI-011); case export as a self-contained
 JSON package with import round trip (P2-CASE-012)**
-- **Active task:** P4-RELIABILITY-002 DONE - error semantics. The five
+- **Active task:** P4-UX-003 DONE - the case workspace and the chat surface.
+  Until this task the React bundle was the P0/P1 surface: one case-creation
+  form, no way to open a case. Now cases list and search, creating one opens
+  its workspace, and the workspace shows the question, the derived stage and
+  the single next action (recomputed from the core on open, so the UI cannot
+  show a stage the data does not support), the attached datasets and runs,
+  and the chat panel: an answer, each ground rendered as a citation chip, and
+  a badge for which engine spoke. Prior turns load oldest-first, so a reopened
+  case resumes mid-thought. api.ts is now a typed client whose request()
+  parses a JSON detail only when the core sent JSON - a 500 answers plain text
+  (P4-RELIABILITY-002) and res.json() on it would have thrown a second,
+  hiding failure.
+  Before it: P4-RELIABILITY-002 (error semantics) and P4-VERIFY-001 (the P3
+  gate).
   engine endpoints (single/multi SQL run, Python run, EDA, chart render) ended
   in `except Exception as error: raise 400`, which did two jobs at once: it was
   the only thing keeping a user's SQL syntax error a 400 (DuckDB raises
@@ -23,15 +36,18 @@ JSON package with import round trip (P2-CASE-012)**
   Before it: P4-VERIFY-001, the P3 gate script - 23 journey steps, 15 exit
   criteria, all PASS. Every entry-checklist item is DONE: P3-SEC-001, P3-CHART-002, P3-DATA-003, P3-FLOW-004, P3-ANALYSIS-005, P3-EVIDENCE-006, P3-CASE-007, P3-SHELL-008, P3-DATA-009, P3-VALID-010 and the four contextual AI slices P3-AI-011..014. P4's entry checklist is sketched in ai/ROADMAP.md as a proposal for the user to reorder.
 - **Known issues:** none
-- **Test status:** server 223 passed (211 + 12 error semantics); web 2 passed;
+- **Test status:** server 223 passed (211 + 12 error semantics); web 13 passed
+  (CaseList 5, CaseCreation 3, CaseWorkspace 5);
   desktop shell 7 Rust tests (5 unit + 2 e2e, `cd desktop/src-tauri && cargo test [--features e2e]`);
   P2 and P3 gates PASS
-- **Next task:** continue the P4 entry checklist - the assistant surfaces in
-  the React shell (the widest gap between what DAH can do and what it shows),
-  large-dataset behaviour, and the desktop shell lifecycle under CI plus the
-  signing decision. A small follow-up surfaced by this task: a 500 answers with
-  Starlette's plain-text "Internal Server Error", not JSON - the shell will
-  want a JSON envelope; fold that into the UX work.
+- **Next task:** P4-UX-004, the run-scoped assistant surfaces - interpret,
+  draft-finding and generate-code need a run-selection UI in the workspace,
+  and accepting a draft should still POST through the findings endpoint so the
+  human-owns-the-finding property stays structural. Then large-dataset
+  behaviour and the desktop shell lifecycle under CI plus the signing decision.
+  Carried: a 500 still answers with Starlette's plain-text "Internal Server
+  Error"; the client now handles it, but the core giving it a JSON envelope
+  remains worth doing.
   Carried: nothing agent-shaped remains. The packaged app is unsigned
   (macOS gatekeeps the first launch; signing is P5)
 - **Blockers:** none
@@ -94,8 +110,19 @@ JSON package with import round trip (P2-CASE-012)**
 |------|--------|
 | P4-VERIFY-001 P3 gate script | DONE |
 | P4-RELIABILITY-002 error semantics | DONE |
+| P4-UX-003 case workspace + chat | DONE |
 
 ## How to run (P4)
 
 - P3 verification: `server/.venv/bin/python verification/p3/verify_p3.py`
   (in-process, ~3-4 min; the last step re-runs the suite)
+
+## How to run (web)
+
+- Web tests: `cd web && npm test` (13 tests; vitest, jsdom, no network)
+- Web build: `cd web && npm run build` (tsc -b + vite)
+- Desktop bundle: `cd web && npm run build:desktop` (absolute API URL for the
+  Tauri shell)
+- Note for live checks: a background process started from a shell here does not
+  outlive its command session - run uvicorn/vite in a persistent session, or
+  the smoke test dies with ECONNREFUSED mid-run.

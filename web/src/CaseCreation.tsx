@@ -1,7 +1,14 @@
 import { useEffect, useState } from 'react'
 import { createCase, getHealth } from './api'
+import { messageOf } from './CaseList'
 
-export function CaseCreation() {
+export function CaseCreation({
+  onCreated,
+  onCancel,
+}: {
+  onCreated: (caseId: string) => void
+  onCancel: () => void
+}) {
   const [question, setQuestion] = useState('')
   const [dataset, setDataset] = useState('')
   const [coreStatus, setCoreStatus] = useState('checking…')
@@ -19,11 +26,12 @@ export function CaseCreation() {
     setSaving(true)
     setError(null)
     try {
-      await createCase({ question, dataset })
-      setQuestion('')
-      setDataset('')
+      const created = await createCase({ question, dataset })
+      // The core returns the persisted case; open it straight into its
+      // workspace rather than dumping the analyst back on an empty form.
+      onCreated(created.id)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'unknown error')
+      setError(messageOf(err))
     } finally {
       setSaving(false)
     }
@@ -31,6 +39,9 @@ export function CaseCreation() {
 
   return (
     <section>
+      <button type="button" onClick={onCancel} className="link">
+        ← Back to cases
+      </button>
       <h1>New Analysis Case</h1>
       <p>Core status: {coreStatus}</p>
       <form onSubmit={handleSubmit}>
