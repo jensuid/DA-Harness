@@ -44,6 +44,7 @@ from app.charts import DEFAULT_WIDTH, DEFAULT_HEIGHT
 from app.planner import create_plan as create_plan_module, validate_plan
 from app.interpreter import create_interpretation as create_interpretation_module
 from app.drafter import create_draft as create_draft_module
+from app.generator import create_code as create_code_module
 from app.exporter import export_case, import_package, PACKAGE_FORMAT, PACKAGE_VERSION
 import app.db as db_module
 from app.db import get_connection
@@ -84,6 +85,8 @@ from app.models import (
     TemplateCreate,
     Interpretation,
     DraftFinding,
+    GenerateCodeRequest,
+    GeneratedCode,
 )
 
 # Under the desktop shell, end this process when the shell is gone (see
@@ -1767,6 +1770,65 @@ def _chart_media_type(path: Path) -> str:
     except OSError:
         return "image/svg+xml"
     return "image/png" if head.startswith(b"\x89PNG\r\n\x1a\n") else "image/svg+xml"
+
+
+@app.post(
+    "/cases/{case_id}/datasets/{dataset_id}/generate-code",
+    status_code=200,
+    response_model=GeneratedCode,
+)
+async def generate_code(
+    case_id: str,
+    dataset_id: str,
+    payload: GenerateCodeRequest,
+    db=Depends(get_db),
+) -> GeneratedCode:
+    """Propose the read-only computation that would answer a question.
+
+    The dataset's own profile - its columns, types and nulls - goes to the
+    generator alongside the question, and what comes back is a proposal: the
+    code, what it does, and the columns it reads. The LLM writes it when it is
+    configured and degrades to a deterministic proposal of the same structure on
+    any failure - unavailable, malformed, not read-only, or reading a column the
+    dataset does not have - so a proposal is always returned and `source` says
+    which engine wrote it.
+
+    Generation is stateless by design (P3-AI-013): nothing is persisted, and
+    nothing runs until a human POSTs the code to the runs endpoint - the only
+    path that persists a run, which keeps the human in charge of what executes.
+    """
+    _require_dataset(db, case_id, dataset_id)
+
+    profile_row = db.execute(
+        "SELECT rows, columns_json, stats_json FROM profiles WHERE dataset_id = ?",
+        (dataset_id,),
+    ).fetchone()
+    # Without a profile there is nothing structural to generate from, so the
+    # call names the missing step rather than writing code against an unknown
+    # dataset.
+    if profile_row is None:
+        raise HTTPException(
+            status_code=400,
+            detail="profile the dataset before generating code",
+        )
+    profile = {
+        "rows": profile_row["rows"],
+        "columns": json.loads(profile_row["columns_json"]),
+        "stats": json.loads(profile_row["stats_json"]),
+    }
+
+    proposal, source = create_code_module(
+        question=payload.question, profile=profile, kind=payload.kind
+    )
+    return GeneratedCode(
+        dataset_id=dataset_id,
+        case_id=case_id,
+        kind=proposal["kind"],
+        code=proposal["code"],
+        explanation=proposal["explanation"],
+        columns_used=proposal.get("columns_used", []),
+        source=source,
+    )
 
 
 @app.post(

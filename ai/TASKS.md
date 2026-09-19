@@ -737,3 +737,66 @@ TESTS: 10 tests - deterministic draft, grounds are real, LLM accepted, invented
 VERIFICATION: pytest green + verification/p2/verify_p2.py PASS.
 STATE UPDATE: mark P3-AI-012 done on pass.
 ```
+
+### P3-AI-013 contract
+
+```
+TASK ID: P3-AI-013
+MILESTONE: P3 V1
+CAPABILITY: Contextual AI (slice 3 of 4: code generation)
+GOAL: Describe what you want to know; the harness proposes the read-only
+      computation that would answer it. The analyst decides whether it runs.
+
+CONTEXT: Slices 1 and 2 read a result and draft the finding it would support.
+         The step before either is the analysis itself, and writing SQL or
+         Python is the part of the loop a non-programmer analyst cannot do
+         alone. So this slice generates the code - and stops one step short of
+         running it, exactly as drafting stops one step short of a finding.
+INPUTS: a question in plain language, a dataset profile (columns, types, nulls),
+        and the desired kind (sql | python).
+RELEVANT FILES: server/app/generator.py (NEW), server/app/models.py
+                (GeneratedCode), server/app/main.py (endpoint),
+                server/tests/test_code_generation.py (NEW)
+REQUIRED CHANGE:
+  - POST /cases/{case_id}/datasets/{dataset_id}/generate-code (200 - nothing is
+    created) with {question, kind?} returns {kind, code, explanation,
+    columns_used, source}.
+  - Two engines, one interface, as before: `generate_code` is deterministic and
+    always available - it picks the profile's first numeric measure and its
+    first categorical (or temporal) dimension and writes a GROUP BY
+    aggregation, or a count-by-dimension query when there is no measure;
+    `LLMGenerator` calls the OpenAI-compatible endpoint when DAH_LLM_API_KEY
+    is set.
+  - Honesty is enforced, not hoped for: every column the generated code
+    references must be a column the dataset actually has. An invented column is
+    a validation failure and the proposal falls back to the deterministic one.
+    Safety likewise: a generated SQL proposal that is not a single read-only
+    statement is rejected, not handed to the analyst.
+  - Generation writes no state. Running a proposal is a POST to the existing
+    runs endpoint (`/runs` for sql, `/runs/python` for python) - the only path
+    that persists a run, so the human decides what executes.
+NON-GOALS: executing generated code from this endpoint (it proposes; the
+           existing endpoints run), generating joins or multi-dataset queries,
+           generating chart or finding artifacts, persisting proposals,
+           iterating on a proposal conversationally (slice 4).
+CONSTRAINTS: no new table; runs endpoints, schema and responses unchanged.
+ACCEPTANCE CRITERIA:
+- [x] a deterministic proposal is produced with no key; code, explanation and
+      columns_used are non-empty and every column named is a real profile column
+- [x] a generated SQL proposal runs as-is through the existing /runs endpoint
+- [x] a generated Python proposal runs as-is through /runs/python and tabulates
+- [x] the deterministic proposal is a single read-only statement
+- [x] an LLM proposal referencing only real columns is returned with source=llm
+- [x] an LLM proposal that invents a column falls back to source=deterministic
+- [x] an LLM proposal that is not read-only (a DELETE/DROP) falls back
+- [x] an LLM that raises or returns malformed output falls back
+- [x] generation writes no state - no run is created
+- [x] 404 for unknown case, unknown dataset, and a cross-case dataset
+- [x] full suite and the P2 gate still pass
+TESTS: 13 tests - deterministic SQL, deterministic Python, columns are real,
+       LLM accepted, invented column rejected, non-read-only rejected, failure
+       and malformed fallbacks, no state written, accept-then-run round trip,
+       404s.
+VERIFICATION: pytest green + verification/p2/verify_p2.py PASS.
+STATE UPDATE: mark P3-AI-013 done on pass.
+```

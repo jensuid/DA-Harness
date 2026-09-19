@@ -12,6 +12,23 @@
   failure. `source` records which one spoke. Three slices remain: finding
   drafting, code generation, conversational memory.
 
+- P3-AI-013 PASSED (contextual AI, slice 3 of 4): a question in plain
+  language now yields the read-only computation that would answer it. `POST
+  /cases/{id}/datasets/{id}/generate-code` takes `{question, kind}` and returns
+  `{kind, code, explanation, columns_used, source}` - a proposal that creates
+  nothing; running it is a POST to the existing `/runs` or `/runs/python`
+  endpoint, the only paths that persist a run, so the human decides what
+  executes. Two engines behind one interface, as before: a deterministic
+  generator that reads the profile's own structure (its measure, its widest
+  categorical or temporal dimension, its nulls) and writes a GROUP BY
+  aggregation - counting by dimension when the data has no measure to sum, and
+  skipping identifier columns, which are keys rather than quantities - and an
+  LLM behind `DAH_LLM_API_KEY`. Honesty is enforced: every column the generated
+  code reads must be a column the dataset actually has (aliases, function calls
+  and qualified names are structure, not reads), and a generated SQL proposal
+  must be a single read-only statement, so nothing is handed to the analyst that
+  the runner would refuse. One slice remains: conversational memory.
+
 - P3-AI-012 PASSED (contextual AI, slice 2 of 4): a result can now propose
   the finding it would support, and the proposal creates nothing. `POST
   /cases/{id}/runs/{id}/draft-finding` returns a candidate - statement,
@@ -329,6 +346,32 @@ Create Case -> Question -> Load CSV -> Profile -> SQL Analysis
   honesty property - the deterministic read may only quote values the result
   actually contains (the two aggregated totals, 80.5 and 325.0, and no others).
 
+## What changed (P3-AI-013)
+
+- app/generator.py (NEW): `generate_code` (deterministic; `_pick_axes` chooses
+  the measure and dimension from the profile and `_is_identifier` keeps a unique
+  key from being summed or grouped by), `_sql_identifiers` /
+  `_python_read_columns` / `_columns_referenced` (the reach of a proposal -
+  aliases, function calls, qualified names and SQL literals are treated as
+  structure, and a Python proposal's *reads* are checked while its output dict
+  keys are not, because inventing an output name invents nothing), the
+  read-only check `_looks_read_only`, `validate_code`, `LLMGenerator`
+  (OpenAI-compatible, httpx, JSON-only prompt, told the exact columns that
+  exist) and `create_code`, which prefers the LLM and falls back on any failure
+  - unavailable, malformed, a wrong `kind`, a statement that is not read-only,
+  or a column the dataset does not have.
+- app/main.py + models.py: the stateless `POST .../generate-code` endpoint (200
+  - no INSERT, no new table), `GenerateCodeRequest` and `GeneratedCode`. It
+  requires a profile first (400 names the missing step), exactly as planning
+  does, because a proposal against an unprofiled dataset is a guess.
+- tests/test_code_generation.py (NEW): 13 tests - deterministic SQL and Python
+  proposals naming the dataset's real columns (and not its identifier), columns
+  used checked against the profiled set, both proposals running as-is through
+  the existing run endpoints, single-read-only check, LLM accepted, invented
+  column rejected, DELETE rejected, failure and malformed fallbacks, no state
+  written for either kind, 400 without a profile, 404s including a cross-case
+  dataset.
+
 ## What changed (P3-AI-012)
 
 - app/drafter.py (NEW): `draft_finding` (the deterministic drafter - every figure
@@ -418,7 +461,7 @@ reported as unsupported (clear 400) rather than faked; that gate is future work.
 
 ## Tests performed (current)
 
-- server pytest: 186 passed (176 + 10 drafting)
+- server pytest: 199 passed (186 + 13 code generation)
 - desktop shell: 7 Rust tests - `cd desktop/src-tauri && cargo test` (5 unit)
   and `cargo test --features e2e` (+2 live-core tests)
 - web: 2 passed
@@ -432,7 +475,7 @@ reported as unsupported (clear 400) rather than faked; that gate is future work.
   `dfb115b` P3-SEC-001, `2c7b11f` P3-CHART-002, `f5df5d1` P3-DATA-003,
   `967544b` P3-FLOW-004, `7b7e49f` P3-ANALYSIS-005, `ebaa30e` P3-EVIDENCE-006,
   P3-CASE-007, P3-SHELL-008, P3-DATA-009, P3-VALID-010, P3-AI-011,
-  <this commit> P3-AI-012
+  P3-AI-012, <this commit> P3-AI-013
 - `.gitignore` covers `web/dist-desktop/`, `server/build/` (the 98MB PyInstaller
   tree) and `desktop/src-tauri/{target,gen,binaries}` - the 85MB sidecar is
   never committed.
@@ -460,13 +503,14 @@ is configured in `server/.env`, so the LLM paths are live and the P2 gate's
 plan step reports `source=llm`. This is an agent task now, not a user action.
 Everything else in the P3 entry checklist is done, including the desktop shell.
 
-Two slices remain, in this order: code generation (natural language to a
-sandboxed Python run - the hard sandbox and the interpreter's reading of a
-result are both already in place), and conversational memory scoped to the
-case. A draft already hands the analyst a statement and the grounds it stands
-on, so code generation is the natural next step: the analyst says what they
-want to know, the harness proposes the read-only Python or SQL that would
-answer it, and the human decides whether to run it.
+One slice remains: conversational memory scoped to the case - a
+case-scoped conversation the analyst can ask questions of, grounded in the
+case's own artifacts. The three proposal slices are all in place now: a
+question yields the computation that would answer it (P3-AI-013), a result
+yields a reading of what it shows (P3-AI-011) and a candidate finding with the
+grounds it stands on (P3-AI-012). Each stops one step short of writing state -
+the human runs, accepts or rejects - so conversational memory is the last
+piece of an assistant that proposes and never decides.
 
 Nothing is unblocked-but-undone. The one remaining carried item is not agent
 work: the packaged app is unsigned, so macOS gatekeeps the first launch

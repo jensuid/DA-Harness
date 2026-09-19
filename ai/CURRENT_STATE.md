@@ -7,18 +7,19 @@
 case management - rename, duplicate, delete (P2-CASE-010);
 AI planning with structured output (P2-AI-011); case export as a self-contained
 JSON package with import round trip (P2-CASE-012)**
-- **Active task:** P3 V1 - P3-SEC-001, P3-CHART-002, P3-DATA-003, P3-FLOW-004, P3-ANALYSIS-005, P3-EVIDENCE-006, P3-CASE-007, P3-SHELL-008, P3-DATA-009, P3-VALID-010, P3-AI-011, P3-AI-012 all DONE. Remaining P3 item: 7, the contextual AI assistant - two slices left, code generation and conversational memory.
+- **Active task:** P3 V1 - P3-SEC-001, P3-CHART-002, P3-DATA-003, P3-FLOW-004, P3-ANALYSIS-005, P3-EVIDENCE-006, P3-CASE-007, P3-SHELL-008, P3-DATA-009, P3-VALID-010, P3-AI-011, P3-AI-012, P3-AI-013 all DONE. Remaining P3 item: 7, the contextual AI assistant - one slice left, conversational memory scoped to the case.
 - **Known issues:** none
-- **Test status:** server 186 passed; web 2 passed; desktop shell 7 Rust tests (5 unit + 2 e2e, `cd desktop/src-tauri && cargo test [--features e2e]`)
-- **Next task:** P3 item 7 continues - the contextual AI assistant's
-  last two slices: code generation (natural language to a sandboxed Python
-  run - the hard sandbox and the interpreter's reading of a result are both
-  already in place) and conversational memory scoped to the case. Slices 1
-  (result interpretation) and 2 (finding drafting) are done; the trust loop
-  is complete, and drafting stops one step short of a finding, so the
-  evidence chain stays human-owned. DAH_LLM_API_KEY is already configured
-  in server/.env (the P2 gate's plan step reports source=llm), so this is
-  an agent task now, not a user action.
+- **Test status:** server 199 passed; web 2 passed; desktop shell 7 Rust tests (5 unit + 2 e2e, `cd desktop/src-tauri && cargo test [--features e2e]`)
+- **Next task:** P3 item 7's final slice: conversational memory scoped to
+  the case - a case-scoped conversation the analyst can ask questions of,
+  grounded in the case's own artifacts (datasets, runs, findings, plans,
+  interpretations, drafts), with deterministic context assembly and an LLM
+  behind DAH_LLM_API_KEY. Slices 1-3 are done: a result can be read,
+  drafted into a candidate finding, and reached by generating the
+  computation that would answer a question - each stopping one step short
+  of writing state, so the human owns every artifact. DAH_LLM_API_KEY is
+  already configured in server/.env, so this is an agent task, not a user
+  action.
   Carried: nothing agent-shaped remains. The packaged app is unsigned
   (macOS gatekeeps the first launch; signing is P5)
 - **Blockers:** none
@@ -69,6 +70,7 @@ JSON package with import round trip (P2-CASE-012)**
   `DELETE /templates/{id}` (templates outlive their source case)
 - Interpret a run: `POST /cases/{id}/runs/{id}/interpret` (plain-language read of the result; deterministic by default, LLM when DAH_LLM_API_KEY is set, `source` records which); latest at `GET .../interpret`, history at `GET .../interpretations`
 - Draft a finding: `POST /cases/{id}/runs/{id}/draft-finding` (the candidate finding a result supports - statement, interpretation, caveat and grounds; deterministic by default, LLM when DAH_LLM_API_KEY is set, `source` records which; **writes nothing** - accepting a draft is a POST to `/cases/{id}/findings`, the only path that creates one)
+- Generate code: `POST /cases/{id}/datasets/{id}/generate-code` with `{question, kind?: "sql"|"python"}` (the read-only computation a question needs - code, explanation, the columns it reads; deterministic by default, LLM when DAH_LLM_API_KEY is set, `source` records which; **writes nothing** - running a proposal is a POST to the `/runs` or `/runs/python` endpoint)
 - Chart from a run: `POST /cases/{id}/runs/{id}/charts` with `{"kind": "bar|line", "x": ..., "y": ..., "series": ...}`; image at `GET /cases/{id}/charts/{id}/image`
 - Rename: `PATCH /cases/{id}` with `{question?, dataset?}`; duplicate: `POST /cases/{id}/duplicate`;
   delete: `DELETE /cases/{id}` (removes the case row, all children, and its on-disk data)

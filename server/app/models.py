@@ -389,3 +389,30 @@ class DraftFinding(BaseModel):
     caveat: str
     grounds: list[str]
     source: str
+
+
+class GenerateCodeRequest(BaseModel):
+    """A natural-language request for the computation that would answer it."""
+
+    question: str
+    kind: str = "sql"
+
+
+class GeneratedCode(BaseModel):
+    """The read-only computation a question would need (P3-AI-013).
+
+    A proposal, not an artifact: generation writes nothing, so nothing has to be
+    un-written when the analyst rejects it. Running it is a POST to the runs
+    endpoint - the only path that persists a run - which keeps "the human
+    decides what executes" structural rather than a flag. `columns_used` are the
+    dataset columns the proposal reads, so an analyst can see the proposal's
+    reach before running it, and `source` records which engine wrote it.
+    """
+
+    dataset_id: str
+    case_id: str
+    kind: str
+    code: str
+    explanation: str
+    columns_used: list[str]
+    source: str
