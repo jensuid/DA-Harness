@@ -1368,3 +1368,66 @@ VERIFICATION: validated step by step locally (venv install on a clean
 STATE UPDATE: mark P4-CI-007 done on pass; the P4 checklist's distribution
               item is closed (signing formally deferred to P5 by DEC-004).
 ```
+
+### P5-VERIFY-001 contract
+
+```
+TASK ID: P5-VERIFY-001
+MILESTONE: P5 Production Grade
+CAPABILITY: Verification (P4 gate)
+GOAL: Prove the P4 properties hold as one journey, not as separate suites.
+
+CONTEXT: every earlier phase has a gate that walks its journey end to end -
+         P4 alone relied on the P3 gate plus the per-task suite, which is
+         honest but never exercised the P4 capabilities against each other.
+         The two properties that make P4 *P4* - the error taxonomy
+         (P4-RELIABILITY-002) and rerun determinism (P4-VALID-005) - are
+         invisible on the happy path, so no existing gate saw them.
+INPUTS: an in-process TestClient; a dataset larger than the result cap.
+RELEVANT FILES: verification/p4/verify_p4.py (NEW), verification/p4/REPORT.md
+                (emitted), .github/workflows/ci.yml, ai/ROADMAP.md,
+                ai/CURRENT_STATE.md, ai/HANDOFF.md
+REQUIRED CHANGE:
+  - verification/p4/verify_p4.py: 18 steps walking the edges a controlled
+    external user reaches - a 5000-row dataset, the result cap truncating a
+    full scan while an aggregate over the same data stays exact, bad SQL
+    answering 400 with the engine's own message and persisting nothing, a
+    write and a sandbox escape both refused, an injected harness fault
+    answering 500, a deliberately broken LLM degrading to deterministic, the
+    assistant drafting without writing, the human accepting, eight repeat
+    validations of an unordered result agreeing, and an export/import round
+    trip.
+  - .github/workflows/ci.yml: the server job runs the P4 gate alongside P2
+    and P3, and its report is uploaded with the others.
+NON-GOALS: the P0 gate (binds a port); testing the React shell (a vitest
+           concern); testing CI itself; signing (DEC-004, P5-DIST).
+CONSTRAINTS: hermetic - no LLM credential is ever set and the one step that
+             sets a dummy key breaks the LLM on purpose, so no run makes a
+             network call. Every dataset value is a closed function of the
+             row index, so the expectations are known by construction rather
+             than measured. Injected faults are restored in a finally block
+             so a failure cannot leak a broken engine into later steps.
+ACCEPTANCE CRITERIA:
+- [x] the gate exits 0 with all 18 steps and all 10 exit criteria PASS
+- [x] bad input answers 400 with a message and leaves no run behind
+- [x] an injected harness fault answers 500, never 400
+- [x] a broken LLM degrades to deterministic and still returns a plan
+- [x] the result cap truncates a full scan but an aggregate reads every row
+- [x] eight validations of an unordered GROUP BY return exactly {"supported"}
+- [x] the case exports and reproduces elsewhere; the suite runs green (231)
+- [x] CI runs the gate on every push
+TESTS: the gate is the test; it also re-runs the suite as its last step.
+VERIFICATION: verification/p4/REPORT.md PASS; P2/P3 gates still PASS.
+STATE UPDATE: mark P5-VERIFY-001 done on pass; the P5 checklist's verification
+              item is closed and P4 has the gate it previously lacked.
+```
+
+## P5 Production Grade
+
+Goal: make DAH tested, hardened, distributable, maintainable, observable and
+supportable (roadmap section 8). Entry order follows ai/ROADMAP.md's checklist;
+the gate comes first because a phase is done when a gate says so.
+
+| Task ID | Capability | Priority | Status | Dependencies | Verification |
+|---------|-----------|----------|--------|--------------|--------------|
+| P5-VERIFY-001 | Verification (P4 gate) | M | DONE | P4 complete | One journey walks the edges: the error taxonomy, rerun determinism, the result cap, graceful degradation |

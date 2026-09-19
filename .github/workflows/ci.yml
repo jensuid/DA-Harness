@@ -63,6 +63,11 @@ jobs:
       - name: P3 gate
         run: .venv/bin/python ../verification/p3/verify_p3.py
 
+      - name: P4 gate
+        # The P4 journey walks the edges, not the happy path: bad input, a
+        # harness fault, a broken LLM, rerun determinism, the result cap.
+        run: .venv/bin/python ../verification/p4/verify_p4.py
+
       - name: Upload gate reports
         if: always()
         uses: actions/upload-artifact@v4
@@ -71,6 +76,7 @@ jobs:
           path: |
             verification/p2/REPORT.md
             verification/p3/REPORT.md
+            verification/p4/REPORT.md
 
   web:
     name: Web suite + build

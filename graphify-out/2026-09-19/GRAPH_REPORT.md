@@ -1,17 +1,17 @@
 # Graph Report - DA-Harness  (2026-09-19)
 
 ## Corpus Check
-- 97 files · ~95,641 words
+- 98 files · ~99,239 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 7 file(s) not represented in the graph (top: (none) 2, .icns 1, .ico 1)
 
 ## Summary
-- 1392 nodes · 2793 edges · 75 communities (69 shown, 3 thin omitted)
+- 1398 nodes · 2798 edges · 74 communities (68 shown, 3 thin omitted)
 - Extraction: 95% EXTRACTED · 5% INFERRED · 0% AMBIGUOUS · INFERRED: 127 edges (avg confidence: 0.89)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `8c74bc23`
+- Built from commit: `b1e2fbca`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -23,7 +23,7 @@
 - Coding-Agent Production System
 - test_case_templates.py
 - analysis.py
-- test_interpretations.py
+- interpreter.py
 - datetime
 - Implementation Roadmap
 - _DatasetHandle
@@ -59,17 +59,17 @@
 - test_code_generation.py
 - test_cases.py
 - main.py
-- test_datasets.py
+- get_db
 - test_supervisor.py
 - python_exec.py
-- test_python_hard_sandbox.py
+- test_interpretations.py
 - execute_user_code
 - LLM Configuration
 - test_profiles.py
-- get_db
-- db.py
+- test_findings.py
+- test_export.py
 - test_runs.py
-- _child_env
+- create_plan
 - tauri.conf.json
 - scripts
 - DAH desktop shell
@@ -80,13 +80,12 @@
 - build_sidecar.sh
 - dah-shell
 - exporter.py
-- _kill_group
+- DAH — Data Analysis Harness
 - _require_case
 - test_error_semantics.py
 - ValueError
 - CaseWorkspace.tsx
 - build_evidence_graph
-- get_evidence_chain
 - Template
 
 ## God Nodes (most connected - your core abstractions)
@@ -119,7 +118,7 @@
 ## Hyperedges (group relationships)
 - **P0 Verification System: gate + state + report** — verification_p0_report, ai_current_state, ai_tasks, ai_handoff [INFERRED 0.90]
 
-## Communities (75 total, 3 thin omitted)
+## Communities (74 total, 3 thin omitted)
 
 ### Community 0 - "Product & Engineering Master Specification"
 Cohesion: 0.13
@@ -127,7 +126,7 @@ Nodes (17): Core Analytical Loop: Question to Finding, Product & Engineering Mas
 
 ### Community 1 - "models.py"
 Cohesion: 0.07
-Nodes (47): BaseModel, get_evidence_graph(), node(), Every claim in the case and what it rests on (P3-EVIDENCE-006). The graph is…, Run one exploratory operation over an attached dataset (P3-ANALYSIS-005).…, run_exploratory_analysis(), CaseCreate, CaseFromTemplate (+39 more)
+Nodes (42): BaseModel, get_evidence_graph(), node(), Every claim in the case and what it rests on (P3-EVIDENCE-006). The graph is…, CaseCreate, CaseFromTemplate, CaseHistory, CaseProgress (+34 more)
 
 ### Community 2 - "web/package.json"
 Cohesion: 0.06
@@ -142,16 +141,16 @@ Cohesion: 0.14
 Nodes (12): Coding-Agent Production System, Agent Implementation Protocol, Artifact Authority Hierarchy, Agent Control Loop: PLAN to EXIT-CRITERIA, Development Context Protocol, Development State Model, Hard Stop Conditions, Persistent Project State (/ai documents) (+4 more)
 
 ### Community 5 - "test_case_templates.py"
-Cohesion: 0.27
-Nodes (15): _promote(), Case template tests for P3-CASE-007. A template is the skeleton a new case…, A templated case starts clean: question and label only, no data., Deleting a promoted case leaves the template usable., _temp_db(), test_case_from_template_allows_overrides(), test_case_from_template_keeps_skeleton(), test_case_from_unknown_template_is_404() (+7 more)
+Cohesion: 0.24
+Nodes (16): _promote(), Case template tests for P3-CASE-007. A template is the skeleton a new case…, A templated case starts clean: question and label only, no data., Deleting a promoted case leaves the template usable., _temp_db(), override(), test_case_from_template_allows_overrides(), test_case_from_template_keeps_skeleton() (+8 more)
 
 ### Community 6 - "analysis.py"
 Cohesion: 0.10
 Nodes (27): _bind_dataset(), _bind_datasets(), _coerce(), _column_stat(), _column_stat_expr(), _duplicate_row_count(), _execute_read_only(), _is_read_only() (+19 more)
 
-### Community 7 - "test_interpretations.py"
-Cohesion: 0.09
-Nodes (33): _column_stats(), _configured_llm(), create_interpretation(), _fmt(), interpret_result(), _is_number(), LLMInterpreter, Any (+25 more)
+### Community 7 - "interpreter.py"
+Cohesion: 0.17
+Nodes (17): _column_stats(), _configured_llm(), create_interpretation(), _fmt(), interpret_result(), _is_number(), LLMInterpreter, Any (+9 more)
 
 ### Community 8 - "datetime"
 Cohesion: 0.07
@@ -170,8 +169,8 @@ Cohesion: 0.40
 Nodes (3): devDependencies, @testing-library/jest-dom, @testing-library/jest-dom
 
 ### Community 13 - "test_case_history.py"
-Cohesion: 0.26
-Nodes (13): _history(), Case history tests for P3-CASE-007. The timeline is derived from each…, Validation has no timestamp of its own, so its status rides along., One case's artifacts never appear in another's timeline., Walking the whole loop leaves one event per artifact, chronologically., _temp_env(), override(), test_events_carry_their_own_artifact_ids_and_details() (+5 more)
+Cohesion: 0.29
+Nodes (12): _history(), Case history tests for P3-CASE-007. The timeline is derived from each…, Validation has no timestamp of its own, so its status rides along., One case's artifacts never appear in another's timeline., Walking the whole loop leaves one event per artifact, chronologically., _temp_env(), test_events_carry_their_own_artifact_ids_and_details(), test_finding_event_carries_validation_status() (+4 more)
 
 ### Community 16 - "Verification & Production Readiness Plan"
 Cohesion: 0.22
@@ -190,20 +189,20 @@ Cohesion: 0.33
 Nodes (5): Decision, Evidence, Exit criteria (Coding-Agent Production System section 8), Exit-test sequence (the full user journey), P1 Vertical Slice - Verification Report
 
 ### Community 20 - "_require_dataset"
-Cohesion: 0.11
-Nodes (23): Dataset, GeneratedCode, Profile, attach_dataset(), create_plan(), generate_code(), get_plan(), get_profile() (+15 more)
+Cohesion: 0.10
+Nodes (25): Dataset, GeneratedCode, Profile, attach_dataset(), create_python_run(), create_run(), generate_code(), get_profile() (+17 more)
 
 ### Community 21 - "test_evidence_graph.py"
 Cohesion: 0.33
 Nodes (13): _full_case(), _graph(), Evidence graph tests for P3-EVIDENCE-006. The graph is a projection of the…, A claim anchored on nothing shows up as an orphan, not as a trace., _temp_env(), override(), test_edges_describe_derivation(), test_graph_400_when_the_case_is_empty() (+5 more)
 
 ### Community 22 - "post"
-Cohesion: 0.13
-Nodes (23): Case, post, create_case(), create_case_from_template(), duplicate_case(), get_case(), import_case_package(), _insert_case() (+15 more)
+Cohesion: 0.12
+Nodes (24): Case, patch, post, create_case(), create_case_from_template(), duplicate_case(), get_case(), import_case_package() (+16 more)
 
 ### Community 23 - "validate_finding"
-Cohesion: 0.09
-Nodes (24): Run a read-only SQL query across several attached files (P3-DATA-003).…, run_query_multi(), create_multi_dataset_run(), create_python_run(), create_run(), Append the reproducibility check and report whether it passed., A canonical sort key for one result row. DuckDB does not promise a row order…, Rerun the stored SQL and compare it to the persisted rows. A multi-dataset run… (+16 more)
+Cohesion: 0.13
+Nodes (17): Run a read-only SQL query across several attached files (P3-DATA-003).…, run_query_multi(), create_multi_dataset_run(), Append the reproducibility check and report whether it passed., A canonical sort key for one result row. DuckDB does not promise a row order…, Rerun the stored SQL and compare it to the persisted rows. A multi-dataset run…, Re-execute the stored script and compare the whole tabulated result. Both…, Reproduce a finding's computation and check its support. The trust loop closes… (+9 more)
 
 ### Community 24 - "test_multi_dataset_runs.py"
 Cohesion: 0.31
@@ -242,12 +241,12 @@ Cohesion: 0.10
 Nodes (35): _columns(), _columns_referenced(), _configured_llm(), create_code(), _explain(), generate_code(), _is_identifier(), LLMGenerator (+27 more)
 
 ### Community 33 - "get_chart_image"
-Cohesion: 0.18
-Nodes (12): FileResponse, _chart_media_type(), delete_dataset(), _format_for(), get_chart_image(), Path, Serve the persisted chart image itself., The artifact's content type, sniffed from its stored bytes. Charts created… (+4 more)
+Cohesion: 0.17
+Nodes (13): FileResponse, _chart_media_type(), delete_dataset(), _format_for(), get_chart_image(), Path, Serve the persisted chart image itself., The artifact's content type, sniffed from its stored bytes. Charts created… (+5 more)
 
 ### Community 34 - "get_connection"
-Cohesion: 0.20
-Nodes (10): Connection, get_connection(), Path, Open a connection, ensuring the schema exists, and commit on success., override(), override(), override(), override() (+2 more)
+Cohesion: 0.15
+Nodes (13): Connection, _ensure_column(), get_connection(), Path, SQLite persistence for Analysis Cases, datasets, and profiles. Owns case STATE…, Add a column to an older schema; a no-op on current ones., Open a connection, ensuring the schema exists, and commit on success., override() (+5 more)
 
 ### Community 35 - "P2 MVP Milestone Verification"
 Cohesion: 0.33
@@ -258,8 +257,8 @@ Cohesion: 0.19
 Nodes (20): _full_setup(), _python_setup(), The core guarantee: if the persisted result no longer matches a rerun,…, A GROUP BY without ORDER BY must not fail reproduction for getting its rows…, The same unordered query, validated repeatedly, must always agree. This is the…, Case + dataset + profile + Python run + finding., A changed result shape shows up as a column change even when values line up., A script that no longer runs is a verdict, never a 500. (+12 more)
 
 ### Community 37 - "DAH - Global Roadmap Status"
-Cohesion: 0.25
-Nodes (7): Current position detail, DAH - Global Roadmap Status, P3 V1 — entry checklist (COMPLETE), P4 Production Candidate — entry checklist (proposed, not started), Phase gate definitions (what "done" means), Phase status, Rules this file enforces
+Cohesion: 0.22
+Nodes (8): Current position detail, DAH - Global Roadmap Status, P3 V1 — entry checklist (COMPLETE), P4 Production Candidate — entry checklist (COMPLETE), P5 Production Grade — entry checklist (proposed, not started), Phase gate definitions (what "done" means), Phase status, Rules this file enforces
 
 ### Community 38 - "test_dataset_delete.py"
 Cohesion: 0.21
@@ -287,23 +286,23 @@ Nodes (16): _client(), A `%` or `_` in the term is literal, not a LIKE wildcard.
 
 ### Community 44 - "main.py"
 Cohesion: 0.11
-Nodes (26): DraftFinding, Interpretation, Which failures are the input's fault (P4-RELIABILITY-002). Every engine the API…, _chart_row_to_summary(), create_chart(), create_interpretation(), draft_finding(), get_chart() (+18 more)
+Nodes (27): DraftFinding, Interpretation, Which failures are the input's fault (P4-RELIABILITY-002). Every engine the API…, _chart_row_to_summary(), create_chart(), create_interpretation(), draft_finding(), get_chart() (+19 more)
 
-### Community 45 - "test_datasets.py"
-Cohesion: 0.22
-Nodes (20): _attach(), _golden_parquet(), _golden_xlsx(), _make_case(), _profile(), The same SQL runs against csv, parquet, and xlsx datasets., Writing the natural read_parquet(?) placeholder works on a parquet file., Build a two-row parquet file from the golden CSV content. (+12 more)
+### Community 45 - "get_db"
+Cohesion: 0.10
+Nodes (36): get_db(), _attach(), _golden_parquet(), _golden_xlsx(), _make_case(), _profile(), The same SQL runs against csv, parquet, and xlsx datasets., Writing the natural read_parquet(?) placeholder works on a parquet file. (+28 more)
 
 ### Community 46 - "test_supervisor.py"
 Cohesion: 0.16
 Nodes (21): parent_pid(), pid_alive(), Parent-process supervision for the desktop shell. The Tauri shell is the only…, The pid the shell asked this core to outlive, or None if not supervised., Whether ``pid`` is currently a running process., Start a daemon thread that ends this process when the shell is gone. Returns…, start_parent_watchdog(), watch() (+13 more)
 
 ### Community 47 - "python_exec.py"
-Cohesion: 0.15
-Nodes (14): Exception, _alarm_handler(), _failure(), _guarded_import(), _ImportGuard, Restricted Python execution engine for the Analysis Workspace. The Python…, Raised in the signal handler when a run exceeds its wall clock., A sys.meta_path finder that refuses everything outside the allowlist. Installed… (+6 more)
+Cohesion: 0.10
+Nodes (25): Exception, _alarm_handler(), _child_env(), _failure(), _guarded_import(), _ImportGuard, _kill_group(), Popen (+17 more)
 
-### Community 48 - "test_python_hard_sandbox.py"
-Cohesion: 0.27
-Nodes (11): _case_with_dataset(), _python(), Hard-sandbox tests for P3-SEC-001. The inner guards (import allowlist,…, An unbounded loop ends at the time limit and the API answers 400., A worker that dies on startup surfaces as a 400, never as an API crash., A rejected contract is a 400 with a message, not a dead process., _temp_env(), override() (+3 more)
+### Community 48 - "test_interpretations.py"
+Cohesion: 0.21
+Nodes (16): _case_with_sql_run(), _FailingInterpreter, _GoodInterpreter, _MalformedInterpreter, Result interpretation tests for P3-AI-011. The loop could run, chart, validate…, _temp_env(), override(), test_404s_for_unknown_and_cross_case_runs() (+8 more)
 
 ### Community 49 - "execute_user_code"
 Cohesion: 0.24
@@ -317,21 +316,21 @@ Nodes (8): 1. Create the file, 2. Start the server, 3. Check it took effect, Alt
 Cohesion: 0.44
 Nodes (9): _attach(), _temp_env(), override(), test_deep_profile_stats(), test_deep_profile_survives_reopen(), test_get_profile_before_profiling_returns_404(), test_header_only_dataset_profiles_cleanly(), test_profile_and_reopen() (+1 more)
 
-### Community 52 - "get_db"
-Cohesion: 0.42
-Nodes (8): get_db(), _case_with_run(), _temp_env(), override(), test_create_finding_and_trace_evidence(), test_finding_unknown_run_returns_404(), test_findings_survive_reopen(), test_set_validation_status()
+### Community 52 - "test_findings.py"
+Cohesion: 0.50
+Nodes (7): _case_with_run(), _temp_env(), override(), test_create_finding_and_trace_evidence(), test_finding_unknown_run_returns_404(), test_findings_survive_reopen(), test_set_validation_status()
 
-### Community 53 - "db.py"
-Cohesion: 0.26
-Nodes (11): _ensure_column(), SQLite persistence for Analysis Cases, datasets, and profiles. Owns case STATE…, Add a column to an older schema; a no-op on current ones., _full_case(), _temp_env(), override(), test_export_contains_every_section(), test_export_unknown_case_returns_404() (+3 more)
+### Community 53 - "test_export.py"
+Cohesion: 0.44
+Nodes (8): _full_case(), _temp_env(), override(), test_export_contains_every_section(), test_export_unknown_case_returns_404(), test_import_rejects_bad_package(), test_round_trip_relinks_references_and_serves_artifacts(), test_round_trip_restores_the_case()
 
 ### Community 54 - "test_runs.py"
 Cohesion: 0.47
 Nodes (8): _case_with_dataset(), _temp_env(), override(), test_list_runs_excludes_rows(), test_rejects_multi_statement(), test_rejects_write_query(), test_run_aggregation_and_reopen(), test_run_unknown_dataset_returns_404()
 
-### Community 55 - "_child_env"
-Cohesion: 0.25
-Nodes (8): _child_env(), The macOS sandbox-exec profile for one run. Reads are unrestricted (the…, The minimal environment the worker inherits. The API process may carry…, _seatbelt_profile(), Secrets held by the API process never reach the worker., The profile production emits is enforced by the kernel, not by Python., test_child_env_scrubs_api_secrets(), test_seatbelt_profile_denies_writes_and_network()
+### Community 55 - "create_plan"
+Cohesion: 0.33
+Nodes (6): create_plan(), get_plan(), Plan an analysis from the case question and the dataset profile. The plan is…, Retrieve the latest plan for a case's dataset., Plan, A structured analysis plan, persisted against a case and dataset.
 
 ### Community 56 - "tauri.conf.json"
 Cohesion: 0.11
@@ -354,8 +353,8 @@ Cohesion: 0.33
 Nodes (5): description, identifier, permissions, $schema, windows
 
 ### Community 61 - "get"
-Cohesion: 0.11
-Nodes (20): get, RunSummary, _dataset_ids_of(), export_case_package(), get_case_history(), get_run(), health(), list_plans() (+12 more)
+Cohesion: 0.10
+Nodes (22): get, RunSummary, _dataset_ids_of(), export_case_package(), get_case_history(), get_evidence_chain(), get_run(), health() (+14 more)
 
 ### Community 62 - "dah_core_main.py"
 Cohesion: 0.67
@@ -365,13 +364,13 @@ Nodes (3): main(), parse_port(), Entrypoint for the `dah-core` sidecar (the pack
 Cohesion: 0.18
 Nodes (17): _chart_format(), _dataset_ids_of(), export_case(), _import_dataset_ids(), import_package(), PackageError, Path, Self-contained Analysis Case packages (P2-CASE-012). Export assembles… (+9 more)
 
-### Community 67 - "_kill_group"
+### Community 67 - "DAH — Data Analysis Harness"
 Cohesion: 0.40
-Nodes (5): _kill_group(), Popen, Kill the worker and anything it spawned (sandbox-exec sits in between)., A timeout kills the worker and anything it spawned, not just the shell., test_kill_group_terminates_the_tree()
+Nodes (4): Building the packaged app, DAH — Data Analysis Harness, Installing the app, Layers
 
 ### Community 68 - "_require_case"
-Cohesion: 0.12
-Nodes (22): CaseProgress, ConversationTurn, Finding, patch, chat_about_case(), create_finding(), get_case_progress(), get_finding() (+14 more)
+Cohesion: 0.11
+Nodes (23): CaseProgress, ConversationTurn, Finding, chat_about_case(), create_finding(), get_case_progress(), get_finding(), list_chat() (+15 more)
 
 ### Community 69 - "test_error_semantics.py"
 Cohesion: 0.19
@@ -389,33 +388,29 @@ Nodes (63): react, @testing-library/react, @testing-library/user-event, vitest, 
 Cohesion: 0.33
 Nodes (6): build_evidence_graph(), _dataset_ids_of(), Any, Case-wide evidence graph and claim-to-source tracing (P3-EVIDENCE-006). The…, Every dataset a run bound, from its recorded list (P3-DATA-003)., Project a case into its evidence graph. Raises ValueError when the case has no…
 
-### Community 73 - "get_evidence_chain"
-Cohesion: 0.50
-Nodes (4): get_evidence_chain(), Trace a finding back to its computation and dataset. Walks finding -> run ->…, EvidenceChain, The trust chain a reviewer walks to verify a finding.
-
 ### Community 79 - "Template"
 Cohesion: 0.33
 Nodes (6): list_templates(), promote_template(), Promote a case into a reusable template (P3-CASE-007). The template keeps the…, List every saved template, newest first (P3-CASE-007)., A reusable case skeleton: the question and the dataset label. A template…, Template
 
 ## Knowledge Gaps
-- **132 isolated node(s):** `name`, `private`, `version`, `description`, `tauri` (+127 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 531 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **136 isolated node(s):** `name`, `private`, `version`, `description`, `tauri` (+131 more)
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 536 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
 - **3 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `get_connection()` connect `get_connection` to `test_case_templates.py`, `test_interpretations.py`, `datetime`, `test_case_history.py`, `test_python_runs.py`, `test_evidence_graph.py`, `test_multi_dataset_runs.py`, `test_plans.py`, `test_charts_raster.py`, `test_conversation.py`, `test_drafting.py`, `test_eda.py`, `test_validation.py`, `test_dataset_delete.py`, `test_workflow.py`, `test_large_datasets.py`, `test_case_management.py`, `test_code_generation.py`, `test_cases.py`, `main.py`, `test_datasets.py`, `test_python_hard_sandbox.py`, `test_profiles.py`, `get_db`, `db.py`, `test_runs.py`, `test_error_semantics.py`?**
-  _High betweenness centrality (0.117) - this node is a cross-community bridge._
+- **Why does `get_connection()` connect `get_connection` to `test_case_templates.py`, `datetime`, `test_case_history.py`, `test_python_runs.py`, `test_evidence_graph.py`, `test_multi_dataset_runs.py`, `test_plans.py`, `test_charts_raster.py`, `test_conversation.py`, `test_drafting.py`, `test_eda.py`, `test_validation.py`, `test_dataset_delete.py`, `test_workflow.py`, `test_large_datasets.py`, `test_case_management.py`, `test_code_generation.py`, `test_cases.py`, `main.py`, `get_db`, `test_interpretations.py`, `test_profiles.py`, `test_findings.py`, `test_export.py`, `test_runs.py`, `test_error_semantics.py`?**
+  _High betweenness centrality (0.116) - this node is a cross-community bridge._
 - **Why does `create_plan()` connect `test_plans.py` to `main.py`, `ValueError`?**
   _High betweenness centrality (0.018) - this node is a cross-community bridge._
 - **Why does `profile_csv()` connect `analysis.py` to `main.py`, `_require_dataset`?**
-  _High betweenness centrality (0.016) - this node is a cross-community bridge._
+  _High betweenness centrality (0.015) - this node is a cross-community bridge._
 - **Are the 22 inferred relationships involving `ValueError` (e.g. with `_bind_datasets()` and `run_query()`) actually correct?**
   _`ValueError` has 22 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `name`, `private`, `version` to the rest of the system?**
-  _132 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _136 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Product & Engineering Master Specification` be split into smaller, more focused modules?**
   _Cohesion score 0.1323529411764706 - nodes in this community are weakly interconnected._
 - **Should `models.py` be split into smaller, more focused modules?**
-  _Cohesion score 0.06648936170212766 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.07419712070874862 - nodes in this community are weakly interconnected._

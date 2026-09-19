@@ -1,6 +1,20 @@
 # DAH - Handoff
 
 ## What was completed
+- P5-VERIFY-001 PASSED: the P4 gate exists. P4 was the only phase without one
+  - it relied on the P3 gate plus the per-task suites, which never exercised
+  the P4 capabilities against each other. The two properties that make P4 *P4*
+  - the error taxonomy and rerun determinism - are invisible on the happy path,
+  so nothing was watching them. `verification/p4/verify_p4.py` walks the edges
+  instead: a 5000-row dataset, the result cap truncating a full scan while an
+  aggregate over the same data stays exact, bad SQL answering 400 with the
+  engine's own message and leaving nothing behind, a write and a sandbox escape
+  both refused, an injected harness fault answering 500 rather than blaming the
+  analyst, a deliberately broken LLM degrading to the deterministic engine, the
+  assistant drafting without writing, eight repeat validations of an unordered
+  GROUP BY agreeing, and an export/import round trip. 18 steps, 10 exit
+  criteria, all PASS; CI runs it on every push.
+
 - P4-CI-007 PASSED (and it closes P4): CI exists, runs green on GitHub's own
   runners, and the app-signing question is answered in writing. There was no
   `.github` directory at all - 231 server tests, 17 web tests and 7 Rust tests
@@ -277,6 +291,31 @@
 Create Case -> Question -> Load CSV -> Profile -> SQL Analysis
 -> Finding -> Evidence chain -> Validation (rerun) -> Save -> Reopen
 ```
+
+## What changed (P5-VERIFY-001)
+
+- verification/p4/verify_p4.py (NEW): the gate, modelled on the P3 one. In-
+  process TestClient, one journey, a step table and an exit-criteria table
+  written to verification/p4/REPORT.md, exit 0 only when every step passes.
+- Every dataset value is a closed function of the row index (revenue depends
+  only on the region, so each region's sum is exactly rate x group size), so
+  the expectations are known by construction rather than measured against a
+  captured value that could drift.
+- Hermeticity: the LLM credentials are scrubbed from the process and from the
+  pytest subprocess, so no assistant step makes a live call. The one step that
+  sets a dummy DAH_LLM_API_KEY does it to *break* the LLM on purpose and prove
+  the fallback; `_BrokenLLM` raises without touching the network.
+- The injected harness fault is observed through a second TestClient with
+  `raise_server_exceptions=False` - the only way a 500 is visible in process -
+  and the engine is restored in a `finally` so a failure cannot leak a broken
+  function into later steps.
+- .github/workflows/ci.yml: the server job runs the P4 gate alongside P2 and
+  P3, and uploads its report with the others. A gate CI never runs is a gate
+  that rots.
+- One genuine bug in the gate itself, caught by its own first run: the journey
+  never rendered a chart, so the workflow's `evidence` stage stayed open and
+  the loop never closed. Not a code bug - the stage derives from artifacts and
+  a chart is one of them. The gate now renders one.
 
 ## What the first CI runs caught (P4-CI-007, follow-up)
 
@@ -823,9 +862,11 @@ reported as unsupported (clear 400) rather than faked; that gate is future work.
 - server pytest: 231 passed (verified again on a clean venv built
   from pyproject - the install path CI uses)
 - CI on GitHub's own runners: ALL FOUR JOBS GREEN
-  (https://github.com/jensuid/DA-Harness/actions) - server suite + P2/P3 gates,
-  web suite + build, sidecar packaging + /health smoke, desktop shell lifecycle
-  (7 Rust tests, both e2e tests running against the real sidecar)
+  (https://github.com/jensuid/DA-Harness/actions) - server suite + P2/P3/P4
+  gates, web suite + build, sidecar packaging + /health smoke, desktop shell
+  lifecycle (7 Rust tests, both e2e tests running against the real sidecar)
+- P4 gate: `server/.venv/bin/python verification/p4/verify_p4.py` PASS on all
+  18 journey steps and all 10 exit criteria (the last step re-runs the suite)
 - web: 17 passed (CaseList 5, CaseCreation 3, CaseWorkspace 9); `cd web && npm test`
 - desktop shell: 7 Rust tests - `cd desktop/src-tauri && cargo test` (5 unit)
   and `cargo test --features e2e` (+2 live-core tests)
@@ -867,27 +908,24 @@ reported as unsupported (clear 400) rather than faked; that gate is future work.
 
 ## Next action
 
-**P4 is complete.** All five checklist items are done and the phase is closed:
-the P3 gate (P4-VERIFY-001), error semantics (P4-RELIABILITY-002), the
-assistant surfaces in the shell (P4-UX-003 + P4-UX-004), validation determinism
-(P4-VALID-005), large-dataset performance (P4-PERF-006), and CI plus the
-signing decision (P4-CI-007). Everything runs in CI now; signing is a written
-deferral rather than an open question.
+P4 is closed and it now has the gate it lacked. `verification/p4/verify_p4.py`
+walks the edges a controlled external user reaches and CI runs it on every
+push; 18 steps and 10 exit criteria, all PASS.
 
-P5 Production Grade is proposed in ai/ROADMAP.md, not started. Oldest-risk
-first:
+P5 Production Grade is under way - 1 of 5 checklist items done. What remains,
+oldest-risk first:
 
-- macOS code signing + notarization - formally deferred here by DEC-004. The
-  identity becomes a CI secret in the `packaging` job; the unsigned build stays
-  as a fallback target.
-- a P4 gate (`verification/p4/verify_p4.py`) - every earlier phase has a gate
-  that walks one journey; P4 relied on the P3 gate plus CI, which is honest but
-  not a P4-specific journey.
-- observability: a 500 is honest and logged with a traceback, but in a
-  packaged app a non-developer has nowhere to read that output.
+- macOS code signing + notarization - formally deferred here by DEC-004. This
+  one is blocked on an external dependency: a $99 Apple Developer ID, which
+  only you can provision. The identity becomes a CI secret in the `packaging`
+  job; the unsigned build stays as a fallback target.
+- observability: a 500 is honest and logged with a traceback, but in a packaged
+  app a non-developer has nowhere for that output to go.
 - carried: a 500 still answers with Starlette's plain-text "Internal Server
-  Error". The client handles it; giving it a JSON envelope is the last rough
-  edge of the error contract.
+  Error". The client handles it; a JSON envelope is the last rough edge of the
+  error contract, and it is small and self-contained.
+- release automation: versioned artifacts published from CI, on top of the
+  packaging job that already builds and smokes the sidecar.
 
 Nothing is unblocked-but-undone.
 

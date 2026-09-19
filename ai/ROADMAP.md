@@ -56,32 +56,23 @@ production-grade**.
   (deterministic default, LLM behind `DAH_LLM_API_KEY`); case export/import
   round trip.
 - **Test status:** server 231 passed; web 17 passed; desktop shell 7 Rust
-  tests (5 unit + 2 e2e, the two spawning a real core and asserting it stops
-  and frees the port); P2 and P3 gates PASS. All of it now runs in CI
-  (`.github/workflows/ci.yml`, P4-CI-007) - before that, every test was green
-  only because a developer happened to run it.
-- **Active task:** P4-CI-007 DONE - CI exists, and the signing question is
-  answered. There was no `.github` at all: 231 server tests, 17 web tests and 7
-  Rust tests were green only because someone ran them. `.github/workflows/ci.yml`
-  now runs four macOS jobs - the server suite plus the P2 and P3 gates, the web
-  suite plus a tsc-then-vite build, the desktop shell's two live-core lifecycle
-  tests (spawn uvicorn, wait on /health, assert the core stops and frees port
-  8123), and a sidecar packaging build that smokes the built binary's /health.
-  Validating the install path on a clean venv found two real reproducibility
-  bugs: flat-layout package discovery failed without the stale egg-info that
-  masked it locally, and PyInstaller was installed ad-hoc and undeclared.
-  macOS-only on purpose (seatbelt sandbox, macOS sidecar and .app), and no job
-  needs a single secret - no LLM key is ever set, so every assistant step is
-  deterministic and no run makes a network call.
-  Signing is DECIDED, not carried: DEC-004 defers it to P5. The cost is the
-  pipeline (identity as a CI secret, rotation, re-signing an in-flight bundle)
-  not the fee, P4 has no secret store yet, and Gatekeeper's prompt is a single
-  once-per-machine cost that degrades gracefully. Consequence: nothing in P4 may
-  depend on the app being signed, and the README documents the right-click >
-  Open workaround in plain language.
-  Before it: P4-PERF-006 (large-dataset profiling), P4-VALID-005 (validation
-  determinism), P4-UX-004 (run-scoped assistant surfaces), P4-UX-003 (workspace
-  + chat), P4-RELIABILITY-002 (error semantics), P4-VERIFY-001 (the P3 gate).
+  tests (5 unit + 2 e2e); P2, P3 **and P4** gates PASS. All of it runs in CI
+  (`.github/workflows/ci.yml`) - before P4-CI-007, every test was green only
+  because a developer happened to run it.
+- **Active task:** P5-VERIFY-001 DONE - the P4 gate exists, so P4 finally
+  has what every earlier phase has: one journey that walks its capabilities end
+  to end. Where P3's gate proved the loop is *useful*, this one proves it is
+  *safe to hand to someone else* by walking the edges instead of the happy
+  path: a 5000-row dataset, the result cap truncating a full scan while an
+  aggregate over the same data stays exact, bad SQL answering 400 with the
+  engine's own message and leaving nothing behind, a write and a sandbox escape
+  both refused, an injected harness fault answering 500 rather than blaming the
+  analyst, a deliberately broken LLM degrading to the deterministic engine, and
+  eight repeat validations of an unordered GROUP BY agreeing every time. 18
+  steps and 10 exit criteria, all PASS; CI runs it on every push.
+  Before it (P4, now closed): the P3 gate, error semantics, the assistant
+  surfaces in the shell, validation determinism, large-dataset performance, and
+  CI plus the signing decision.
 - **Known issues / blockers:** none.
 - **Repository:** private, `master` tracks `origin/master`.
 
@@ -142,7 +133,7 @@ Ordered oldest-risk first.
   close, green state only, pushed to origin/master before work is called done
   (see the commit and push discipline section of AGENTS.md).
 
-## P5 Production Grade — entry checklist (proposed, not started)
+## P5 Production Grade — entry checklist (1 of 5 done)
 
 Ordered oldest-risk first; a proposal for the user to reorder before work
 starts. P4 closed with the signing question decided rather than open
@@ -152,7 +143,7 @@ of a shrug.
 | # | Capability | Why now | Roadmap section |
 |---|-----------|---------|-----------------|
 | 1 | macOS code signing + notarization — **formally deferred here by DEC-004**: provision a Developer ID identity, store it as a CI secret in the `packaging` job, notarize the bundle, and keep the unsigned build as a fallback target | P4 shipped unsigned with a documented right-click > Open workaround; the pipeline cost (identity, rotation, re-signing an in-flight bundle) is the reason it waited, and P5 is where the bundle becomes final | P5 Distribution |
-| 2 | The P4 gate — a `verification/p4/verify_p4.py` walking one journey through the P4 capabilities, as each earlier phase has | A phase is done when a gate says so; P4 relied on the P3 gate plus CI, which is honest but not a P4-specific journey | P5 Verification |
+| 2 | The P4 gate — **DONE (P5-VERIFY-001)**: `verification/p4/verify_p4.py` walks the *edges* rather than the happy path - a 5000-row dataset, the result cap truncating a full scan while an aggregate stays exact, bad SQL answering 400 with the engine's message and persisting nothing, a sandbox escape refused, an injected harness fault answering 500, a deliberately broken LLM degrading to deterministic, and eight repeat validations of an unordered result agreeing. 18 steps, 10 exit criteria, all PASS; CI runs it on every push | P4 relied on the P3 gate plus CI, which never exercised the P4 capabilities against each other - the error taxonomy and rerun determinism are invisible on the happy path | P5 Verification |
 | 3 | Observability: structured logs and a way to read them when a user hits a problem, beyond uvicorn's stderr | P4 made a 500 honest and logged with a traceback, but there is nowhere for that output to go in a packaged app a non-developer is running | P5 Observability |
 | 4 | Give the 500 a JSON envelope — **carried from P4-RELIABILITY-002**: the core still answers Starlette's plain-text "Internal Server Error", which the client already tolerates but which is the one remaining rough edge in the error contract | Small, self-contained, and it closes the last item the reliability task explicitly declined to expand into | P5 Reliability |
 | 5 | Release automation: versioned, notarized artifacts published from CI rather than built by hand | The `packaging` job already builds and smokes the sidecar on a clean machine; publishing is the step after signing lands | P5 Distribution |

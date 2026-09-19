@@ -3,37 +3,32 @@
  - **Phase:** P4 Production Candidate - COMPLETE (all 5 checklist items:
   P4-VERIFY-001, P4-RELIABILITY-002, P4-UX-003 + P4-UX-004, P4-VALID-005,
   P4-PERF-006, P4-CI-007). P3 V1 is COMPLETE: all 10 entry-checklist items,
-  231 server tests, and a P3 gate of its own. P5 Production Grade is proposed,
-  not started.
+  231 server tests, and a P3 gate of its own. P5 Production Grade is IN
+  PROGRESS (1 of 5 checklist items: the P4 gate is done; signing,
+  observability, the 500 envelope and release automation remain).
 - **Global roadmap status:** ai/ROADMAP.md (phase tracker - current stage, phase table, next-phase entry checklist)
 - **Milestone status:** P1 Vertical Slice PASSED (verification/p1/REPORT.md); P0 PASSED
 - **Completed capabilities:** FastAPI core; SQLite case persistence; DuckDB engine; Vite/React shell; P0 verification harness; CSV dataset attachment; deterministic dataset profiling; read-only SQL analysis runs with persisted results; findings with evidence chain; validation via rerun; parquet + xlsx ingest; deep profiling; **read-only Python execution with persisted results (P2-ANALYSIS-008); chart images rendered and persisted from run results (P2-ANALYSIS-009);
 case management - rename, duplicate, delete (P2-CASE-010);
 AI planning with structured output (P2-AI-011); case export as a self-contained
 JSON package with import round trip (P2-CASE-012)**
-- **Active task:** P4-CI-007 DONE - CI exists and the signing question is
-  answered, which closes P4. There was no `.github` directory at all: 231
-  server tests, 17 web tests and 7 Rust tests were green only because a
-  developer happened to run them. `.github/workflows/ci.yml` now runs four
-  macOS jobs - the server suite plus the P2 and P3 gates (reports uploaded as
-  an artifact), the web suite plus a tsc-then-vite build, the desktop shell's
-  two live-core lifecycle tests, and a sidecar packaging build that smokes the
-  built binary's /health. macOS-only on purpose (the hard sandbox is seatbelt
-  and the sidecar and .app are macOS builds), and no job needs a single secret
-  - no LLM key is ever set, so every assistant step is deterministic and no
-  run makes a network call.
-  Validating the install path on a clean venv found two reproducibility bugs
-  that local state had been masking: flat-layout package discovery failed
-  without the stale egg-info (`[tool.setuptools] packages = ["app"]` fixes it),
-  and PyInstaller was installed ad-hoc and undeclared (now a `packaging`
-  extra). Every command in the workflow was run locally in the order the
-  workflow runs it before the file was written.
-  Signing is DECIDED, not carried: DEC-004 defers it to P5. The cost is the
-  pipeline (identity as a CI secret, rotation, re-signing an in-flight bundle)
-  rather than the fee, P4 had no secret store yet, and Gatekeeper's prompt is
-  a once-per-machine cost that degrades gracefully. Consequence: nothing in P4
-  depends on the app being signed, and the README documents the right-click >
-  Open workaround in plain language.
+- **Active task:** P5-VERIFY-001 DONE - the P4 gate. P4 relied on the P3 gate
+  plus CI, which never exercised the P4 capabilities against each other, so it
+  got a gate of its own. Where the earlier gates walk the happy path, this one
+  walks the edges a controlled external user actually reaches: a 5000-row
+  dataset with analytically-known aggregates, the result cap truncating a full
+  scan while an aggregate over the same data stays exact, bad SQL answering 400
+  with the engine's own message and persisting nothing, a write and a sandbox
+  escape both refused, an injected harness fault answering 500 instead of
+  blaming the analyst, a deliberately broken LLM degrading to the deterministic
+  engine rather than blocking, the assistant drafting without writing, eight
+  repeat validations of an unordered GROUP BY agreeing, and an export/import
+  round trip. 18 steps and 10 exit criteria, all PASS; CI runs it on every
+  push. Hermetic - no credential is ever set, and the one step that sets a
+  dummy key breaks the LLM on purpose.
+  Before it: P4 in full (the P3 gate, error semantics, the assistant surfaces,
+  validation determinism, large-dataset performance, CI and the signing
+  decision).
 - **Known issues:** none. CI runs green on GitHub's own runners after five
   local-state bugs it exposed were fixed (see ai/HANDOFF.md, "What the first
   CI runs caught").
@@ -42,15 +37,14 @@ JSON package with import round trip (P2-CASE-012)**
   CaseWorkspace 9);
   desktop shell 7 Rust tests (5 unit + 2 e2e, `cd desktop/src-tauri && cargo test [--features e2e]`);
   P2 and P3 gates PASS
-- **Next task:** P5 Production Grade is proposed in ai/ROADMAP.md, not
-  started - oldest-risk first: macOS signing + notarization (formally deferred
-  by DEC-004, with the identity landing as a CI secret in the `packaging`
-  job), a P4 gate script so a phase is done when a gate says so, observability
-  (there is nowhere for a packaged app's logs to go), the carried 500 JSON
-  envelope, and release automation.
-  Carried (not agent work): the packaged app is unsigned, so macOS
-  gatekeeps the first launch (right-click, Open - documented in README.md);
-  signing and notarization are P5.
+- **Next task:** the remaining P5 checklist, oldest-risk first - macOS
+  signing + notarization (formally deferred by DEC-004, blocked on a Developer
+  ID), observability for a packaged app that has nowhere to send its logs, the
+  carried 500 JSON envelope, and release automation on top of the packaging
+  job.
+  Carried: a 500 still answers with Starlette's plain-text "Internal Server
+  Error"; the client handles it, but a JSON envelope is the last rough edge of
+  the error contract.
 - **Blockers:** none
 
 ## P2 progress
@@ -131,3 +125,9 @@ JSON package with import round trip (P2-CASE-012)**
 - Note for live checks: a background process started from a shell here does not
   outlive its command session - run uvicorn/vite in a persistent session, or
   the smoke test dies with ECONNREFUSED mid-run.
+
+## P5 progress
+
+| Task | Status |
+|------|--------|
+| P5-VERIFY-001 P4 gate | DONE |
