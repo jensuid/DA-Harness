@@ -1263,12 +1263,29 @@ def _record_repro(checks, reproduced, detail_ok, detail_bad) -> bool:
     return reproduced
 
 
+def _row_key(row) -> str:
+    """A canonical sort key for one result row.
+
+    DuckDB does not promise a row order for unordered results: a GROUP BY can
+    return its groups in a different order on a different connection, so the
+    same query rerun against the same data can persist its rows in another
+    order and a positional comparison would call that a drift it is not. An SQL
+    result set is a bag of rows; only ORDER BY makes it a sequence, and when the
+    query asks for one DuckDB honours it, so sorting both sides is a no-op there
+    and a correction everywhere else. JSON-encoding the row keeps the key
+    type-aware and deterministic.
+    """
+    return json.dumps(row)
+
+
 def _reproduce_sql(run_row, dataset_ids, by_id, checks) -> bool:
     """Rerun the stored SQL and compare it to the persisted rows.
 
     A multi-dataset run re-binds every placeholder in order. A query that no
     longer binds against the stored data - a renamed column, a changed schema
-    - is a failed check, not a server error.
+    - is a failed check, not a server error. Rows are compared as a multiset
+    (see _row_key): a query that never asked for an order must not fail
+    reproduction for having got a different one.
     """
     try:
         if len(dataset_ids) > 1:
@@ -1278,7 +1295,8 @@ def _reproduce_sql(run_row, dataset_ids, by_id, checks) -> bool:
             )
         else:
             rerun = run_query(by_id[dataset_ids[0]]["stored_path"], run_row["sql"])
-        matches = rerun["rows"] == json.loads(run_row["rows_json"])
+        stored = json.loads(run_row["rows_json"])
+        matches = sorted(rerun["rows"], key=_row_key) == sorted(stored, key=_row_key)
     except (ValueError, Exception) as error:
         return _record_repro(checks, False, "", f"query rejected: {error}")
     return _record_repro(checks, matches, "rerun matches stored result", "rerun differs")

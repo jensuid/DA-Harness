@@ -122,6 +122,87 @@ def test_validate_fails_when_result_drifts(tmp_path) -> None:
     assert checks["reproducibility"]["passed"] is False
 
 
+def test_validate_accepts_reordered_unordered_result(tmp_path) -> None:
+    """A GROUP BY without ORDER BY must not fail reproduction for getting its
+    rows back in a different order (P4-VALID-005).
+
+    DuckDB does not promise a row order for unordered results - the same query
+    can return its groups in either order across connections - so reproduction
+    compares rows as a multiset. Reversing the stored rows is the failure this
+    pins: before the fix it validated as a drift roughly half the time.
+    """
+    _temp_env(tmp_path)
+
+    with TestClient(app) as client:
+        case_id, finding_id = _full_setup(client)
+        run_id = client.get(f"/cases/{case_id}/findings/{finding_id}").json()["run_id"]
+
+        with get_connection(db_module.DATA_DIR.parent / "test.db") as conn:
+            stored = json.loads(
+                conn.execute("SELECT rows_json FROM runs WHERE id = ?", (run_id,)).fetchone()["rows_json"]
+            )
+            conn.execute(
+                "UPDATE runs SET rows_json = ? WHERE id = ?",
+                (json.dumps(list(reversed(stored))), run_id),
+            )
+            conn.commit()
+
+        result = client.post(f"/cases/{case_id}/findings/{finding_id}/validate")
+
+    assert result.status_code == 200
+    assert result.json()["status"] == "supported"
+    checks = {c["name"]: c for c in result.json()["checks"]}
+    assert checks["reproducibility"]["passed"] is True
+
+
+UNORDERED_SQL = (
+    # No ORDER BY: DuckDB may return these two groups in either order on any
+    # given connection, which is exactly the instability reproduction must
+    # tolerate. This is the query that flipped verdicts in the live smoke.
+    "SELECT region, SUM(revenue) AS total FROM read_csv_auto(?) "
+    "GROUP BY region"
+)
+
+
+def test_validate_unordered_groupby_is_stable_across_reruns(tmp_path) -> None:
+    """The same unordered query, validated repeatedly, must always agree.
+
+    This is the flake the live UI smoke exposed: a GROUP BY without ORDER BY
+    returned its groups in a different order on a later connection, and the
+    positional comparison turned that into a drift it was not, flipping the
+    verdict between supported and insufficient_evidence on identical inputs.
+    Repetition is the only honest way to pin it - the order is not under the
+    test's control.
+    """
+    _temp_env(tmp_path)
+
+    with TestClient(app) as client:
+        case_id = client.post(
+            "/cases", json={"question": "Why did revenue decline?", "dataset": "sales.csv"}
+        ).json()["id"]
+        dataset_id = client.post(
+            f"/cases/{case_id}/datasets",
+            files={"file": ("sales.csv", CSV, "text/csv")},
+        ).json()["id"]
+        client.post(f"/cases/{case_id}/datasets/{dataset_id}/profile")
+        run_id = client.post(
+            f"/cases/{case_id}/datasets/{dataset_id}/runs",
+            json={"sql": UNORDERED_SQL},
+        ).json()["id"]
+        finding_id = client.post(
+            f"/cases/{case_id}/findings",
+            json={"run_id": run_id, "statement": "North leads revenue"},
+        ).json()["id"]
+
+        verdicts = set()
+        for _ in range(12):
+            response = client.post(f"/cases/{case_id}/findings/{finding_id}/validate")
+            assert response.status_code == 200
+            verdicts.add(response.json()["status"])
+
+    assert verdicts == {"supported"}, verdicts
+
+
 # Python-run validation (P3-VALID-010). Re-execution is safe because the script
 # runs in the hard sandbox (P3-SEC-001), so the gate is the same one SQL gets.
 

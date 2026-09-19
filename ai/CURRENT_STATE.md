@@ -1,55 +1,48 @@
 # DAH - Current State
 
  - **Phase:** P4 Production Candidate - IN PROGRESS (P4-VERIFY-001,
-  P4-RELIABILITY-002, P4-UX-003 done). P3 V1 is COMPLETE: all 10 entry-checklist
-  items, 223 server tests, and a P3 gate of its own.
+  P4-RELIABILITY-002, P4-UX-003, P4-UX-004 and P4-VALID-005 done). P3 V1 is
+  COMPLETE: all 10 entry-checklist items, 225 server tests, and a P3 gate of
+  its own.
 - **Global roadmap status:** ai/ROADMAP.md (phase tracker - current stage, phase table, next-phase entry checklist)
 - **Milestone status:** P1 Vertical Slice PASSED (verification/p1/REPORT.md); P0 PASSED
 - **Completed capabilities:** FastAPI core; SQLite case persistence; DuckDB engine; Vite/React shell; P0 verification harness; CSV dataset attachment; deterministic dataset profiling; read-only SQL analysis runs with persisted results; findings with evidence chain; validation via rerun; parquet + xlsx ingest; deep profiling; **read-only Python execution with persisted results (P2-ANALYSIS-008); chart images rendered and persisted from run results (P2-ANALYSIS-009);
 case management - rename, duplicate, delete (P2-CASE-010);
 AI planning with structured output (P2-AI-011); case export as a self-contained
 JSON package with import round trip (P2-CASE-012)**
-- **Active task:** P4-UX-003 DONE - the case workspace and the chat surface.
-  Until this task the React bundle was the P0/P1 surface: one case-creation
-  form, no way to open a case. Now cases list and search, creating one opens
-  its workspace, and the workspace shows the question, the derived stage and
-  the single next action (recomputed from the core on open, so the UI cannot
-  show a stage the data does not support), the attached datasets and runs,
-  and the chat panel: an answer, each ground rendered as a citation chip, and
-  a badge for which engine spoke. Prior turns load oldest-first, so a reopened
-  case resumes mid-thought. api.ts is now a typed client whose request()
-  parses a JSON detail only when the core sent JSON - a 500 answers plain text
-  (P4-RELIABILITY-002) and res.json() on it would have thrown a second,
-  hiding failure.
-  Before it: P4-RELIABILITY-002 (error semantics) and P4-VERIFY-001 (the P3
-  gate).
-  engine endpoints (single/multi SQL run, Python run, EDA, chart render) ended
-  in `except Exception as error: raise 400`, which did two jobs at once: it was
-  the only thing keeping a user's SQL syntax error a 400 (DuckDB raises
-  `duckdb.Error`, which is *not* a `ValueError`), and it flattened every real
-  server fault into a 400 that blamed the analyst. Now each site catches the
-  input-error families only - `ValueError` plus `duckdb.Error`, gathered once in
-  `app/errors.py` - and a harness fault propagates to an honest 500 that uvicorn
-  logs. The five LLM fallbacks stay broad because degradation is the contract,
-  but each now logs the reason, so a fallback caused by our own bug surfaces
-  instead of vanishing into `source=deterministic`.
-  Before it: P4-VERIFY-001, the P3 gate script - 23 journey steps, 15 exit
-  criteria, all PASS. Every entry-checklist item is DONE: P3-SEC-001, P3-CHART-002, P3-DATA-003, P3-FLOW-004, P3-ANALYSIS-005, P3-EVIDENCE-006, P3-CASE-007, P3-SHELL-008, P3-DATA-009, P3-VALID-010 and the four contextual AI slices P3-AI-011..014. P4's entry checklist is sketched in ai/ROADMAP.md as a proposal for the user to reorder.
+- **Active task:** P4-VALID-005 DONE - a validation verdict no longer depends
+  on which DuckDB connection answered. The live-LLM smoke of P4-UX-004 walked
+  the whole loop repeatedly and validation started flipping between
+  `supported` and `insufficient_evidence` on identical inputs: DuckDB does not
+  promise a row order for a result that never asked for one, and a GROUP BY
+  returns its groups in either order across connections (2 distinct orders
+  observed across 8 reruns of one query). `_reproduce_sql` compared rows
+  positionally, so an unordered query was a rerun mismatch roughly half the
+  time. It now compares sorted rows - a multiset comparison, correct because an
+  SQL result set is a bag of rows and only ORDER BY makes it a sequence
+  (DuckDB honours ORDER BY deterministically, so the sort is a no-op there and
+  a correction elsewhere). `_reproduce_python` stays positional on purpose: the
+  tabulator is deterministic and column order is a shape signal there.
+  Before it: P4-UX-004 (the run-scoped assistant surfaces in the workspace),
+  P4-UX-003 (the case workspace and chat), P4-RELIABILITY-002 (error
+  semantics) and P4-VERIFY-001 (the P3 gate). P4's entry checklist is in
+  ai/ROADMAP.md as a proposal for the user to reorder.
 - **Known issues:** none
-- **Test status:** server 223 passed (211 + 12 error semantics); web 13 passed
-  (CaseList 5, CaseCreation 3, CaseWorkspace 5);
+- **Test status:** server 225 passed (211 + 12 error semantics + 2 validation
+  determinism); web 17 passed (CaseList 5, CaseCreation 3, CaseWorkspace 9);
   desktop shell 7 Rust tests (5 unit + 2 e2e, `cd desktop/src-tauri && cargo test [--features e2e]`);
   P2 and P3 gates PASS
-- **Next task:** P4-UX-004, the run-scoped assistant surfaces - interpret,
-  draft-finding and generate-code need a run-selection UI in the workspace,
-  and accepting a draft should still POST through the findings endpoint so the
-  human-owns-the-finding property stays structural. Then large-dataset
-  behaviour and the desktop shell lifecycle under CI plus the signing decision.
+- **Next task:** the remaining P4 checklist, oldest risk first -
+  large-dataset behaviour (result caps, profiling cost, export package size:
+  the 1000-row cap exists but nothing has been measured at scale), then the
+  desktop shell lifecycle under CI and the app-signing decision (sign now or
+  formally defer to P5).
   Carried: a 500 still answers with Starlette's plain-text "Internal Server
-  Error"; the client now handles it, but the core giving it a JSON envelope
-  remains worth doing.
-  Carried: nothing agent-shaped remains. The packaged app is unsigned
-  (macOS gatekeeps the first launch; signing is P5)
+  Error"; the client handles it (parses JSON only when the core sent it), but
+  the core giving it a JSON envelope remains worth doing.
+  Carried (not agent work): the packaged app is unsigned, so macOS
+  gatekeeps the first launch (right-click, Open); signing and notarization
+  are P5.
 - **Blockers:** none
 
 ## P2 progress
@@ -111,6 +104,8 @@ JSON package with import round trip (P2-CASE-012)**
 | P4-VERIFY-001 P3 gate script | DONE |
 | P4-RELIABILITY-002 error semantics | DONE |
 | P4-UX-003 case workspace + chat | DONE |
+| P4-UX-004 run-scoped assistant surfaces | DONE |
+| P4-VALID-005 validation rerun determinism | DONE |
 
 ## How to run (P4)
 
@@ -119,7 +114,7 @@ JSON package with import round trip (P2-CASE-012)**
 
 ## How to run (web)
 
-- Web tests: `cd web && npm test` (13 tests; vitest, jsdom, no network)
+- Web tests: `cd web && npm test` (17 tests; vitest, jsdom, no network)
 - Web build: `cd web && npm run build` (tsc -b + vite)
 - Desktop bundle: `cd web && npm run build:desktop` (absolute API URL for the
   Tauri shell)

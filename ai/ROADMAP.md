@@ -13,9 +13,9 @@ P2 MVP                 DONE  ✓   (all gates green)
 P3 V1                  DONE  ✓   (all 10 entry-checklist items, 211 tests;
                               verification/p3/REPORT.md PASS)
 P4 Production Candidate IN PROGRESS  ← we are here
-                              (P4-VERIFY-001, P4-RELIABILITY-002 and
-                              P4-UX-003 done; the run-scoped assistant
-                              surfaces, performance, distribution remain)
+                              (P4-VERIFY-001, P4-RELIABILITY-002,
+                              P4-UX-003, P4-UX-004 and P4-VALID-005 done;
+                              performance and distribution remain)
 P5 Production Grade    NOT STARTED
 P6 Evolution           NOT STARTED
 ```
@@ -55,14 +55,17 @@ repeatable**.
   case management (rename/duplicate/delete); structured AI planning
   (deterministic default, LLM behind `DAH_LLM_API_KEY`); case export/import
   round trip.
-- **Test status:** server 223 passed; web 13 passed (was 2 - the shell now
-  covers the case list and the workspace); desktop shell 7 Rust tests (5 unit
-  + 2 e2e); P2 and P3 gates PASS.
-- **Active task:** P4-UX-003 DONE - the case workspace and the chat surface.
-  DAH can be used from the shell rather than curl: cases list and search, a
-  case opens to its derived stage, its datasets and runs, and it answers
-  questions with each citation rendered as a chip and a badge for which engine
-  spoke.
+- **Test status:** server 225 passed (was 223 - validation gained a
+  determinism pair); web 17 passed (was 2 - the shell now covers the case list,
+  the workspace and the run-scoped assistant surfaces); desktop shell 7 Rust
+  tests (5 unit + 2 e2e); P2 and P3 gates PASS.
+- **Active task:** P4-VALID-005 DONE - validation is now deterministic across
+  connections. The live-LLM smoke of P4-UX-004 (the run-scoped assistant
+  surfaces, now DONE) walked the loop repeatedly and validation flipped
+  between `supported` and `insufficient_evidence` on identical inputs: DuckDB
+  gives no row-order promise for an unordered result and a GROUP BY can answer
+  in either order per connection. `_reproduce_sql` compared rows positionally;\  it now compares them as a multiset, so an unordered query is a match and a
+  real drift still fails.
 - **Known issues / blockers:** none.
 - **Repository:** private, `master` tracks `origin/master`.
 
@@ -100,7 +103,7 @@ starts. P3 has no gate of its own yet, so that comes first.
 |---|-----------|---------|-----------------|
 | 1 | P3 gate script (`verification/p3/verify_p3.py`) — **DONE (P4-VERIFY-001)**: 23 steps joining a CSV and a Parquet, refusing a sandbox escape, firing all four assistant slices, validating a join finding and round-tripping through export/import | The P2 gate re-verifies the suite but nothing walked the P3 capabilities end to end; a phase is done when a gate says so. Now it does | P4 Verification |
 | 2 | Error semantics - **DONE (P4-RELIABILITY-002)**: input errors answer 400 with the engine's own message; a harness fault answers 500 instead of the old broad `except Exception -> 400` that blamed the analyst for our own bugs. The five LLM fallbacks stay broad (degradation is the contract) but now log the reason | P3 added four LLM fallback paths, each intentionally broad; P4 is where that breadth stops hiding real bugs | P4 Reliability |
-| 3 | Assistant surfaces in the React shell - **partly DONE (P4-UX-003)**: the case workspace plus chat, the slice that needs nothing but a case. Each citation renders as a chip and the engine that spoke is badged, so the honesty property is visible. The run-scoped slices (generate-code, draft-finding, interpret) are P4-UX-004 - they need a run-selection surface | The widest gap between what DAH can do and what it shows; the backend is complete, the UI was the P0/P1 surface | P4 UX |
+| 3 | Assistant surfaces in the React shell - **DONE (P4-UX-003 + P4-UX-004)**: the case workspace plus chat (each citation a chip, the engine that spoke badged), and the run-scoped slices - attach+profile, generate code, run, interpret, draft, accept, validate - one panel per step with every write posted to the endpoint that owns it. The live smoke of P4-UX-004 exposed a validation flake, fixed as **P4-VALID-005**: DuckDB returns an unordered GROUP BY's groups in either order across connections, so reproduction now compares rows as a multiset and a verdict no longer depends on which connection answered | The widest gap between what DAH can do and what it shows; the backend is complete, the UI was the P0/P1 surface | P4 UX |
 | 4 | Large-dataset behaviour: result caps, profiling cost, export package size | P3 caps results at 1000 rows but nothing has been measured at scale | P4 Performance |
 | 5 | Desktop shell lifecycle under CI; app signing decision (sign now, or formally defer to P5) | The shell is tested locally; the unsigned first launch is the carried P3 item | P4 Distribution |
 

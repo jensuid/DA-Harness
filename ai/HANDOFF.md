@@ -1,6 +1,33 @@
 # DAH - Handoff
 
 ## What was completed
+- P4-VALID-005 PASSED: validating the same finding twice now always gives the
+  same verdict. The live-LLM smoke of P4-UX-004 walked the whole loop
+  repeatedly and validation started flipping between `supported` and
+  `insufficient_evidence` on identical inputs - a real bug, not a test artifact.
+  DuckDB gives no row-order promise for a result that never asked for one, and a
+  GROUP BY returns its groups in either order across connections (verified: 2
+  distinct orders across 8 reruns of one query). `_reproduce_sql` compared rows
+  positionally, so an unordered query was a rerun mismatch roughly half the time.
+  It now compares `sorted(rerun) == sorted(stored)` - a multiset comparison,
+  which is what an SQL result set actually is (a bag of rows; only ORDER BY makes
+  it a sequence, and DuckDB honours that deterministically, so the sort is a
+  no-op there and a correction everywhere else). `_reproduce_python` is
+  deliberately left positional: the tabulator is deterministic and column order is
+  a shape signal there. Two regression tests, one of which was verified to FAIL
+  without the fix.
+
+- P4-UX-004 PASSED: the three remaining assistant slices are reachable from the
+  workspace - generate code from a question, read what a run shows, draft the
+  finding it would support - each proposing and none deciding. CaseWorkspace is
+  now the loop the core walks, one panel per step: attach + profile, generate
+  code (Run posts to the only endpoint that persists a run), runs with Interpret
+  and Draft-finding buttons, a draft that Accept posts to the only endpoint that
+  writes a finding, then Validate with its verdict and checks. Every assistant
+  panel names the engine that spoke. 9 new web tests (17 total, was 13). The
+  full loop was smoked against the live core with the LLM live, which is exactly
+  what exposed the DuckDB GROUP BY ordering flake fixed as P4-VALID-005.
+
 
 - P4-UX-003 PASSED: DAH can be used from the shell instead of curl. The React
   bundle was still the P0/P1 surface - one case-creation form and no way to
@@ -211,6 +238,46 @@
 Create Case -> Question -> Load CSV -> Profile -> SQL Analysis
 -> Finding -> Evidence chain -> Validation (rerun) -> Save -> Reopen
 ```
+
+## What changed (P4-VALID-005)
+
+- server/app/main.py: `_row_key(row)` (new) canonicalises one row as JSON so the
+  sort key is type-aware and deterministic; `_reproduce_sql` now compares
+  `sorted(rerun["rows"], key=_row_key) == sorted(stored, key=_row_key)`. Nothing
+  else moved - the stored shape, the verdict vocabulary and the
+  missing_data / evidence_integrity checks are untouched, and a query that no
+  longer binds still records a failed reproducibility check rather than a 500.
+- `_reproduce_python` was deliberately NOT changed: the Python tabulator is
+  deterministic, and there a changed column order *is* a changed result, so the
+  positional comparison stays correct.
+- server/tests/test_validation.py: +2 tests.
+  `test_validate_accepts_reordered_unordered_result` reverses the stored rows of
+  a real GROUP BY run in SQLite and requires a `supported` verdict - this is the
+  one verified to FAIL before the fix. `test_validate_unordered_groupby_is_stable_across_reruns`
+  validates an ORDER BY-less GROUP BY 12 times and requires the verdict set to be
+  exactly `{"supported"}`; repetition is the only honest way to pin it, since the
+  order is not under the test's control. The pre-existing
+  `test_validate_fails_when_result_drifts` (a substituted value no rerun can
+  produce) is what proves the fix did not weaken the gate.
+- ai/TASKS.md: the P4-VALID-005 contract, plus the P4-UX-004 table row that its
+  commit had missed.
+
+## What changed (P4-UX-004)
+
+- web/src/CaseWorkspace.tsx: the workspace becomes the loop the core walks, one
+  panel per step - attach + profile (file picker, then columns and nulls), a
+  profile-scoped generate-code panel whose Run posts to the runs endpoint, the
+  run list with Interpret and Draft-finding buttons, a draft rendered with its
+  statement / interpretation / caveat / grounds and an Accept that posts to
+  /findings, then a Validate that renders the verdict and its checks. Each
+  assistant panel shows which engine spoke (source).
+- web/src/api.ts: the remaining contracts - attach, profile, run SQL (single-
+  and multi-dataset), generate-code, interpret, draft-finding, POST /findings,
+  POST .../validate.
+- web/src/index.css: panel and action styles for the new surfaces.
+- web/src/CaseWorkspace.test.tsx: +9 tests (17 web total).
+- No server change - every call is an existing endpoint, which is what keeps the
+  propose / human-decides split structural rather than a UI flag.
 
 ## What changed (P4-UX-003)
 
@@ -632,11 +699,10 @@ reported as unsupported (clear 400) rather than faked; that gate is future work.
 
 ## Tests performed (current)
 
-- server pytest: 223 passed (199 + 12 conversation + 12 error semantics)
-- web: 13 passed (CaseList 5, CaseCreation 3, CaseWorkspace 5); `cd web && npm test`
+- server pytest: 225 passed (was 223; +2 validation determinism)
+- web: 17 passed (CaseList 5, CaseCreation 3, CaseWorkspace 9); `cd web && npm test`
 - desktop shell: 7 Rust tests - `cd desktop/src-tauri && cargo test` (5 unit)
   and `cargo test --features e2e` (+2 live-core tests)
-- web: 2 passed
 - P3 gate: `server/.venv/bin/python verification/p3/verify_p3.py` PASS on all
   23 journey steps and all 15 exit criteria (the last step re-runs the suite)
 - P2 gate: `server/.venv/bin/python verification/p2/verify_p2.py` PASS on all
@@ -646,7 +712,8 @@ reported as unsupported (clear 400) rather than faked; that gate is future work.
 
 - Every P3 task is one atomic commit, all pushed to `origin/master`
   (github.com/jensuid/DA-Harness), plus the phase close; P4 opens with
-  P4-VERIFY-001, P4-RELIABILITY-002 and P4-UX-003 as their own commits.
+  P4-VERIFY-001, P4-RELIABILITY-002, P4-UX-003, P4-UX-004 and P4-VALID-005 as
+  their own commits.
   `dfb115b` P3-SEC-001, `2c7b11f` P3-CHART-002, `f5df5d1` P3-DATA-003,
   `967544b` P3-FLOW-004, `7b7e49f` P3-ANALYSIS-005, `ebaa30e` P3-EVIDENCE-006,
   P3-CASE-007, P3-SHELL-008, P3-DATA-009, P3-VALID-010, P3-AI-011,
@@ -674,29 +741,20 @@ reported as unsupported (clear 400) rather than faked; that gate is future work.
 
 ## Next action
 
-P3 is complete and closed (`bffc6ad` marked the phase DONE, moved the stage
-marker to P4 and wrote P4's entry checklist). All ten entry-checklist items are
-done, including the four contextual AI slices: a question yields the computation
-that would answer it (P3-AI-013), a result yields a reading of what it shows
-(P3-AI-011), a candidate finding with the grounds it stands on (P3-AI-012), and
-a case answers questions about itself with citations (P3-AI-014). Each assistant
-slice stops one step short of writing state - the human runs, accepts or rejects
-- so the assistant proposes and never decides.
+P4 is four tasks in and the assistant surfaces are finished - the workspace now
+walks the whole loop the core walks (P4-UX-003 + P4-UX-004), and validation is
+deterministic across connections (P4-VALID-005, a real bug the live smoke
+exposed). What remains of the P4 checklist, oldest risk first:
 
-Three of P4's checklist items are done - the P3 gate (P4-VERIFY-001), error
-semantics (P4-RELIABILITY-002) and the case workspace with chat (P4-UX-003).
-What remains, oldest risk first:
-
-- error handling and resilience: every broad `except` narrowed where it still
-  swallows, and a 500 that is never the answer to bad input;
-- a real integration test of the desktop shell's core lifecycle on CI, and the
-  unsigned-app signing carried from P3 (or formally deferred to P5);
-- performance: query/result caps and profiling on large datasets, and the
-  export package on a case with many artifacts;
-- UX: the assistant surfaces (generate-code, draft-finding, interpret, chat) are
-  backend-only so far - the React shell still shows the P0/P1 case-creation
-  surface, which is now the widest gap between what DAH can do and what it
-  shows.
+- large-dataset behaviour: the 1000-row result cap exists but nothing has been
+  measured at scale. Profiling cost, query cost and export package size on a
+  case with many artifacts are all unmeasured. This is the performance task.
+- the desktop shell lifecycle under CI (the Rust tests run locally, including
+  the two live-core e2e tests), and the app-signing decision - sign now or
+  formally defer to P5.
+- carried: a 500 still answers with Starlette's plain-text "Internal Server
+  Error". The client handles it (it parses JSON only when the core sent it),
+  but giving the 500 a JSON envelope remains worth doing.
 
 Nothing is unblocked-but-undone. The one remaining carried item is not agent
 work: the packaged app is unsigned, so macOS gatekeeps the first launch

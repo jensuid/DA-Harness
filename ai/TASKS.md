@@ -887,6 +887,8 @@ checklist; the gate comes first because a phase is done when a gate says so.
 | P4-VERIFY-001 | Verification (P3 gate) | M | DONE | P3 complete | One journey exercises multi-dataset joins, the hard sandbox and all four assistant slices end to end |
 | P4-RELIABILITY-002 | Reliability | M | DONE | P4-VERIFY-001 | Input errors answer 400 with the engine's message; a harness fault answers 500 instead of a 400 that blamed the analyst |
 | P4-UX-003 | UX (case workspace + chat) | M | DONE | P4-RELIABILITY-002 | Cases can be searched and opened; the workspace shows the derived stage, datasets and runs, and the case answers questions with visible citations |
+| P4-UX-004 | UX (run-scoped assistant surfaces) | M | DONE | P4-UX-003 | The workspace walks the loop one panel per step - attach+profile, generate code, run, interpret, draft, accept, validate - and every write posts to the endpoint that owns it |
+| P4-VALID-005 | Validation (rerun determinism) | M | DONE | P4-UX-004 | Reproduction compares SQL rows as a multiset, so an unordered GROUP BY answering in a different order is a match, not a drift |
 
 ### P4-VERIFY-001 contract
 
@@ -1167,4 +1169,55 @@ TESTS: web/src/CaseWorkspace.test.tsx extended - attach+profile, generate-code
 VERIFICATION: cd web && npm test green + the P2/P3 gates as regression.
 STATE UPDATE: mark P4-UX-004 done on pass; this closes the assistant surfaces
               and roadmap item 3.
+```
+
+### P4-VALID-005 contract
+
+```
+TASK ID: P4-VALID-005
+MILESTONE: P4 Production Candidate
+CAPABILITY: Validation (rerun determinism)
+GOAL: Validating the same finding twice always gives the same verdict.
+
+CONTEXT: the live-LLM smoke of P4-UX-004 walked the whole loop repeatedly and
+         validation started flipping between `supported` and
+         `insufficient_evidence` on identical inputs. The cause was in the
+         comparison, not the data: DuckDB does not promise a row order for a
+         result that never asked for one, and a GROUP BY can return its groups
+         in a different order on a different connection (observed: 2 distinct
+         orders across 8 reruns of one query). `_reproduce_sql` compared rows
+         positionally, so an unordered query validated as a rerun mismatch
+         roughly half the time - and a verdict that depends on which
+         connection happened to answer is not a verdict at all.
+INPUTS: a finding whose run stored an unordered result set.
+RELEVANT FILES: server/app/main.py, server/tests/test_validation.py
+REQUIRED CHANGE:
+  - `_row_key(row)` canonicalises one row as JSON, so the sort key is
+    type-aware and deterministic;
+  - `_reproduce_sql` compares `sorted(rerun rows) == sorted(stored rows)` - a
+    multiset comparison. An SQL result set is a bag of rows; only ORDER BY
+    makes it a sequence, and when the query asks for one DuckDB honours it
+    deterministically, so the sort is a no-op there and a correction
+    everywhere else;
+  - `_reproduce_python` is deliberately unchanged: the Python tabulator is
+    deterministic and column order is a shape signal (a changed shape is a
+    changed result), so positional comparison stays right there.
+NON-GOALS: normalising row order at store time; changing the verdict
+           vocabulary; touching the null or duplicate checks; any UI change.
+CONSTRAINTS: the fix must not weaken the gate - rows that differ as a
+             multiset still fail reproducibility, and a query that no longer
+             binds still reports a failed check rather than a 500.
+ACCEPTANCE CRITERIA:
+- [x] a stored result whose rows were deliberately reordered validates
+      `supported`
+- [x] an unordered GROUP BY validated 12 times returns exactly {"supported"}
+- [x] a genuine multiset drift still fails reproducibility (the pre-existing
+      drift test, which substitutes a value no rerun can produce)
+- [x] the full suite and both the P2 and P3 gates stay green
+TESTS: server/tests/test_validation.py +2 - `test_validate_accepts_reordered_unordered_result`
+       (verified to FAIL without the fix) and
+       `test_validate_unordered_groupby_is_stable_across_reruns` (12 reruns).
+VERIFICATION: pytest green (225 passed) + P2/P3 gates PASS.
+STATE UPDATE: mark P4-VALID-005 done on pass; a validation verdict no longer
+              depends on which DuckDB connection answered.
 ```
