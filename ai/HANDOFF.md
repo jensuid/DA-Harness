@@ -292,6 +292,35 @@ Create Case -> Question -> Load CSV -> Profile -> SQL Analysis
 -> Finding -> Evidence chain -> Validation (rerun) -> Save -> Reopen
 ```
 
+## What the CI runs after the P4 gate caught (two test races)
+
+Both were invisible locally - seven consecutive local runs passed before the
+fix, which is the definition of passing by timing luck. CI failed twice, on a
+*different* test each time, which is what pointed at interference rather than
+a broken test.
+
+1. **The two lifecycle tests raced for port 8123.** Both start a real core on
+   the same fixed port and each asserts the port is its own afterwards (that is
+   the orphan check). Cargo runs tests in parallel by default, so one won the
+   bind and the other died on `[Errno 48] address already in use` - presenting
+   as a 180s timeout that looked like a dead sidecar.
+2. **The resolution tests shared `DAH_DEV_CORE`.** The override test sets that
+   variable process-wide, resolves, and removes it. A concurrently-running
+   resolution test observed it mid-flight and resolved to the virtualenv while
+   a sidecar was present, so `release_resolution_uses_a_bundled_sidecar_when_present`
+   panicked on an assertion about its own input.
+
+The fix was `#[serial]` on all five tests, with a comment naming both races.
+Serialization is right and a port is not: giving each test its own port would
+have hidden the interference instead of removing it, and the tests exist to
+assert exclusive use of the one port the app actually uses.
+
+The general lesson, now stated twice in this handoff: **parallel test
+interference presents as a flaky failure in whatever test happens to be
+running alongside**. When a test fails intermittently and the failing test
+changes between runs, suspect shared global state - a port, an env var, a
+fixed temp path - before suspecting the code under test.
+
 ## What changed (P5-VERIFY-001)
 
 - verification/p4/verify_p4.py (NEW): the gate, modelled on the P3 one. In-
@@ -867,6 +896,8 @@ reported as unsupported (clear 400) rather than faked; that gate is future work.
   lifecycle (7 Rust tests, both e2e tests running against the real sidecar)
 - P4 gate: `server/.venv/bin/python verification/p4/verify_p4.py` PASS on all
   18 journey steps and all 10 exit criteria (the last step re-runs the suite)
+- desktop shell: 7 Rust tests, now stable - five are #[serial] after CI caught
+  two interference races (port 8123 and the DAH_DEV_CORE env var)
 - web: 17 passed (CaseList 5, CaseCreation 3, CaseWorkspace 9); `cd web && npm test`
 - desktop shell: 7 Rust tests - `cd desktop/src-tauri && cargo test` (5 unit)
   and `cargo test --features e2e` (+2 live-core tests)
