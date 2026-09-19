@@ -4,14 +4,17 @@ Source of truth for **where we are** on the global roadmap
 (`docs/Implementation Roadmap.md`). Every phase completion must update this
 file together with `CURRENT_STATE.md` and `TASKS.md`.
 
-**Current stage: P4 Production Candidate — NOT STARTED (P3 V1 complete).**
+**Current stage: P4 Production Candidate — IN PROGRESS (P3 gate complete).**
 
 ```
 P0 Foundation          DONE  ✓
 P1 Vertical Slice      DONE  ✓
 P2 MVP                 DONE  ✓   (all gates green)
-P3 V1                  DONE  ✓   (all 10 entry-checklist items, 211 tests)
-P4 Production Candidate NOT STARTED  ← we are here
+P3 V1                  DONE  ✓   (all 10 entry-checklist items, 211 tests;
+                              verification/p3/REPORT.md PASS)
+P4 Production Candidate IN PROGRESS  ← we are here
+                              (P4-VERIFY-001 done; reliability, UX,
+                              performance, distribution remain)
 P5 Production Grade    NOT STARTED
 P6 Evolution           NOT STARTED
 ```
@@ -29,7 +32,7 @@ repeatable**.
 | P1 Vertical Slice | One complete analytical case end to end | DONE | PASS | `verification/p1/REPORT.md` |
 | P2 MVP | Usable analytical application; inspectable, reproducible case | DONE | PASS | `verification/p2/REPORT.md` (16 steps, 10 exit criteria) |
 | P3 V1 | Repeated real-world use: multi-dataset, joins, richer EDA, contextual AI | DONE | P2 gate PASS (re-verified during close, 211 tests) | hard sandbox, raster charts, multi-dataset joins, workflow, EDA, evidence graph, case reuse, desktop shell and all four contextual AI slices DONE |
-| P4 Production Candidate | Serious software: reliability, security, performance, UX, observability | NOT STARTED | — | — |
+| P4 Production Candidate | Serious software: reliability, security, performance, UX, observability | IN PROGRESS | P3 gate PASS | `verification/p3/REPORT.md` (23 journey steps, 15 exit criteria, all PASS) |
 | P5 Production Grade | Maintainable, distributable, secure product | NOT STARTED | — | — |
 | P6 Post-Launch Evolution | Scale and intelligence | NOT STARTED | — | — |
 
@@ -51,10 +54,11 @@ repeatable**.
   case management (rename/duplicate/delete); structured AI planning
   (deterministic default, LLM behind `DAH_LLM_API_KEY`); case export/import
   round trip.
-- **Test status:** server 211 passed; web 2 passed; desktop shell 7 Rust tests (5 unit + 2 e2e).
-- **Active task:** none open. All 10 P3 entry-checklist items are DONE,
-  including the contextual AI assistant (all four slices); see the phase table -
-  P3 is complete.
+- **Test status:** server 211 passed; web 2 passed; desktop shell 7 Rust tests (5 unit + 2 e2e);
+  P3 gate `verification/p3/verify_p3.py` PASS (23 journey steps + the suite).
+- **Active task:** P4-VERIFY-001 DONE - the P3 gate. It walks multi-dataset
+  joins, the hard sandbox and all four assistant slices as one journey and is
+  now the standing P3 regression check alongside the P2 gate.
 - **Known issues / blockers:** none.
 - **Repository:** private, `master` tracks `origin/master`.
 
@@ -90,7 +94,7 @@ starts. P3 has no gate of its own yet, so that comes first.
 
 | # | Capability | Why now | Roadmap section |
 |---|-----------|---------|-----------------|
-| 1 | P3 gate script (`verification/p3/verify_p3.py`) — one journey exercising multi-dataset joins, the hard sandbox and the four assistant slices | The P2 gate re-verifies the suite but nothing walks the P3 capabilities end to end; a phase is done when a gate says so | P4 Verification |
+| 1 | P3 gate script (`verification/p3/verify_p3.py`) — **DONE (P4-VERIFY-001)**: 23 steps joining a CSV and a Parquet, refusing a sandbox escape, firing all four assistant slices, validating a join finding and round-tripping through export/import | The P2 gate re-verifies the suite but nothing walked the P3 capabilities end to end; a phase is done when a gate says so. Now it does | P4 Verification |
 | 2 | Narrow the broad exception handlers; no input error may answer 500 | P3 added four LLM fallback paths, each intentionally broad; P4 is where that breadth stops hiding real bugs | P4 Reliability |
 | 3 | Assistant surfaces in the React shell (generate-code, draft-finding, interpret, chat) | The widest gap between what DAH can do and what it shows; the backend is complete, the UI is still the P0/P1 surface | P4 UX |
 | 4 | Large-dataset behaviour: result caps, profiling cost, export package size | P3 caps results at 1000 rows but nothing has been measured at scale | P4 Performance |

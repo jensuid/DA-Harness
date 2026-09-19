@@ -1,19 +1,31 @@
 # DAH - Current State
 
- - **Phase:** P3 V1 - COMPLETE (all 10 entry-checklist items; P2 gate re-verified PASS during the close, 211 tests). Next: P4 Production Candidate.
+ - **Phase:** P4 Production Candidate - IN PROGRESS (P4-VERIFY-001 done). P3 V1 is
+  COMPLETE: all 10 entry-checklist items, 211 tests, and now a P3 gate of its own
+  (`verification/p3/verify_p3.py` -> PASS).
 - **Global roadmap status:** ai/ROADMAP.md (phase tracker - current stage, phase table, next-phase entry checklist)
 - **Milestone status:** P1 Vertical Slice PASSED (verification/p1/REPORT.md); P0 PASSED
 - **Completed capabilities:** FastAPI core; SQLite case persistence; DuckDB engine; Vite/React shell; P0 verification harness; CSV dataset attachment; deterministic dataset profiling; read-only SQL analysis runs with persisted results; findings with evidence chain; validation via rerun; parquet + xlsx ingest; deep profiling; **read-only Python execution with persisted results (P2-ANALYSIS-008); chart images rendered and persisted from run results (P2-ANALYSIS-009);
 case management - rename, duplicate, delete (P2-CASE-010);
 AI planning with structured output (P2-AI-011); case export as a self-contained
 JSON package with import round trip (P2-CASE-012)**
-- **Active task:** none - P3 V1 is complete. Every entry-checklist item is DONE: P3-SEC-001, P3-CHART-002, P3-DATA-003, P3-FLOW-004, P3-ANALYSIS-005, P3-EVIDENCE-006, P3-CASE-007, P3-SHELL-008, P3-DATA-009, P3-VALID-010 and the four contextual AI slices P3-AI-011..014. P4's entry checklist is sketched in ai/ROADMAP.md as a proposal for the user to reorder.
+- **Active task:** P4-VERIFY-001 DONE - the P3 gate script
+  (`verification/p3/verify_p3.py`). It walks one journey - question, attach a CSV
+  and a Parquet, profile, generate-code (writes nothing), plan, a join run,
+  a hard-sandbox escape attempt refused, interpret, draft-finding (writes
+  nothing), accept through the only endpoint that writes, a raster chart,
+  validation closing the loop, an evidence graph reaching both datasets, a
+  derived workflow reporting loop_closed, chat with citations, EDA, history,
+  search, a template outliving its case, dataset deletion blocked by evidence,
+  and an export/import round trip that reproduces the join - then re-runs the
+  suite. 23 journey steps, 15 exit criteria, all PASS. Every entry-checklist item is DONE: P3-SEC-001, P3-CHART-002, P3-DATA-003, P3-FLOW-004, P3-ANALYSIS-005, P3-EVIDENCE-006, P3-CASE-007, P3-SHELL-008, P3-DATA-009, P3-VALID-010 and the four contextual AI slices P3-AI-011..014. P4's entry checklist is sketched in ai/ROADMAP.md as a proposal for the user to reorder.
 - **Known issues:** none
-- **Test status:** server 211 passed; web 2 passed; desktop shell 7 Rust tests (5 unit + 2 e2e, `cd desktop/src-tauri && cargo test [--features e2e]`)
-- **Next task:** close P3 (phase table, stage marker, P4 entry checklist)
-  and then start P4, Production Candidate - reliability, security,
-  performance, UX and observability. Nothing in P3 remains open. The P2
-  gate is the standing regression check and re-passes at 211 tests.
+- **Test status:** server 211 passed; web 2 passed; desktop shell 7 Rust tests (5 unit + 2 e2e, `cd desktop/src-tauri && cargo test [--features e2e]`); P3 gate PASS (23 steps + suite), P2 gate PASS
+- **Next task:** continue the P4 entry checklist - the remaining items are
+  narrowing the broad exception handlers (no input error may answer 500), the
+  assistant surfaces in the React shell, large-dataset behaviour, and the
+  desktop shell lifecycle under CI plus the signing decision. The P3 gate is
+  the standing P3 regression check alongside the P2 gate.
   Carried: nothing agent-shaped remains. The packaged app is unsigned
   (macOS gatekeeps the first launch; signing is P5)
 - **Blockers:** none
@@ -69,3 +81,14 @@ JSON package with import round trip (P2-CASE-012)**
 - Chart from a run: `POST /cases/{id}/runs/{id}/charts` with `{"kind": "bar|line", "x": ..., "y": ..., "series": ...}`; image at `GET /cases/{id}/charts/{id}/image`
 - Rename: `PATCH /cases/{id}` with `{question?, dataset?}`; duplicate: `POST /cases/{id}/duplicate`;
   delete: `DELETE /cases/{id}` (removes the case row, all children, and its on-disk data)
+
+## P4 progress
+
+| Task | Status |
+|------|--------|
+| P4-VERIFY-001 P3 gate script | DONE |
+
+## How to run (P4)
+
+- P3 verification: `server/.venv/bin/python verification/p3/verify_p3.py`
+  (in-process, ~3-4 min; the last step re-runs the suite)

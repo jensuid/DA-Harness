@@ -2,6 +2,24 @@
 
 ## What was completed
 
+- P4-VERIFY-001 PASSED (first P4 task): P3 now has a gate of its own. `verification/p3/verify_p3.py`
+  walks one journey in-process - a question, a CSV and a Parquet attached to the
+  same case, both profiled, the assistant proposing the query and creating
+  nothing, a plan, one SQL run joining both files positionally, a hard-sandbox
+  escape attempt refused with a 400 that leaves no run behind, the assistant
+  reading the result and drafting the finding (still writing nothing), the human
+  accepting the draft through the only endpoint that writes, a raster chart,
+  validation closing the loop on the join finding, an evidence graph whose claim
+  trace reaches *both* datasets, the derived workflow reporting stage=validated
+  and loop_closed, chat with citations, EDA without a query, the case history,
+  search, a template that outlives its case, dataset deletion refused while
+  evidence stands on it, and an export/import round trip that reproduces the
+  join elsewhere - then re-runs the suite. 23 journey steps and 15 exit
+  criteria, all PASS (`verification/p3/REPORT.md`). The gate is hermetic: the
+  LLM credentials are scrubbed from its own process and from the pytest
+  subprocess, so every assistant step reports source=deterministic and the gate
+  makes no network call.
+
 - P3-AI-011 PASSED (contextual AI, slice 1 of 4): a persisted result can now be
   *read*. `POST /cases/{id}/runs/{id}/interpret` returns a plain-language
   summary, observations and caveats grounded in the result's own numbers, in
@@ -159,6 +177,26 @@
 Create Case -> Question -> Load CSV -> Profile -> SQL Analysis
 -> Finding -> Evidence chain -> Validation (rerun) -> Save -> Reopen
 ```
+
+## What changed (P4-VERIFY-001)
+
+- verification/p3/verify_p3.py (NEW): the P3 gate, modelled on the P0/P1/P2
+  gates. In-process TestClient, one atomic journey, a step table and an exit
+  criteria table written to verification/p3/REPORT.md, exit 0 only when every
+  step passes. It builds its own data - a CSV plus a Parquet written from a
+  table with DuckDB, so the join deliberately mixes formats - and uses clean
+  data on purpose, so validation reaching `supported` proves the join
+  reproduces rather than that a messy finding was tolerated.
+- Hermeticity is the one design decision worth stating: app.main loads
+  server/.env at import (a gate is a script, not a pytest module) and every
+  assistant engine reads DAH_LLM_API_KEY at *call* time, so scrubbing those
+  variables after import is enough to make the whole journey deterministic.
+  The LLM paths stay covered by the suite, which tests both engines
+  explicitly; the gate's own report says source=deterministic on every
+  assistant step.
+- ai/ROADMAP.md, ai/CURRENT_STATE.md, ai/TASKS.md: P4 is IN PROGRESS with
+  P4-VERIFY-001 DONE, the P3 gate added to the standing checks, and the
+  P4-VERIFY-001 contract recorded.
 
 ## What changed (P3-EVIDENCE-006)
 
@@ -510,13 +548,16 @@ reported as unsupported (clear 400) rather than faked; that gate is future work.
 - desktop shell: 7 Rust tests - `cd desktop/src-tauri && cargo test` (5 unit)
   and `cargo test --features e2e` (+2 live-core tests)
 - web: 2 passed
+- P3 gate: `server/.venv/bin/python verification/p3/verify_p3.py` PASS on all
+  23 journey steps and all 15 exit criteria (the last step re-runs the suite)
 - P2 gate: `server/.venv/bin/python verification/p2/verify_p2.py` PASS on all
-  18 steps (re-verified during this task; the gate re-runs the suite)
+  18 steps
 
 ## Repository state
 
-- Working tree clean; every P3 task is one atomic commit, all pushed to
-  `origin/master` (github.com/jensuid/DA-Harness):
+- Every P3 task is one atomic commit, all pushed to `origin/master`
+  (github.com/jensuid/DA-Harness), plus the phase close; P4 opens with
+  P4-VERIFY-001 as its own commit.
   `dfb115b` P3-SEC-001, `2c7b11f` P3-CHART-002, `f5df5d1` P3-DATA-003,
   `967544b` P3-FLOW-004, `7b7e49f` P3-ANALYSIS-005, `ebaa30e` P3-EVIDENCE-006,
   P3-CASE-007, P3-SHELL-008, P3-DATA-009, P3-VALID-010, P3-AI-011,
@@ -537,30 +578,27 @@ reported as unsupported (clear 400) rather than faked; that gate is future work.
   planner silently switches to the LLM inside the suite. That made the gate
   both slow (a live call per plan) and flaky (a fast LLM flipped an assertion
   that expected `source=deterministic`; a slow one fell back and passed). Fixed
-  two ways: the gate scrubs the LLM vars from its subprocess, and
-  `test_export.py` deletes them. Any future runner that spawns the suite must
-  do the same.
+  three ways: the P2 gate scrubs the LLM vars from its subprocess, the P3
+  gate scrubs them from its own process as well (its journey would otherwise
+  make a live call per assistant step), and `test_export.py` deletes them. Any
+  future runner that spawns the suite must do the same.
 
 ## Next action
 
-P3 is complete. All ten entry-checklist items are done, including the
-four contextual AI slices: a question yields the computation that would answer
-it (P3-AI-013), a result yields a reading of what it shows (P3-AI-011), a
-candidate finding with the grounds it stands on (P3-AI-012), and a case answers
-questions about itself with citations (P3-AI-014). Each assistant slice stops
-one step short of writing state - the human runs, accepts or rejects - so the
-assistant proposes and never decides.
+P3 is complete and closed (`bffc6ad` marked the phase DONE, moved the stage
+marker to P4 and wrote P4's entry checklist). All ten entry-checklist items are
+done, including the four contextual AI slices: a question yields the computation
+that would answer it (P3-AI-013), a result yields a reading of what it shows
+(P3-AI-011), a candidate finding with the grounds it stands on (P3-AI-012), and
+a case answers questions about itself with citations (P3-AI-014). Each assistant
+slice stops one step short of writing state - the human runs, accepts or rejects
+- so the assistant proposes and never decides.
 
-The immediate next action is the phase close: mark P3 DONE in ai/ROADMAP.md's
-phase table, move the stage marker, and write P4's entry checklist. Then P4,
-Production Candidate - reliability, security, performance, UX and
-observability. A candidate ordering, oldest risk first (a proposal for the user
-to reorder, not a decision yet):
+Next is P4, Production Candidate - reliability, security, performance, UX and
+observability. Its entry checklist in ai/ROADMAP.md is a proposal for the user
+to reorder; item 1 is done - the P3 gate (P4-VERIFY-001) - and the rest have
+not been started. A candidate ordering for what remains, oldest risk first:
 
-- a P3 gate script (verification/p3/verify_p3.py) like the P0/P1/P2 gates - the
-  P2 gate currently re-verifies the suite, but nothing exercises the P3
-  capabilities (multi-dataset joins, the hard sandbox, the four assistant
-  slices) as one journey;
 - error handling and resilience: every broad `except` narrowed where it still
   swallows, and a 500 that is never the answer to bad input;
 - a real integration test of the desktop shell's core lifecycle on CI, and the
@@ -586,6 +624,9 @@ work: the packaged app is unsigned, so macOS gatekeeps the first launch
   pytest so a configured key never makes test-time live calls; an exported
   variable always overrides the file.
 - Run tests: `cd server && .venv/bin/python -m pytest -q`
+- P3 gate: `server/.venv/bin/python verification/p3/verify_p3.py` (~3-4 min; it
+  re-runs the suite, and its journey is deterministic - the LLM vars are
+  scrubbed, so no assistant step makes a live call)
 - P2 gate: `server/.venv/bin/python verification/p2/verify_p2.py` (~70-90s; it
   re-runs the suite)
 - P1 gate (in-process): `server/.venv/bin/python verification/p1/verify_p1.py`

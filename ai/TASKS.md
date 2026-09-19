@@ -875,3 +875,78 @@ TESTS: 12 tests - counts, column stats, stage fallback, grounds are real, LLM
 VERIFICATION: pytest green + verification/p2/verify_p2.py PASS.
 STATE UPDATE: mark P3-AI-014 done on pass; this closes roadmap item 7.
 ```
+
+## P4 Production Candidate
+
+Goal: make DAH reliable, secure, usable and observable enough for controlled
+external users (roadmap section 7). Entry order follows ai/ROADMAP.md's
+checklist; the gate comes first because a phase is done when a gate says so.
+
+| Task ID | Capability | Priority | Status | Dependencies | Verification |
+|---------|-----------|----------|--------|--------------|--------------|
+| P4-VERIFY-001 | Verification (P3 gate) | M | DONE | P3 complete | One journey exercises multi-dataset joins, the hard sandbox and all four assistant slices end to end |
+
+### P4-VERIFY-001 contract
+
+```
+TASK ID: P4-VERIFY-001
+MILESTONE: P4 Production Candidate
+CAPABILITY: Verification (P3 gate)
+GOAL: Prove the P3 capabilities work as one journey, not just as separate
+      suites.
+
+CONTEXT: the P2 gate re-verifies the test suite, and every P3 task shipped its
+         own tests, but nothing walked the P3 surface end to end - multi-dataset
+         joins, the OS-level sandbox, the four assistant slices, raster charts,
+         the derived workflow and case reuse. A phase is done when a gate says
+         so, and P3 had no gate of its own.
+INPUTS: none (the gate builds its own data: a CSV and a Parquet written from a
+        table, so the join deliberately mixes formats).
+RELEVANT FILES: verification/p3/verify_p3.py (NEW),
+                verification/p3/REPORT.md (generated), ai/ROADMAP.md,
+                ai/CURRENT_STATE.md, ai/HANDOFF.md
+REQUIRED CHANGE: write verification/p3/verify_p3.py after the P0/P1/P2 gates -
+         in-process TestClient, one atomic journey, a step table and an exit
+         criteria table in verification/p3/REPORT.md, exit 0 only when every
+         step passes. The journey is: question -> attach CSV + Parquet ->
+         profile both -> generate-code (writes nothing) -> plan -> join run ->
+         hard-sandbox escape attempt refused -> interpret -> draft-finding
+         (writes nothing) -> accept through the only endpoint that writes ->
+         raster chart -> validation closes the loop -> evidence graph reaches
+         both datasets -> workflow reports loop_closed -> chat with citations
+         -> EDA -> history -> search -> template outlives the case -> dataset
+         deletion blocked by evidence -> export -> import -> join reproduces
+         elsewhere -> suite green.
+NON-GOALS: new server behaviour (the gate exercises what exists; if the journey
+           exposes a bug, that is a separate task), LLM live calls in the
+           journey (the gate is hermetic - see CONSTRAINTS), a UI, performance
+           measurement (that is the P4 performance task).
+CONSTRAINTS: deterministic by construction - app.main loads server/.env at
+             import and every assistant engine reads the LLM credentials at
+             call time, so the gate scrubs those variables from its own process
+             after import and from the pytest subprocess it spawns; the journey
+             therefore reports source=deterministic on every assistant step and
+             makes no network call. The LLM paths stay covered by the suite,
+             which tests both engines explicitly. The journey's data is clean
+             (no nulls, no duplicates) so validation reaching `supported` proves
+             the join reproduces, not that a messy finding was tolerated.
+ACCEPTANCE CRITERIA:
+- [x] the gate runs standalone and exits 0 only when every step passes
+- [x] the journey joins two attached datasets of different formats in one run
+- [x] a sandbox escape attempt is a 400 that leaves no run behind
+- [x] each assistant slice fires once, writes nothing where the contract says
+      so, and the human-only action (accept the draft) is what creates state
+- [x] a finding on the join run validates to supported with the reproducibility
+      check passing
+- [x] the evidence graph's claim trace reaches both datasets the join bound
+- [x] the derived workflow reports stage=validated and loop_closed
+- [x] the case survives search, templating (template outlives the case), and an
+      export/import round trip that reproduces the join
+- [x] dataset deletion is refused while evidence stands on it
+- [x] the full server suite passes as the gate's last step
+TESTS: the gate itself is the test - 23 journey steps + the 211-test suite.
+VERIFICATION: server/.venv/bin/python verification/p3/verify_p3.py -> PASS
+      (verification/p3/REPORT.md, all 15 exit criteria PASS).
+STATE UPDATE: mark P4-VERIFY-001 done on pass; P4's checklist item 1 is
+      complete.
+```
