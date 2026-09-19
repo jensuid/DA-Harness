@@ -1,6 +1,26 @@
 # DAH - Handoff
 
 ## What was completed
+- P4-PERF-006 PASSED: large-dataset behaviour is now measured rather than
+  assumed, and the one real cost is fixed. A benchmark on a 200k-row / 13.4MB
+  CSV showed attach 0.2s, GROUP BY 0.8s, capped SELECT * 0.8s (row_count=1000,
+  truncated=true) and export 0.4s / 17.8MB - everything fine except profiling,
+  at ~6.0s. Instrumented internally, the cause was exact and embarrassing:
+  `profile_csv` ran `SELECT *` and then `fetchall()` on the entire dataset
+  purely to read the column description (2.7s materialising rows it then threw
+  away), followed by four separate full scans. The description - names *and*
+  the inferred logical types - is available from `LIMIT 0` with no rows fetched
+  (verified identical on a file with a date, a decimal, a boolean and a
+  leading-zero id). The row total is now a leading COUNT(*) in the one
+  aggregate pass, and `_duplicate_row_count` takes that total instead of
+  recounting. ~6.0s -> ~2.4s (the endpoint: ~6.0s -> ~1.6s), peak RSS
+  147MB -> 111MB, and the profile output is unchanged. Six new tests pin
+  profile correctness at scale, the wide-table width slicing (the shape most
+  likely to expose an off-by-one now that the total occupies slot 0), exact
+  duplicate counts, the result cap truncating a full-table scan, an
+  aggregation reading every row rather than the capped page, and an export
+  round trip.
+
 - P4-VALID-005 PASSED: validating the same finding twice now always gives the
   same verdict. The live-LLM smoke of P4-UX-004 walked the whole loop
   repeatedly and validation started flipping between `supported` and
@@ -238,6 +258,26 @@
 Create Case -> Question -> Load CSV -> Profile -> SQL Analysis
 -> Finding -> Evidence chain -> Validation (rerun) -> Save -> Reopen
 ```
+
+## What changed (P4-PERF-006)
+
+- server/app/analysis.py: `profile_csv` reads the description via
+  `SELECT * FROM <reader> LIMIT 0` instead of `SELECT *` + `fetchall()`. The
+  per-column aggregate pass now leads with `COUNT(*) AS _total` and the row
+  total is read from slot 0 (offset starts at 1), so the separate COUNT(*) scan
+  is gone. `_duplicate_row_count(connection, path, total_rows)` takes the total
+  it already has instead of rescanning for it.
+- server/tests/test_large_datasets.py (NEW): 6 tests over a deterministic
+  50k-row generated dataset whose stats are analytically known (id 1..N, region
+  cycling through 5 values, quantity cycling 1..50, revenue = quantity * 2.5,
+  one null every ten rows). Profile correctness at scale, the wide-table width
+  slicing (40 columns), exact duplicate counts (500 groups x 4 repeats), the
+  result cap truncating `SELECT *`, an aggregation summing every row, and an
+  export/import round trip that re-profiles to the same row count.
+- No API or output-shape change - the profile dict is identical, so nothing
+  downstream (the planner, the generator, export) needed to move. The speedup
+  is documented as benchmark numbers in ai/CURRENT_STATE.md so the next
+  regression is measured against a number.
 
 ## What changed (P4-VALID-005)
 
@@ -699,7 +739,7 @@ reported as unsupported (clear 400) rather than faked; that gate is future work.
 
 ## Tests performed (current)
 
-- server pytest: 225 passed (was 223; +2 validation determinism)
+- server pytest: 231 passed (was 225; +6 large-dataset)
 - web: 17 passed (CaseList 5, CaseCreation 3, CaseWorkspace 9); `cd web && npm test`
 - desktop shell: 7 Rust tests - `cd desktop/src-tauri && cargo test` (5 unit)
   and `cargo test --features e2e` (+2 live-core tests)
@@ -712,8 +752,8 @@ reported as unsupported (clear 400) rather than faked; that gate is future work.
 
 - Every P3 task is one atomic commit, all pushed to `origin/master`
   (github.com/jensuid/DA-Harness), plus the phase close; P4 opens with
-  P4-VERIFY-001, P4-RELIABILITY-002, P4-UX-003, P4-UX-004 and P4-VALID-005 as
-  their own commits.
+  P4-VERIFY-001, P4-RELIABILITY-002, P4-UX-003, P4-UX-004, P4-VALID-005 and
+  P4-PERF-006 as their own commits.
   `dfb115b` P3-SEC-001, `2c7b11f` P3-CHART-002, `f5df5d1` P3-DATA-003,
   `967544b` P3-FLOW-004, `7b7e49f` P3-ANALYSIS-005, `ebaa30e` P3-EVIDENCE-006,
   P3-CASE-007, P3-SHELL-008, P3-DATA-009, P3-VALID-010, P3-AI-011,
@@ -741,20 +781,17 @@ reported as unsupported (clear 400) rather than faked; that gate is future work.
 
 ## Next action
 
-P4 is four tasks in and the assistant surfaces are finished - the workspace now
-walks the whole loop the core walks (P4-UX-003 + P4-UX-004), and validation is
-deterministic across connections (P4-VALID-005, a real bug the live smoke
-exposed). What remains of the P4 checklist, oldest risk first:
+P4 is five tasks in and only its distribution item remains. The performance
+item is closed with a number behind it (P4-PERF-006): profiling went
+~6.0s -> ~2.4s on 200k rows and the result cap is pinned at scale. What's left:
 
-- large-dataset behaviour: the 1000-row result cap exists but nothing has been
-  measured at scale. Profiling cost, query cost and export package size on a
-  case with many artifacts are all unmeasured. This is the performance task.
-- the desktop shell lifecycle under CI (the Rust tests run locally, including
-  the two live-core e2e tests), and the app-signing decision - sign now or
-  formally defer to P5.
+- the desktop shell lifecycle under CI - the Rust unit tests and the two
+  live-core e2e tests (`cd desktop/src-tauri && cargo test --features e2e`) run
+  locally, nothing runs them in CI yet - plus the app-signing decision: sign
+  now, or formally defer to P5.
 - carried: a 500 still answers with Starlette's plain-text "Internal Server
-  Error". The client handles it (it parses JSON only when the core sent it),
-  but giving the 500 a JSON envelope remains worth doing.
+  Error". The client handles it, but giving the 500 a JSON envelope remains
+  worth doing.
 
 Nothing is unblocked-but-undone. The one remaining carried item is not agent
 work: the packaged app is unsigned, so macOS gatekeeps the first launch

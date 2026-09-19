@@ -889,6 +889,7 @@ checklist; the gate comes first because a phase is done when a gate says so.
 | P4-UX-003 | UX (case workspace + chat) | M | DONE | P4-RELIABILITY-002 | Cases can be searched and opened; the workspace shows the derived stage, datasets and runs, and the case answers questions with visible citations |
 | P4-UX-004 | UX (run-scoped assistant surfaces) | M | DONE | P4-UX-003 | The workspace walks the loop one panel per step - attach+profile, generate code, run, interpret, draft, accept, validate - and every write posts to the endpoint that owns it |
 | P4-VALID-005 | Validation (rerun determinism) | M | DONE | P4-UX-004 | Reproduction compares SQL rows as a multiset, so an unordered GROUP BY answering in a different order is a match, not a drift |
+| P4-PERF-006 | Performance (large datasets) | M | DONE | P4-VALID-005 | Profiling no longer materialises every row to read a description; the result cap and profile correctness are pinned at scale |
 
 ### P4-VERIFY-001 contract
 
@@ -1220,4 +1221,66 @@ TESTS: server/tests/test_validation.py +2 - `test_validate_accepts_reordered_uno
 VERIFICATION: pytest green (225 passed) + P2/P3 gates PASS.
 STATE UPDATE: mark P4-VALID-005 done on pass; a validation verdict no longer
               depends on which DuckDB connection answered.
+```
+
+### P4-PERF-006 contract
+
+```
+TASK ID: P4-PERF-006
+MILESTONE: P4 Production Candidate
+CAPABILITY: Performance (large-dataset behaviour)
+GOAL: DAH stays responsive on a dataset too large to be a toy, and the
+      behaviour that protects memory at scale is measured and pinned rather
+      than assumed.
+
+CONTEXT: the 1000-row result cap has existed since P1 and nothing had ever
+         been measured at scale - "it probably holds" is not a property. A
+         benchmark on a 200k-row / 13.4MB CSV found the real cost: attaching
+         and querying were fine (0.2s and 0.8s), export was fine (0.4s,
+         17.8MB package, dominated by the dataset bytes), but PROFILING took
+         ~6s. Instrumented internally, the cause was exact and wasteful:
+         profile_csv ran `SELECT *` and then `fetchall()` on the entire
+         dataset purely to read the column description - 2.68s of materialising
+         rows that were then thrown away - followed by four separate full
+         scans (aggregates, COUNT(*), and duplicate-row count's own COUNT(*)
+         plus DISTINCT). The description, names AND inferred types, is
+         available with LIMIT 0 and fetches nothing.
+INPUTS: a large CSV (100k+ rows); a case with several artifacts.
+RELEVANT FILES: server/app/analysis.py, server/tests/test_profiles.py,
+                server/tests/test_large_datasets.py (NEW)
+REQUIRED CHANGE:
+  - profile_csv reads the description via `SELECT * ... LIMIT 0` instead of
+    materialising every row;
+  - the row total is folded into the single per-column aggregate pass as a
+    leading COUNT(*), so the separate COUNT(*) scan is gone;
+  - _duplicate_row_count takes the already-known total instead of recounting;
+  - the result cap and the truncation flag are exercised at scale, and the
+    profile's correctness at scale is pinned by tests.
+NON-GOALS: rewriting the profile vocabulary; streaming/async endpoints;
+           paginating results; changing the 1000-row cap or the 100MB export
+           guard; memory-profiling the Python sandbox worker; chart rendering
+           cost.
+CONSTRAINTS: the profile output must be byte-for-byte the same shape as
+             before (the tests are the proof); correctness must not be traded
+             for speed - a wrong fast profile is worse than a slow right one;
+             the fix must not depend on file format (csv/parquet/xlsx all
+             reach the same code path).
+ACCEPTANCE CRITERIA:
+- [x] profiling a 200k-row CSV is materially faster than before (measured
+      ~6.0s -> ~1.9s, a 3x improvement) with an identical profile output
+- [x] a SELECT * run at scale reports row_count=1000 and truncated=true
+- [x] the profile at scale reports the right row count, nulls, distinct counts
+      and duplicate rows (known-answer data, generated deterministically)
+- [x] export on a case carrying a large dataset stays bounded and round-trips
+- [x] the existing profile tests (including header-only and parquet/xlsx)
+      stay green, and the full suite plus both gates pass
+TESTS: server/tests/test_large_datasets.py (NEW) - a deterministic 50k-row
+       generator, profile correctness at scale, the result cap truncating a
+       full-table query, a wide table (many columns) profiling correctly, and
+       the duplicate count on data with known duplicates.
+VERIFICATION: pytest green + P2/P3 gates PASS; the benchmark numbers above
+              are recorded in ai/CURRENT_STATE.md so the next regression is
+              measured against a number, not a feeling.
+STATE UPDATE: mark P4-PERF-006 done on pass; roadmap item 4 is measured and
+              the profiling hot path is fixed.
 ```

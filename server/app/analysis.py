@@ -124,38 +124,43 @@ def profile_csv(path: str) -> dict:
     connection = duckdb.connect()
     try:
         reader_call, bind_path = _reader_for(path)
-        reader = connection.execute(f"SELECT * FROM {reader_call}", [bind_path])
-        description = reader.description or []
+        # LIMIT 0: the description - names *and* the inferred logical types,
+        # which is what selects each column's stats - is available without
+        # materialising a single row. Fetching the whole dataset here used to
+        # dominate profiling cost on large files (P4-PERF-006: 2.7s of a 6s
+        # profile on 200k rows, all of it rows that were then discarded).
+        description = connection.execute(
+            f"SELECT * FROM {reader_call} LIMIT 0", [bind_path]
+        ).description or []
         columns = [column[0] for column in description]
-        # DuckDB reports logical types per column; they drive which stats apply.
         families = {name: _type_family(str(column[1])) for name, column in
                     zip(columns, description)}
-        reader.fetchall()
 
         stats: dict[str, dict] = {}
         total_rows = 0
         duplicate_rows = 0
         if columns:
+            # One scan computes the row total and every per-column aggregate.
             # Each column contributes 2 base aggregates, plus min/max for
             # temporal/numeric and avg for numeric - so the flat result row is
-            # sliced per column by how many aggregates that column produced.
-            exprs = [_column_stat_expr(name, families[name]) for name in columns]
-            widths = [_stat_width(families[name]) for name in columns]
+            # sliced per column by how many aggregates that column produced,
+            # with the leading COUNT(*) total taking slot 0.
+            exprs = ["COUNT(*) AS _total"] + [
+                _column_stat_expr(name, families[name]) for name in columns
+            ]
+            widths = [1] + [_stat_width(families[name]) for name in columns]
             row = connection.execute(
                 f"SELECT {', '.join(exprs)} FROM {reader_call}", [bind_path]
             ).fetchone()
 
-            total_rows = connection.execute(
-                f"SELECT COUNT(*) FROM {reader_call}", [bind_path]
-            ).fetchone()[0]
-
-            offset = 0
-            for name, width in zip(columns, widths):
+            total_rows = int(row[0])
+            offset = 1
+            for name, width in zip(columns, widths[1:]):
                 stats[name] = _column_stat(
                     name, families[name], row[offset:offset + width], total_rows
                 )
                 offset += width
-            duplicate_rows = _duplicate_row_count(connection, path)
+            duplicate_rows = _duplicate_row_count(connection, path, total_rows)
     finally:
         connection.close()
 
@@ -217,22 +222,19 @@ def _column_stat(name: str, family: str, values, total_rows: int) -> dict:
     return stat
 
 
-def _duplicate_row_count(connection, path: str) -> int:
+def _duplicate_row_count(connection, path: str, total_rows: int) -> int:
     """Count rows that are exact duplicates of an earlier row.
 
     Total rows minus distinct rows: a row appearing three times contributes two
-    duplicates. Computed on the full row, not per column.
+    duplicates. Computed on the full row, not per column. The total is already
+    known from the aggregate pass, so only the distinct count rescans the file.
     """
     reader_call, bind_path = _reader_for(path)
-    row = connection.execute(
-        f"SELECT COUNT(*) FROM {reader_call}", [bind_path]
-    ).fetchone()
-    total = int(row[0])
     distinct = int(connection.execute(
         f"SELECT COUNT(*) FROM (SELECT DISTINCT * FROM {reader_call})",
         [bind_path],
     ).fetchone()[0])
-    return total - distinct
+    return total_rows - distinct
 
 
 def _bind_datasets(sql: str, paths: list[str]) -> tuple[str, list]:

@@ -1,42 +1,43 @@
 # DAH - Current State
 
  - **Phase:** P4 Production Candidate - IN PROGRESS (P4-VERIFY-001,
-  P4-RELIABILITY-002, P4-UX-003, P4-UX-004 and P4-VALID-005 done). P3 V1 is
-  COMPLETE: all 10 entry-checklist items, 225 server tests, and a P3 gate of
-  its own.
+  P4-RELIABILITY-002, P4-UX-003, P4-UX-004, P4-VALID-005 and P4-PERF-006
+  done). P3 V1 is COMPLETE: all 10 entry-checklist items, 231 server tests,
+  and a P3 gate of its own.
 - **Global roadmap status:** ai/ROADMAP.md (phase tracker - current stage, phase table, next-phase entry checklist)
 - **Milestone status:** P1 Vertical Slice PASSED (verification/p1/REPORT.md); P0 PASSED
 - **Completed capabilities:** FastAPI core; SQLite case persistence; DuckDB engine; Vite/React shell; P0 verification harness; CSV dataset attachment; deterministic dataset profiling; read-only SQL analysis runs with persisted results; findings with evidence chain; validation via rerun; parquet + xlsx ingest; deep profiling; **read-only Python execution with persisted results (P2-ANALYSIS-008); chart images rendered and persisted from run results (P2-ANALYSIS-009);
 case management - rename, duplicate, delete (P2-CASE-010);
 AI planning with structured output (P2-AI-011); case export as a self-contained
 JSON package with import round trip (P2-CASE-012)**
-- **Active task:** P4-VALID-005 DONE - a validation verdict no longer depends
-  on which DuckDB connection answered. The live-LLM smoke of P4-UX-004 walked
-  the whole loop repeatedly and validation started flipping between
-  `supported` and `insufficient_evidence` on identical inputs: DuckDB does not
-  promise a row order for a result that never asked for one, and a GROUP BY
-  returns its groups in either order across connections (2 distinct orders
-  observed across 8 reruns of one query). `_reproduce_sql` compared rows
-  positionally, so an unordered query was a rerun mismatch roughly half the
-  time. It now compares sorted rows - a multiset comparison, correct because an
-  SQL result set is a bag of rows and only ORDER BY makes it a sequence
-  (DuckDB honours ORDER BY deterministically, so the sort is a no-op there and
-  a correction elsewhere). `_reproduce_python` stays positional on purpose: the
-  tabulator is deterministic and column order is a shape signal there.
-  Before it: P4-UX-004 (the run-scoped assistant surfaces in the workspace),
-  P4-UX-003 (the case workspace and chat), P4-RELIABILITY-002 (error
-  semantics) and P4-VERIFY-001 (the P3 gate). P4's entry checklist is in
-  ai/ROADMAP.md as a proposal for the user to reorder.
+- **Active task:** P4-PERF-006 DONE - large-dataset behaviour measured and the
+  profiling hot path fixed. Nothing had ever been measured at scale, so a
+  benchmark on a 200k-row / 13.4MB CSV established where the cost actually was:
+  attaching 0.2s, a GROUP BY query 0.8s, a capped SELECT * 0.8s (row_count=1000,
+  truncated=true - the cap has held since P1), and export 0.4s producing a
+  17.8MB package (dominated by the dataset bytes; the 100MB guard is far off).
+  The outlier was profiling at ~6.0s, and instrumenting it found pure waste: a
+  `SELECT *` + `fetchall()` of every row just to read the column description
+  (2.7s of rows materialised then discarded) followed by four separate full
+  scans (aggregates, COUNT(*), and the duplicate count's own COUNT(*) plus
+  DISTINCT). The description now comes from `LIMIT 0` - verified to give
+  identical names *and* inferred types - the row total is folded into the one
+  aggregate pass as a leading COUNT(*), and the duplicate count reuses that
+  total. Result: ~6.0s -> ~2.4s for the profile (~6.0s -> ~1.6s for the
+  endpoint), peak RSS 147MB -> 111MB, profile output unchanged.
+  Before it: P4-VALID-005 (validation determinism), P4-UX-004 (the run-scoped
+  assistant surfaces), P4-UX-003 (case workspace + chat), P4-RELIABILITY-002
+  (error semantics) and P4-VERIFY-001 (the P3 gate).
 - **Known issues:** none
-- **Test status:** server 225 passed (211 + 12 error semantics + 2 validation
-  determinism); web 17 passed (CaseList 5, CaseCreation 3, CaseWorkspace 9);
+- **Test status:** server 231 passed (211 + 12 error semantics + 2 validation
+  determinism + 6 large-dataset); web 17 passed (CaseList 5, CaseCreation 3,
+  CaseWorkspace 9);
   desktop shell 7 Rust tests (5 unit + 2 e2e, `cd desktop/src-tauri && cargo test [--features e2e]`);
   P2 and P3 gates PASS
-- **Next task:** the remaining P4 checklist, oldest risk first -
-  large-dataset behaviour (result caps, profiling cost, export package size:
-  the 1000-row cap exists but nothing has been measured at scale), then the
-  desktop shell lifecycle under CI and the app-signing decision (sign now or
-  formally defer to P5).
+- **Next task:** the last item of the P4 checklist - the desktop shell
+  lifecycle under CI and the app-signing decision (sign now, or formally defer
+  to P5). The Rust unit tests and the two live-core e2e tests run locally;
+  nothing runs them in CI yet.
   Carried: a 500 still answers with Starlette's plain-text "Internal Server
   Error"; the client handles it (parses JSON only when the core sent it), but
   the core giving it a JSON envelope remains worth doing.
@@ -106,6 +107,7 @@ JSON package with import round trip (P2-CASE-012)**
 | P4-UX-003 case workspace + chat | DONE |
 | P4-UX-004 run-scoped assistant surfaces | DONE |
 | P4-VALID-005 validation rerun determinism | DONE |
+| P4-PERF-006 large-dataset performance | DONE |
 
 ## How to run (P4)
 
