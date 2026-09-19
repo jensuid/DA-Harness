@@ -1,6 +1,6 @@
 # P2 MVP Milestone Verification
 
-Run: 2026-09-19T14:02:32.528221+00:00
+Run: 2026-09-19T14:12:43.643512+00:00
 
 ## Journey under test
 
@@ -20,7 +20,7 @@ real question -> load data -> profile -> SQL -> Python -> chart -> AI plan
 | Execute SQL analysis | PASS | row_count=2 |
 | Execute Python analysis | PASS | columns=['region', 'total'] |
 | Create chart from run result | PASS | HTTP 201 |
-| Generate AI plan | PASS | source=llm, hypotheses=3 |
+| Generate AI plan | PASS | source=llm, hypotheses=5 |
 | Create finding | PASS | HTTP 201 |
 | Trace evidence chain | PASS | finding -> run -> dataset verified |
 | Validate finding | PASS | status=partially_supported, missing_data check fired |
@@ -31,7 +31,7 @@ real question -> load data -> profile -> SQL -> Python -> chart -> AI plan
 | Import package round trip | PASS | 2 run(s) restored with fresh IDs |
 | Reproduce analysis on restored data | PASS | rows=[['north', 325.0], ['south', 161.0]] |
 | Serve restored chart artifact | PASS | HTTP 200 |
-| Test suite runs | PASS | 231 passed, 2 warnings in 102.68s (0:01:42) |
+| Test suite runs | PASS | 231 passed, 2 warnings in 104.54s (0:01:44) |
 
 ## Exit criteria (P2 gate: real problem, data, SQL/Python, visualization,
 AI, evidence, validation, export, reproducibility)

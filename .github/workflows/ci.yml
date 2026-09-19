@@ -56,10 +56,11 @@ jobs:
         run: .venv/bin/python -m pytest -q
 
       - name: P2 gate
-        run: .venv/bin/python verification/p2/verify_p2.py
+        # The scripts live at the repo root, not under server/.
+        run: .venv/bin/python ../verification/p2/verify_p2.py
 
       - name: P3 gate
-        run: .venv/bin/python verification/p3/verify_p3.py
+        run: .venv/bin/python ../verification/p3/verify_p3.py
 
       - name: Upload gate reports
         if: always()
@@ -67,8 +68,8 @@ jobs:
         with:
           name: gate-reports
           path: |
-            server/verification/p2/REPORT.md
-            server/verification/p3/REPORT.md
+            verification/p2/REPORT.md
+            verification/p3/REPORT.md
 
   web:
     name: Web suite + build
