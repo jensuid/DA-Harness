@@ -173,6 +173,46 @@ class Finding(BaseModel):
     created_at: datetime
 
 
+class EvidenceNode(BaseModel):
+    """One artifact in a case's evidence graph (P3-EVIDENCE-006)."""
+    id: str
+    kind: str
+    label: str
+    detail: str | None = None
+    created_at: str | None = None
+
+
+class EvidenceEdge(BaseModel):
+    """How one artifact was derived from another."""
+    source: str
+    target: str
+    relation: str
+
+
+class ClaimTrace(BaseModel):
+    """A single claim's path back to the data it stands on."""
+    finding_id: str
+    statement: str
+    validation_status: str
+    hops: list[EvidenceNode]
+    reaches_source: bool
+
+
+class EvidenceGraph(BaseModel):
+    """Every claim in a case and what it rests on.
+
+    Nodes are the case's artifacts; edges say how each was derived. A finding
+    that reaches no dataset is a claim with no source, listed in
+    `orphan_findings` - which is what makes this a review tool, not a diagram.
+    """
+    case_id: str
+    nodes: list[EvidenceNode]
+    edges: list[EvidenceEdge]
+    traces: list[ClaimTrace]
+    orphan_findings: list[str]
+    counts: dict[str, int]
+
+
 class EvidenceChain(BaseModel):
     """The trust chain a reviewer walks to verify a finding."""
     finding: Finding

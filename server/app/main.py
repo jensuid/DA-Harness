@@ -13,6 +13,7 @@ import json
 
 from app.analysis import profile_csv, run_query, run_query_multi
 from app.eda import EDA_OPS, run_eda
+from app.evidence import build_evidence_graph
 from app.python_exec import run_python
 from app.workflow import STAGES, case_progress
 from app.charts import render_chart, CHART_KINDS, CHART_FORMATS
@@ -28,6 +29,10 @@ from app.models import (
     CaseUpdate,
     EdaCreate,
     EdaResult,
+    EvidenceGraph,
+    EvidenceNode,
+    EvidenceEdge,
+    ClaimTrace,
     WorkflowStage,
     Dataset,
     Profile,
@@ -1014,6 +1019,56 @@ async def get_evidence_chain(
         row_count=run_row["row_count"],
         truncated=bool(run_row["truncated"]),
         dataset_filename=dataset_row["filename"],
+    )
+
+
+@app.get(
+    "/cases/{case_id}/evidence-graph",
+    response_model=EvidenceGraph,
+)
+async def get_evidence_graph(case_id: str, db=Depends(get_db)) -> EvidenceGraph:
+    """Every claim in the case and what it rests on (P3-EVIDENCE-006).
+
+    The graph is projected from the persisted rows, never stored, so it cannot
+    drift from what is on disk. Each trace walks one finding out to the dataset
+    it stands on; a finding that reaches no dataset is an orphan.
+    """
+    _require_case(db, case_id)
+    try:
+        graph = build_evidence_graph(db, case_id)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error))
+
+    def node(item: dict) -> EvidenceNode:
+        return EvidenceNode(
+            id=item["id"],
+            kind=item["kind"],
+            label=item["label"],
+            detail=item.get("detail"),
+            created_at=item.get("created_at"),
+        )
+
+    return EvidenceGraph(
+        case_id=case_id,
+        nodes=[node(item) for item in graph["nodes"]],
+        edges=[
+            EvidenceEdge(
+                source=edge["source"], target=edge["target"], relation=edge["relation"]
+            )
+            for edge in graph["edges"]
+        ],
+        traces=[
+            ClaimTrace(
+                finding_id=trace["finding_id"],
+                statement=trace["statement"],
+                validation_status=trace["validation_status"],
+                hops=[node(hop) for hop in trace["hops"]],
+                reaches_source=trace["reaches_source"],
+            )
+            for trace in graph["traces"]
+        ],
+        orphan_findings=graph["orphan_findings"],
+        counts=graph["counts"],
     )
 
 

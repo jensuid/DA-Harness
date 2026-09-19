@@ -321,3 +321,42 @@ TESTS: 9 tests - segment, correlate, numeric and categorical distribution, and
 VERIFICATION: pytest (118 passed) + verification/p2/verify_p2.py PASS.
 STATE UPDATE: mark P3-ANALYSIS-005 done on pass.
 ```
+
+### P3-EVIDENCE-006 contract
+
+```
+TASK ID: P3-EVIDENCE-006
+MILESTONE: P3 V1
+CAPABILITY: Evidence (richer lineage)
+GOAL: Show every claim in a case and what it rests on.
+
+CONTEXT: the single-finding chain (`GET .../findings/{id}/evidence`) answers
+         "what backs this claim"; nothing answered the case-level question a
+         reviewer asks: which claims exist, what each rests on, and does every
+         one trace back to stored data.
+INPUTS: a case id.
+RELEVANT FILES: server/app/evidence.py (NEW), server/app/main.py, models.py,
+                server/tests/test_evidence_graph.py (NEW)
+REQUIRED CHANGE: project the case into a graph - nodes for datasets, runs,
+         charts, plans and findings; edges for how each was derived
+         (anchored_on / queries / rendered_from / planned_from); a per-claim
+         trace walking finding -> run -> dataset(s); orphan findings listed
+         rather than hidden. Exposed as GET /cases/{id}/evidence-graph.
+NON-GOALS: storing the graph (it is a pure projection of the persisted rows),
+           visual rendering, cross-case lineage.
+CONSTRAINTS: read-only; every edge must connect nodes that exist; a case with
+             no artifacts answers 400 rather than returning an empty diagram.
+ACCEPTANCE CRITERIA:
+- [x] the graph covers every artifact kind with correct counts
+- [x] edges describe derivation and all connect real nodes
+- [x] a claim's trace reaches the dataset it stands on
+- [x] a join run's trace covers every dataset it bound
+- [x] a claim anchored on nothing is reported as an orphan with reaches_source
+      false, never hidden
+- [x] an artifact-free case answers 400; unknown case answers 404
+- [x] full suite and the P2 gate still pass
+TESTS: 7 tests - coverage, edge relations, single and multi-dataset traces,
+       orphan reporting, empty case, 404.
+VERIFICATION: pytest (125 passed) + verification/p2/verify_p2.py PASS.
+STATE UPDATE: mark P3-EVIDENCE-006 done on pass.
+```

@@ -2,6 +2,12 @@
 
 ## What was completed
 
+- P3-EVIDENCE-006 PASSED: GET /cases/{id}/evidence-graph projects a case into
+  its evidence graph - every dataset, run, chart, plan and finding as a node,
+  each derivation as an edge, and a per-claim trace walking a finding out to
+  the data it stands on. Claims that reach no dataset are listed as orphans,
+  which is what makes it a review tool.
+
 - P3-ANALYSIS-005 PASSED: POST /cases/{id}/datasets/{id}/eda runs segmentation,
   correlation, and distribution summaries. Each op compiles to read-only
   DuckDB through the existing run_query, so the read-only gate and row cap
@@ -55,6 +61,17 @@
 Create Case -> Question -> Load CSV -> Profile -> SQL Analysis
 -> Finding -> Evidence chain -> Validation (rerun) -> Save -> Reopen
 ```
+
+## What changed (P3-EVIDENCE-006)
+
+- server/app/evidence.py (NEW): `build_evidence_graph` reads the case's rows
+  and builds nodes, edges and traces. Nothing is stored - it is a pure
+  projection, so it cannot drift from what is on disk.
+- server/app/main.py + models.py: the `/evidence-graph` endpoint and
+  `EvidenceGraph` / `EvidenceNode` / `EvidenceEdge` / `ClaimTrace`.
+- server/tests/test_evidence_graph.py (NEW): 7 tests, including orphan
+  reporting (a dangling claim inserted directly into SQLite) and a join run
+  whose trace covers both datasets it bound.
 
 ## What changed (P3-ANALYSIS-005)
 
