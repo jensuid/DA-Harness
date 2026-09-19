@@ -70,7 +70,7 @@ come first because P3 code generation multiplies the risk.
 | 4 | Multiple datasets per case + joins — **DONE (P3-DATA-003)** | Core P3 capability; everything below depends on it | P3 Data |
 | 5 | Guided workflow + stage completion — **DONE (P3-FLOW-004)** | Turns features into a repeatable process | P3 Analysis workflow |
 | 6 | Richer EDA, segmentation, statistical tests — **DONE (P3-ANALYSIS-005)** | Depth after the multi-dataset base (formal hypothesis tests deferred) | P3 Analysis |
-| 7 | Contextual AI assistant — **slice 1 of 4 DONE (P3-AI-011)**: result interpretation; remaining: finding drafting, code generation, conversational memory | Only after the deterministic surface is complete (it now is) | P3 AI |
+| 7 | Contextual AI assistant — **slice 2 of 4 DONE (P3-AI-011, P3-AI-012)**: result interpretation, finding drafting; remaining: code generation, conversational memory | Only after the deterministic surface is complete (it now is) | P3 AI |
 | 8 | Evidence graph / claim-to-source tracing — **DONE (P3-EVIDENCE-006)** | Trust layer for repeated use | P3 Evidence |
 | 9 | Case templates, search, case history — **DONE (P3-CASE-007)** | Repeatability and reuse | P3 Case management |
 | 10 | Tauri desktop shell — **DONE (P3-SHELL-008)** | Wraps the existing React bundle; post-MVP as planned | Platform decision |

@@ -43,6 +43,7 @@ from app.charts import render_chart, CHART_KINDS, CHART_FORMATS
 from app.charts import DEFAULT_WIDTH, DEFAULT_HEIGHT
 from app.planner import create_plan as create_plan_module, validate_plan
 from app.interpreter import create_interpretation as create_interpretation_module
+from app.drafter import create_draft as create_draft_module
 from app.exporter import export_case, import_package, PACKAGE_FORMAT, PACKAGE_VERSION
 import app.db as db_module
 from app.db import get_connection
@@ -82,6 +83,7 @@ from app.models import (
     Template,
     TemplateCreate,
     Interpretation,
+    DraftFinding,
 )
 
 # Under the desktop shell, end this process when the shell is gone (see
@@ -1522,6 +1524,75 @@ async def list_interpretations(
         (run_id, case_id),
     ).fetchall()
     return [_interpretation_of(row) for row in rows]
+
+
+@app.post(
+    "/cases/{case_id}/runs/{run_id}/draft-finding",
+    status_code=200,
+    response_model=DraftFinding,
+)
+async def draft_finding(
+    case_id: str,
+    run_id: str,
+    db=Depends(get_db),
+) -> DraftFinding:
+    """Draft the finding a result would support, without writing anything.
+
+    A finding is the trust artifact - the evidence chain, validation and export
+    all stand on it - so this stops one step short of creating one. The drafter
+    reads the same inputs an interpretation reads (the run's own columns and
+    rows, the case question, the SQL or Python that produced them, the dataset
+    profile) and returns a candidate: a statement, what it means, its caveat and
+    the grounds it stands on. The LLM proposes when it is configured; an invented
+    magnitude or any other failure degrades to a deterministic draft of the same
+    numbers, so a draft is always returned and `source` says which engine spoke.
+
+    Drafting is stateless by design (P3-AI-012): nothing is persisted, and
+    nothing is created until a human POSTs the statement to /findings - the only
+    path that writes a finding, which keeps the human-owns-the-finding property
+    structural instead of a flag.
+    """
+    _require_run(db, case_id, run_id)
+    row = db.execute(
+        "SELECT kind, sql, code, columns_json, rows_json, row_count, truncated, "
+        "dataset_id FROM runs WHERE id = ? AND case_id = ?",
+        (run_id, case_id),
+    ).fetchone()
+    if row is None:
+        raise HTTPException(status_code=404, detail="run not found")
+
+    case = db.execute("SELECT question FROM cases WHERE id = ?", (case_id,)).fetchone()
+    profile_row = db.execute(
+        "SELECT columns_json, stats_json FROM profiles WHERE dataset_id = ?",
+        (row["dataset_id"],),
+    ).fetchone()
+    profile = (
+        {
+            "columns": json.loads(profile_row["columns_json"]),
+            "stats": json.loads(profile_row["stats_json"]),
+        }
+        if profile_row is not None
+        else None
+    )
+
+    draft, source = create_draft_module(
+        question=case["question"] if case else "",
+        kind=row["kind"],
+        source_text=row["sql"] if row["kind"] == "sql" else row["code"],
+        columns=json.loads(row["columns_json"]),
+        rows=json.loads(row["rows_json"]),
+        profile=profile,
+        truncated=bool(row["truncated"]),
+    )
+    return DraftFinding(
+        run_id=run_id,
+        case_id=case_id,
+        statement=draft["statement"],
+        interpretation=draft["interpretation"],
+        caveat=draft["caveat"],
+        grounds=draft.get("grounds", []),
+        source=source,
+    )
 
 
 @app.post(

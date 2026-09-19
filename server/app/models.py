@@ -369,3 +369,23 @@ class Interpretation(BaseModel):
     caveats: list[str]
     source: str
     created_at: datetime
+
+
+class DraftFinding(BaseModel):
+    """The candidate finding a result would support (P3-AI-012).
+
+    A proposal, not an artifact: drafting writes nothing, so nothing has to be
+    un-written when the analyst rejects it. Acceptance is a POST to the findings
+    endpoint - the only path that creates a finding - which keeps "the LLM
+    proposes, the human disposes" structural rather than a flag. `grounds` are
+    the values from the result the statement stands on, so a human can check the
+    claim against the numbers before it becomes evidence.
+    """
+
+    run_id: str
+    case_id: str
+    statement: str
+    interpretation: str
+    caveat: str
+    grounds: list[str]
+    source: str

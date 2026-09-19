@@ -12,7 +12,23 @@
   failure. `source` records which one spoke. Three slices remain: finding
   drafting, code generation, conversational memory.
 
-- P3-VALID-010 PASSED: the trust loop has no gaps left. A finding built on a
+- P3-AI-012 PASSED (contextual AI, slice 2 of 4): a result can now propose
+  the finding it would support, and the proposal creates nothing. `POST
+  /cases/{id}/runs/{id}/draft-finding` returns a candidate - statement,
+  interpretation, caveat and grounds (the values the statement stands on) -
+  computed from the run's own rows. Two engines behind one interface, as the
+  planner and interpreter do it: a deterministic drafter that finds the result's
+  measure and dimension and states which category leads at what value, and an
+  LLM behind `DAH_LLM_API_KEY`. Honesty is enforced rather than hoped for: every
+  number in the statement or the grounds must be one the result actually contains
+  (a cell, a row count, or a repeat count), so an invented magnitude fails
+  validation and the draft falls back to the deterministic one. Accepting a draft
+  is a POST to the existing `/findings` endpoint - the only path that writes a
+  finding - which makes "the LLM proposes, the human disposes" structural instead
+  of a flag. The findings table is untouched by this task. Two slices remain:
+  code generation and conversational memory.
+
+- P3-AI-011 PASSED the trust loop has no gaps left. A finding built on a
   Python run now validates the same way a SQL one does - the stored script is
   re-executed through the hard sandbox against the stored dataset and its
   tabulated columns AND rows are compared to what the run persists. A script
@@ -313,6 +329,26 @@ Create Case -> Question -> Load CSV -> Profile -> SQL Analysis
   honesty property - the deterministic read may only quote values the result
   actually contains (the two aggregated totals, 80.5 and 325.0, and no others).
 
+## What changed (P3-AI-012)
+
+- app/drafter.py (NEW): `draft_finding` (the deterministic drafter - every figure
+  is computed from the result's own rows, and a result with no numeric measure
+  gets an honest weaker draft that says so), `_allowed_numbers` (the honesty
+  budget: cell values, the row/column counts, and how often each value repeats),
+  `validate_draft`, `LLMDrafter` (OpenAI-compatible, httpx, JSON-only prompt)
+  and `create_draft`, which prefers the LLM and falls back on any failure -
+  unavailable, malformed, schema-invalid, or quoting a magnitude the result does
+  not contain.
+- app/main.py + models.py: the stateless `POST .../draft-finding` endpoint (200 -
+  no INSERT, no new table) and `DraftFinding`. It loads exactly what an
+  interpretation loads (run columns/rows, question, SQL or script, profile) so
+  the two slices compose.
+- tests/test_drafting.py (NEW): 10 tests - deterministic draft naming the run's
+  real columns, grounds checked against the result's own honesty budget via the
+  API, LLM accepted, invented magnitude rejected, failure and malformed
+  fallbacks, the findings table left empty, accept-then-validate round trip
+  (an accepted draft validates `supported`), the no-numeric-column draft, 404s.
+
 ## What changed (P3-VALID-010)
 
 - server/app/main.py: validate_finding no longer special-cases Python runs
@@ -382,7 +418,7 @@ reported as unsupported (clear 400) rather than faked; that gate is future work.
 
 ## Tests performed (current)
 
-- server pytest: 176 passed (167 + 9 interpretation)
+- server pytest: 186 passed (176 + 10 drafting)
 - desktop shell: 7 Rust tests - `cd desktop/src-tauri && cargo test` (5 unit)
   and `cargo test --features e2e` (+2 live-core tests)
 - web: 2 passed
@@ -395,8 +431,8 @@ reported as unsupported (clear 400) rather than faked; that gate is future work.
   `origin/master` (github.com/jensuid/DA-Harness):
   `dfb115b` P3-SEC-001, `2c7b11f` P3-CHART-002, `f5df5d1` P3-DATA-003,
   `967544b` P3-FLOW-004, `7b7e49f` P3-ANALYSIS-005, `ebaa30e` P3-EVIDENCE-006,
-  P3-CASE-007, P3-SHELL-008, P3-DATA-009, P3-VALID-010,
-  <this commit> P3-AI-011
+  P3-CASE-007, P3-SHELL-008, P3-DATA-009, P3-VALID-010, P3-AI-011,
+  <this commit> P3-AI-012
 - `.gitignore` covers `web/dist-desktop/`, `server/build/` (the 98MB PyInstaller
   tree) and `desktop/src-tauri/{target,gen,binaries}` - the 85MB sidecar is
   never committed.
@@ -415,37 +451,26 @@ reported as unsupported (clear 400) rather than faked; that gate is future work.
   two ways: the gate scrubs the LLM vars from its subprocess, and
   `test_export.py` deletes them. Any future runner that spawns the suite must
   do the same.
-- Python-run validation is still reported as a clear 400 "not supported yet".
-  The hard sandbox (P3-SEC-001) unblocks it, but the validation gate itself is
-  not yet implemented. Recorded in ai/TASKS.md.
-- No single-dataset delete endpoint: nothing can walk a case backwards today.
-  Recorded in ai/TASKS.md.
-- Contextual AI (roadmap item 7) is BLOCKED on the user setting
-  `DAH_LLM_API_KEY`. The planner's LLM path is coded and monkeypatch-tested but
-  dormant without the key. Not an agent task.
 
 ## Next action
 
-P3 has one item left: roadmap item 7, the contextual AI assistant (code
-generation, result interpretation, finding drafting). The planner backend it
-would build on is already live - `DAH_LLM_API_KEY` is configured in
-`server/.env` and the P2 gate's plan step reports `source=llm` - so this is an
-agent task now, not a user action. Everything else in the P3 entry checklist is
-done, including the desktop shell.
+P3 has one item left: roadmap item 7, the contextual AI assistant. Slices 1
+(result interpretation) and 2 (finding drafting) are done - `DAH_LLM_API_KEY`
+is configured in `server/.env`, so the LLM paths are live and the P2 gate's
+plan step reports `source=llm`. This is an agent task now, not a user action.
+Everything else in the P3 entry checklist is done, including the desktop shell.
+
+Two slices remain, in this order: code generation (natural language to a
+sandboxed Python run - the hard sandbox and the interpreter's reading of a
+result are both already in place), and conversational memory scoped to the
+case. A draft already hands the analyst a statement and the grounds it stands
+on, so code generation is the natural next step: the analyst says what they
+want to know, the harness proposes the read-only Python or SQL that would
+answer it, and the human decides whether to run it.
 
 Nothing is unblocked-but-undone. The one remaining carried item is not agent
 work: the packaged app is unsigned, so macOS gatekeeps the first launch
 (right-click, Open); signing and notarization are P5.
-
-Contextual AI has three slices left, in this order: finding drafting (an
-interpretation becomes a candidate finding the analyst accepts or rejects, so
-the evidence chain stays human-owned), code generation (natural language to a
-sandboxed Python run - the hard sandbox and the interpreter's reading of a
-result are both already in place), and conversational memory scoped to the
-case.
-
-Contextual AI (roadmap item 7) remains BLOCKED on the user setting
-`DAH_LLM_API_KEY`; not an agent task.
 
 ## Important context
 

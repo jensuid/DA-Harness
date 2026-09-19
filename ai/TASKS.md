@@ -677,3 +677,63 @@ TESTS: 9 tests - deterministic read, real values referenced, LLM persisted,
 VERIFICATION: pytest green + verification/p2/verify_p2.py PASS.
 STATE UPDATE: mark P3-AI-011 done on pass.
 ```
+
+### P3-AI-012 contract
+
+```
+TASK ID: P3-AI-012
+MILESTONE: P3 V1
+CAPABILITY: Contextual AI (slice 2 of 4: finding drafting)
+GOAL: Draft the *candidate* finding a result would support, so the analyst
+      decides whether it becomes evidence rather than finding out an LLM
+      already decided for them.
+
+CONTEXT: Slice 1 (P3-AI-011) reads a result. The next step in the loop is a
+         finding - and a finding is the trust artifact: it is what the evidence
+         chain, validation and export are built on. So this slice stops one
+         step short of it. The LLM drafts; a human accepts; only the acceptance
+         writes a row to findings, through the endpoint that already exists.
+INPUTS: a persisted run, the case question, and the dataset profile - the same
+        inputs interpretation takes, so the two slices compose.
+RELEVANT FILES: server/app/drafter.py (NEW), server/app/models.py (DraftFinding),
+                server/app/main.py (endpoint), server/tests/test_drafting.py (NEW)
+REQUIRED CHANGE:
+  - POST /cases/{case_id}/runs/{run_id}/draft-finding (200 - nothing is
+    created) returns {statement, interpretation, caveat, grounds, source}.
+    `grounds` is the list of values from the result that the statement stands
+    on, so a human can check the claim against the numbers.
+  - Two engines, one interface, as before: `draft_finding` is deterministic and
+    always available - it finds the result's measure and dimension, and states
+    which category leads on the measure at what value; `LLMDrafter` calls the
+    OpenAI-compatible endpoint when DAH_LLM_API_KEY is set.
+  - Honesty is enforced, not hoped for: every number the LLM quotes in its
+    statement or its grounds must be a value the result actually contains (a
+    cell, the row count, or a derived count). An invented magnitude is a
+    validation failure and the draft falls back to the deterministic one.
+  - Drafting writes no state. Accepting a draft is a POST to the existing
+    /findings endpoint - the only path that creates a finding.
+NON-GOALS: persisting drafts (a draft is a proposal, not state; rejected drafts
+           are deliberately not kept), batch drafting, drafting from a chart,
+           accepting a draft in one call (acceptance is the existing endpoint,
+           so the human-owns-the-finding property is structural, not a flag).
+CONSTRAINTS: the findings table is untouched by this task - same schema, same
+             endpoints, same responses. No existing behaviour changes.
+ACCEPTANCE CRITERIA:
+- [x] a deterministic draft is produced with no key; statement, interpretation
+      and caveat are non-empty and it names the run's real columns
+- [x] every value in grounds appears in the result's rows or columns
+- [x] an LLM draft quoting only real values is returned with source=llm
+- [x] an LLM draft that invents a magnitude falls back to source=deterministic
+- [x] an LLM that raises or returns malformed output falls back
+- [x] drafting leaves the findings table empty - nothing is created
+- [x] a draft's statement is accepted through the existing findings endpoint,
+      lands as a real finding, and validates
+- [x] a result with no numeric column still yields an honest weaker draft
+- [x] 404 for unknown case, unknown run, and a cross-case run
+- [x] full suite and the P2 gate still pass
+TESTS: 10 tests - deterministic draft, grounds are real, LLM accepted, invented
+       magnitude rejected, LLM failure and malformed fallbacks, no state
+       written, accept-then-validate round trip, no-numeric-column result, 404s.
+VERIFICATION: pytest green + verification/p2/verify_p2.py PASS.
+STATE UPDATE: mark P3-AI-012 done on pass.
+```
