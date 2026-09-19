@@ -42,6 +42,7 @@ from app.workflow import STAGES, case_progress
 from app.charts import render_chart, CHART_KINDS, CHART_FORMATS
 from app.charts import DEFAULT_WIDTH, DEFAULT_HEIGHT
 from app.planner import create_plan as create_plan_module, validate_plan
+from app.interpreter import create_interpretation as create_interpretation_module
 from app.exporter import export_case, import_package, PACKAGE_FORMAT, PACKAGE_VERSION
 import app.db as db_module
 from app.db import get_connection
@@ -80,6 +81,7 @@ from app.models import (
     PlanSummary,
     Template,
     TemplateCreate,
+    Interpretation,
 )
 
 # Under the desktop shell, end this process when the shell is gone (see
@@ -408,6 +410,27 @@ async def duplicate_case(
              plan["question"], plan["plan_json"], plan["source"], plan["created_at"]),
         )
 
+    for item in db.execute(
+        "SELECT id, run_id, summary, observations_json, caveats_json, source, "
+        "created_at FROM interpretations WHERE case_id = ? ORDER BY created_at",
+        (case_id,),
+    ).fetchall():
+        db.execute(
+            "INSERT INTO interpretations (id, run_id, case_id, summary, "
+            "observations_json, caveats_json, source, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            (
+                str(uuid4()),
+                run_ids.get(item["run_id"]),
+                new_case_id,
+                item["summary"],
+                item["observations_json"],
+                item["caveats_json"],
+                item["source"],
+                item["created_at"],
+            ),
+        )
+
     return new_case
 
 
@@ -425,6 +448,7 @@ async def delete_case(case_id: str, db=Depends(get_db)) -> None:
     # Order matters for the declared foreign keys: charts and findings
     # reference runs; profiles are keyed by dataset, not by case.
     db.execute("DELETE FROM charts WHERE case_id = ?", (case_id,))
+    db.execute("DELETE FROM interpretations WHERE case_id = ?", (case_id,))
     db.execute("DELETE FROM findings WHERE case_id = ?", (case_id,))
     db.execute("DELETE FROM runs WHERE case_id = ?", (case_id,))
     db.execute(
@@ -1369,6 +1393,135 @@ async def validate_finding(
         checks=checks,
         validated_at=datetime.now(timezone.utc),
     )
+
+
+@app.post(
+    "/cases/{case_id}/runs/{run_id}/interpret",
+    status_code=201,
+    response_model=Interpretation,
+)
+async def create_interpretation(
+    case_id: str,
+    run_id: str,
+    db=Depends(get_db),
+) -> Interpretation:
+    """Say what a persisted result shows, in the language of the case question.
+
+    The run's own columns and rows, the question, the SQL or Python that
+    produced them, and the dataset profile go to the interpreter. The LLM reads
+    them when it is configured and degrades to a deterministic read of the same
+    numbers on any failure, so an interpretation is always returned and the
+    persisted `source` says which engine spoke (P3-AI-011).
+    """
+    _require_run(db, case_id, run_id)
+    row = db.execute(
+        "SELECT kind, sql, code, columns_json, rows_json, row_count, truncated, "
+        "dataset_id FROM runs WHERE id = ? AND case_id = ?",
+        (run_id, case_id),
+    ).fetchone()
+    if row is None:
+        raise HTTPException(status_code=404, detail="run not found")
+
+    case = db.execute("SELECT question FROM cases WHERE id = ?", (case_id,)).fetchone()
+    profile_row = db.execute(
+        "SELECT columns_json, stats_json FROM profiles WHERE dataset_id = ?",
+        (row["dataset_id"],),
+    ).fetchone()
+    profile = (
+        {
+            "columns": json.loads(profile_row["columns_json"]),
+            "stats": json.loads(profile_row["stats_json"]),
+        }
+        if profile_row is not None
+        else None
+    )
+
+    interpretation, source = create_interpretation_module(
+        question=case["question"] if case else "",
+        kind=row["kind"],
+        source_text=row["sql"] if row["kind"] == "sql" else row["code"],
+        columns=json.loads(row["columns_json"]),
+        rows=json.loads(row["rows_json"]),
+        profile=profile,
+        truncated=bool(row["truncated"]),
+    )
+
+    interpretation_id = str(uuid4())
+    now = datetime.now(timezone.utc)
+    db.execute(
+        "INSERT INTO interpretations (id, run_id, case_id, summary, "
+        "observations_json, caveats_json, source, created_at) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        (
+            interpretation_id,
+            run_id,
+            case_id,
+            interpretation["summary"],
+            json.dumps(interpretation.get("observations", [])),
+            json.dumps(interpretation.get("caveats", [])),
+            source,
+            now.isoformat(),
+        ),
+    )
+    return Interpretation(
+        id=interpretation_id,
+        run_id=run_id,
+        case_id=case_id,
+        summary=interpretation["summary"],
+        observations=interpretation.get("observations", []),
+        caveats=interpretation.get("caveats", []),
+        source=source,
+        created_at=now,
+    )
+
+
+def _interpretation_of(row) -> Interpretation:
+    return Interpretation(
+        id=row["id"],
+        run_id=row["run_id"],
+        case_id=row["case_id"],
+        summary=row["summary"],
+        observations=json.loads(row["observations_json"]),
+        caveats=json.loads(row["caveats_json"]),
+        source=row["source"],
+        created_at=row["created_at"],
+    )
+
+
+@app.get(
+    "/cases/{case_id}/runs/{run_id}/interpret",
+    response_model=Interpretation,
+)
+async def get_interpretation(case_id: str, run_id: str, db=Depends(get_db)) -> Interpretation:
+    """The latest reading of this run's result."""
+    _require_run(db, case_id, run_id)
+    row = db.execute(
+        "SELECT id, run_id, case_id, summary, observations_json, caveats_json, "
+        "source, created_at FROM interpretations WHERE run_id = ? AND case_id = ? "
+        "ORDER BY created_at DESC LIMIT 1",
+        (run_id, case_id),
+    ).fetchone()
+    if row is None:
+        raise HTTPException(status_code=404, detail="no interpretation recorded for this run")
+    return _interpretation_of(row)
+
+
+@app.get(
+    "/cases/{case_id}/runs/{run_id}/interpretations",
+    response_model=list[Interpretation],
+)
+async def list_interpretations(
+    case_id: str, run_id: str, db=Depends(get_db)
+) -> list[Interpretation]:
+    """Every reading of this run's result, newest first."""
+    _require_run(db, case_id, run_id)
+    rows = db.execute(
+        "SELECT id, run_id, case_id, summary, observations_json, caveats_json, "
+        "source, created_at FROM interpretations WHERE run_id = ? AND case_id = ? "
+        "ORDER BY created_at DESC",
+        (run_id, case_id),
+    ).fetchall()
+    return [_interpretation_of(row) for row in rows]
 
 
 @app.post(

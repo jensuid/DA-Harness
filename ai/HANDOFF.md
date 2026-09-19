@@ -2,6 +2,16 @@
 
 ## What was completed
 
+- P3-AI-011 PASSED (contextual AI, slice 1 of 4): a persisted result can now be
+  *read*. `POST /cases/{id}/runs/{id}/interpret` returns a plain-language
+  summary, observations and caveats grounded in the result's own numbers, in
+  the language of the case's question. Two engines behind one interface, as the
+  planner does it: a deterministic reader that computes row counts, numeric
+  ranges and the most frequent value per column from the persisted rows, and an
+  LLM behind `DAH_LLM_API_KEY` that degrades to the deterministic read on any
+  failure. `source` records which one spoke. Three slices remain: finding
+  drafting, code generation, conversational memory.
+
 - P3-VALID-010 PASSED: the trust loop has no gaps left. A finding built on a
   Python run now validates the same way a SQL one does - the stored script is
   re-executed through the hard sandbox against the stored dataset and its
@@ -287,6 +297,22 @@ Create Case -> Question -> Load CSV -> Profile -> SQL Analysis
   from Python, listing alongside SQL, and rejection of write queries, blocked
   imports, filesystem writes, dunder escapes, missing/empty `result`, 404s.
 
+## What changed (P3-AI-011)
+
+- app/interpreter.py (NEW): `interpret_result` (the deterministic reader -
+  every figure it quotes is computed from the result's own rows, so it cannot
+  invent a number), `LLMInterpreter` (OpenAI-compatible, httpx, JSON-only
+  prompt), `validate_interpretation`, and `create_interpretation`, which prefers
+  the LLM and falls back on any failure.
+- app/db.py: the `interpretations` table (a child of a run, like charts).
+- app/main.py: the three endpoints - POST (create), GET .../interpret (latest),
+  GET .../interpretations (history, newest first) - plus duplication copying a
+  case's readings onto the copy's own runs and deletion removing them.
+- app/models.py: `Interpretation`.
+- tests/test_interpretations.py (NEW): 9 tests, including one that pins the
+  honesty property - the deterministic read may only quote values the result
+  actually contains (the two aggregated totals, 80.5 and 325.0, and no others).
+
 ## What changed (P3-VALID-010)
 
 - server/app/main.py: validate_finding no longer special-cases Python runs
@@ -356,7 +382,7 @@ reported as unsupported (clear 400) rather than faked; that gate is future work.
 
 ## Tests performed (current)
 
-- server pytest: 167 passed (163 + 4 Python-run validation)
+- server pytest: 176 passed (167 + 9 interpretation)
 - desktop shell: 7 Rust tests - `cd desktop/src-tauri && cargo test` (5 unit)
   and `cargo test --features e2e` (+2 live-core tests)
 - web: 2 passed
@@ -369,7 +395,8 @@ reported as unsupported (clear 400) rather than faked; that gate is future work.
   `origin/master` (github.com/jensuid/DA-Harness):
   `dfb115b` P3-SEC-001, `2c7b11f` P3-CHART-002, `f5df5d1` P3-DATA-003,
   `967544b` P3-FLOW-004, `7b7e49f` P3-ANALYSIS-005, `ebaa30e` P3-EVIDENCE-006,
-  P3-CASE-007, P3-SHELL-008, P3-DATA-009, <this commit> P3-VALID-010
+  P3-CASE-007, P3-SHELL-008, P3-DATA-009, P3-VALID-010,
+  <this commit> P3-AI-011
 - `.gitignore` covers `web/dist-desktop/`, `server/build/` (the 98MB PyInstaller
   tree) and `desktop/src-tauri/{target,gen,binaries}` - the 85MB sidecar is
   never committed.
@@ -409,6 +436,13 @@ done, including the desktop shell.
 Nothing is unblocked-but-undone. The one remaining carried item is not agent
 work: the packaged app is unsigned, so macOS gatekeeps the first launch
 (right-click, Open); signing and notarization are P5.
+
+Contextual AI has three slices left, in this order: finding drafting (an
+interpretation becomes a candidate finding the analyst accepts or rejects, so
+the evidence chain stays human-owned), code generation (natural language to a
+sandboxed Python run - the hard sandbox and the interpreter's reading of a
+result are both already in place), and conversational memory scoped to the
+case.
 
 Contextual AI (roadmap item 7) remains BLOCKED on the user setting
 `DAH_LLM_API_KEY`; not an agent task.

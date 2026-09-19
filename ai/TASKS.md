@@ -610,3 +610,70 @@ TESTS: 4 tests - reproduces, tampered result is caught, failing script is a
 VERIFICATION: pytest green + verification/p2/verify_p2.py PASS.
 STATE UPDATE: mark P3-VALID-010 done on pass.
 ```
+
+### P3-AI-011 contract
+
+```
+TASK ID: P3-AI-011
+MILESTONE: P3 V1
+CAPABILITY: Contextual AI (slice 1 of 4: result interpretation)
+GOAL: Tell the analyst what a persisted result actually shows, in the language
+      of the case's own question, without making them re-derive it.
+
+CONTEXT: The loop can run, chart, validate and export - but reading a result
+         still means reading a table. A non-trivial result needs a human to
+         re-derive what it says about the question. The planner (P2-AI-011)
+         already proved the two-engine pattern: a deterministic engine that is
+         always available, and an LLM behind it that degrades to the
+         deterministic read on any failure. This is that pattern applied to a
+         result instead of to a profile.
+INPUTS: a persisted run (SQL or Python), the case's question, and the primary
+        dataset's profile.
+RELEVANT FILES: server/app/interpreter.py (NEW), server/app/db.py (table),
+                server/app/models.py (Interpretation), server/app/main.py
+                (endpoints + duplicate/delete), server/tests/test_interpretations.py
+                (NEW)
+REQUIRED CHANGE:
+  - POST /cases/{case_id}/runs/{run_id}/interpret (201) reads the run's own
+    persisted columns and rows, the question, the SQL or Python that produced
+    it, and the dataset profile, then returns {summary, observations, caveats}
+    and persists it as an artifact of the run.
+  - GET .../interpret returns the latest, GET .../interpretations the history
+    newest first.
+  - Two engines behind one interface, exactly as the planner does it:
+    `interpret_result` is deterministic and always available, reading the
+    result's own numbers (row counts, numeric min/max/mean, the most frequent
+    value per text column); `LLMInterpreter` calls the OpenAI-compatible
+    endpoint when DAH_LLM_API_KEY is set, schema-validated by this module, and
+    any failure - bad JSON, schema violation, network - falls back to the
+    deterministic read. `source` records which engine spoke.
+  - An interpretation is a child of a run: duplicated with the case (remapped
+    to the copy's run ids) and removed with it.
+NON-GOALS: finding drafting (slice 2), code generation (slice 3),
+           conversational memory (slice 4), streaming, per-row narration,
+           interpretation of charts as distinct from the runs behind them.
+CONSTRAINTS: every observation must reference a value that is actually in the
+             persisted result - the deterministic engine computes from the rows
+             and the LLM is prompted with them, so an interpretation can never
+             invent a number. The persisted source field always says which
+             engine spoke. No existing endpoint or response changes.
+ACCEPTANCE CRITERIA:
+- [x] a deterministic interpretation is produced with no key configured; its
+      summary and observations reference the result's real columns and values
+- [x] a configured LLM's valid output is persisted with source=llm
+- [x] an LLM that raises, returns malformed JSON, or violates the schema
+      falls back to source=deterministic and the endpoint still answers 201
+- [x] an interpretation survives a session restart and is retrievable, and the
+      history is newest first
+- [x] 404 for an unknown case, an unknown run, and a run belonging to another
+      case
+- [x] duplicating a case copies its interpretations onto the copy's own runs;
+      deleting a case removes them
+- [x] full suite and the P2 gate still pass
+TESTS: 9 tests - deterministic read, real values referenced, LLM persisted,
+       LLM failure/malformed/schema-violation fallbacks (3), retrieval across a
+       session + newest-first history, 404 contract, duplicate/delete
+       survival.
+VERIFICATION: pytest green + verification/p2/verify_p2.py PASS.
+STATE UPDATE: mark P3-AI-011 done on pass.
+```

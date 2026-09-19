@@ -110,6 +110,19 @@ CREATE TABLE IF NOT EXISTS plans (
     FOREIGN KEY (case_id) REFERENCES cases(id),
     FOREIGN KEY (dataset_id) REFERENCES datasets(id)
 );
+
+CREATE TABLE IF NOT EXISTS interpretations (
+    id TEXT PRIMARY KEY,
+    run_id TEXT NOT NULL,
+    case_id TEXT NOT NULL,
+    summary TEXT NOT NULL,
+    observations_json TEXT NOT NULL,
+    caveats_json TEXT NOT NULL,
+    source TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (case_id) REFERENCES cases(id),
+    FOREIGN KEY (run_id) REFERENCES runs(id)
+);
 """
 
 

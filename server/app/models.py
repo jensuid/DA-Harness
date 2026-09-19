@@ -350,3 +350,22 @@ class CaseHistory(BaseModel):
     question: str
     events: list[HistoryEvent]
     counts: dict[str, int]
+
+
+class Interpretation(BaseModel):
+    """A plain-language read of a persisted run result (P3-AI-011).
+
+    An artifact of the run, not of the case: it says what a result shows in the
+    language of the case's question. `source` records which engine spoke, so a
+    reviewer knows how much weight to give it - the deterministic read only
+    ever cites values the result actually contains.
+    """
+
+    id: str
+    run_id: str
+    case_id: str
+    summary: str
+    observations: list[str]
+    caveats: list[str]
+    source: str
+    created_at: datetime

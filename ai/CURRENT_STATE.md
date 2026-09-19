@@ -7,12 +7,14 @@
 case management - rename, duplicate, delete (P2-CASE-010);
 AI planning with structured output (P2-AI-011); case export as a self-contained
 JSON package with import round trip (P2-CASE-012)**
-- **Active task:** P3 V1 - P3-SEC-001, P3-CHART-002, P3-DATA-003, P3-FLOW-004, P3-ANALYSIS-005, P3-EVIDENCE-006, P3-CASE-007, P3-SHELL-008, P3-DATA-009, P3-VALID-010 all DONE. Remaining P3 item: 7, the contextual AI assistant (code generation, result interpretation, finding drafting). The planner backend exists and is live via DAH_LLM_API_KEY, but the assistant surface is not built.
+- **Active task:** P3 V1 - P3-SEC-001, P3-CHART-002, P3-DATA-003, P3-FLOW-004, P3-ANALYSIS-005, P3-EVIDENCE-006, P3-CASE-007, P3-SHELL-008, P3-DATA-009, P3-VALID-010, P3-AI-011 all DONE. Remaining P3 item: 7, the contextual AI assistant (code generation, result interpretation, finding drafting). The planner backend exists and is live via DAH_LLM_API_KEY, but the assistant surface is not built.
 - **Known issues:** none
-- **Test status:** server 167 passed; web 2 passed; desktop shell 7 Rust tests (5 unit + 2 e2e, `cd desktop/src-tauri && cargo test [--features e2e]`)
-- **Next task:** P3 item 7, the contextual AI assistant - the last open P3
-  item. Validation of Python runs and single-dataset deletion are both done, so
-  the trust loop is complete. DAH_LLM_API_KEY is
+- **Test status:** server 176 passed; web 2 passed; desktop shell 7 Rust tests (5 unit + 2 e2e, `cd desktop/src-tauri && cargo test [--features e2e]`)
+- **Next task:** P3 item 7 continues - the contextual AI assistant's
+  remaining slices: finding drafting, code generation, conversational memory.
+  Slice 1 (result interpretation) is done. Validation of Python runs and
+  single-dataset deletion are done, so the trust loop is complete.
+  DAH_LLM_API_KEY is
   already configured in server/.env (the P2 gate's plan step reports source=llm),
   so this is an agent task now, not a user action.
   Carried: nothing agent-shaped remains. The packaged app is unsigned
@@ -63,6 +65,7 @@ JSON package with import round trip (P2-CASE-012)**
 - Templates: `POST /cases/{id}/template` with `{"name"?}` (promote), `GET /templates`,
   `POST /cases/from-template` with `{"template_id", "question"?, "dataset"?}`,
   `DELETE /templates/{id}` (templates outlive their source case)
+- Interpret a run: `POST /cases/{id}/runs/{id}/interpret` (plain-language read of the result; deterministic by default, LLM when DAH_LLM_API_KEY is set, `source` records which); latest at `GET .../interpret`, history at `GET .../interpretations`
 - Chart from a run: `POST /cases/{id}/runs/{id}/charts` with `{"kind": "bar|line", "x": ..., "y": ..., "series": ...}`; image at `GET /cases/{id}/charts/{id}/image`
 - Rename: `PATCH /cases/{id}` with `{question?, dataset?}`; duplicate: `POST /cases/{id}/duplicate`;
   delete: `DELETE /cases/{id}` (removes the case row, all children, and its on-disk data)
