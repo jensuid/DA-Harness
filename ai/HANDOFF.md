@@ -2,6 +2,13 @@
 
 ## What was completed
 
+- P3-SEC-001 PASSED: Python analysis runs now execute in a separate process
+  under an OS-level sandbox (macOS sandbox-exec / seatbelt). Writes outside
+  the per-run scratch directory and all network access are denied by the
+  kernel; the child environment carries no API-process secrets; runaway loops
+  are killed at the process-group level and reported as a 400. The P2 soft
+  guards remain as defense in depth inside the child.
+
 - P2-ANALYSIS-008 PASSED: read-only Python execution against an attached dataset,
   result persisted and retrievable like a SQL run
 - P2-ANALYSIS-009 PASSED: chart images rendered from a persisted run result and
@@ -25,6 +32,24 @@
 Create Case -> Question -> Load CSV -> Profile -> SQL Analysis
 -> Finding -> Evidence chain -> Validation (rerun) -> Save -> Reopen
 ```
+
+## What changed (P3-SEC-001)
+
+- server/app/python_exec.py: `run_python` is now an orchestrator. It writes a
+  JSON job into a per-run scratch dir, spawns `app.python_worker` as a child
+  (sandbox-exec wrapped when available) with a scrubbed environment, and reads
+  the tabulated result back from stdout. The old in-process body is
+  `execute_user_code`, which the worker calls; timeouts are enforced three
+  ways - parent kills the process group after limit + startup grace, child
+  RLIMIT_CPU, child SIGALRM.
+- server/app/python_worker.py (NEW): the in-sandbox entrypoint. Reads the job,
+  runs `execute_user_code`, and emits either the result or `{"error": ...}`;
+  it stays alive to report contract violations so the parent answers 400 with
+  a useful message.
+- server/tests/test_python_hard_sandbox.py (NEW): 6 tests at the process
+  boundary - real seatbelt enforcement (scratch write allowed, outside write
+  and network denied), child env scrub, process-group kill, runaway loop,
+  dead worker, contract violation.
 
 ## What changed (P2-CASE-012)
 

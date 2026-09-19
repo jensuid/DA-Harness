@@ -1,7 +1,7 @@
-"""Restricted Python execution engine for the Analysis Workspace (P2-ANALYSIS-008).
+"""Restricted Python execution engine for the Analysis Workspace.
 
-This is the Python counterpart to analysis.run_query: user Python runs against an
-attached dataset and yields a table that persists in the same `runs` store, so
+The Python counterpart to analysis.run_query: user Python runs against an
+attached dataset and yield a table that persists in the same `runs` store, so
 findings, evidence, and validation treat SQL and Python runs identically.
 
 The user code is handed a `dataset` handle with read-only access to the attached
@@ -20,32 +20,47 @@ list of dicts (or a list of lists) becomes the run's columns and rows.
 Threat posture (Master Spec section on external engines; Verification plan,
 "Python" risks: filesystem access, process execution, network, exhaustion):
 
-    blocked   - filesystem writes (no `open`, no os/shutil/pathlib imports),
-                process execution and network egress (import allowlist),
-                resource exhaustion (wall-clock and CPU limits).
-    also      - dunder access on the injected handle is refused, so casual
-                escapes like `dataset.query.__globals__` do not reach the engine.
+    outer wall - the code runs in a *separate process* under an OS-level
+                sandbox. On macOS that is sandbox-exec (seatbelt) with a
+                profile that denies every filesystem write outside the run's
+                scratch directory and denies all network access. On hosts
+                without sandbox-exec the separate process still isolates the
+                server: a crash, an infinite loop, or a wild allocation ends
+                in the child, not in the API process.
+    inner wall - the child keeps the in-process guards (import allowlist,
+                restricted builtins, dunder-hardened handle, CPU and wall-clock
+                limits). Even on a host with no OS sandbox the inner wall still
+                refuses unsafe imports and filesystem writes; on a host with
+                one, it is defense in depth.
 
-This is a *soft* sandbox suited to a local-first single-user tool: it stops
-accidental writes and runaway AI-generated code, not a hostile user who already
-owns the machine. A hard OS-level sandbox (separate process under sandbox-exec /
-landlock) is the V1 follow-up and is tracked as such.
+Timeouts are enforced three ways, outermost first: the parent kills the child's
+process group after the limit plus startup grace; the child's CPU rlimit bounds
+burning loops; the child's SIGALRM bounds wall clock inside user code.
+
+Validation of Python runs (reproducing the result by re-execution) is reported
+as unsupported (a clear 400) rather than faked; that gate is future work.
 """
 
 import builtins
+import json
+import os
 import resource
+import shutil
 import signal
+import subprocess
 import sys
+import tempfile
 import threading
 from contextlib import contextmanager
+from pathlib import Path
 from typing import Any, Iterator
 
 from app.analysis import run_query
 
 # Modules the user code may import. Everything else - subprocess, socket, os,
-# ctypes, multiprocessing, urllib, http, importlib - is refused by the import
-# hook. openpyxl/pyarrow are included because the dataset reader needs them when
-# the attached file is xlsx; both are read-only data readers.
+# shutil, pathlib, ctypes, multiprocessing, urllib, http, importlib - is
+# refused by the import hook. openpyxl/pyarrow are included because the dataset
+# reader needs them when the attached file is xlsx; both are read-only readers.
 _SAFE_MODULES = frozenset(
     {
         "math",
@@ -87,9 +102,21 @@ _ALLOWED_BUILTINS = frozenset(
     }
 )
 
-# Wall-clock and CPU seconds for one run, and the address-space ceiling.
+# Wall-clock and CPU seconds for one run.
 _DEFAULT_TIMEOUT_SECONDS = 30
 _DEFAULT_CPU_SECONDS = _DEFAULT_TIMEOUT_SECONDS + 5
+
+# Interpreter startup plus teardown on top of the user-code budget.
+_STARTUP_GRACE_SECONDS = 20
+
+_SERVER_ROOT = Path(__file__).resolve().parent.parent
+_WORKER_MODULE = "app.python_worker"
+_MAX_RESULT_BYTES = 64 * 1024 * 1024
+
+# macOS seatbelt is the only OS sandbox wired up today; elsewhere the separate
+# process plus the inner guards still apply. `which` is cheap, so it is checked
+# per run rather than cached - a PATH change mid-process is rare but harmless.
+_SANDBOX_BINARY = "sandbox-exec"
 
 
 class _DatasetQuery:
@@ -192,11 +219,12 @@ def _import_restrictions() -> Iterator[None]:
 def _resource_limits(timeout_seconds: int) -> Iterator[None]:
     """Bound wall clock and CPU time, restoring both afterwards.
 
-    Address space is deliberately not capped: on macOS the process already
-    maps far more virtual memory than a useful limit allows, so an RLIMIT_AS
-    bound rejects the run outright rather than restraining it. A real memory
-    bound needs a separate process, which arrives with the V1 hard sandbox.
+    Address space is deliberately not capped here: the hard sandbox's separate
+    process is what carries memory risk, and on macOS an RLIMIT_AS bound
+    rejects ordinary runs because the interpreter maps far more VM than a
+    useful limit allows.
     """
+
     prev_cpu = resource.getrlimit(resource.RLIMIT_CPU)
     resource.setrlimit(resource.RLIMIT_CPU, (_DEFAULT_CPU_SECONDS, prev_cpu[1]))
 
@@ -232,14 +260,11 @@ def _restricted_builtins() -> dict:
     return namespace
 
 
-_real_import = builtins.__import__
-
-
 def _guarded_import(name, globals=None, locals=None, fromlist=(), level=0):
     root = name.split(".", 1)[0]
     if root not in _SAFE_MODULES:
         raise ImportError(f"module '{name}' is not allowed in analysis code")
-    return _real_import(name, globals, locals, fromlist, level)
+    return builtins.__import__(name, globals, locals, fromlist, level)
 
 
 def _tabulate(result: Any) -> dict:
@@ -279,16 +304,17 @@ def _tabulate(result: Any) -> dict:
     }
 
 
-def run_python(
+def execute_user_code(
     path: str,
     source: str,
     timeout_seconds: int = _DEFAULT_TIMEOUT_SECONDS,
 ) -> dict:
-    """Execute user Python against one attached dataset and tabulate `result`.
+    """Run user code in this process under the inner guards.
 
-    Raises ValueError for anything the analysis contract rejects - unsafe
-    imports, missing `result`, the wrong row shape - so the caller can answer
-    400 rather than 500.
+    Used by the sandboxed worker; `run_python` is what the API calls. Raises
+    ValueError for anything the analysis contract rejects - unsafe imports,
+    missing `result`, the wrong row shape - so the caller can answer 400
+    rather than 500.
     """
     if not source.strip():
         raise ValueError("analysis code is empty")
@@ -309,3 +335,137 @@ def run_python(
             raise ValueError(str(error)) from error
 
     return _tabulate(namespace.get("result"))
+
+
+def _seatbelt_profile(scratch_real: str) -> str:
+    """The macOS sandbox-exec profile for one run.
+
+    Reads are unrestricted (the interpreter, the stdlib, and the attached
+    dataset all have to load). Writes are denied everywhere except the run's
+    own scratch directory, and the network is denied outright.
+    """
+    return (
+        "(version 1)\n"
+        "(deny default)\n"
+        "(allow process*)\n"
+        "(allow file-read*)\n"
+        "(deny file-write*)\n"
+        f'(allow file-write* (subpath "{scratch_real}"))\n'
+        "(deny network*)\n"
+    )
+
+
+def _child_env(scratch: str) -> dict[str, str]:
+    """The minimal environment the worker inherits.
+
+    The API process may carry DAH_LLM_API_KEY and other secrets; the worker
+    never sees them, so user code cannot reach them even past the inner wall.
+    """
+    env = {
+        "PATH": os.environ.get("PATH", ""),
+        "HOME": os.environ.get("HOME", ""),
+        "PYTHONPATH": str(_SERVER_ROOT),
+        "TMPDIR": scratch,
+        "LC_ALL": "C.UTF-8",
+        "LANG": "C.UTF-8",
+    }
+    return {key: value for key, value in env.items() if value}
+
+
+def _kill_group(process: subprocess.Popen) -> None:
+    """Kill the worker and anything it spawned (sandbox-exec sits in between)."""
+    try:
+        group = os.getpgid(process.pid)
+    except ProcessLookupError:
+        return
+    try:
+        os.killpg(group, signal.SIGKILL)
+    except ProcessLookupError:
+        return
+    except PermissionError:
+        process.kill()
+
+
+def run_python(
+    path: str,
+    source: str,
+    timeout_seconds: int = _DEFAULT_TIMEOUT_SECONDS,
+) -> dict:
+    """Execute user Python in a separate, OS-sandboxed process and tabulate it.
+
+    Raises ValueError for anything the analysis contract rejects - unsafe
+    imports, missing `result`, the wrong row shape, exceeding the time limit -
+    so the caller can answer 400 rather than 500.
+    """
+    if not source.strip():
+        raise ValueError("analysis code is empty")
+
+    scratch = tempfile.mkdtemp(prefix="dah-exec-")
+    job = {
+        "dataset_path": path,
+        "code": source,
+        "timeout_seconds": timeout_seconds,
+    }
+    job_path = os.path.join(scratch, "job.json")
+    with open(job_path, "w", encoding="utf-8") as handle:
+        json.dump(job, handle)
+
+    command = [sys.executable, "-B", "-s", "-m", _WORKER_MODULE, job_path]
+    profile_path: str | None = None
+    if shutil.which(_SANDBOX_BINARY) is not None:
+        profile_path = os.path.join(scratch, "profile.sb")
+        with open(profile_path, "w", encoding="utf-8") as handle:
+            handle.write(_seatbelt_profile(os.path.realpath(scratch)))
+        command = [_SANDBOX_BINARY, "-f", profile_path, *command]
+
+    deadline = timeout_seconds + _STARTUP_GRACE_SECONDS
+    process = subprocess.Popen(
+        command,
+        cwd=str(_SERVER_ROOT),
+        env=_child_env(scratch),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        start_new_session=True,
+    )
+    try:
+        stdout, stderr = process.communicate(timeout=deadline)
+    except subprocess.TimeoutExpired:
+        _kill_group(process)
+        process.wait()
+        return _failure("analysis exceeded the time limit", scratch)
+    finally:
+        shutil.rmtree(scratch, ignore_errors=True)
+
+    if process.returncode != 0:
+        detail = (stderr or b"").decode("utf-8", "replace").strip()
+        return _failure(
+            f"analysis process exited with code {process.returncode}"
+            + (f": {detail[-800:]}" if detail else ""),
+            scratch,
+        )
+
+    try:
+        payload = json.loads(stdout.decode("utf-8"))
+    except json.JSONDecodeError as error:
+        detail = (stderr or b"").decode("utf-8", "replace").strip()
+        return _failure(
+            f"analysis produced an unreadable result: {error}"
+            + (f": {detail[-800:]}" if detail else ""),
+            scratch,
+        )
+
+    if "error" in payload:
+        return _failure(payload["error"], scratch)
+
+    return {
+        "columns": payload["columns"],
+        "rows": payload["rows"],
+        "row_count": payload["row_count"],
+        "truncated": payload.get("truncated", False),
+    }
+
+
+def _failure(message: str, scratch: str) -> dict:
+    """Turn a sandbox-layer rejection into the ValueError the API answers 400."""
+    shutil.rmtree(scratch, ignore_errors=True)
+    raise ValueError(message)

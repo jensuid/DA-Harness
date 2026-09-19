@@ -97,3 +97,58 @@ TESTS: numeric stats; type inference; distinct counts; duplicate rows;
 VERIFICATION: pytest + in-process round-trip.
 STATE UPDATE: mark P2-DATA-007 done on pass.
 ```
+
+## P3 V1
+
+Goal: make the MVP substantially better for repeated real-world use (roadmap
+section 6). Entry order follows ai/ROADMAP.md; hardening first because the P3
+AI code-generation work multiplies the risk of the P2 soft sandbox.
+
+| Task ID | Capability | Priority | Status | Dependencies | Verification |
+|---------|-----------|----------|--------|--------------|--------------|
+| P3-SEC-001 | Analysis Workspace (hardening) | M | DONE | P2-ANALYSIS-008 | Python runs in a separate process under an OS sandbox; writes outside scratch, network, and runaway CPU are bounded and reported as 400 |
+| P3-CHART-002 | Analysis Workspace (raster charts) | M | TODO | P3-SEC-001 | PNG/high-DPI rendering behind the same chart interface |
+| P3-DATA-003 | Data Layer (multi-dataset) | M | TODO | P2 done | Multiple datasets per case with joins |
+
+### P3-SEC-001 contract
+
+```
+TASK ID: P3-SEC-001
+MILESTONE: P3 V1
+CAPABILITY: Analysis Workspace (hardening)
+GOAL: Move Python execution out of the API process and under an OS-level
+      sandbox.
+
+CONTEXT: P2-ANALYSIS-008 shipped an in-process soft sandbox (import allowlist,
+         restricted builtins, dunder-hardened handle, CPU/wall-clock limits).
+         It stops accidental damage, not a determined escape, and a crash or
+         unbounded allocation in user code hits the API process itself.
+INPUTS: an attached dataset and a user Python script (unchanged API).
+RELEVANT FILES: server/app/python_exec.py, server/app/python_worker.py (NEW),
+                server/app/main.py (unchanged), server/tests/test_python_hard_sandbox.py (NEW)
+REQUIRED CHANGE: execute user code in a child process; on macOS wrap it with
+         sandbox-exec under a profile that denies every filesystem write
+         outside the run's scratch directory and denies all network access;
+         scrub the child environment so API-process secrets never reach it;
+         bound wall clock at the process-group level (kill the tree, not just
+         the wrapper) and keep the in-process guards as defense in depth.
+NON-GOALS: Linux landlock / Windows job-object sandboxes (the separate process
+           plus inner guards remain the floor on those hosts); address-space
+           caps (macOS rejects useful RLIMIT_AS values); validation of Python
+           runs by re-execution.
+CONSTRAINTS: the /runs/python contract is unchanged - same request, same
+             response, same 400 messages; existing tests must pass unmodified.
+ACCEPTANCE CRITERIA:
+- [x] user Python runs in a process separate from the API
+- [x] on macOS the child is under sandbox-exec; a write outside scratch and a
+      network connection are denied by the kernel
+- [x] an unbounded loop ends at the time limit and the API answers 400
+- [x] a worker that dies is reported as 400, never raised into the API
+- [x] API-process environment secrets are absent from the child environment
+- [x] full server suite and the P2 gate still pass
+TESTS: seatbelt enforcement probe (scratch write allowed, outside write and
+       network denied), child env scrub, process-group kill, runaway loop,
+       dead worker, contract violation.
+VERIFICATION: pytest + verification/p2/verify_p2.py regression.
+STATE UPDATE: mark P3-SEC-001 done on pass.
+```

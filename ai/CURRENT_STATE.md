@@ -1,18 +1,17 @@
 # DAH - Current State
 
-- **Phase:** P2 MVP - COMPLETE (verification/p2/REPORT.md: PASS)
+ - **Phase:** P2 MVP - COMPLETE (verification/p2/REPORT.md: PASS)
 - **Global roadmap status:** ai/ROADMAP.md (phase tracker - current stage, phase table, next-phase entry checklist)
 - **Milestone status:** P1 Vertical Slice PASSED (verification/p1/REPORT.md); P0 PASSED
 - **Completed capabilities:** FastAPI core; SQLite case persistence; DuckDB engine; Vite/React shell; P0 verification harness; CSV dataset attachment; deterministic dataset profiling; read-only SQL analysis runs with persisted results; findings with evidence chain; validation via rerun; parquet + xlsx ingest; deep profiling; **read-only Python execution with persisted results (P2-ANALYSIS-008); chart images rendered and persisted from run results (P2-ANALYSIS-009);
 case management - rename, duplicate, delete (P2-CASE-010);
 AI planning with structured output (P2-AI-011); case export as a self-contained
 JSON package with import round trip (P2-CASE-012)**
-- **Active task:** none - P2 milestone complete
+- **Active task:** P3 V1 in progress - P3-SEC-001 DONE (hard OS-level sandbox)
 - **Known issues:** none
-- **Test status:** server 79 passed (5 new for export); web 2 passed
-- **Next task:** V1 hardening track (not started): hard OS-level sandbox for Python
-  execution, raster chart backend, configure an LLM key for the planner, Tauri desktop
-  shell wrapping the same React bundle
+- **Test status:** server 85 passed (6 new hard-sandbox tests) (5 new for export); web 2 passed
+- **Next task:** P3-SEC-002 raster chart backend (PNG/high-DPI behind the existing
+  render_chart interface); then multi-dataset + joins (P3-DATA)
 - **Blockers:** none
 
 ## P2 progress
