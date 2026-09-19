@@ -520,7 +520,8 @@ reported as unsupported (clear 400) rather than faked; that gate is future work.
   `dfb115b` P3-SEC-001, `2c7b11f` P3-CHART-002, `f5df5d1` P3-DATA-003,
   `967544b` P3-FLOW-004, `7b7e49f` P3-ANALYSIS-005, `ebaa30e` P3-EVIDENCE-006,
   P3-CASE-007, P3-SHELL-008, P3-DATA-009, P3-VALID-010, P3-AI-011,
-  P3-AI-012, P3-AI-013, <this commit> P3-AI-014
+  P3-AI-012, P3-AI-013, P3-AI-014, and the phase close
+  `bffc6ad docs: mark P3 V1 complete...`
 - `.gitignore` covers `web/dist-desktop/`, `server/build/` (the 98MB PyInstaller
   tree) and `desktop/src-tauri/{target,gen,binaries}` - the 85MB sidecar is
   never committed.
@@ -541,12 +542,6 @@ reported as unsupported (clear 400) rather than faked; that gate is future work.
   do the same.
 
 ## Next action
-
-P3 has one item left: roadmap item 7, the contextual AI assistant. Slices 1
-(result interpretation) and 2 (finding drafting) are done - `DAH_LLM_API_KEY`
-is configured in `server/.env`, so the LLM paths are live and the P2 gate's
-plan step reports `source=llm`. This is an agent task now, not a user action.
-Everything else in the P3 entry checklist is done, including the desktop shell.
 
 P3 is complete. All ten entry-checklist items are done, including the
 four contextual AI slices: a question yields the computation that would answer
