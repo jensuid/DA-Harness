@@ -208,16 +208,23 @@ mod tests {
     use super::*;
     use std::fs;
 
-    // Both lifecycle tests start a real core on PORT and assert that port is
-    // theirs alone afterwards (the orphan check depends on it). Cargo runs
-    // tests in parallel by default, so without serialization the two would
-    // race for the bind - one would win, the other would die with "address
-    // already in use", and the failure would look like a flaky core. Marking
-    // them serial makes the port exclusive by construction. CI hit this; a
-    // local run passed only by timing luck.
+    // Serial because these tests share global state that cargo's default
+    // parallelism breaks, and CI caught both halves of it:
+    //
+    //  - the two lifecycle tests each start a real core on PORT and assert the
+    //    port is theirs alone afterwards (the orphan check depends on it);
+    //    unserialized, one wins the bind and the other dies with "address
+    //    already in use", presenting as a flaky 180s timeout.
+    //  - the three resolution tests share the process-wide DAH_DEV_CORE
+    //    variable (set, then removed) and fixed temp-directory paths; a
+    //    concurrent resolution test could observe the override mid-flight and
+    //    resolve to the virtualenv beside a present sidecar.
+    //
+    // Local runs passed only by timing luck.
     use serial_test::serial;
 
     #[test]
+    #[serial]
     fn dev_resolution_uses_the_project_virtualenv() {
         // A shell directory with no sidecar beside it is a dev checkout.
         let tmp = std::env::temp_dir().join("dah_shell_test_dev");
@@ -240,6 +247,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn dev_core_override_ignores_a_present_sidecar() {
         std::env::set_var("DAH_DEV_CORE", "1");
         let tmp = std::env::temp_dir().join("dah_shell_test_override");
@@ -257,6 +265,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn release_resolution_uses_a_bundled_sidecar_when_present() {
         // A shell directory that already contains `dah-core` is a packaged app.
         let tmp = std::env::temp_dir().join("dah_shell_test_release");
