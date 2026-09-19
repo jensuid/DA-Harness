@@ -2,6 +2,11 @@
 
 ## What was completed
 
+- P3-ANALYSIS-005 PASSED: POST /cases/{id}/datasets/{id}/eda runs segmentation,
+  correlation, and distribution summaries. Each op compiles to read-only
+  DuckDB through the existing run_query, so the read-only gate and row cap
+  apply and output is the standard result shape.
+
 - P3-FLOW-004 PASSED: GET /cases/{id}/progress reports where a case stands in
   the loop and the single action that advances it. The stage is *derived* from
   the case's artifacts - no schema change - so it cannot claim a step the data
@@ -50,6 +55,15 @@
 Create Case -> Question -> Load CSV -> Profile -> SQL Analysis
 -> Finding -> Evidence chain -> Validation (rerun) -> Save -> Reopen
 ```
+
+## What changed (P3-ANALYSIS-005)
+
+- server/app/eda.py (NEW): `run_eda` compiles segment / correlate /
+  distribution to SQL; column names are quoted and refused if they contain a
+  quote; the numeric-vs-categorical choice for distribution reads DuckDB's own
+  column types via DESCRIBE rather than probing with AVG.
+- server/app/main.py + models.py: the `/eda` endpoint, `EdaCreate`, `EdaResult`.
+- server/tests/test_eda.py (NEW): 9 tests.
 
 ## What changed (P3-FLOW-004)
 

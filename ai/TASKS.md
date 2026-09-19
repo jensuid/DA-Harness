@@ -283,3 +283,41 @@ nothing can currently walk a case backwards. Adding one (cascade to its runs,
 charts and anchored findings, or refuse with 409 while runs exist) is what makes
 the derived stage's "moves back" property observable.
 ```
+
+### P3-ANALYSIS-005 contract
+
+```
+TASK ID: P3-ANALYSIS-005
+MILESTONE: P3 V1
+CAPABILITY: Analysis Workspace (richer EDA)
+GOAL: Answer "what should I look at first" without writing a query.
+
+CONTEXT: profiling describes a dataset and runs answer a specific question,
+         but the step between them - segmentation, correlation, distribution -
+         had no surface, so the analyst re-derived common SQL by hand.
+INPUTS: an attached dataset, an op name, and its column parameters.
+RELEVANT FILES: server/app/eda.py (NEW), server/app/main.py, models.py,
+                server/tests/test_eda.py (NEW)
+REQUIRED CHANGE: compile each op to a read-only DuckDB statement and run it
+         through the same run_query - one engine, one gate, one row cap; expose
+         POST /cases/{id}/datasets/{id}/eda returning the standard result shape.
+NON-GOALS: persisting EDA as evidence (a finding must anchor on a query the
+           analyst wrote), formal hypothesis tests (need a stats story of their
+           own), charts from EDA (the result shape already feeds the chart
+           endpoint through a run).
+CONSTRAINTS: column names are quoted and refused if they contain a quote;
+             unknown op/column and missing parameters are 400s; results are
+             read-only and row-capped like any query.
+ACCEPTANCE CRITERIA:
+- [x] segment reports rows/mean/median/min/max/stddev per category
+- [x] correlate reports Pearson r and paired row count
+- [x] distribution reports the numeric spread, and falls back to top values for
+      a categorical column
+- [x] unknown op, unknown column, and missing parameter are clean 400s
+- [x] a quote-bearing column name cannot reach the SQL
+- [x] full suite and the P2 gate still pass
+TESTS: 9 tests - segment, correlate, numeric and categorical distribution, and
+       six error cases.
+VERIFICATION: pytest (118 passed) + verification/p2/verify_p2.py PASS.
+STATE UPDATE: mark P3-ANALYSIS-005 done on pass.
+```

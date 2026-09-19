@@ -12,6 +12,7 @@ from pydantic import BaseModel
 import json
 
 from app.analysis import profile_csv, run_query, run_query_multi
+from app.eda import EDA_OPS, run_eda
 from app.python_exec import run_python
 from app.workflow import STAGES, case_progress
 from app.charts import render_chart, CHART_KINDS, CHART_FORMATS
@@ -25,6 +26,8 @@ from app.models import (
     CaseCreate,
     CaseProgress,
     CaseUpdate,
+    EdaCreate,
+    EdaResult,
     WorkflowStage,
     Dataset,
     Profile,
@@ -654,6 +657,40 @@ async def get_profile(
         stats=json.loads(row["stats_json"]),
         duplicate_rows=row["duplicate_rows"],
         profiled_at=row["profiled_at"],
+    )
+
+
+@app.post(
+    "/cases/{case_id}/datasets/{dataset_id}/eda",
+    response_model=EdaResult,
+)
+async def run_exploratory_analysis(
+    case_id: str,
+    dataset_id: str,
+    payload: EdaCreate,
+    db=Depends(get_db),
+) -> EdaResult:
+    """Run one exploratory operation over an attached dataset (P3-ANALYSIS-005).
+
+    Segmentation, correlation, and distribution summaries compile to read-only
+    DuckDB and run under the same gate and row cap as a hand-written query. EDA
+    is exploration rather than evidence, so the result is returned, not
+    persisted: a finding must anchor on a query the analyst wrote.
+    """
+    dataset = _require_dataset(db, case_id, dataset_id)
+    try:
+        result = run_eda(dataset.stored_path, payload.op, payload.model_dump())
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error))
+    except Exception as error:
+        raise HTTPException(status_code=400, detail=f"eda failed: {error}")
+
+    return EdaResult(
+        op=payload.op,
+        columns=result["columns"],
+        rows=result["rows"],
+        row_count=result["row_count"],
+        truncated=result["truncated"],
     )
 
 

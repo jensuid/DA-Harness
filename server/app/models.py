@@ -66,6 +66,31 @@ class Profile(BaseModel):
     profiled_at: datetime
 
 
+class EdaCreate(BaseModel):
+    """One exploratory operation over an attached dataset (P3-ANALYSIS-005).
+
+    `op` picks the analysis; the rest are its inputs:
+
+        segment       by, measure  - group stats per category
+        correlate     x, y         - Pearson r between two numeric columns
+        distribution  column       - numeric spread, or top values for a category
+    """
+    op: str
+    by: str | None = None
+    measure: str | None = None
+    x: str | None = None
+    y: str | None = None
+    column: str | None = None
+
+
+class EdaResult(BaseModel):
+    op: str
+    columns: list[str]
+    rows: list[list[Any]]
+    row_count: int
+    truncated: bool
+
+
 class MultiRunCreate(BaseModel):
     """A SQL run that touches several attached datasets (P3-DATA-003).
 

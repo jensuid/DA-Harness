@@ -7,12 +7,13 @@
 case management - rename, duplicate, delete (P2-CASE-010);
 AI planning with structured output (P2-AI-011); case export as a self-contained
 JSON package with import round trip (P2-CASE-012)**
-- **Active task:** P3 V1 in progress - P3-SEC-001, P3-CHART-002, P3-DATA-003, P3-FLOW-004 DONE
+- **Active task:** P3 V1 in progress - P3-SEC-001, P3-CHART-002, P3-DATA-003, P3-FLOW-004, P3-ANALYSIS-005 DONE
 - **Known issues:** none
-- **Test status:** server 109 passed (6 hard-sandbox, 9 raster-chart, 10 multi-dataset, 5 workflow tests) (5 new for export); web 2 passed
-- **Next task:** P3-ANALYSIS-005 richer EDA / segmentation / statistical tests; then
-  contextual AI (needs DAH_LLM_API_KEY - user action), evidence graph, case
-  templates + search, Tauri shell
+- **Test status:** server 118 passed (6 hard-sandbox, 9 raster-chart, 10 multi-dataset, 5 workflow, 9 EDA tests) (5 new for export); web 2 passed
+- **Next task:** remaining P3 items: evidence graph / claim-to-source tracing,
+  case templates + search + history, contextual AI (needs DAH_LLM_API_KEY - a
+  user action), Tauri shell. Statistical tests beyond correlation deferred
+  (needs a stats story of their own)
 - **Blockers:** none
 
 ## P2 progress
