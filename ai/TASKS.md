@@ -239,3 +239,47 @@ TESTS: 10 tests - join correctness, positional binding, count mismatch, unknown
 VERIFICATION: pytest (104 passed) + verification/p2/verify_p2.py PASS.
 STATE UPDATE: mark P3-DATA-003 done on pass.
 ```
+
+### P3-FLOW-004 contract
+
+```
+TASK ID: P3-FLOW-004
+MILESTONE: P3 V1
+CAPABILITY: Analysis workflow (guided)
+GOAL: Tell the analyst where they are in the loop and what to do next.
+
+CONTEXT: every stage of the core loop already had an endpoint, but nothing
+         reported which stage a case was in, so the UI could not guide and the
+         analyst had to hold the sequence in their head.
+INPUTS: a case id.
+RELEVANT FILES: server/app/workflow.py (NEW), server/app/main.py, models.py,
+                server/tests/test_workflow.py (NEW)
+REQUIRED CHANGE: derive the stage from the artifacts a case actually has
+         (datasets, profiles, plans, runs, charts, findings, validated findings)
+         rather than storing it; expose GET /cases/{id}/progress returning the
+         current stage, the completed stages, the single next action, the
+         endpoint that performs it, artifact counts, and whether the trust loop
+         has closed.
+NON-GOALS: storing stage state (by design), UI, recommendations from the LLM
+           (deterministic only - the LLM path waits on DAH_LLM_API_KEY), a
+           dataset-delete endpoint (surfaced as a follow-up below).
+CONSTRAINTS: no schema change - the stage is a pure function of the data, so it
+             can never claim a step the artifacts do not support, and deleting
+             an artifact would move a case back without a migration.
+ACCEPTANCE CRITERIA:
+- [x] a fresh case reports stage=data with the attach action and endpoint
+- [x] walking the whole loop ends at stage=validated, loop_closed, no next action
+- [x] the profile stage only closes when every attached dataset is profiled
+- [x] progress is recomputed per request and never leaks across cases
+- [x] unknown case answers 404
+- [x] full suite and the P2 gate still pass
+TESTS: 5 tests - start state, full-loop advance, partial profiling, per-request
+       derivation and case scoping, 404.
+VERIFICATION: pytest (109 passed) + verification/p2/verify_p2.py PASS.
+STATE UPDATE: mark P3-FLOW-004 done on pass.
+
+FOLLOW-UP (not this task): there is no DELETE endpoint for a single dataset, so
+nothing can currently walk a case backwards. Adding one (cascade to its runs,
+charts and anchored findings, or refuse with 409 while runs exist) is what makes
+the derived stage's "moves back" property observable.
+```

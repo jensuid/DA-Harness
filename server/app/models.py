@@ -11,6 +11,29 @@ class CaseCreate(BaseModel):
     dataset: str
 
 
+class WorkflowStage(BaseModel):
+    """One stage of the analysis loop: what it asks for and where it stands."""
+    name: str
+    completed: bool
+
+
+class CaseProgress(BaseModel):
+    """Where a case sits in the guided workflow (P3-FLOW-004).
+
+    The stage is derived from the artifacts the case actually has, so it can
+    never claim a step the data does not support.
+    """
+    case_id: str
+    stage: str
+    completed: list[str]
+    stages: list[WorkflowStage]
+    next_action: str | None
+    next_hint: str | None
+    next_endpoint: str | None
+    loop_closed: bool
+    counts: dict[str, int]
+
+
 class CaseUpdate(BaseModel):
     """Rename a case; either field may be omitted to leave it unchanged."""
     question: str | None = None

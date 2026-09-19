@@ -2,6 +2,11 @@
 
 ## What was completed
 
+- P3-FLOW-004 PASSED: GET /cases/{id}/progress reports where a case stands in
+  the loop and the single action that advances it. The stage is *derived* from
+  the case's artifacts - no schema change - so it cannot claim a step the data
+  does not support.
+
 - P3-DATA-003 PASSED: one run can now join several attached datasets.
   POST /cases/{id}/runs takes dataset_ids and binds the k-th placeholder in the
   SQL to the k-th dataset, in order - any mix of csv/parquet/xlsx. Runs record
@@ -45,6 +50,17 @@
 Create Case -> Question -> Load CSV -> Profile -> SQL Analysis
 -> Finding -> Evidence chain -> Validation (rerun) -> Save -> Reopen
 ```
+
+## What changed (P3-FLOW-004)
+
+- server/app/workflow.py (NEW): `case_progress` counts the case's artifacts and
+  returns the first stage with nothing behind it, plus the deterministic next
+  action and the endpoint that performs it. The loop closes when a finding has
+  been validated.
+- server/app/main.py + models.py: the `/progress` endpoint, `CaseProgress` and
+  `WorkflowStage`.
+- server/tests/test_workflow.py (NEW): 5 tests, including a full walk of the
+  loop from case creation to a closed loop.
 
 ## What changed (P3-DATA-003)
 

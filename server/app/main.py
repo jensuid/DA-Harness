@@ -13,6 +13,7 @@ import json
 
 from app.analysis import profile_csv, run_query, run_query_multi
 from app.python_exec import run_python
+from app.workflow import STAGES, case_progress
 from app.charts import render_chart, CHART_KINDS, CHART_FORMATS
 from app.charts import DEFAULT_WIDTH, DEFAULT_HEIGHT
 from app.planner import create_plan as create_plan_module, validate_plan
@@ -22,7 +23,9 @@ from app.db import get_connection
 from app.models import (
     Case,
     CaseCreate,
+    CaseProgress,
     CaseUpdate,
+    WorkflowStage,
     Dataset,
     Profile,
     Run,
@@ -102,6 +105,37 @@ async def get_case(case_id: str, db=Depends(get_db)) -> Case:
         dataset=row["dataset"],
         created_at=row["created_at"],
         updated_at=row["updated_at"],
+    )
+
+
+@app.get(
+    "/cases/{case_id}/progress",
+    response_model=CaseProgress,
+)
+async def get_case_progress(case_id: str, db=Depends(get_db)) -> CaseProgress:
+    """Where this case stands in the guided workflow (P3-FLOW-004).
+
+    The stage is derived from the case's artifacts rather than stored, so the
+    answer always matches the data: attach a dataset and the `data` stage
+    closes; delete it and the case moves back. The response names the single
+    action that advances, and the endpoint that performs it.
+    """
+    _require_case(db, case_id)
+    progress = case_progress(db, case_id)
+    completed = set(progress["completed"])
+    return CaseProgress(
+        case_id=case_id,
+        stage=progress["stage"],
+        completed=progress["completed"],
+        stages=[
+            WorkflowStage(name=stage, completed=stage in completed)
+            for stage in STAGES
+        ],
+        next_action=progress["next_action"],
+        next_hint=progress["next_hint"],
+        next_endpoint=progress["next_endpoint"],
+        loop_closed=progress["loop_closed"],
+        counts=progress["counts"],
     )
 
 
