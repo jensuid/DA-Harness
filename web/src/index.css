@@ -156,3 +156,55 @@ code {
   padding: 0.1rem 0.3rem;
   border-radius: 0.25rem;
 }
+
+.subpanel {
+  border-top: 1px solid #eee;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+}
+
+.file-button {
+  display: inline-block;
+  font: inherit;
+  font-weight: 600;
+  margin: 0.5rem 0;
+  padding: 0.4rem 0.8rem;
+  border: 1px solid #bbb;
+  border-radius: 0.4rem;
+  background: #fff;
+  cursor: pointer;
+}
+
+.file-button input {
+  display: none;
+}
+
+.proposal {
+  border-left: 3px solid #4a6fa5;
+  background: #f7f9fc;
+  padding: 0.5rem 0.75rem;
+  margin: 0.5rem 0;
+}
+
+.proposal pre {
+  background: #eee;
+  padding: 0.5rem;
+  border-radius: 0.3rem;
+  overflow-x: auto;
+  font-size: 0.85rem;
+}
+
+.run {
+  padding: 0.5rem 0;
+  border-top: 1px solid #eee;
+}
+
+button.small {
+  margin-top: 0;
+  padding: 0.25rem 0.6rem;
+  font-size: 0.9rem;
+}
+
+.warn {
+  color: #a03a2a;
+}

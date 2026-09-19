@@ -30,6 +30,7 @@ export interface Dataset {
 export interface RunSummary {
   id: string
   case_id: string
+  dataset_id: string
   kind: string
   sql: string | null
   code: string | null
@@ -52,6 +53,65 @@ export interface CaseProgress {
   next_endpoint: string | null
   loop_closed: boolean
   counts: Record<string, number>
+}
+
+export interface Profile {
+  dataset_id: string
+  rows: number
+  columns: string[]
+  stats: Record<string, unknown>
+  duplicate_rows: number
+  profiled_at: string
+}
+
+export interface GeneratedCode {
+  dataset_id: string
+  case_id: string
+  kind: string
+  code: string
+  explanation: string
+  columns_used: string[]
+  source: string
+}
+
+export interface Interpretation {
+  id: string
+  run_id: string
+  case_id: string
+  summary: string
+  observations: string[]
+  caveats: string[]
+  source: string
+  created_at: string
+}
+
+export interface DraftFinding {
+  run_id: string
+  case_id: string
+  statement: string
+  interpretation: string
+  caveat: string
+  grounds: string[]
+  source: string
+}
+
+export interface Finding {
+  id: string
+  case_id: string
+  run_id: string
+  statement: string
+  interpretation: string | null
+  caveat: string | null
+  validation_status: string
+  created_at: string
+}
+
+export interface ValidationResult {
+  finding_id: string
+  run_id: string
+  status: string
+  checks: { name: string; passed: boolean; detail: string }[]
+  validated_at: string
 }
 
 export interface ConversationTurn {
@@ -140,4 +200,96 @@ export function postChat(id: string, message: string): Promise<ConversationTurn>
 
 export function listChat(id: string): Promise<ConversationTurn[]> {
   return request<ConversationTurn[]>(`/cases/${id}/chat`)
+}
+
+// --- the loop the workspace walks -------------------------------------------
+
+export function attachDataset(caseId: string, file: File): Promise<Dataset> {
+  const form = new FormData()
+  form.append('file', file)
+  return request<Dataset>(`/cases/${caseId}/datasets`, {
+    method: 'POST',
+    body: form,
+  })
+}
+
+export function profileDataset(caseId: string, datasetId: string): Promise<Profile> {
+  return request<Profile>(`/cases/${caseId}/datasets/${datasetId}/profile`, {
+    method: 'POST',
+  })
+}
+
+export function runSql(
+  caseId: string,
+  datasetId: string,
+  sql: string,
+): Promise<RunSummary> {
+  return request<RunSummary>(`/cases/${caseId}/datasets/${datasetId}/runs`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ sql }),
+  })
+}
+
+// The three assistant slices. Each returns a proposal and writes nothing
+// except interpret, which persists a reading of an already-persisted result.
+export function generateCode(
+  caseId: string,
+  datasetId: string,
+  question: string,
+  kind = 'sql',
+): Promise<GeneratedCode> {
+  return request<GeneratedCode>(
+    `/cases/${caseId}/datasets/${datasetId}/generate-code`,
+    {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ question, kind }),
+    },
+  )
+}
+
+export function interpretRun(caseId: string, runId: string): Promise<Interpretation> {
+  return request<Interpretation>(`/cases/${caseId}/runs/${runId}/interpret`, {
+    method: 'POST',
+  })
+}
+
+export function draftFinding(
+  caseId: string,
+  runId: string,
+): Promise<DraftFinding> {
+  return request<DraftFinding>(`/cases/${caseId}/runs/${runId}/draft-finding`, {
+    method: 'POST',
+  })
+}
+
+// The two ways a proposal becomes real. Both stay the analyst's call: the
+// findings endpoint is the only path that writes a finding, and validation
+// reruns the stored computation rather than trusting the claim.
+export function acceptFinding(
+  caseId: string,
+  runId: string,
+  draft: DraftFinding,
+): Promise<Finding> {
+  return request<Finding>(`/cases/${caseId}/findings`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      run_id: runId,
+      statement: draft.statement,
+      interpretation: draft.interpretation,
+      caveat: draft.caveat,
+    }),
+  })
+}
+
+export function validateFinding(caseId: string, findingId: string): Promise<ValidationResult> {
+  return request<ValidationResult>(`/cases/${caseId}/findings/${findingId}/validate`, {
+    method: 'POST',
+  })
+}
+
+export function listFindings(caseId: string): Promise<Finding[]> {
+  return request<Finding[]>(`/cases/${caseId}/findings`)
 }

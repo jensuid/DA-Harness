@@ -1092,3 +1092,79 @@ TESTS: web/src/CaseList.test.tsx and CaseWorkspace.test.tsx - render from
 VERIFICATION: cd web && npm test green + the P2/P3 gates as regression.
 STATE UPDATE: mark P4-UX-003 done on pass; the run-scoped slices are next.
 ```
+
+### P4-UX-004 contract
+
+```
+TASK ID: P4-UX-004
+MILESTONE: P4 Production Candidate
+CAPABILITY: UX (run-scoped assistant surfaces)
+GOAL: The three remaining assistant slices are reachable from the workspace:
+      generate code from a question, read what a run shows, and draft the
+      finding it would support - each proposing, none deciding.
+
+CONTEXT: P4-UX-003 gave the shell a case workspace with chat, the one slice
+         that needs nothing but a case. The other three are run-scoped: they
+         need a dataset to generate against and a run to read or draft from.
+         They also need the analyst to be able to attach data, profile it and
+         run a query in the first place, or the surfaces have nothing to hang
+         on - so the workspace gains the steps the core loop actually walks.
+INPUTS: a case; a dataset; a run; a question in plain language.
+RELEVANT FILES: web/src/CaseWorkspace.tsx, web/src/api.ts,
+                web/src/CaseWorkspace.test.tsx, web/src/index.css
+REQUIRED CHANGE:
+  - api.ts gains the remaining contracts: attach a dataset, profile one, run
+    SQL (single- and multi-dataset), the three assistant calls
+    (generate-code, interpret, draft-finding) and the two that accept a
+    proposal (POST /findings, POST .../validate).
+  - CaseWorkspace becomes the loop the core walks, one panel per step, each
+    reading its own data and each proposal surfaced as a decision the human
+    makes:
+      * Attach + profile: file picker, then profile, then the columns and
+        nulls it found;
+      * Generate code: a question against a profiled dataset returns code,
+        explanation and the columns it reads, with a Run button that posts it
+        to the runs endpoint - the only path that persists a run;
+      * Runs: each lists its kind and row count, with Interpret (what it
+        shows) and Draft finding (what it claims) buttons;
+      * A draft renders its statement, interpretation, caveat and grounds,
+        and Accept posts it to /findings - the only path that writes one -
+        after which Validate reruns the computation and reports the verdict.
+  - Every assistant panel shows which engine spoke (source), because a
+    deterministic answer citing only real values and an LLM answer carry
+    different weight.
+NON-GOALS: a SQL editor with highlighting or schema introspection beyond the
+           profile; charts in the UI (a later slice); multi-dataset join
+           building (the attach UI stays one file at a time; the API still
+           accepts a list); streaming; executing generated code without the
+           human's explicit Run.
+CONSTRAINTS: no server change - every call is an existing endpoint; no new
+             runtime dependency; every screen reads its own data after an
+             action, so the UI cannot go stale against the core; acceptance
+             still goes through the findings endpoint and running still
+             through the runs endpoint, so the propose/human-decides split
+             stays structural rather than becoming a UI flag.
+ACCEPTANCE CRITERIA:
+- [x] a dataset attaches and profiles from the UI; the columns and null counts
+      it reports are the profile's own
+- [x] a question against a profiled dataset returns generated code with its
+      explanation and columns used, and the code runs through the runs
+      endpoint when the analyst chooses Run
+- [x] a run interprets: summary, observations and caveats render, with the
+      engine that spoke
+- [x] a run drafts a finding: statement, interpretation, caveat and grounds
+      render, and Accept creates a real finding (not_evaluated, as the API
+      insists)
+- [x] a created finding validates and the verdict renders
+- [x] no assistant action writes state except through the endpoints that own
+      it - generation and interpretation-creation aside, drafting and
+      generating create nothing, and a rejected draft leaves nothing behind
+- [x] an API failure renders as text, never a crash
+- [x] web tests cover each surface; the server suite and both gates stay green
+TESTS: web/src/CaseWorkspace.test.tsx extended - attach+profile, generate-code
+       round trip with Run, interpret, draft + accept + validate, error
+       rendering, no state written by a draft.
+VERIFICATION: cd web && npm test green + the P2/P3 gates as regression.
+STATE UPDATE: mark P4-UX-004 done on pass; this closes the assistant surfaces
+              and roadmap item 3.
+```
