@@ -239,35 +239,63 @@ macOS maps far more VM than a useful cap allows; a real memory bound needs the
 separate-process hard sandbox planned for V1. Validation of Python runs is
 reported as unsupported (clear 400) rather than faked; that gate is future work.
 
-## Tests performed
+## Tests performed (current)
 
-- server pytest: 44 passed (12 new)
-- Schema migration verified against a database built with the pre-P2 `runs` schema
-- P0 gate: PASS (required port bind - run outside the sandbox if it fails)
-- P1 gate: PASS (9/9 steps, 43 tests)
+- server pytest: 125 passed
+- P2 gate: `server/.venv/bin/python verification/p2/verify_p2.py` PASS
+  (re-verified after each P3 task; the gate re-runs the suite)
+
+## Repository state
+
+- Working tree clean; every P3 task so far is one atomic commit, all pushed to
+  `origin/master` (github.com/jensuid/DA-Harness):
+  `dfb115b` P3-SEC-001, `2c7b11f` P3-CHART-002, `f5df5d1` P3-DATA-003,
+  `967544b` P3-FLOW-004, `7b7e49f` P3-ANALYSIS-005, `ebaa30e` P3-EVIDENCE-006
+- `.git` is writable under the current permission profile (this changed
+  mid-session; the earlier read-only restriction is gone).
 
 ## Unresolved problems
 
-- Commits blocked from the agent side: .git read-only under the current permission
-  profile. All P2-ANALYSIS-008 work is uncommitted on disk.
+- Python-run validation is still reported as a clear 400 "not supported yet".
+  The hard sandbox (P3-SEC-001) unblocks it, but the validation gate itself is
+  not yet implemented. Recorded in ai/TASKS.md.
+- No single-dataset delete endpoint: nothing can walk a case backwards today.
+  Recorded in ai/TASKS.md.
+- Contextual AI (roadmap item 7) is BLOCKED on the user setting
+  `DAH_LLM_API_KEY`. The planner's LLM path is coded and monkeypatch-tested but
+  dormant without the key. Not an agent task.
 
 ## Next action
 
-P2 is complete and gated. The next track is V1 hardening, none of it started:
+P3-CASE-007 (roadmap item 9: case templates + search + case history) is the next
+task. Design already decided, nothing committed yet:
 
-- hard OS-level sandbox for Python execution (separate process + sandbox-exec /
-  landlock) replacing the current soft sandbox
-- configure DAH_LLM_API_KEY to light up the planner's LLM backend (currently
-  dormant and covered only by monkeypatched tests)
-- raster chart backend behind the same render_chart interface
-- wrap the existing React bundle in Tauri for the desktop shell
+- Search: optional `q` param on `GET /cases`, filtering on question + dataset
+  case-insensitively (SQLite `LIKE` on `LOWER(...)`).
+- Case history: `GET /cases/{id}/history` - a timeline derived from each
+  artifact's `created_at` (datasets, profiles, runs, findings, charts, plans).
+  Read-side projection like the evidence graph; no schema change.
+- Templates: new `templates` table (`id, name, question, dataset_label,
+  created_at`) via `CREATE TABLE IF NOT EXISTS` in db.py SCHEMA - no migration
+  needed. Endpoints: `POST /cases/{id}/template` (promote), `GET /templates`,
+  `POST /cases/from-template`, `DELETE /templates/{id}`.
 
-All P2 work remains uncommitted: .git is read-only from the agent side.
+After that, remaining P3: item 10 Tauri desktop shell (needs Rust toolchain + npm
+deps; verify network first).
 
 ## Important context
 
-- P1 gate runs in-process: `server/.venv/bin/python verification/p1/verify_p1.py`
-- P0 gate binds a port and needs permission to do so
+- Server venv: server/.venv (Python 3.14). There is no `pip` module - install
+  with `uv pip install --python .venv/bin/python <package>`; PyPI is reachable.
+- Run tests: `cd server && .venv/bin/python -m pytest -q`
+- P2 gate: `server/.venv/bin/python verification/p2/verify_p2.py` (~70-90s; it
+  re-runs the suite)
+- P1 gate (in-process): `server/.venv/bin/python verification/p1/verify_p1.py`
+- P0 gate binds a port - run it outside the sandbox if it fails
+- Web: `cd web && npm run dev` (deps installed; UI is P0/P1 scope, case creation
+  only)
+- A uvicorn server may still be running on port 8123 from the MVP demo - check
+  `curl -s localhost:8123/health` before starting another
 - python-multipart installed; DATA_DIR gitignored
-- server venv at server/.venv (Python 3.14); no pandas/numpy available - the
-  Python engine is dependency-free and works on plain dicts
+- No pandas/numpy available - the Python engine is dependency-free and works on
+  plain dicts
