@@ -51,9 +51,10 @@ repeatable**.
   case management (rename/duplicate/delete); structured AI planning
   (deterministic default, LLM behind `DAH_LLM_API_KEY`); case export/import
   round trip.
-- **Test status:** server 155 passed; web 2 passed; desktop shell 7 Rust tests (5 unit + 2 e2e).
-- **Active task:** P3 item 7, the contextual AI assistant (code generation,
-  result interpretation, finding drafting) - the last open P3 item.
+- **Test status:** server 211 passed; web 2 passed; desktop shell 7 Rust tests (5 unit + 2 e2e).
+- **Active task:** none open. All 10 P3 entry-checklist items are DONE,
+  including the contextual AI assistant (all four slices); see the phase table -
+  P3 is complete.
 - **Known issues / blockers:** none.
 - **Repository:** private, `master` tracks `origin/master`.
 
@@ -70,7 +71,7 @@ come first because P3 code generation multiplies the risk.
 | 4 | Multiple datasets per case + joins — **DONE (P3-DATA-003)** | Core P3 capability; everything below depends on it | P3 Data |
 | 5 | Guided workflow + stage completion — **DONE (P3-FLOW-004)** | Turns features into a repeatable process | P3 Analysis workflow |
 | 6 | Richer EDA, segmentation, statistical tests — **DONE (P3-ANALYSIS-005)** | Depth after the multi-dataset base (formal hypothesis tests deferred) | P3 Analysis |
-| 7 | Contextual AI assistant — **slice 3 of 4 DONE (P3-AI-011, P3-AI-012, P3-AI-013)**: result interpretation, finding drafting, code generation; remaining: conversational memory | Only after the deterministic surface is complete (it now is) | P3 AI |
+| 7 | Contextual AI assistant — **DONE (P3-AI-011, P3-AI-012, P3-AI-013, P3-AI-014)**: result interpretation, finding drafting, code generation, conversational memory | Only after the deterministic surface is complete (it now is) | P3 AI |
 | 8 | Evidence graph / claim-to-source tracing — **DONE (P3-EVIDENCE-006)** | Trust layer for repeated use | P3 Evidence |
 | 9 | Case templates, search, case history — **DONE (P3-CASE-007)** | Repeatability and reuse | P3 Case management |
 | 10 | Tauri desktop shell — **DONE (P3-SHELL-008)** | Wraps the existing React bundle; post-MVP as planned | Platform decision |

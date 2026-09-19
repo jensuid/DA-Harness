@@ -45,6 +45,7 @@ from app.planner import create_plan as create_plan_module, validate_plan
 from app.interpreter import create_interpretation as create_interpretation_module
 from app.drafter import create_draft as create_draft_module
 from app.generator import create_code as create_code_module
+from app.assistant import create_answer as create_answer_module, summarize_case
 from app.exporter import export_case, import_package, PACKAGE_FORMAT, PACKAGE_VERSION
 import app.db as db_module
 from app.db import get_connection
@@ -87,6 +88,8 @@ from app.models import (
     DraftFinding,
     GenerateCodeRequest,
     GeneratedCode,
+    ChatRequest,
+    ConversationTurn,
 )
 
 # Under the desktop shell, end this process when the shell is gone (see
@@ -454,6 +457,7 @@ async def delete_case(case_id: str, db=Depends(get_db)) -> None:
     # reference runs; profiles are keyed by dataset, not by case.
     db.execute("DELETE FROM charts WHERE case_id = ?", (case_id,))
     db.execute("DELETE FROM interpretations WHERE case_id = ?", (case_id,))
+    db.execute("DELETE FROM conversations WHERE case_id = ?", (case_id,))
     db.execute("DELETE FROM findings WHERE case_id = ?", (case_id,))
     db.execute("DELETE FROM runs WHERE case_id = ?", (case_id,))
     db.execute(
@@ -1770,6 +1774,92 @@ def _chart_media_type(path: Path) -> str:
     except OSError:
         return "image/svg+xml"
     return "image/png" if head.startswith(b"\x89PNG\r\n\x1a\n") else "image/svg+xml"
+
+
+@app.post(
+    "/cases/{case_id}/chat",
+    status_code=201,
+    response_model=ConversationTurn,
+)
+async def chat_about_case(
+    case_id: str,
+    payload: ChatRequest,
+    db=Depends(get_db),
+) -> ConversationTurn:
+    """Answer a question about the case, and remember the exchange.
+
+    The case's own artifacts - datasets with their profiles, runs, findings,
+    plans, charts and the derived workflow stage - are the only things the
+    answer may draw on, and `grounds` cites the artifact behind each claim so a
+    reviewer can check it. The LLM answers when it is configured, with the recent
+    turns as context (that is the memory), and degrades to a deterministic
+    answer of the same facts on any failure - unavailable, malformed, or citing
+    an artifact the case does not have - so an answer is always returned and
+    `source` says which engine spoke (P3-AI-014).
+    """
+    _require_case(db, case_id)
+
+    facts = summarize_case(db, case_id)
+    history = [
+        {"message": row["message"], "answer": row["answer"]}
+        for row in db.execute(
+            "SELECT message, answer FROM conversations WHERE case_id = ? "
+            "ORDER BY created_at",
+            (case_id,),
+        ).fetchall()
+    ]
+
+    turn, source = create_answer_module(payload.message, history, facts)
+    turn_id = str(uuid4())
+    now = datetime.now(timezone.utc)
+    db.execute(
+        "INSERT INTO conversations (id, case_id, message, answer, grounds_json, "
+        "source, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        (
+            turn_id,
+            case_id,
+            payload.message,
+            turn["answer"],
+            json.dumps(turn.get("grounds", [])),
+            source,
+            now.isoformat(),
+        ),
+    )
+    return ConversationTurn(
+        id=turn_id,
+        case_id=case_id,
+        message=payload.message,
+        answer=turn["answer"],
+        grounds=turn.get("grounds", []),
+        source=source,
+        created_at=now,
+    )
+
+
+@app.get(
+    "/cases/{case_id}/chat",
+    response_model=list[ConversationTurn],
+)
+async def list_chat(case_id: str, db=Depends(get_db)) -> list[ConversationTurn]:
+    """The case's conversation, oldest first, so a reopened case resumes."""
+    _require_case(db, case_id)
+    rows = db.execute(
+        "SELECT id, case_id, message, answer, grounds_json, source, created_at "
+        "FROM conversations WHERE case_id = ? ORDER BY created_at",
+        (case_id,),
+    ).fetchall()
+    return [
+        ConversationTurn(
+            id=row["id"],
+            case_id=row["case_id"],
+            message=row["message"],
+            answer=row["answer"],
+            grounds=json.loads(row["grounds_json"]),
+            source=row["source"],
+            created_at=row["created_at"],
+        )
+        for row in rows
+    ]
 
 
 @app.post(

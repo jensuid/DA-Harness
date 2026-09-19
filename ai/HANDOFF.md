@@ -12,6 +12,25 @@
   failure. `source` records which one spoke. Three slices remain: finding
   drafting, code generation, conversational memory.
 
+- P3-AI-014 PASSED (contextual AI, slice 4 of 4 - and the last P3 item): a
+  case can now be asked questions, and every answer cites its evidence. `POST
+  /cases/{id}/chat` with a message returns an answer plus `grounds` - citations
+  of the form `kind:name` naming the dataset, run, finding, plan, chart or
+  column behind each claim; `GET /cases/{id}/chat` replays the conversation
+  oldest-first, so a reopened case resumes mid-thought. `summarize_case` reads
+  the case's rows and builds the facts an answer may draw on - a pure
+  projection, like the evidence graph and the history timeline, so it cannot
+  drift from what is on disk. Two engines behind one interface, as in every
+  other slice: a deterministic assistant that answers count, column and dataset
+  questions and otherwise states the case's derived workflow stage and the one
+  action that advances it (reusing P3-FLOW-004, so it cannot claim a step the
+  data does not support), and an LLM behind `DAH_LLM_API_KEY` that receives the
+  recent turns as context - that is the memory. Honesty is enforced: every
+  citation must be an artifact the case actually has, and an answer about a case
+  with artifacts must cite at least one. An invented citation is a validation
+  failure and the answer falls back to the deterministic one. **This closes
+  roadmap item 7 and the whole P3 phase.**
+
 - P3-AI-013 PASSED (contextual AI, slice 3 of 4): a question in plain
   language now yields the read-only computation that would answer it. `POST
   /cases/{id}/datasets/{id}/generate-code` takes `{question, kind}` and returns
@@ -346,6 +365,32 @@ Create Case -> Question -> Load CSV -> Profile -> SQL Analysis
   honesty property - the deterministic read may only quote values the result
   actually contains (the two aggregated totals, 80.5 and 325.0, and no others).
 
+## What changed (P3-AI-014)
+
+- app/assistant.py (NEW): `summarize_case` (the facts, read from the case's
+  rows - runs carry columns and row counts, not result rows, because a
+  conversation points at evidence rather than replaying it), `answer_question`
+  (deterministic; counts, a named column's real profiled stats, a dataset
+  summary, the latest finding, or the derived stage and next action),
+  `_references` / `parse_ground` / `validate_answer` (the citation budget: each
+  ground must be `kind:name` with name in the case), `LLMAssistant`
+  (OpenAI-compatible, httpx, JSON-only prompt, told the exact artifact ids and
+  the last ten turns) and `create_answer`, which prefers the LLM and falls back
+  on any failure - unavailable, malformed, or citing an artifact the case does
+  not have.
+- app/db.py: the `conversations` table under `CREATE TABLE IF NOT EXISTS`, so
+  older databases need no migration.
+- app/main.py + models.py: `POST /cases/{id}/chat` (201, persists the turn) and
+  `GET /cases/{id}/chat` (oldest first), `ChatRequest` and `ConversationTurn`.
+  Case deletion now removes the conversation with the rest of the case's
+  children; duplication deliberately does not copy one (a duplicate starts a
+  fresh investigation).
+- tests/test_conversation.py (NEW): 12 tests - counts, a column's real stats,
+  the derived stage and next action, grounds checked against the case's own
+  rows, LLM accepted, the prior turn reaching the LLM, invented citation
+  rejected, failure and malformed fallbacks, persistence oldest-first, delete
+  cleanup at the row level, 404s.
+
 ## What changed (P3-AI-013)
 
 - app/generator.py (NEW): `generate_code` (deterministic; `_pick_axes` chooses
@@ -461,7 +506,7 @@ reported as unsupported (clear 400) rather than faked; that gate is future work.
 
 ## Tests performed (current)
 
-- server pytest: 199 passed (186 + 13 code generation)
+- server pytest: 211 passed (199 + 12 conversation)
 - desktop shell: 7 Rust tests - `cd desktop/src-tauri && cargo test` (5 unit)
   and `cargo test --features e2e` (+2 live-core tests)
 - web: 2 passed
@@ -475,7 +520,7 @@ reported as unsupported (clear 400) rather than faked; that gate is future work.
   `dfb115b` P3-SEC-001, `2c7b11f` P3-CHART-002, `f5df5d1` P3-DATA-003,
   `967544b` P3-FLOW-004, `7b7e49f` P3-ANALYSIS-005, `ebaa30e` P3-EVIDENCE-006,
   P3-CASE-007, P3-SHELL-008, P3-DATA-009, P3-VALID-010, P3-AI-011,
-  P3-AI-012, <this commit> P3-AI-013
+  P3-AI-012, P3-AI-013, <this commit> P3-AI-014
 - `.gitignore` covers `web/dist-desktop/`, `server/build/` (the 98MB PyInstaller
   tree) and `desktop/src-tauri/{target,gen,binaries}` - the 85MB sidecar is
   never committed.
@@ -503,14 +548,34 @@ is configured in `server/.env`, so the LLM paths are live and the P2 gate's
 plan step reports `source=llm`. This is an agent task now, not a user action.
 Everything else in the P3 entry checklist is done, including the desktop shell.
 
-One slice remains: conversational memory scoped to the case - a
-case-scoped conversation the analyst can ask questions of, grounded in the
-case's own artifacts. The three proposal slices are all in place now: a
-question yields the computation that would answer it (P3-AI-013), a result
-yields a reading of what it shows (P3-AI-011) and a candidate finding with the
-grounds it stands on (P3-AI-012). Each stops one step short of writing state -
-the human runs, accepts or rejects - so conversational memory is the last
-piece of an assistant that proposes and never decides.
+P3 is complete. All ten entry-checklist items are done, including the
+four contextual AI slices: a question yields the computation that would answer
+it (P3-AI-013), a result yields a reading of what it shows (P3-AI-011), a
+candidate finding with the grounds it stands on (P3-AI-012), and a case answers
+questions about itself with citations (P3-AI-014). Each assistant slice stops
+one step short of writing state - the human runs, accepts or rejects - so the
+assistant proposes and never decides.
+
+The immediate next action is the phase close: mark P3 DONE in ai/ROADMAP.md's
+phase table, move the stage marker, and write P4's entry checklist. Then P4,
+Production Candidate - reliability, security, performance, UX and
+observability. A candidate ordering, oldest risk first (a proposal for the user
+to reorder, not a decision yet):
+
+- a P3 gate script (verification/p3/verify_p3.py) like the P0/P1/P2 gates - the
+  P2 gate currently re-verifies the suite, but nothing exercises the P3
+  capabilities (multi-dataset joins, the hard sandbox, the four assistant
+  slices) as one journey;
+- error handling and resilience: every broad `except` narrowed where it still
+  swallows, and a 500 that is never the answer to bad input;
+- a real integration test of the desktop shell's core lifecycle on CI, and the
+  unsigned-app signing carried from P3 (or formally deferred to P5);
+- performance: query/result caps and profiling on large datasets, and the
+  export package on a case with many artifacts;
+- UX: the assistant surfaces (generate-code, draft-finding, interpret, chat) are
+  backend-only so far - the React shell still shows the P0/P1 case-creation
+  surface, which is now the widest gap between what DAH can do and what it
+  shows.
 
 Nothing is unblocked-but-undone. The one remaining carried item is not agent
 work: the packaged app is unsigned, so macOS gatekeeps the first launch

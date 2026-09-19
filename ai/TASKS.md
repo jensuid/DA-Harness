@@ -800,3 +800,78 @@ TESTS: 13 tests - deterministic SQL, deterministic Python, columns are real,
 VERIFICATION: pytest green + verification/p2/verify_p2.py PASS.
 STATE UPDATE: mark P3-AI-013 done on pass.
 ```
+
+### P3-AI-014 contract
+
+```
+TASK ID: P3-AI-014
+MILESTONE: P3 V1
+CAPABILITY: Contextual AI (slice 4 of 4: conversational memory)
+GOAL: Ask the case a question in plain language and get an answer grounded in
+      what the case actually contains - with the citations to prove it.
+
+CONTEXT: Slices 1-3 propose: a question yields the computation that would
+         answer it, a result yields a reading and a candidate finding. Each
+         stops one step short of writing state. This slice is the last piece:
+         the assistant remembers the conversation and answers from the case's
+         own artifacts, so the analyst can ask rather than dig.
+INPUTS: a case (its datasets, profiles, runs, findings, plans, charts, derived
+        workflow stage), the conversation so far, and a message.
+RELEVANT FILES: server/app/assistant.py (NEW), server/app/db.py (table),
+                server/app/models.py (ChatRequest, ConversationTurn),
+                server/app/main.py (endpoints),
+                server/tests/test_conversation.py (NEW)
+REQUIRED CHANGE:
+  - POST /cases/{case_id}/chat with {message} -> 201
+    {id, case_id, message, answer, grounds, source, created_at}.
+    GET /cases/{case_id}/chat returns the whole conversation oldest-first, so
+    a reopened case resumes mid-thought.
+  - `summarize_case` reads the case's rows and builds the facts an answer may
+    draw on: datasets with their columns and stats, runs with their columns and
+    row counts, findings with their validation status, plans, charts, and the
+    derived workflow stage. A pure projection, like the evidence graph and the
+    history timeline, so it cannot drift from what is on disk.
+  - Two engines, one interface: `answer_question` is deterministic and always
+    available - it answers count questions, column and dataset questions, and
+    otherwise states where the case stands and the one action that advances it
+    (reusing P3-FLOW-004's derived stage); `LLMAssistant` calls the
+    OpenAI-compatible endpoint when DAH_LLM_API_KEY is set and receives the
+    recent turns as context - that is the memory.
+  - Honesty is enforced, not hoped for: every citation in `grounds` must be an
+    artifact the case actually has (a dataset, run, finding, plan, chart or
+    column that exists). An invented citation is a validation failure and the
+    answer falls back to the deterministic one. An answer about a case that has
+    artifacts must cite at least one of them.
+NON-GOALS: executing analysis from chat (the proposal slices do that; chat
+           answers and cites), streaming, multi-case conversations, exporting
+           or duplicating a conversation (a duplicate starts a fresh
+           investigation), tool calling / function calling.
+CONSTRAINTS: no existing endpoint, schema or response changes. The new
+             conversations table is created under CREATE TABLE IF NOT EXISTS,
+             so older databases need no migration. DELETE /cases/{id} removes a
+             case's conversation; nothing else writes to the table.
+ACCEPTANCE CRITERIA:
+- [x] a deterministic answer is produced with no key; answer and grounds are
+      non-empty
+- [x] every ground cites an artifact the case actually has
+- [x] a "how many" question is answered with the case's real counts
+- [x] a question naming a column is answered with that column's real profiled
+      stats
+- [x] a question about nothing specific is answered with the case's derived
+      stage and next action
+- [x] an LLM answer citing real artifacts is returned with source=llm
+- [x] an LLM answer that invents a citation falls back to source=deterministic
+- [x] an LLM that raises or returns malformed output falls back
+- [x] the LLM receives the prior turns as context - a second question is
+      answered with the first one in view
+- [x] the conversation persists across a restart, oldest-first
+- [x] deleting the case removes its conversation rows
+- [x] 404 for an unknown case (posting and reading)
+- [x] full suite and the P2 gate still pass
+TESTS: 12 tests - counts, column stats, stage fallback, grounds are real, LLM
+       accepted, invented citation rejected, failure and malformed fallbacks,
+       memory (prior turn in context), persistence oldest-first, delete
+       cleanup, 404s.
+VERIFICATION: pytest green + verification/p2/verify_p2.py PASS.
+STATE UPDATE: mark P3-AI-014 done on pass; this closes roadmap item 7.
+```

@@ -416,3 +416,28 @@ class GeneratedCode(BaseModel):
     explanation: str
     columns_used: list[str]
     source: str
+
+
+class ChatRequest(BaseModel):
+    """A question put to the case's assistant."""
+
+    message: str
+
+
+class ConversationTurn(BaseModel):
+    """One question and its answer, grounded in the case's artifacts
+    (P3-AI-014).
+
+    A conversation is the one assistant surface that persists, because memory is
+    the point: a reopened case resumes mid-thought. `grounds` cites the artifact
+    behind each claim as `kind:name`, so a reviewer can check the answer against
+    the evidence rather than trusting it; `source` records which engine spoke.
+    """
+
+    id: str
+    case_id: str
+    message: str
+    answer: str
+    grounds: list[str]
+    source: str
+    created_at: datetime

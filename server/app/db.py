@@ -123,6 +123,17 @@ CREATE TABLE IF NOT EXISTS interpretations (
     FOREIGN KEY (case_id) REFERENCES cases(id),
     FOREIGN KEY (run_id) REFERENCES runs(id)
 );
+
+CREATE TABLE IF NOT EXISTS conversations (
+    id TEXT PRIMARY KEY,
+    case_id TEXT NOT NULL,
+    message TEXT NOT NULL,
+    answer TEXT NOT NULL,
+    grounds_json TEXT NOT NULL,
+    source TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (case_id) REFERENCES cases(id)
+);
 """
 
 
