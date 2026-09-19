@@ -1,6 +1,7 @@
 # DAH - Current State
 
 - **Phase:** P2 MVP - COMPLETE (verification/p2/REPORT.md: PASS)
+- **Global roadmap status:** ai/ROADMAP.md (phase tracker - current stage, phase table, next-phase entry checklist)
 - **Milestone status:** P1 Vertical Slice PASSED (verification/p1/REPORT.md); P0 PASSED
 - **Completed capabilities:** FastAPI core; SQLite case persistence; DuckDB engine; Vite/React shell; P0 verification harness; CSV dataset attachment; deterministic dataset profiling; read-only SQL analysis runs with persisted results; findings with evidence chain; validation via rerun; parquet + xlsx ingest; deep profiling; **read-only Python execution with persisted results (P2-ANALYSIS-008); chart images rendered and persisted from run results (P2-ANALYSIS-009);
 case management - rename, duplicate, delete (P2-CASE-010);
