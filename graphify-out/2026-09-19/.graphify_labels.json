@@ -1,6 +1,6 @@
 {
   "0": "Product & Engineering Master Specification",
-  "1": "main.py",
+  "1": "models.py",
   "2": "web/package.json",
   "3": "compilerOptions",
   "4": "Coding-Agent Production System",
@@ -9,7 +9,7 @@
   "7": "test_datasets.py",
   "8": "verify_p0.py",
   "9": "Implementation Roadmap",
-  "10": "verify_p1.py",
+  "10": "python_exec.py",
   "11": "package.json",
   "12": "dah-server",
   "13": "app/__init__.py",
@@ -17,6 +17,18 @@
   "15": "vite-env.d.ts",
   "16": "Verification & Production Readiness Plan",
   "17": "DEC-001: Web-first MVP, Tauri post-MVP",
-  "18": "test_findings.py",
-  "19": "P1 Vertical Slice - Verification Report"
+  "18": "test_python_runs.py",
+  "19": "P1 Vertical Slice - Verification Report",
+  "20": "post",
+  "21": "test_charts.py",
+  "22": "verify_p1.py",
+  "23": "main.py",
+  "24": "test_case_management.py",
+  "25": "planner.py",
+  "26": "get",
+  "27": "test_plans.py",
+  "28": "Plan",
+  "29": "Case",
+  "30": "attach_dataset",
+  "32": "delete_case"
 }

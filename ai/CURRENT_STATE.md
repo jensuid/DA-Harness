@@ -1,23 +1,30 @@
 # DAH - Current State
 
-- **Phase:** P2 MVP
-- **Milestone status:** P1 Vertical Slice PASSED (verification/p1/REPORT.md)
-- **Completed capabilities:** FastAPI core; SQLite case persistence; DuckDB engine; Vite/React shell; P0 verification harness; CSV dataset attachment; deterministic dataset profiling; read-only SQL analysis runs with persisted results; findings with evidence chain; validation via rerun
-- **Active task:** P2-ANALYSIS-008 (Python execution) - DATA-007 complete
+- **Phase:** P2 MVP - COMPLETE (verification/p2/REPORT.md: PASS)
+- **Milestone status:** P1 Vertical Slice PASSED (verification/p1/REPORT.md); P0 PASSED
+- **Completed capabilities:** FastAPI core; SQLite case persistence; DuckDB engine; Vite/React shell; P0 verification harness; CSV dataset attachment; deterministic dataset profiling; read-only SQL analysis runs with persisted results; findings with evidence chain; validation via rerun; parquet + xlsx ingest; deep profiling; **read-only Python execution with persisted results (P2-ANALYSIS-008); chart images rendered and persisted from run results (P2-ANALYSIS-009);
+case management - rename, duplicate, delete (P2-CASE-010);
+AI planning with structured output (P2-AI-011); case export as a self-contained
+JSON package with import round trip (P2-CASE-012)**
+- **Active task:** none - P2 milestone complete
 - **Known issues:** none
-- **Test status:** server 32 passed; web 2 passed
-- **Next task:** P2-ANALYSIS-008 - read-only Python executes against a dataset, result persisted
+- **Test status:** server 79 passed (5 new for export); web 2 passed
+- **Next task:** V1 hardening track (not started): hard OS-level sandbox for Python
+  execution, raster chart backend, configure an LLM key for the planner, Tauri desktop
+  shell wrapping the same React bundle
 - **Blockers:** none
 
-## P1 progress
+## P2 progress
 
 | Task | Status |
 |------|--------|
-| P1-DATA-001 CSV ingest | DONE |
-| P1-DATA-002 Dataset profiling | DONE |
-| P1-ANALYSIS-003 SQL analysis run | DONE |
-| P1-EVIDENCE-004 Findings & evidence | NOT STARTED |
-| P1-VALID-005 Validation | DONE |
+| P2-DATA-006 parquet + xlsx ingest | DONE |
+| P2-DATA-007 deep profiling | DONE |
+| P2-ANALYSIS-008 Python execution | DONE |
+| P2-ANALYSIS-009 charts | DONE |
+| P2-CASE-010 case management | DONE |
+| P2-AI-011 AI planning | DONE |
+| P2-CASE-012 export | DONE |
 
 ## Platform decisions (locked, see ai/DECISIONS.md)
 
@@ -34,4 +41,13 @@
 - Web dev: `cd web && npm run dev` (proxies /api to :8123)
 - Web build: `cd web && npm run build`
 - Web tests: `cd web && npm test`
-- P0 verification: `python3 verification/p0/verify_p0.py`
+- P0 verification: `python3 verification/p0/verify_p0.py` (needs port bind)
+- P1 verification: `server/.venv/bin/python verification/p1/verify_p1.py` (in-process)
+- P2 verification: `server/.venv/bin/python verification/p2/verify_p2.py` (in-process)
+- Python analysis run: `POST /cases/{id}/datasets/{id}/runs/python` with `{"code": "..."}`
+- Export: `GET /cases/{id}/export` (self-contained JSON package); `POST /cases/import`
+  reconstructs it with fresh IDs
+- Plan: `POST /cases/{id}/datasets/{id}/plan` (structured plan from question + profile; deterministic by default, LLM when DAH_LLM_API_KEY is set, source field records which); latest at `GET .../plan`, history at `GET .../plans`
+- Chart from a run: `POST /cases/{id}/runs/{id}/charts` with `{"kind": "bar|line", "x": ..., "y": ..., "series": ...}`; image at `GET /cases/{id}/charts/{id}/image`
+- Rename: `PATCH /cases/{id}` with `{question?, dataset?}`; duplicate: `POST /cases/{id}/duplicate`;
+  delete: `DELETE /cases/{id}` (removes the case row, all children, and its on-disk data)

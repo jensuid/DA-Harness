@@ -1,7 +1,7 @@
 # P0 Foundation - Verification Report
 
 **Milestone:** P0 Foundation  
-**Date:** 2026-09-18T16:21:27.323071+00:00  
+**Date:** 2026-09-19T00:03:57.616283+00:00  
 **Decision:** **PASS**
 
 ## Exit-test sequence
@@ -33,7 +33,7 @@
 
 - Application launches and serves: GET /health on port 8125
 - Backend operation executes: /health -> {'status': 'ok'}
-- State persists: case 9b1b05c8-134b-4405-815c-77fe9627e590 written to SQLite
+- State persists: case 9e08b95d-80ec-41f1-a523-0773dc47bb70 written to SQLite
 - State recovers after restart: case reopened intact
 - Test suite runs: pytest=pass vitest=pass
 
@@ -45,7 +45,7 @@
     _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-5 passed, 2 warnings in 1.97s
+43 passed, 2 warnings in 8.29s
 ```
 
 ### web vitest

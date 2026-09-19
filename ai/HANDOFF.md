@@ -2,11 +2,22 @@
 
 ## What was completed
 
+- P2-ANALYSIS-008 PASSED: read-only Python execution against an attached dataset,
+  result persisted and retrievable like a SQL run
+- P2-ANALYSIS-009 PASSED: chart images rendered from a persisted run result and
+  stored with the case as evidence artifacts
+- P2-CASE-010 PASSED: rename, duplicate (deep copy, new IDs throughout), and
+  delete (rows + on-disk data) of Analysis Cases
+- P2-AI-011 PASSED: AI planning with structured output - objective, primary
+  question, sub-questions, hypotheses, data requirements, analysis steps
+- P2-CASE-012 PASSED: case export as a self-contained JSON package, with import
+  as the round-trip proof
+- **P2 MILESTONE COMPLETE**: verification/p2/verify_p2.py PASS on all 16 steps
+  and all 10 exit criteria
 - P2-DATA-007 PASSED: deep profile (types, null %, distinct counts, min/max/avg, duplicate rows)
 - P2-DATA-006 PASSED: parquet + xlsx attach, profile, and query alongside CSV
-- P0 PASSED: verification/p0/REPORT.md
-- P1 PASSED: verification/p1/REPORT.md - full vertical slice verified end to end
-- All five P1 tasks done: ingest, profiling, SQL runs, findings+evidence, validation
+- P0 PASSED: verification/p0/REPORT.md (re-run during this task: PASS)
+- P1 PASSED: verification/p1/REPORT.md - re-run during this task: PASS (43 tests)
 
 ## P1 vertical slice (verified)
 
@@ -15,36 +26,129 @@ Create Case -> Question -> Load CSV -> Profile -> SQL Analysis
 -> Finding -> Evidence chain -> Validation (rerun) -> Save -> Reopen
 ```
 
-## What changed
+## What changed (P2-CASE-012)
 
-- verification/p1/verify_p1.py: repeatable P1 gate (in-process, no network needed)
-- verification/p1/REPORT.md: PASS on all 9 steps and all 8 exit criteria
-- ai/: phase advanced to P2
+- server/app/exporter.py (NEW): `export_case` assembles one self-contained JSON
+  package (case, datasets with base64 bytes, profiles, runs, findings, charts
+  with inline SVG, plans); `import_package` reconstructs it with fresh IDs and
+  remapped references. `PackageError` covers malformed packages.
+- server/app/main.py: `GET /cases/{id}/export` and `POST /cases/import`.
+- server/tests/test_export.py (NEW): 5 tests - every section present with
+  embedded bytes/SVG, 404 on unknown case, round trip restores state
+  losslessly, references relink and artifacts are live (chart served, imported
+  dataset queryable), malformed packages rejected.
+- verification/p2/verify_p2.py (NEW): the P2 milestone gate, modelled on the P1
+  gate. Walks the whole loop on deliberately messy data (a null, a duplicate
+  row, a categorical split) and requires every P2 capability to fire.
+
+## What changed (P2-AI-011)
+
+- server/app/planner.py (NEW): the Analysis Planner. `plan_analysis` derives a
+  structured plan deterministically from the question + profile - missingness,
+  numeric spread/outliers, categorical splits, temporal trends, duplicates - so
+  every item references real columns. `LLMPlanner` is an OpenAI-compatible
+  backend on httpx (no SDK dependency), enabled by DAH_LLM_API_KEY (plus
+  optional DAH_LLM_BASE_URL / DAH_LLM_MODEL). `create_plan` prefers the LLM,
+  validates its output with `validate_plan`, and falls back to the deterministic
+  planner on any failure - an unavailable or misbehaving LLM never blocks the
+  loop. The persisted `source` field says which engine made the plan.
+- server/app/main.py: `POST /cases/{id}/datasets/{id}/plan` (creates),
+  `GET .../plan` (latest), `GET .../plans` (history). Planning requires a
+  profile first (400 names the missing step). Duplicate now copies plans and
+  delete now removes them.
+- server/app/models.py: `Plan`, `PlanSummary`.
+- server/app/db.py: new `plans` table.
+- server/tests/test_plans.py (NEW): 10 tests - create/retrieve across sessions,
+  plan references real columns, 400 without a profile, 404s, newest-first
+  listing, LLM fallback on failure and on malformed output, valid LLM output
+  persisted with source=llm, schema validation, and survival through
+  duplicate/delete.
+
+## What changed (P2-CASE-010)
+
+- server/app/main.py: three endpoints - `PATCH /cases/{id}` (rename question
+  and/or dataset label, bumps updated_at), `POST /cases/{id}/duplicate` (deep
+  copy: case, datasets with bytes on disk, profiles, runs, findings, charts,
+  all with fresh IDs and remapped references), `DELETE /cases/{id}` (children
+  in FK order then the case row, plus `shutil.rmtree` of the case directory).
+- server/app/models.py: `CaseUpdate`.
+- server/tests/test_case_management.py (NEW): 9 tests - rename persists and
+  leaves data alone, single-field rename, 404s, duplicate is deep and
+  independent (new IDs, mutating the copy does not touch the original,
+  dataset bytes copied into the copy's own directory), delete removes rows,
+  files, and 404s afterwards, other cases untouched.
+
+## What changed (P2-ANALYSIS-009)
+
+- server/app/charts.py (NEW): deterministic, dependency-free SVG renderer.
+  `bar` and `line` over one or more series (optional `series` column splits the
+  result into legend-ordered series). Rendering from the *stored* run result
+  keeps a chart reproducible after the run; SVG is stored in the case dir.
+- server/app/main.py: chart endpoints - `POST /cases/{id}/runs/{id}/charts`,
+  `GET .../charts` (list), `GET /cases/{id}/charts/{id}` (metadata),
+  `GET /cases/{id}/charts/{id}/image` (serves the SVG as image/svg+xml).
+- server/app/models.py: `ChartCreate`, `Chart`, `ChartSummary`.
+- server/app/db.py: new `charts` table (run-scoped, case-owned).
+- server/tests/test_charts.py (NEW): 11 tests - persist and serve, reopen in a
+  new session, byte-identical re-render, multi-series line, chart from a Python
+  run, rejection of unknown kind/column and non-numeric measure, 404s, and bar
+  geometry (anchored on the zero baseline, heights proportional to values).
+
+## What changed (P2-ANALYSIS-008)
+
+- server/app/python_exec.py (NEW): restricted Python engine. User code gets a
+  read-only `dataset` handle (`dataset.rows` as list of dicts, `dataset.query(sql)`
+  under the same read-only SQL gate) and leaves its answer in `result`; a list of
+  dicts or lists becomes the run's columns/rows.
+- server/app/main.py: `POST /cases/{case_id}/datasets/{dataset_id}/runs/python`;
+  `runs` read/write paths now carry `kind` and `code`; SQL runs unchanged.
+- server/app/models.py: `PythonRunCreate`, `RUN_KINDS`, `Run`/`RunSummary` gained
+  `kind` (`sql` | `python`) and nullable `code`; `sql` is now nullable.
+- server/app/db.py: `runs` gained `kind` (default `sql`) and `code` columns, both
+  added by `_ensure_column` so older databases migrate in place.
+- server/tests/test_python_runs.py (NEW): 11 tests - persist/reopen, DuckDB query
+  from Python, listing alongside SQL, and rejection of write queries, blocked
+  imports, filesystem writes, dunder escapes, missing/empty `result`, 404s.
+
+## Sandbox posture (documented, see module docstring)
+
+Blocked: filesystem writes, process execution, network egress, resource
+exhaustion (wall-clock + CPU limits). This is a *soft* sandbox for a local
+single-user tool: it stops accidental writes and runaway AI-generated code, not a
+hostile user who owns the machine. Address-space limits were tried and dropped -
+macOS maps far more VM than a useful cap allows; a real memory bound needs the
+separate-process hard sandbox planned for V1. Validation of Python runs is
+reported as unsupported (clear 400) rather than faked; that gate is future work.
 
 ## Tests performed
 
-- P1 exit-test sequence: all 9 steps PASS
-- P2-DATA-006: server pytest 29 passed (5 new: parquet attach+profile, xlsx attach+profile, cross-format query, parquet placeholder form); web vitest: 2 passed
-- P2-DATA-007: server pytest 32 passed (3 new: deep stats incl. numeric min/max/avg, type inference, duplicate rows; header-only dataset); P1 gate re-run PASS; deep stats verified identical across csv/parquet/xlsx
+- server pytest: 44 passed (12 new)
+- Schema migration verified against a database built with the pre-P2 `runs` schema
+- P0 gate: PASS (required port bind - run outside the sandbox if it fails)
+- P1 gate: PASS (9/9 steps, 43 tests)
 
 ## Unresolved problems
 
 - Commits blocked from the agent side: .git read-only under the current permission
-  profile, and escalation reviewer errors ("A supported model is required").
-  Two commits' worth of work is uncommitted on disk (EVIDENCE-004, VALID-005,
-  graph updates, P1 harness).
+  profile. All P2-ANALYSIS-008 work is uncommitted on disk.
 
 ## Next action
 
-P2-ANALYSIS-008: read-only Python execution against a dataset, result persisted. Per the roadmap, P2 broadens the working loop:
-- Parquet and Excel ingest (in addition to CSV)
-- Python execution in the workspace (alongside SQL)
-- essential charts / result tables
-- AI planning with structured output (this is where AI joins)
-- export of an Analysis Case
+P2 is complete and gated. The next track is V1 hardening, none of it started:
+
+- hard OS-level sandbox for Python execution (separate process + sandbox-exec /
+  landlock) replacing the current soft sandbox
+- configure DAH_LLM_API_KEY to light up the planner's LLM backend (currently
+  dormant and covered only by monkeypatched tests)
+- raster chart backend behind the same render_chart interface
+- wrap the existing React bundle in Tauri for the desktop shell
+
+All P2 work remains uncommitted: .git is read-only from the agent side.
 
 ## Important context
 
 - P1 gate runs in-process: `server/.venv/bin/python verification/p1/verify_p1.py`
+- P0 gate binds a port and needs permission to do so
 - python-multipart installed; DATA_DIR gitignored
-- server venv at server/.venv (Python 3.14)
+- server venv at server/.venv (Python 3.14); no pandas/numpy available - the
+  Python engine is dependency-free and works on plain dicts

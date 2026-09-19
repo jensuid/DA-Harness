@@ -33,11 +33,11 @@ Parquet/Excel + richer profiling + Python execution + charts
 |---------|-----------|----------|--------|--------------|--------------|
 | P2-DATA-006 | Data Layer (breadth) | M | DONE | P1 done | Parquet and Excel attach alongside CSV |
 | P2-DATA-007 | Data Layer (depth) | M | DONE | P2-DATA-006 | Profile covers duplicates, types, basic stats |
-| P2-ANALYSIS-008 | Analysis Workspace | M | NOT_STARTED | P2-DATA-006 | Read-only Python executes against a dataset, result persisted |
-| P2-ANALYSIS-009 | Analysis Workspace | M | NOT_STARTED | P2-ANALYSIS-008 | Chart image persisted from a run result |
-| P2-CASE-010 | Analysis Case | M | NOT_STARTED | P1 done | Rename, duplicate, delete cases |
-| P2-AI-011 | AI Planning | M | NOT_STARTED | P2-ANALYSIS-008 | Structured plan (sub-questions, hypotheses) from a question + profile |
-| P2-CASE-012 | Export | M | NOT_STARTED | P2-AI-011 | Case exports as a self-contained JSON package |
+| P2-ANALYSIS-008 | Analysis Workspace | M | DONE | P2-DATA-006 | Read-only Python executes against a dataset, result persisted |
+| P2-ANALYSIS-009 | Analysis Workspace | M | DONE | P2-ANALYSIS-008 | Chart image persisted from a run result |
+| P2-CASE-010 | Analysis Case | M | DONE | P1 done | Rename, duplicate, delete cases |
+| P2-AI-011 | AI Planning | M | DONE | P2-ANALYSIS-008 | Structured plan (sub-questions, hypotheses) from a question + profile |
+| P2-CASE-012 | Export | M | DONE | P2-AI-011 | Case exports as a self-contained JSON package |
 
 ### P2-DATA-006 contract
 
