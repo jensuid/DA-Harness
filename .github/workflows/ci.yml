@@ -1,8 +1,9 @@
 # CI for DAH (P4-CI-007).
 #
-# Three jobs, one per layer, mirroring exactly what a developer runs locally:
-# the server suite plus its gates, the web suite plus a build, and the desktop
-# shell's Rust tests including the two live-core lifecycle tests.
+# Four jobs: the server suite plus its gates, the web suite plus a build, a
+# sidecar packaging build, and the desktop shell's Rust tests - including the
+# two live-core lifecycle tests - which consume the sidecar the packaging job
+# built, because tauri-build will not compile without it.
 #
 # macOS only, on purpose. The Python engine's hard sandbox is macOS seatbelt
 # (P3-SEC-001), the packaged app is a macOS .app, and the sidecar is a macOS
@@ -100,8 +101,18 @@ jobs:
   desktop:
     name: Desktop shell lifecycle
     runs-on: macos-latest
+    needs: packaging
     steps:
       - uses: actions/checkout@v4
+
+      - name: Fetch the sidecar built by the packaging job
+        # tauri-build refuses to compile without the externalBin resource
+        # present, so the shell cannot be tested - not even its pure unit
+        # tests - until this lands in binaries/.
+        uses: actions/download-artifact@v4
+        with:
+          name: sidecar
+          path: desktop/src-tauri/binaries
 
       - name: Install uv
         uses: astral-sh/setup-uv@v5
@@ -161,6 +172,18 @@ jobs:
 
       - name: Build the sidecar
         run: ./build_sidecar.sh
+
+      - name: Upload the sidecar
+        # The desktop job cannot compile without it: tauri-build validates the
+        # externalBin resource at build time, so cargo test fails outright when
+        # the binary is absent. Passing it along also lets the orphan test run
+        # in CI instead of skipping.
+        uses: actions/upload-artifact@v4
+        with:
+          name: sidecar
+          path: desktop/src-tauri/binaries/dah-core-*
+          if-no-files-found: error
+          retention-days: 1
 
       - name: Smoke the packaged core
         # The binary must actually serve, not merely build.
