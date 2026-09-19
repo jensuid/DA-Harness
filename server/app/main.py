@@ -11,7 +11,7 @@ from pydantic import BaseModel
 
 import json
 
-from app.analysis import profile_csv, run_query
+from app.analysis import profile_csv, run_query, run_query_multi
 from app.python_exec import run_python
 from app.charts import render_chart, CHART_KINDS, CHART_FORMATS
 from app.charts import DEFAULT_WIDTH, DEFAULT_HEIGHT
@@ -26,6 +26,7 @@ from app.models import (
     Dataset,
     Profile,
     Run,
+    MultiRunCreate,
     RunCreate,
     PythonRunCreate,
     RunSummary,
@@ -235,19 +236,23 @@ async def duplicate_case(
     # Runs: remap dataset; keep an old->new id map for findings and charts.
     run_ids: dict[str, str] = {}
     for run in db.execute(
-        "SELECT id, dataset_id, kind, sql, code, columns_json, rows_json, row_count, "
+        "SELECT id, dataset_id, kind, sql, code, dataset_ids_json, columns_json, "
+        "rows_json, row_count, "
         "truncated, executed_at FROM runs WHERE case_id = ? ORDER BY executed_at",
         (case_id,),
     ).fetchall():
         new_run_id = str(uuid4())
         run_ids[run["id"]] = new_run_id
         db.execute(
-            "INSERT INTO runs (id, case_id, dataset_id, kind, sql, code, columns_json, "
-            "rows_json, row_count, truncated, executed_at) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO runs (id, case_id, dataset_id, kind, sql, code, "
+            "dataset_ids_json, columns_json, rows_json, row_count, truncated, "
+            "executed_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (new_run_id, new_case_id, dataset_ids.get(run["dataset_id"]), run["kind"],
-             run["sql"], run["code"], run["columns_json"], run["rows_json"],
-             run["row_count"], run["truncated"], run["executed_at"]),
+             run["sql"], run["code"],
+             _remap_dataset_ids(run["dataset_ids_json"], dataset_ids),
+             run["columns_json"],
+             run["rows_json"], run["row_count"], run["truncated"], run["executed_at"]),
         )
 
     for finding in db.execute(
@@ -419,6 +424,118 @@ async def list_datasets(case_id: str, db=Depends(get_db)) -> list[Dataset]:
     ]
 
 
+def _dataset_ids_of(row) -> list[str] | None:
+    """The datasets a run touches; None means an unknown (legacy) set.
+
+    Older runs predate the column, and single-dataset runs record [dataset_id]
+    so the response always tells the caller what the query bound.
+    """
+    raw = row["dataset_ids_json"] if "dataset_ids_json" in row.keys() else None
+    if not raw:
+        return None
+    try:
+        ids = json.loads(raw)
+    except json.JSONDecodeError:
+        return None
+    return [str(item) for item in ids] if ids else None
+
+
+@app.post(
+    "/cases/{case_id}/runs",
+    status_code=201,
+    response_model=Run,
+)
+async def create_multi_dataset_run(
+    case_id: str,
+    payload: MultiRunCreate,
+    db=Depends(get_db),
+) -> Run:
+    """Run user SQL across several attached datasets (P3-DATA-003).
+
+    Placeholders bind positionally to the datasets in the order listed, so a
+    query can join files of any supported format:
+
+        SELECT a.region, b.target
+        FROM read_csv_auto(?) a JOIN read_parquet(?) b ON a.id = b.id
+
+    One placeholder per dataset; a mismatch is a 400. The first dataset is the
+    run's primary, which keeps the evidence chain and old code paths working.
+    """
+    _require_case(db, case_id)
+    if not payload.dataset_ids:
+        raise HTTPException(status_code=400, detail="at least one dataset is required")
+    if len(set(payload.dataset_ids)) != len(payload.dataset_ids):
+        raise HTTPException(status_code=400, detail="dataset_ids must be unique")
+
+    placeholders = ", ".join("?" * len(payload.dataset_ids))
+    rows = db.execute(
+        f"SELECT id, stored_path FROM datasets WHERE case_id = ? AND id IN "
+        f"({placeholders})",
+        (case_id, *payload.dataset_ids),
+    ).fetchall()
+    by_id = {row["id"]: row for row in rows}
+    if len(by_id) != len(payload.dataset_ids):
+        missing = [i for i in payload.dataset_ids if i not in by_id]
+        raise HTTPException(
+            status_code=404,
+            detail=f"dataset(s) not found in this case: {', '.join(missing)}",
+        )
+
+    paths = [by_id[dataset_id]["stored_path"] for dataset_id in payload.dataset_ids]
+    try:
+        result = run_query_multi(paths, payload.sql)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error))
+    except Exception as error:
+        raise HTTPException(status_code=400, detail=f"query failed: {error}")
+
+    run = Run(
+        id=str(uuid4()),
+        case_id=case_id,
+        dataset_id=payload.dataset_ids[0],
+        kind="sql",
+        sql=payload.sql,
+        dataset_ids=list(payload.dataset_ids),
+        columns=result["columns"],
+        rows=result["rows"],
+        row_count=result["row_count"],
+        truncated=result["truncated"],
+        executed_at=datetime.now(timezone.utc),
+    )
+    db.execute(
+        "INSERT INTO runs (id, case_id, dataset_id, kind, sql, code, "
+        "dataset_ids_json, columns_json, rows_json, row_count, truncated, "
+        "executed_at) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (
+            run.id,
+            run.case_id,
+            run.dataset_id,
+            run.kind,
+            run.sql,
+            None,
+            json.dumps(run.dataset_ids),
+            json.dumps(run.columns),
+            json.dumps(run.rows),
+            run.row_count,
+            1 if run.truncated else 0,
+            run.executed_at.isoformat(),
+        ),
+    )
+    return run
+
+
+def _remap_dataset_ids(raw: str | None, dataset_ids: dict[str, str]) -> str:
+    """Repoint a duplicated run's dataset list at the copy's own datasets."""
+    if not raw:
+        return json.dumps(list(dataset_ids.values())[:1]) if dataset_ids else "[]"
+    try:
+        listed = json.loads(raw)
+    except json.JSONDecodeError:
+        return json.dumps(list(dataset_ids.values())[:1]) if dataset_ids else "[]"
+    return json.dumps([dataset_ids.get(item) for item in listed])
+
+
 def _require_dataset(db, case_id: str, dataset_id: str) -> Dataset:
     row = db.execute(
         "SELECT id, case_id, filename, stored_path, format, created_at FROM datasets "
@@ -545,9 +662,10 @@ async def create_run(
         executed_at=datetime.now(timezone.utc),
     )
     db.execute(
-        "INSERT INTO runs (id, case_id, dataset_id, kind, sql, code, columns_json, "
-        "rows_json, row_count, truncated, executed_at) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO runs (id, case_id, dataset_id, kind, sql, code, "
+        "dataset_ids_json, columns_json, rows_json, row_count, truncated, "
+        "executed_at) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         (
             run.id,
             run.case_id,
@@ -555,6 +673,7 @@ async def create_run(
             run.kind,
             run.sql,
             run.code,
+            json.dumps([run.dataset_id]),
             json.dumps(run.columns),
             json.dumps(run.rows),
             run.row_count,
@@ -605,9 +724,10 @@ async def create_python_run(
         executed_at=datetime.now(timezone.utc),
     )
     db.execute(
-        "INSERT INTO runs (id, case_id, dataset_id, kind, sql, code, columns_json, "
-        "rows_json, row_count, truncated, executed_at) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO runs (id, case_id, dataset_id, kind, sql, code, "
+        "dataset_ids_json, columns_json, rows_json, row_count, truncated, "
+        "executed_at) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         (
             run.id,
             run.case_id,
@@ -615,6 +735,7 @@ async def create_python_run(
             run.kind,
             run.sql,
             run.code,
+            json.dumps([run.dataset_id]),
             json.dumps(run.columns),
             json.dumps(run.rows),
             run.row_count,
@@ -630,8 +751,9 @@ async def list_runs(case_id: str, db=Depends(get_db)) -> list[RunSummary]:
     """List analysis runs for a case, without the heavy result rows."""
     _require_case(db, case_id)
     rows = db.execute(
-        "SELECT id, case_id, dataset_id, kind, sql, code, row_count, truncated, "
-        "executed_at FROM runs WHERE case_id = ? ORDER BY executed_at DESC",
+        "SELECT id, case_id, dataset_id, kind, sql, code, dataset_ids_json, "
+        "row_count, truncated, executed_at FROM runs "
+        "WHERE case_id = ? ORDER BY executed_at DESC",
         (case_id,),
     ).fetchall()
     return [
@@ -642,6 +764,7 @@ async def list_runs(case_id: str, db=Depends(get_db)) -> list[RunSummary]:
             kind=row["kind"],
             sql=row["sql"],
             code=row["code"],
+            dataset_ids=_dataset_ids_of(row),
             row_count=row["row_count"],
             truncated=bool(row["truncated"]),
             executed_at=row["executed_at"],
@@ -655,8 +778,9 @@ async def get_run(case_id: str, run_id: str, db=Depends(get_db)) -> Run:
     """Reopen a persisted analysis run, including its result rows."""
     _require_case(db, case_id)
     row = db.execute(
-        "SELECT id, case_id, dataset_id, kind, sql, code, columns_json, rows_json, "
-        "row_count, truncated, executed_at FROM runs WHERE id = ? AND case_id = ?",
+        "SELECT id, case_id, dataset_id, kind, sql, code, dataset_ids_json, "
+        "columns_json, rows_json, row_count, truncated, executed_at "
+        "FROM runs WHERE id = ? AND case_id = ?",
         (run_id, case_id),
     ).fetchone()
     if row is None:
@@ -668,6 +792,7 @@ async def get_run(case_id: str, run_id: str, db=Depends(get_db)) -> Run:
         kind=row["kind"],
         sql=row["sql"],
         code=row["code"],
+        dataset_ids=_dataset_ids_of(row),
         columns=json.loads(row["columns_json"]),
         rows=json.loads(row["rows_json"]),
         row_count=row["row_count"],
@@ -865,8 +990,8 @@ async def validate_finding(
     finding = await get_finding(case_id, finding_id, db)
 
     run_row = db.execute(
-        "SELECT id, case_id, dataset_id, kind, sql, columns_json, rows_json, "
-        "row_count, truncated FROM runs WHERE id = ?",
+        "SELECT id, case_id, dataset_id, kind, sql, dataset_ids_json, "
+        "columns_json, rows_json, row_count, truncated FROM runs WHERE id = ?",
         (finding.run_id,),
     ).fetchone()
     if run_row is None:
@@ -880,20 +1005,33 @@ async def validate_finding(
             detail="validation of Python runs is not supported yet",
         )
 
-    dataset_row = db.execute(
-        "SELECT id, stored_path FROM datasets WHERE id = ?",
-        (run_row["dataset_id"],),
-    ).fetchone()
-    if dataset_row is None:
+    dataset_ids = _dataset_ids_of(run_row) or [run_row["dataset_id"]]
+    dataset_rows = db.execute(
+        "SELECT id, stored_path FROM datasets WHERE id IN "
+        f"({', '.join('?' * len(dataset_ids))})",
+        dataset_ids,
+    ).fetchall()
+    by_id = {row["id"]: row for row in dataset_rows}
+    if len(by_id) != len(dataset_ids):
         raise HTTPException(status_code=500, detail="referenced dataset is missing")
+    dataset_row = by_id[dataset_ids[0]]
 
     checks: list[ValidationCheck] = []
 
     # 1. Reproducibility: rerun the stored SQL and compare to the stored rows.
+    # A multi-dataset run re-binds every placeholder in order.
     try:
-        rerun = run_query(dataset_row["stored_path"], run_row["sql"])
+        if len(dataset_ids) > 1:
+            rerun = run_query_multi(
+                [by_id[dataset_id]["stored_path"] for dataset_id in dataset_ids],
+                run_row["sql"],
+            )
+        else:
+            rerun = run_query(dataset_row["stored_path"], run_row["sql"])
         reproduced = rerun["rows"] == json.loads(run_row["rows_json"])
-    except ValueError as error:
+    except (ValueError, Exception) as error:
+        # A query that no longer binds against the stored data - a renamed
+        # column, a changed schema - is a failed check, not a server error.
         checks.append(
             ValidationCheck(
                 name="reproducibility", passed=False, detail=f"query rejected: {error}"

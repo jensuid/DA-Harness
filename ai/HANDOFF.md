@@ -2,6 +2,12 @@
 
 ## What was completed
 
+- P3-DATA-003 PASSED: one run can now join several attached datasets.
+  POST /cases/{id}/runs takes dataset_ids and binds the k-th placeholder in the
+  SQL to the k-th dataset, in order - any mix of csv/parquet/xlsx. Runs record
+  the full dataset list (dataset_ids_json) with the first kept as the primary,
+  and validation, duplicate, and export/import all carry it.
+
 - P3-CHART-002 PASSED: charts can now render as PNG behind the same interface.
   charts.py is now a shared ChartModel plus SVG and PNG backends, so the two
   cannot drift apart; the PNG path draws at 2x and downscales with LANCZOS.
@@ -39,6 +45,22 @@
 Create Case -> Question -> Load CSV -> Profile -> SQL Analysis
 -> Finding -> Evidence chain -> Validation (rerun) -> Save -> Reopen
 ```
+
+## What changed (P3-DATA-003)
+
+- server/app/analysis.py: `run_query_multi(paths, sql)` binds placeholders
+  positionally; `run_query` and the new path share `_execute_read_only`.
+- server/app/main.py: `POST /cases/{case_id}/runs`; `dataset_ids_json` on the
+  runs schema and in every read path; `_remap_dataset_ids` so a duplicated
+  case's runs point at the copy's own datasets; validation reproduces through
+  the multi path and now treats a query that no longer binds as a failed check
+  rather than a 500.
+- server/app/exporter.py: packages carry `dataset_ids` per run; import remaps
+  them to the imported case's datasets.
+- server/tests/test_multi_dataset_runs.py (NEW): 10 tests.
+- Two real bugs surfaced and are pinned by tests: the placeholder regex needed
+  escaping (a literal `?` inside a group is not a regex extension), and an
+  INSERT value list had shifted a column (found by the validation tests).
 
 ## What changed (P3-CHART-002)
 

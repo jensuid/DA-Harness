@@ -66,7 +66,7 @@ come first because P3 code generation multiplies the risk.
 | 1 | Hard OS-level sandbox for Python execution — **DONE (P3-SEC-001)** | P2 shipped a process-level read-only guard; P3 code generation multiplies the risk | P4 Security (pulled forward) |
 | 2 | LLM key for the planner (`DAH_LLM_API_KEY`) | Deterministic path is verified; P3 contextual AI needs the real backend | P3 AI |
 | 3 | Raster chart backend — **DONE (P3-CHART-002)** | SVG covers MVP; richer visualization needs PNG/high-DPI | P3 Analysis |
-| 4 | Multiple datasets per case + joins | Core P3 capability; everything below depends on it | P3 Data |
+| 4 | Multiple datasets per case + joins — **DONE (P3-DATA-003)** | Core P3 capability; everything below depends on it | P3 Data |
 | 5 | Guided workflow + stage completion | Turns features into a repeatable process | P3 Analysis workflow |
 | 6 | Richer EDA, segmentation, statistical tests | Depth after the multi-dataset base | P3 Analysis |
 | 7 | Contextual AI assistant, code generation, result interpretation, finding drafting | Only after the deterministic surface is complete | P3 AI |

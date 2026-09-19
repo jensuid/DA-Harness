@@ -43,6 +43,16 @@ class Profile(BaseModel):
     profiled_at: datetime
 
 
+class MultiRunCreate(BaseModel):
+    """A SQL run that touches several attached datasets (P3-DATA-003).
+
+    Placeholders bind positionally to the datasets in the order listed, so a
+    query can join files: one `?` per dataset.
+    """
+    sql: str
+    dataset_ids: list[str]
+
+
 class RunCreate(BaseModel):
     sql: str
 
@@ -62,6 +72,10 @@ class Run(BaseModel):
     kind: str = "sql"
     sql: str | None = None
     code: str | None = None
+    # Every dataset the run touches. A single-dataset run has [dataset_id];
+    # a join run lists them in placeholder order (P3-DATA-003). Absent on runs
+    # created before that task, which are single-dataset by construction.
+    dataset_ids: list[str] | None = None
     columns: list[str]
     rows: list[list[Any]]
     row_count: int
@@ -76,6 +90,7 @@ class RunSummary(BaseModel):
     kind: str = "sql"
     sql: str | None = None
     code: str | None = None
+    dataset_ids: list[str] | None = None
     row_count: int
     truncated: bool
     executed_at: datetime

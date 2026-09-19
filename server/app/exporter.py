@@ -48,6 +48,27 @@ def _read_bytes(path: str) -> str:
         return ""
 
 
+def _dataset_ids_of(row) -> list[str] | None:
+    """The datasets a run touches, as recorded (None for older packages)."""
+    raw = row["dataset_ids_json"] if "dataset_ids_json" in row.keys() else None
+    if not raw:
+        return None
+    try:
+        ids = json.loads(raw)
+    except json.JSONDecodeError:
+        return None
+    return [str(item) for item in ids] if ids else None
+
+
+def _import_dataset_ids(run: dict, dataset_ids: dict[str, str]) -> str:
+    """Re-map a package run's dataset list to the imported case's own ids."""
+    listed = run.get("dataset_ids")
+    if not listed:
+        # Older packages name one dataset; the column keeps the remapped id.
+        return json.dumps([dataset_ids.get(run.get("dataset_id"))])
+    return json.dumps([dataset_ids.get(dataset_id) for dataset_id in listed])
+
+
 def _chart_format(path: Path) -> str:
     """The artifact format, sniffed from its bytes (PNG magic, else SVG)."""
     try:
@@ -103,6 +124,7 @@ def export_case(db, case_id: str) -> dict | None:
         {
             "id": row["id"],
             "dataset_id": row["dataset_id"],
+            "dataset_ids": _dataset_ids_of(row),
             "kind": row["kind"],
             "sql": row["sql"],
             "code": row["code"],
@@ -113,8 +135,9 @@ def export_case(db, case_id: str) -> dict | None:
             "executed_at": row["executed_at"],
         }
         for row in db.execute(
-            "SELECT id, dataset_id, kind, sql, code, columns_json, rows_json, "
-            "row_count, truncated, executed_at FROM runs WHERE case_id = ? "
+            "SELECT id, dataset_id, dataset_ids_json, kind, sql, code, "
+            "columns_json, rows_json, row_count, truncated, executed_at "
+            "FROM runs WHERE case_id = ? "
             "ORDER BY executed_at",
             (case_id,),
         ).fetchall()
@@ -293,9 +316,10 @@ def import_package(db, package: dict, data_dir: Path) -> dict:
         new_run_id = str(uuid4())
         run_ids[run["id"]] = new_run_id
         db.execute(
-            "INSERT INTO runs (id, case_id, dataset_id, kind, sql, code, columns_json, "
-            "rows_json, row_count, truncated, executed_at) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO runs (id, case_id, dataset_id, kind, sql, code, "
+            "dataset_ids_json, columns_json, rows_json, row_count, truncated, "
+            "executed_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 new_run_id,
                 new_case_id,
@@ -303,6 +327,7 @@ def import_package(db, package: dict, data_dir: Path) -> dict:
                 run.get("kind") or "sql",
                 run.get("sql"),
                 run.get("code"),
+                _import_dataset_ids(run, dataset_ids),
                 json.dumps(run.get("columns") or []),
                 json.dumps(run.get("rows") or []),
                 run.get("row_count") or 0,

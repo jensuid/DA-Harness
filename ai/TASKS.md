@@ -108,7 +108,7 @@ AI code-generation work multiplies the risk of the P2 soft sandbox.
 |---------|-----------|----------|--------|--------------|--------------|
 | P3-SEC-001 | Analysis Workspace (hardening) | M | DONE | P2-ANALYSIS-008 | Python runs in a separate process under an OS sandbox; writes outside scratch, network, and runaway CPU are bounded and reported as 400 |
 | P3-CHART-002 | Analysis Workspace (raster charts) | M | DONE | P3-SEC-001 | PNG rendering behind the same interface; bar geometry and export round trip verified |
-| P3-DATA-003 | Data Layer (multi-dataset) | M | TODO | P2 done | Multiple datasets per case with joins |
+| P3-DATA-003 | Data Layer (multi-dataset) | M | DONE | P2 done | Join runs across attached files; validation, duplicate, export all carry the dataset list |
 
 ### P3-SEC-001 contract
 
@@ -194,4 +194,48 @@ TESTS: 9 raster tests - real image, determinism, bar geometry by pixel scan,
        multi-series, rejections, SVG default, PNG and SVG API round trips.
 VERIFICATION: pytest (94 passed) + verification/p2/verify_p2.py PASS.
 STATE UPDATE: mark P3-CHART-002 done on pass.
+```
+
+### P3-DATA-003 contract
+
+```
+TASK ID: P3-DATA-003
+MILESTONE: P3 V1
+CAPABILITY: Data Layer (multi-dataset)
+GOAL: Let one analysis run join several attached datasets.
+
+CONTEXT: attaching several datasets per case already worked (the datasets table
+         is case-scoped); the query layer bound every placeholder to a single
+         file, so joins across attached files were impossible.
+INPUTS: a case, two or more attached datasets, and one SQL statement with one
+        placeholder per dataset.
+RELEVANT FILES: server/app/analysis.py, server/app/main.py, server/app/models.py,
+                server/app/db.py, server/app/exporter.py,
+                server/tests/test_multi_dataset_runs.py (NEW)
+REQUIRED CHANGE: run_query_multi binds the k-th placeholder to the k-th dataset
+         positionally; new POST /cases/{id}/runs endpoint; runs store
+         dataset_ids_json alongside the single dataset_id kept as the primary;
+         validation re-runs through the multi path; duplicate remaps the list to
+         the copy's own datasets; export/import carries it as a JSON list.
+NON-GOALS: cross-case datasets, a join builder UI, multi-dataset Python runs
+           (the Python handle stays single-dataset - documented).
+CONSTRAINTS: the single-dataset endpoints and their responses are unchanged;
+             placeholder count must equal dataset count (a mismatch is a 400,
+             never a guess); the read-only gate and row cap apply unchanged.
+ACCEPTANCE CRITERIA:
+- [x] a join across two attached files returns correct results
+- [x] binding is positional - swapping the dataset list changes which file each
+      placeholder reads
+- [x] placeholder/dataset count mismatch, unknown dataset, and duplicate ids are
+      clean 400/404s
+- [x] multi runs are read-only and reopen/list with their dataset list
+- [x] a finding on a join run validates (reproduces) through the multi path
+- [x] duplicating a case repoints the copied run at the copied datasets
+- [x] export/import round trips a join run with its dataset list
+- [x] full suite and the P2 gate still pass
+TESTS: 10 tests - join correctness, positional binding, count mismatch, unknown
+       dataset, uniqueness, read-only, reopen/list, finding validation,
+       duplicate remap, export round trip.
+VERIFICATION: pytest (104 passed) + verification/p2/verify_p2.py PASS.
+STATE UPDATE: mark P3-DATA-003 done on pass.
 ```

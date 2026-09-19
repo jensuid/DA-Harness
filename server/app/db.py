@@ -64,6 +64,7 @@ CREATE TABLE IF NOT EXISTS runs (
     kind TEXT NOT NULL DEFAULT 'sql',
     sql TEXT,
     code TEXT,
+    dataset_ids_json TEXT,
     columns_json TEXT NOT NULL,
     rows_json TEXT NOT NULL,
     row_count INTEGER NOT NULL,
@@ -131,6 +132,9 @@ def get_connection(db_path: Path = DB_PATH) -> Iterator[sqlite3.Connection]:
         # Runs created before P2-ANALYSIS-008 were SQL-only.
         _ensure_column(conn, "runs", "kind", "TEXT NOT NULL DEFAULT 'sql'")
         _ensure_column(conn, "runs", "code", "TEXT")
+        # Runs created before P3-DATA-003 touch a single dataset; the JSON list
+        # is the full set, dataset_id kept as the primary for old code paths.
+        _ensure_column(conn, "runs", "dataset_ids_json", "TEXT")
         yield conn
         conn.commit()
     finally:

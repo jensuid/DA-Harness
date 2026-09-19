@@ -54,21 +54,21 @@
     "semantic_hash": ""
   },
   "server/app/main.py": {
-    "mtime": 1789777751.025647,
-    "seen": 1789778008.611731,
-    "ast_hash": "f6c7be60f4bb0f6b139f24323c9b591f",
+    "mtime": 1789780455.9234233,
+    "seen": 1789781042.671231,
+    "ast_hash": "8ac5e9aaa653b13bbd779fe586f7d047",
     "semantic_hash": ""
   },
   "server/app/models.py": {
-    "mtime": 1789777507.5177836,
-    "seen": 1789777667.622085,
-    "ast_hash": "a5ec5da788918b9d4698f0c9ba8f2b08",
+    "mtime": 1789780427.214629,
+    "seen": 1789781042.671235,
+    "ast_hash": "590ba372bcf998a09f07ae7e7b75b169",
     "semantic_hash": ""
   },
   "server/pyproject.toml": {
-    "mtime": 1789773829.5508618,
-    "seen": 1789774069.1254568,
-    "ast_hash": "f84b1b3a7d0ef8ccb90e2ee95bf1d904",
+    "mtime": 1789780761.511765,
+    "seen": 1789781042.671256,
+    "ast_hash": "3fd621add8378cd6f600a21afeaece98",
     "semantic_hash": ""
   },
   "server/tests/__init__.py": {
@@ -168,9 +168,9 @@
     "semantic_hash": ""
   },
   "ai/CURRENT_STATE.md": {
-    "mtime": 1789780253.2019165,
-    "seen": 1789780273.012186,
-    "ast_hash": "ea5b31f28d97c5d0944cebf559200501",
+    "mtime": 1789781037.7746375,
+    "seen": 1789781042.6714082,
+    "ast_hash": "deb9239fb19ae2b07852cc4d5faefc36",
     "semantic_hash": ""
   },
   "ai/DECISIONS.md": {
@@ -180,15 +180,15 @@
     "semantic_hash": "25b5adff030d3b2aab676170e54ca24e"
   },
   "ai/HANDOFF.md": {
-    "mtime": 1789780267.2134922,
-    "seen": 1789780273.012223,
-    "ast_hash": "989c73064dbc4afdecab38b6fba76b0e",
+    "mtime": 1789781037.7757685,
+    "seen": 1789781042.6714182,
+    "ast_hash": "833856f9b1849cdc671c472f7c47a9d6",
     "semantic_hash": ""
   },
   "ai/TASKS.md": {
-    "mtime": 1789780267.1037407,
-    "seen": 1789780273.012233,
-    "ast_hash": "c637a5725367d37e59eea61528cf46ab",
+    "mtime": 1789781037.7740643,
+    "seen": 1789781042.6714282,
+    "ast_hash": "ebffc7d8f5e7d7940de01b7c1d7c14a5",
     "semantic_hash": ""
   },
   "verification/p0/REPORT.md": {
@@ -258,9 +258,9 @@
     "semantic_hash": ""
   },
   "server/app/charts.py": {
-    "mtime": 1789776633.110161,
-    "seen": 1789776790.111691,
-    "ast_hash": "135e1631b5f66d39f8d943f9508603a7",
+    "mtime": 1789780737.2701373,
+    "seen": 1789781042.671215,
+    "ast_hash": "c5e373e5b6a9d7787a26f28413f0ed34",
     "semantic_hash": ""
   },
   "server/tests/test_charts.py": {
@@ -288,9 +288,9 @@
     "semantic_hash": ""
   },
   "server/app/exporter.py": {
-    "mtime": 1789777743.716172,
-    "seen": 1789778008.6117241,
-    "ast_hash": "bb3919ff57a958cb05b5cf3ef179ea9b",
+    "mtime": 1789780497.3498046,
+    "seen": 1789781042.671227,
+    "ast_hash": "1adc42c132249234be98bf9e91e7ca15",
     "semantic_hash": ""
   },
   "server/tests/test_export.py": {
@@ -306,9 +306,9 @@
     "semantic_hash": ""
   },
   "verification/p2/REPORT.md": {
-    "mtime": 1789780247.750723,
-    "seen": 1789780273.012296,
-    "ast_hash": "640a9f333ecbee83e38172604046eea9",
+    "mtime": 1789780857.5604534,
+    "seen": 1789781042.671464,
+    "ast_hash": "7df640ec350db2099546661f398ae943",
     "semantic_hash": ""
   },
   "server/app/python_worker.py": {
@@ -324,9 +324,15 @@
     "semantic_hash": ""
   },
   "ai/ROADMAP.md": {
-    "mtime": 1789780257.153004,
-    "seen": 1789780273.012228,
-    "ast_hash": "b5d2b3efa7d438f07b84df049fcf5061",
+    "mtime": 1789781037.7752576,
+    "seen": 1789781042.671423,
+    "ast_hash": "311169b51fe854ba9cc5eceea5faa71e",
+    "semantic_hash": ""
+  },
+  "server/tests/test_charts_raster.py": {
+    "mtime": 1789780752.7919745,
+    "seen": 1789781042.671284,
+    "ast_hash": "1d6856d8b4073f7dcbcea3603bcf3ba4",
     "semantic_hash": ""
   }
 }

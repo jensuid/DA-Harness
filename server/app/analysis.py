@@ -4,6 +4,8 @@ Analytical queries only. This module never writes Analysis Case state; that stay
 in db.py on SQLite (DEC-001).
 """
 
+import re
+
 import duckdb
 
 _XLSX_CACHE: dict[str, str] = {}
@@ -56,6 +58,10 @@ def _reader_for(path: str) -> tuple[str, str]:
 
 
 _DATASET_PLACEHOLDERS = ("read_csv_auto(?)", "read_parquet(?)")
+# The same placeholders, as one pattern so a query can be split positionally
+# and the k-th occurrence bound to the k-th dataset (run_query_multi). Each is
+# escaped: the literal "?" inside a group is not a regex extension.
+_PLACEHOLDER_RE = re.compile("|".join(re.escape(p) for p in _DATASET_PLACEHOLDERS))
 
 
 def _bind_dataset(sql: str, path: str) -> tuple[str, list]:
@@ -229,19 +235,43 @@ def _duplicate_row_count(connection, path: str) -> int:
     return total - distinct
 
 
-def run_query(path: str, sql: str, limit: int = 1000) -> dict:
-    """Run a read-only SQL query against a CSV file.
+def _bind_datasets(sql: str, paths: list[str]) -> tuple[str, list]:
+    """Bind the k-th dataset placeholder in user SQL to the k-th file.
 
-    The dataset path is bound as a parameter; only the read-only check inspects
-    the query text. Results are capped to avoid unbounded memory use.
+    The natural join form works for any mix of formats:
+
+        SELECT a.region, b.target
+        FROM read_csv_auto(?) a JOIN read_parquet(?) b ON a.id = b.id
+
+    One placeholder per file, in the order the caller lists them; a mismatch
+    between the two counts is a caller error, not a guess.
     """
-    if not _is_read_only(sql):
-        raise ValueError("only single read-only SELECT queries are supported")
+    if not paths:
+        raise ValueError("at least one dataset is required for a multi-dataset run")
+    matches = list(_PLACEHOLDER_RE.finditer(sql))
+    if len(matches) != len(paths):
+        raise ValueError(
+            f"the query references {len(matches)} dataset placeholder(s) "
+            f"but {len(paths)} dataset(s) were supplied"
+        )
+    parts: list[str] = []
+    params: list[str] = []
+    last = 0
+    for match, path in zip(matches, paths):
+        reader_call, bind_path = _reader_for(path)
+        parts.append(sql[last : match.start()])
+        parts.append(reader_call)
+        params.append(bind_path)
+        last = match.end()
+    parts.append(sql[last:])
+    return "".join(parts), params
 
+
+def _execute_read_only(sql: str, params: list, limit: int) -> dict:
+    """Run an already-bound read-only query and cap its result."""
     connection = duckdb.connect()
     try:
-        bound_sql, params = _bind_dataset(sql, path)
-        reader = connection.execute(bound_sql, params)
+        reader = connection.execute(sql, params)
         columns = [column[0] for column in (reader.description or [])]
         rows = reader.fetchmany(limit + 1)
     finally:
@@ -256,3 +286,28 @@ def run_query(path: str, sql: str, limit: int = 1000) -> dict:
         "row_count": len(rows),
         "truncated": truncated,
     }
+
+
+def run_query(path: str, sql: str, limit: int = 1000) -> dict:
+    """Run a read-only SQL query against one attached file.
+
+    The dataset path is bound as a parameter; only the read-only check inspects
+    the query text. Results are capped to avoid unbounded memory use.
+    """
+    if not _is_read_only(sql):
+        raise ValueError("only single read-only SELECT queries are supported")
+    bound_sql, params = _bind_dataset(sql, path)
+    return _execute_read_only(bound_sql, params, limit)
+
+
+def run_query_multi(paths: list[str], sql: str, limit: int = 1000) -> dict:
+    """Run a read-only SQL query across several attached files (P3-DATA-003).
+
+    Placeholders bind positionally, so a query can join any mix of formats the
+    engine reads. The read-only gate and the row cap are the same as the
+    single-file path.
+    """
+    if not _is_read_only(sql):
+        raise ValueError("only single read-only SELECT queries are supported")
+    bound_sql, params = _bind_datasets(sql, paths)
+    return _execute_read_only(bound_sql, params, limit)

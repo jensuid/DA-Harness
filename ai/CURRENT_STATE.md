@@ -7,11 +7,13 @@
 case management - rename, duplicate, delete (P2-CASE-010);
 AI planning with structured output (P2-AI-011); case export as a self-contained
 JSON package with import round trip (P2-CASE-012)**
-- **Active task:** P3 V1 in progress - P3-SEC-001, P3-CHART-002 DONE
+- **Active task:** P3 V1 in progress - P3-SEC-001, P3-CHART-002, P3-DATA-003 DONE
 - **Known issues:** none
-- **Test status:** server 94 passed (6 hard-sandbox + 9 raster-chart tests) (5 new for export); web 2 passed
-- **Next task:** P3-DATA-003 multiple datasets per case with joins; then guided
-  workflow + stage completion
+- **Test status:** server 104 passed (6 hard-sandbox, 9 raster-chart, 10 multi-dataset tests) (5 new for export); web 2 passed
+- **Next task:** P3-FLOW-004 guided workflow + stage completion; then richer EDA /
+  segmentation / statistical tests (P3-ANALYSIS-005). Note: configuring
+  DAH_LLM_API_KEY is a user action - the planner path stays deterministic
+  until then
 - **Blockers:** none
 
 ## P2 progress
