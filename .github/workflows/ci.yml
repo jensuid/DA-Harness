@@ -114,6 +114,13 @@ jobs:
           name: sidecar
           path: desktop/src-tauri/binaries
 
+      - name: Restore the sidecar's executable bit
+        # The artifact transport preserves contents but not permissions, and
+        # spawn() needs +x. The tests assert a real packaged binary works, so
+        # this restores what the transfer lost rather than making the test
+        # tolerant of a binary it could not run.
+        run: chmod +x desktop/src-tauri/binaries/dah-core-*
+
       - name: Install uv
         uses: astral-sh/setup-uv@v5
 
