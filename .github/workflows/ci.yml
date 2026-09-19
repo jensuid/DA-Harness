@@ -125,6 +125,21 @@ jobs:
           uv venv .venv --python ${{ env.PYTHON_VERSION }}
           uv pip install --python .venv/bin/python -e ".[dev,charts]"
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Build the desktop web bundle
+        # tauri::generate_context!() embeds web/dist-desktop at compile time,
+        # so cargo test cannot build the shell without it - the path exists on
+        # a developer's machine and nowhere else.
+        working-directory: web
+        run: |
+          npm ci --no-audit --no-fund
+          npm run build:desktop
+
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
