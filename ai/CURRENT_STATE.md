@@ -1,17 +1,18 @@
 # DAH - Current State
 
- - **Phase:** P2 MVP - COMPLETE (verification/p2/REPORT.md: PASS)
+ - **Phase:** P3 V1 - IN PROGRESS (P2 gate re-verified PASS during P3-SHELL-008)
 - **Global roadmap status:** ai/ROADMAP.md (phase tracker - current stage, phase table, next-phase entry checklist)
 - **Milestone status:** P1 Vertical Slice PASSED (verification/p1/REPORT.md); P0 PASSED
 - **Completed capabilities:** FastAPI core; SQLite case persistence; DuckDB engine; Vite/React shell; P0 verification harness; CSV dataset attachment; deterministic dataset profiling; read-only SQL analysis runs with persisted results; findings with evidence chain; validation via rerun; parquet + xlsx ingest; deep profiling; **read-only Python execution with persisted results (P2-ANALYSIS-008); chart images rendered and persisted from run results (P2-ANALYSIS-009);
 case management - rename, duplicate, delete (P2-CASE-010);
 AI planning with structured output (P2-AI-011); case export as a self-contained
 JSON package with import round trip (P2-CASE-012)**
-- **Active task:** P3 V1 in progress - P3-SEC-001, P3-CHART-002, P3-DATA-003, P3-FLOW-004, P3-ANALYSIS-005, P3-EVIDENCE-006, P3-CASE-007 DONE. Remaining: Tauri desktop shell (roadmap item 10)
+- **Active task:** P3 V1 - P3-SEC-001, P3-CHART-002, P3-DATA-003, P3-FLOW-004, P3-ANALYSIS-005, P3-EVIDENCE-006, P3-CASE-007, P3-SHELL-008 all DONE. Remaining P3 item: 7, the contextual AI assistant (code generation, result interpretation, finding drafting). The planner backend exists and is live via DAH_LLM_API_KEY, but the assistant surface is not built.
 - **Known issues:** none
-- **Test status:** server 145 passed (+6 history, +10 templates, +4 search); web 2 passed
-- **Next task:** Tauri desktop shell (roadmap item 10 - verify the Rust toolchain and
-  network first). Contextual AI still needs DAH_LLM_API_KEY (a user action).
+- **Test status:** server 155 passed; web 2 passed; desktop shell 7 Rust tests (5 unit + 2 e2e, `cd desktop/src-tauri && cargo test [--features e2e]`)
+- **Next task:** P3 item 7, the contextual AI assistant. DAH_LLM_API_KEY is
+  already configured in server/.env (the P2 gate's plan step reports source=llm),
+  so this is an agent task now, not a user action.
   Carried: validation of Python runs (the one place the trust loop answers
   "not supported" - now unblocked by the hard sandbox) and a single-dataset
   delete endpoint
@@ -43,6 +44,10 @@ JSON package with import round trip (P2-CASE-012)**
 - Server tests: `cd server && .venv/bin/python -m pytest`
 - Web dev: `cd web && npm run dev` (proxies /api to :8123)
 - Web build: `cd web && npm run build`
+- Desktop shell, dev (serves the embedded bundle): `cd desktop && npm install && npm run dev`
+- Desktop shell, HMR (vite dev server, pinned to port 5273): `cd desktop && npm run dev:hmr`
+- Desktop shell, packaged app: `cd server && ./build_sidecar.sh && cd ../desktop && npm run build`
+- Desktop shell tests: `cd desktop/src-tauri && cargo test --features e2e`
 - Web tests: `cd web && npm test`
 - P0 verification: `python3 verification/p0/verify_p0.py` (needs port bind)
 - P1 verification: `server/.venv/bin/python verification/p1/verify_p1.py` (in-process)

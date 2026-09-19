@@ -138,6 +138,11 @@ def test_child_env_scrubs_api_secrets(tmp_path, monkeypatch) -> None:
     assert env["PYTHONPATH"] == str(python_exec._SERVER_ROOT)
 
 
+# Wall-clock slack for the parent to kill the group, reap it and remove the
+# scratch directory after the deadline itself has been reached.
+_TEARDOWN_SLACK_SECONDS = 30
+
+
 def test_kill_group_terminates_the_tree() -> None:
     """A timeout kills the worker and anything it spawned, not just the shell."""
     child = subprocess.Popen(
@@ -165,7 +170,17 @@ def test_runaway_loop_is_bounded_and_reported(tmp_path) -> None:
         response = _python(client, case_id, dataset_id, code)
         elapsed = time.time() - started
 
-    assert elapsed < python_exec._DEFAULT_TIMEOUT_SECONDS + python_exec._STARTUP_GRACE_SECONDS
+    # The parent's own deadline is exactly timeout + grace, and reaching it is
+    # the *expected* path when the child's own alarm is slow to land - so the
+    # bound here is that deadline plus teardown, not the deadline itself.
+    # Comparing against the same number the implementation uses would fail the
+    # instant a kill, a wait or a tempdir cleanup pushes past it by a tick.
+    assert (
+        elapsed
+        < python_exec._DEFAULT_TIMEOUT_SECONDS
+            + python_exec._STARTUP_GRACE_SECONDS
+            + _TEARDOWN_SLACK_SECONDS
+    )
     assert response.status_code == 400, response.text
     assert "time limit" in response.json()["detail"]
 

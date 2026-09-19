@@ -46,8 +46,15 @@ def _full_case(client) -> str:
     return case_id
 
 
-def test_export_contains_every_section(tmp_path) -> None:
+def test_export_contains_every_section(tmp_path, monkeypatch) -> None:
     _temp_env(tmp_path)
+    # This case's plan must be the deterministic one so the exported source is
+    # stable. The suite skips loading server/.env, but a key already present in
+    # the environment - inherited by the pytest subprocess when the P2 gate,
+    # which does load .env, runs the suite - would otherwise switch the engine
+    # to the LLM and flip this assertion.
+    for var in ("DAH_LLM_API_KEY", "OPENAI_API_KEY"):
+        monkeypatch.delenv(var, raising=False)
 
     with TestClient(app) as client:
         case_id = _full_case(client)

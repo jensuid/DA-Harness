@@ -4,13 +4,13 @@ Source of truth for **where we are** on the global roadmap
 (`docs/Implementation Roadmap.md`). Every phase completion must update this
 file together with `CURRENT_STATE.md` and `TASKS.md`.
 
-**Current stage: P2 MVP — COMPLETE. P3 V1 — NOT STARTED.**
+**Current stage: P3 V1 — IN PROGRESS (all but contextual AI delivered).**
 
 ```
 P0 Foundation          DONE  ✓
 P1 Vertical Slice      DONE  ✓
-P2 MVP                 DONE  ✓   ← we are here (all gates green)
-P3 V1                  NOT STARTED
+P2 MVP                 DONE  ✓   (all gates green)
+P3 V1                  IN PROGRESS  ← we are here
 P4 Production Candidate NOT STARTED
 P5 Production Grade    NOT STARTED
 P6 Evolution           NOT STARTED
@@ -28,7 +28,7 @@ repeatable**.
 | P0 Foundation | Runnable app, cross-layer comms, basic persistence, tests | DONE | PASS | `verification/p0/REPORT.md` |
 | P1 Vertical Slice | One complete analytical case end to end | DONE | PASS | `verification/p1/REPORT.md` |
 | P2 MVP | Usable analytical application; inspectable, reproducible case | DONE | PASS | `verification/p2/REPORT.md` (16 steps, 10 exit criteria) |
-| P3 V1 | Repeated real-world use: multi-dataset, joins, richer EDA, contextual AI | NOT STARTED | — | — |
+| P3 V1 | Repeated real-world use: multi-dataset, joins, richer EDA, contextual AI | IN PROGRESS | P2 gate PASS (re-verified) | hard sandbox, raster charts, multi-dataset joins, workflow, EDA, evidence graph, case reuse, desktop shell all DONE; contextual AI (item 7) outstanding |
 | P4 Production Candidate | Serious software: reliability, security, performance, UX, observability | NOT STARTED | — | — |
 | P5 Production Grade | Maintainable, distributable, secure product | NOT STARTED | — | — |
 | P6 Post-Launch Evolution | Scale and intelligence | NOT STARTED | — | — |
@@ -51,8 +51,9 @@ repeatable**.
   case management (rename/duplicate/delete); structured AI planning
   (deterministic default, LLM behind `DAH_LLM_API_KEY`); case export/import
   round trip.
-- **Test status:** server 79 passed; web 2 passed.
-- **Active task:** none — P2 milestone closed.
+- **Test status:** server 155 passed; web 2 passed; desktop shell 7 Rust tests (5 unit + 2 e2e).
+- **Active task:** P3 item 7, the contextual AI assistant (code generation,
+  result interpretation, finding drafting) - the last open P3 item.
 - **Known issues / blockers:** none.
 - **Repository:** private, `master` tracks `origin/master`.
 
@@ -64,7 +65,7 @@ come first because P3 code generation multiplies the risk.
 | # | Capability | Why now | Roadmap section |
 |---|-----------|---------|-----------------|
 | 1 | Hard OS-level sandbox for Python execution — **DONE (P3-SEC-001)** | P2 shipped a process-level read-only guard; P3 code generation multiplies the risk | P4 Security (pulled forward) |
-| 2 | LLM key for the planner (`DAH_LLM_API_KEY`) | Deterministic path is verified; P3 contextual AI needs the real backend | P3 AI |
+| 2 | LLM key for the planner (`DAH_LLM_API_KEY`) — **configured** (`server/.env`; the P2 gate's plan step reports `source=llm`) | Deterministic path is verified; P3 contextual AI needs the real backend | P3 AI |
 | 3 | Raster chart backend — **DONE (P3-CHART-002)** | SVG covers MVP; richer visualization needs PNG/high-DPI | P3 Analysis |
 | 4 | Multiple datasets per case + joins — **DONE (P3-DATA-003)** | Core P3 capability; everything below depends on it | P3 Data |
 | 5 | Guided workflow + stage completion — **DONE (P3-FLOW-004)** | Turns features into a repeatable process | P3 Analysis workflow |
@@ -72,7 +73,7 @@ come first because P3 code generation multiplies the risk.
 | 7 | Contextual AI assistant, code generation, result interpretation, finding drafting | Only after the deterministic surface is complete | P3 AI |
 | 8 | Evidence graph / claim-to-source tracing — **DONE (P3-EVIDENCE-006)** | Trust layer for repeated use | P3 Evidence |
 | 9 | Case templates, search, case history — **DONE (P3-CASE-007)** | Repeatability and reuse | P3 Case management |
-| 10 | Tauri desktop shell | Wraps the existing React bundle; post-MVP as planned | Platform decision |
+| 10 | Tauri desktop shell — **DONE (P3-SHELL-008)** | Wraps the existing React bundle; post-MVP as planned | Platform decision |
 
 ## Rules this file enforces
 

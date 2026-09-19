@@ -36,6 +36,7 @@ from app.analysis import profile_csv, run_query, run_query_multi
 from app.eda import EDA_OPS, run_eda
 from app.evidence import build_evidence_graph
 from app.history import build_case_history
+from app.supervisor import start_parent_watchdog
 from app.python_exec import run_python
 from app.workflow import STAGES, case_progress
 from app.charts import render_chart, CHART_KINDS, CHART_FORMATS
@@ -80,6 +81,11 @@ from app.models import (
     Template,
     TemplateCreate,
 )
+
+# Under the desktop shell, end this process when the shell is gone (see
+# app.supervisor). No-op for a hand-started server and under pytest.
+start_parent_watchdog()
+
 
 app = FastAPI(
     title="DAH Harness Core",

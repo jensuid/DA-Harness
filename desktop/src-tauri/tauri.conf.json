@@ -1,0 +1,35 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "DAH",
+  "version": "0.1.0",
+  "identifier": "com.jensuid.dah",
+  "build": {
+    "frontendDist": "../../web/dist-desktop",
+    "beforeDevCommand": "npm --prefix ../web run build:desktop:watch",
+    "beforeBuildCommand": "npm --prefix ../web run build:desktop"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "DAH - Data Analysis Harness",
+        "width": 1280,
+        "height": 800,
+        "resizable": true,
+        "visible": false
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/icon.icns"
+    ],
+    "externalBin": [
+      "binaries/dah-core"
+    ]
+  }
+}

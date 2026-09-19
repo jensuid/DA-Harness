@@ -429,3 +429,81 @@ TESTS: 20 tests - 4 search (question, dataset label, wildcard escaping,
 VERIFICATION: pytest (145 passed) + verification/p2/verify_p2.py PASS.
 STATE UPDATE: mark P3-CASE-007 done on pass.
 ```
+
+### P3-SHELL-008 contract
+
+```
+TASK ID: P3-SHELL-008
+MILESTONE: P3 V1
+CAPABILITY: Desktop shell
+GOAL: DAH becomes a double-clickable app instead of two terminals, without
+      changing the frontend or the core.
+
+CONTEXT: P0-P3 built a browser-served UI over a FastAPI core. Everything works,
+         but starting it means running a Python server and a vite dev server.
+         DEC-001 said the Tauri host would wrap the same React bundle post-MVP;
+         this is that step.
+INPUTS: the existing web/ React bundle (unchanged), server/ (unchanged),
+        a Rust toolchain + npm.
+RELEVANT FILES: desktop/ (NEW: package.json, README.md, .gitignore,
+                src-tauri/{Cargo.toml,Cargo.lock,build.rs,tauri.conf.json,
+                capabilities/default.json,icons/,src/main.rs,src/core_server.rs}),
+                server/app/supervisor.py (NEW), server/dah_core_main.py (NEW),
+                server/dah-core.spec (NEW), server/build_sidecar.sh (NEW),
+                server/tests/test_supervisor.py (NEW),
+                server/app/main.py (watchdog start), web/package.json
+                (build:desktop + build:desktop:watch), web/vite.config.ts
+                (dev port pinned to 5273), .gitignore (web/dist-desktop/,
+                server/build/)
+REQUIRED CHANGE:
+  - host swap only: the shell serves the same React bundle the browser host
+    serves, and the bundle keeps talking to the same FastAPI core over HTTP
+  - the shell spawns the core (the packaged PyInstaller sidecar when present,
+    server/.venv's uvicorn in a dev checkout; DAH_DEV_CORE=1 forces dev),
+    waits for GET /health before showing the window, and stops the core when
+    the window closes or the app exits
+  - the core cannot be orphaned: process-group kill handles the PyInstaller
+    bootloader's forked child, and a parent-pid watchdog in the core ends it
+    when the shell dies without running any cleanup (a SIGKILL reaches neither
+    a destructor nor a Tauri event)
+  - per-user data dir (DAH_DATA_DIR/DAH_DB_PATH) so a packaged app keeps its
+    cases in app support, not next to the binary
+  - the webview loads only the embedded bundle (no remote URL), so the
+    capability file grants nothing but core:default
+NON-GOALS: signing/notarization (P5), a Windows/Linux build (needs its own
+           icon set and sidecar triple), frontend changes, a one-dir
+           PyInstaller build (would cut the 40s one-file unpack; deferred
+           because it changes how externalBin addresses the binary).
+CONSTRAINTS: no frontend or core behaviour changes; the browser host keeps
+             working exactly as before; the 85MB sidecar is gitignored and
+             never committed.
+ACCEPTANCE CRITERIA:
+- [x] the packaged app opens a window whose webview renders the real DAH UI,
+      with the core answering /health, and closing the window stops the core
+- [x] a debug build serves the embedded bundle - no devUrl that can point the
+      webview at a port nothing is serving
+- [x] SIGKILL of the shell frees port 8123 (the watchdog), so the next launch
+      is not left looking dead
+- [x] cargo test: 5 unit + 2 e2e (live uvicorn through the resolver, and the
+      sidecar path asserting no orphan)
+- [x] server suite (155) and web suite (2) unchanged; P2 gate PASS
+TESTS: 7 Rust tests - resolution for both hosts, the DAH_DEV_CORE override, the
+       health URL, the silent-port gate, a live dev core answering /health, and
+       the sidecar stopping without orphaning its forked child. Plus 7 Python
+       tests for the supervisor watchdog (two live process tests).
+VERIFICATION: cargo test --features e2e; pytest 155 passed; the P2 gate PASS
+              with all 18 steps green; manual: window renders, /health 200,
+              window-close and SIGKILL both free the port.
+STATE UPDATE: mark P3-SHELL-008 done on pass.
+
+### Carried follow-ups (still open)
+
+- Validation of Python runs still answers a clear 400 "not supported yet". The
+  hard sandbox (P3-SEC-001) makes re-execution safe, so the gate is now
+  implementable: rerun the stored script in the sandbox and compare the result
+  shape, the way SQL validation compares rows. Recorded here since P3-ANALYSIS-008.
+- No single-dataset delete endpoint, so nothing can walk a case backwards. It
+  would also make the derived workflow stage's "moves back" property
+  observable (P3-FLOW-004 follow-up). Recorded here since P3-DATA-003.
+- The packaged app is unsigned: macOS gatekeeps the first launch (right-click,
+  Open). Signing and notarization are P5.

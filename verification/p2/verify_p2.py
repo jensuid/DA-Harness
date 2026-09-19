@@ -12,6 +12,7 @@ Emits verification/p2/REPORT.md. Exit code 0 only if every step passes.
 """
 
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -19,6 +20,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from fastapi.testclient import TestClient
+
+# Environment variables that turn the planner into a live LLM caller. The gate's
+# own journey may use them; the test suite it spawns may not.
+_LLM_ENV_VARS = frozenset(
+    {"DAH_LLM_API_KEY", "OPENAI_API_KEY", "DAH_LLM_BASE_URL", "DAH_LLM_MODEL"}
+)
 
 REPO = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(REPO / "server"))
@@ -281,20 +288,35 @@ def main() -> int:
             f"HTTP {image.status_code if image else '-'}",
         )
 
-    # 16. The test suite runs green
+    # 16. The test suite runs green. -rf makes pytest list every failing test
+    # by name, so a single flake is diagnosable from the report instead of
+    # leaving "1 failed" with no way to tell which one.
+    # The LLM credentials are scrubbed from the subprocess on purpose. app.main
+    # skips loading server/.env under pytest, but *this* gate does load it, and a
+    # key inherited by the child would switch the planner to the LLM inside the
+    # suite - a live call per plan, so a slow endpoint makes the run both
+    # sluggish and timing-dependent. Removing the keys restores what the skip
+    # intends: deterministic plans, no network.
+    suite_env = {
+        name: value for name, value in os.environ.items()
+        if name not in _LLM_ENV_VARS
+    }
     tests = subprocess.run(
-        [str(REPO / "server/.venv/bin/python"), "-m", "pytest", "-q"],
+        [str(REPO / "server/.venv/bin/python"), "-m", "pytest", "-q", "-rf"],
         cwd=str(REPO / "server"),
+        env=suite_env,
         capture_output=True,
         text=True,
     )
     suite_ok = tests.returncode == 0
     summary = [line for line in tests.stdout.splitlines() if "passed" in line]
-    record(
-        "Test suite runs",
-        suite_ok,
-        summary[-1].strip() if summary else f"exit {tests.returncode}",
-    )
+    failed_tests = [
+        line.strip() for line in tests.stdout.splitlines() if line.startswith("FAILED")
+    ]
+    detail = summary[-1].strip() if summary else f"exit {tests.returncode}"
+    if failed_tests:
+        detail = detail + " | " + "; ".join(failed_tests)
+    record("Test suite runs", suite_ok, detail)
 
     failures = [name for name, ok, _ in steps if not ok]
     decision = "PASS" if not failures else "FAIL"

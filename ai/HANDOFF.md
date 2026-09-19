@@ -2,6 +2,15 @@
 
 ## What was completed
 
+- P3-SHELL-008 PASSED: DAH is a double-clickable app. A Tauri 2 shell serves the
+  *same* React bundle (`web/`, built into `web/dist-desktop`) and that bundle
+  keeps talking to the *same* FastAPI core over HTTP - a host swap, not a
+  rewrite, exactly as DEC-001 planned. The shell spawns the core (the packaged
+  PyInstaller sidecar, or `server/.venv` uvicorn in a dev checkout), keeps the
+  window hidden until `/health` answers, and stops the core on close and on
+  exit. A parent-pid watchdog ends the core even when the shell is SIGKILLed,
+  which is the death that reaches no Tauri event and no destructor.
+
 - P3-CASE-007 PASSED: a finished investigation is now reusable. `GET /cases?q=`
   finds a case by question or dataset label (case-insensitive, literal
   substring); `GET /cases/{id}/history` replays everything that happened in a
@@ -260,6 +269,31 @@ Create Case -> Question -> Load CSV -> Profile -> SQL Analysis
   from Python, listing alongside SQL, and rejection of write queries, blocked
   imports, filesystem writes, dunder escapes, missing/empty `result`, 404s.
 
+## What changed (P3-SHELL-008)
+
+- desktop/ (NEW): the whole Tauri 2 shell. `src/core_server.rs` is the pure,
+  tested resolution + health-gate logic (`resolve_server_command`,
+  `wait_for_health`, `ServerCommand::to_process`, group-kill `ServerChild`);
+  `src/main.rs` is the window lifecycle; `tauri.conf.json` has **no `devUrl`**,
+  so every build - debug included - serves the embedded bundle and can never
+  point the webview at a port nothing is serving. Capabilities grant only
+  `core:default`; the webview never loads a remote URL, so the desktop bundle
+  is built with an absolute API URL (`VITE_API_URL=http://127.0.0.1:8123`).
+- server/app/supervisor.py (NEW): `start_parent_watchdog()` - a daemon thread
+  that `os._exit(0)`s the core when `DAH_PARENT_PID` is gone. No-op without the
+  variable; rejects junk and <= 0. Called from main.py after the imports.
+- server/dah_core_main.py + dah-core.spec + build_sidecar.sh (NEW): the
+  PyInstaller one-file sidecar and the script that installs it as
+  `desktop/src-tauri/binaries/dah-core-<triple>` (gitignored, 85MB, never
+  committed).
+- web: `build:desktop` and `build:desktop:watch` produce the desktop bundle;
+  `vite.config.ts` pins the dev server to port **5273** with `strictPort` -
+  5173 (vite's default) collides with another local dev server, and a silent
+  port hop is what left the shell's webview on a dead page.
+- Two test-hygiene fixes landed while verifying: `test_export.py` is now
+  hermetic against an ambient LLM key, and the P2 gate no longer leaks
+  `DAH_LLM_API_KEY` into the pytest subprocess it spawns (see below).
+
 ## Sandbox posture (documented, see module docstring)
 
 Blocked: filesystem writes, process execution, network egress, resource
@@ -272,22 +306,38 @@ reported as unsupported (clear 400) rather than faked; that gate is future work.
 
 ## Tests performed (current)
 
-- server pytest: 145 passed (+6 history, +10 templates, +4 search)
-- P2 gate: `server/.venv/bin/python verification/p2/verify_p2.py` PASS
-  (re-verified after each P3 task; the gate re-runs the suite)
+- server pytest: 155 passed (145 + 7 supervisor + 3 env-config)
+- desktop shell: 7 Rust tests - `cd desktop/src-tauri && cargo test` (5 unit)
+  and `cargo test --features e2e` (+2 live-core tests)
+- web: 2 passed
+- P2 gate: `server/.venv/bin/python verification/p2/verify_p2.py` PASS on all
+  18 steps (re-verified during this task; the gate re-runs the suite)
 
 ## Repository state
 
-- Working tree clean; every P3 task so far is one atomic commit, all pushed to
+- Working tree clean; every P3 task is one atomic commit, all pushed to
   `origin/master` (github.com/jensuid/DA-Harness):
   `dfb115b` P3-SEC-001, `2c7b11f` P3-CHART-002, `f5df5d1` P3-DATA-003,
   `967544b` P3-FLOW-004, `7b7e49f` P3-ANALYSIS-005, `ebaa30e` P3-EVIDENCE-006,
-  <this commit> P3-CASE-007
+  P3-CASE-007, <this commit> P3-SHELL-008
+- `.gitignore` covers `web/dist-desktop/`, `server/build/` (the 98MB PyInstaller
+  tree) and `desktop/src-tauri/{target,gen,binaries}` - the 85MB sidecar is
+  never committed.
 - `.git` is writable under the current permission profile (this changed
   mid-session; the earlier read-only restriction is gone).
 
 ## Unresolved problems
 
+- A test-isolation hole is closed but worth remembering: `app.main` skips
+  loading `server/.env` under pytest, but that only stops the *file* load. If
+  `DAH_LLM_API_KEY` is already in the environment - as it was for the pytest
+  subprocess the P2 gate spawns, because the gate itself does load .env - the
+  planner silently switches to the LLM inside the suite. That made the gate
+  both slow (a live call per plan) and flaky (a fast LLM flipped an assertion
+  that expected `source=deterministic`; a slow one fell back and passed). Fixed
+  two ways: the gate scrubs the LLM vars from its subprocess, and
+  `test_export.py` deletes them. Any future runner that spawns the suite must
+  do the same.
 - Python-run validation is still reported as a clear 400 "not supported yet".
   The hard sandbox (P3-SEC-001) unblocks it, but the validation gate itself is
   not yet implemented. Recorded in ai/TASKS.md.
@@ -299,12 +349,12 @@ reported as unsupported (clear 400) rather than faked; that gate is future work.
 
 ## Next action
 
-Remaining P3 is roadmap item 10: the Tauri desktop shell. It wraps the existing
-React bundle (`web/`) around a Rust core that spawns the FastAPI server, so a
-user gets a double-clickable app instead of two terminals. Verify the toolchain
-first - it needs a Rust toolchain plus npm deps; check `cargo --version` and
-network reachability for crates.io before committing to it. The P0 web build
-already produces a static bundle the shell can load.
+P3 has one item left: roadmap item 7, the contextual AI assistant (code
+generation, result interpretation, finding drafting). The planner backend it
+would build on is already live - `DAH_LLM_API_KEY` is configured in
+`server/.env` and the P2 gate's plan step reports `source=llm` - so this is an
+agent task now, not a user action. Everything else in the P3 entry checklist is
+done, including the desktop shell.
 
 Two carried follow-ups, both recorded in ai/TASKS.md and both unblocked by work
 already landed:
@@ -335,7 +385,14 @@ Contextual AI (roadmap item 7) remains BLOCKED on the user setting
 - P1 gate (in-process): `server/.venv/bin/python verification/p1/verify_p1.py`
 - P0 gate binds a port - run it outside the sandbox if it fails
 - Web: `cd web && npm run dev` (deps installed; UI is P0/P1 scope, case creation
-  only)
+  only). The vite dev server is pinned to port **5273** with `strictPort` -
+  5173 collides with another local dev server here, and a silent hop to the
+  next free port is what made the shell show an empty window.
+- Desktop shell: `cd desktop && npm install` once, then `npm run dev` (serves
+  the embedded bundle - what the packaged app serves) or `npm run dev:hmr`
+  (vite dev server, port 5273, true HMR). Packaged: `cd server &&
+  ./build_sidecar.sh && cd ../desktop && npm run build`. Tests:
+  `cd desktop/src-tauri && cargo test --features e2e`.
 - A uvicorn server may still be running on port 8123 from the MVP demo - check
   `curl -s localhost:8123/health` before starting another
 - python-multipart installed; DATA_DIR gitignored

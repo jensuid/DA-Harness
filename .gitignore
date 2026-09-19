@@ -32,3 +32,9 @@ graphify-out/graph.html
 
 # Uploaded datasets (dev)
 server/data/
+
+# Desktop shell build output (Tauri serves this; built by npm run build:desktop)
+web/dist-desktop/
+
+# PyInstaller sidecar build tree (built by server/build_sidecar.sh)
+server/build/

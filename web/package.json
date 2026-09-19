@@ -6,8 +6,10 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:desktop": "VITE_API_URL=http://127.0.0.1:8123 vite build --outDir dist-desktop --emptyOutDir",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "build:desktop:watch": "VITE_API_URL=http://127.0.0.1:8123 vite build --outDir dist-desktop --emptyOutDir --watch"
   },
   "dependencies": {
     "react": "^18.3.1",

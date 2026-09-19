@@ -1,0 +1,28 @@
+[package]
+name = "dah-shell"
+version = "0.1.0"
+description = "DAH desktop shell - hosts the React bundle, spawns the Python core"
+edition = "2021"
+
+[[bin]]
+name = "dah-shell"
+path = "src/main.rs"
+
+[dependencies]
+tauri = { version = "2", features = [] }
+ureq = "2"
+
+[target.'cfg(unix)'.dependencies]
+# Process-group signalling. The PyInstaller one-file bootloader forks a child
+# that actually runs the server; killing the bootloader alone orphans it and
+# it keeps holding port 8123, so the shell has to stop the whole group.
+nix = { version = "0.29", default-features = false, features = ["signal"] }
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[features]
+# Live core test: actually starts the project's uvicorn through the resolver
+# and waits for /health. Off by default so `cargo test` stays fast and
+# network-free; the desktop shell itself never needs it.
+e2e = []

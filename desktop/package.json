@@ -1,0 +1,18 @@
+{
+  "name": "dah-desktop",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Tauri 2 desktop shell for DAH - hosts the React bundle and spawns the Python core",
+  "scripts": {
+    "tauri": "tauri",
+    "dev": "tauri dev",
+    "dev:hmr": "tauri dev --config '{\"build\":{\"devUrl\":\"http://localhost:5273\",\"beforeDevCommand\":\"npm --prefix ../web run dev -- --port 5273 --strictPort\"}}'",
+    "dev:hmr:5274": "tauri dev --config '{\"build\":{\"devUrl\":\"http://localhost:5274\",\"beforeDevCommand\":\"npm --prefix ../web run dev -- --port 5274 --strictPort\"}}'",
+    "dev:hmr:5275": "tauri dev --config '{\"build\":{\"devUrl\":\"http://localhost:5275\",\"beforeDevCommand\":\"npm --prefix ../web run dev -- --port 5275 --strictPort\"}}'",
+    "dev:hmr:5276": "tauri dev --config '{\"build\":{\"devUrl\":\"http://localhost:5276\",\"beforeDevCommand\":\"npm --prefix ../web run dev -- --port 5276 --strictPort\"}}'",
+    "build": "tauri build"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2"
+  }
+}

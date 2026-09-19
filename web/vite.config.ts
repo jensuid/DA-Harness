@@ -7,7 +7,14 @@ import react from '@vitejs/plugin-react'
 // FastAPI server; in the future Tauri host the same bundle is unchanged.
 export default defineConfig({
   plugins: [react()],
+  // Vite's default port (5173) collides with another dev server on this
+  // machine, so the frontend dev server is pinned here. strictPort matters:
+  // without it Vite silently hops to the next free port and the Tauri shell's
+  // devUrl is left pointing at a dead port - which is exactly how the shell
+  // ended up showing an empty window. Override with DAH_DEV_PORT=... if needed.
   server: {
+    port: Number(process.env.DAH_DEV_PORT ?? 5273),
+    strictPort: true,
     proxy: {
       '/api': {
         target: 'http://127.0.0.1:8123',
