@@ -1,31 +1,37 @@
 # DAH - Current State
 
- - **Phase:** P4 Production Candidate - IN PROGRESS (P4-VERIFY-001 done). P3 V1 is
-  COMPLETE: all 10 entry-checklist items, 211 tests, and now a P3 gate of its own
-  (`verification/p3/verify_p3.py` -> PASS).
+ - **Phase:** P4 Production Candidate - IN PROGRESS (P4-VERIFY-001 and
+  P4-RELIABILITY-002 done). P3 V1 is COMPLETE: all 10 entry-checklist items,
+  223 tests, and a P3 gate of its own (`verification/p3/verify_p3.py` -> PASS).
 - **Global roadmap status:** ai/ROADMAP.md (phase tracker - current stage, phase table, next-phase entry checklist)
 - **Milestone status:** P1 Vertical Slice PASSED (verification/p1/REPORT.md); P0 PASSED
 - **Completed capabilities:** FastAPI core; SQLite case persistence; DuckDB engine; Vite/React shell; P0 verification harness; CSV dataset attachment; deterministic dataset profiling; read-only SQL analysis runs with persisted results; findings with evidence chain; validation via rerun; parquet + xlsx ingest; deep profiling; **read-only Python execution with persisted results (P2-ANALYSIS-008); chart images rendered and persisted from run results (P2-ANALYSIS-009);
 case management - rename, duplicate, delete (P2-CASE-010);
 AI planning with structured output (P2-AI-011); case export as a self-contained
 JSON package with import round trip (P2-CASE-012)**
-- **Active task:** P4-VERIFY-001 DONE - the P3 gate script
-  (`verification/p3/verify_p3.py`). It walks one journey - question, attach a CSV
-  and a Parquet, profile, generate-code (writes nothing), plan, a join run,
-  a hard-sandbox escape attempt refused, interpret, draft-finding (writes
-  nothing), accept through the only endpoint that writes, a raster chart,
-  validation closing the loop, an evidence graph reaching both datasets, a
-  derived workflow reporting loop_closed, chat with citations, EDA, history,
-  search, a template outliving its case, dataset deletion blocked by evidence,
-  and an export/import round trip that reproduces the join - then re-runs the
-  suite. 23 journey steps, 15 exit criteria, all PASS. Every entry-checklist item is DONE: P3-SEC-001, P3-CHART-002, P3-DATA-003, P3-FLOW-004, P3-ANALYSIS-005, P3-EVIDENCE-006, P3-CASE-007, P3-SHELL-008, P3-DATA-009, P3-VALID-010 and the four contextual AI slices P3-AI-011..014. P4's entry checklist is sketched in ai/ROADMAP.md as a proposal for the user to reorder.
+- **Active task:** P4-RELIABILITY-002 DONE - error semantics. The five
+  engine endpoints (single/multi SQL run, Python run, EDA, chart render) ended
+  in `except Exception as error: raise 400`, which did two jobs at once: it was
+  the only thing keeping a user's SQL syntax error a 400 (DuckDB raises
+  `duckdb.Error`, which is *not* a `ValueError`), and it flattened every real
+  server fault into a 400 that blamed the analyst. Now each site catches the
+  input-error families only - `ValueError` plus `duckdb.Error`, gathered once in
+  `app/errors.py` - and a harness fault propagates to an honest 500 that uvicorn
+  logs. The five LLM fallbacks stay broad because degradation is the contract,
+  but each now logs the reason, so a fallback caused by our own bug surfaces
+  instead of vanishing into `source=deterministic`.
+  Before it: P4-VERIFY-001, the P3 gate script - 23 journey steps, 15 exit
+  criteria, all PASS. Every entry-checklist item is DONE: P3-SEC-001, P3-CHART-002, P3-DATA-003, P3-FLOW-004, P3-ANALYSIS-005, P3-EVIDENCE-006, P3-CASE-007, P3-SHELL-008, P3-DATA-009, P3-VALID-010 and the four contextual AI slices P3-AI-011..014. P4's entry checklist is sketched in ai/ROADMAP.md as a proposal for the user to reorder.
 - **Known issues:** none
-- **Test status:** server 211 passed; web 2 passed; desktop shell 7 Rust tests (5 unit + 2 e2e, `cd desktop/src-tauri && cargo test [--features e2e]`); P3 gate PASS (23 steps + suite), P2 gate PASS
-- **Next task:** continue the P4 entry checklist - the remaining items are
-  narrowing the broad exception handlers (no input error may answer 500), the
-  assistant surfaces in the React shell, large-dataset behaviour, and the
-  desktop shell lifecycle under CI plus the signing decision. The P3 gate is
-  the standing P3 regression check alongside the P2 gate.
+- **Test status:** server 223 passed (211 + 12 error semantics); web 2 passed;
+  desktop shell 7 Rust tests (5 unit + 2 e2e, `cd desktop/src-tauri && cargo test [--features e2e]`);
+  P2 and P3 gates PASS
+- **Next task:** continue the P4 entry checklist - the assistant surfaces in
+  the React shell (the widest gap between what DAH can do and what it shows),
+  large-dataset behaviour, and the desktop shell lifecycle under CI plus the
+  signing decision. A small follow-up surfaced by this task: a 500 answers with
+  Starlette's plain-text "Internal Server Error", not JSON - the shell will
+  want a JSON envelope; fold that into the UX work.
   Carried: nothing agent-shaped remains. The packaged app is unsigned
   (macOS gatekeeps the first launch; signing is P5)
 - **Blockers:** none
@@ -87,6 +93,7 @@ JSON package with import round trip (P2-CASE-012)**
 | Task | Status |
 |------|--------|
 | P4-VERIFY-001 P3 gate script | DONE |
+| P4-RELIABILITY-002 error semantics | DONE |
 
 ## How to run (P4)
 

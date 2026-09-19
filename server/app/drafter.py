@@ -24,6 +24,7 @@ swapping provider means implementing `draft(question, run, profile)`.
 """
 
 import json
+import logging
 import os
 import re
 from typing import Any
@@ -359,7 +360,13 @@ def create_draft(
             )
         candidate.setdefault("grounds", [])
         return candidate, SOURCE_LLM
-    except Exception:
-        # An unavailable or misbehaving LLM degrades to the deterministic draft
-        # rather than producing nothing.
+    except Exception as error:
+        # An unavailable or misbehaving LLM degrades to the deterministic
+        # draft rather than producing nothing. The breadth stays - the contract
+        # is "any failure falls back" - but the reason is logged, so a fallback
+        # caused by a bug in our own code surfaces instead of vanishing into
+        # source=deterministic (P4-RELIABILITY-002).
+        logging.getLogger(__name__).warning(
+            "llm draft failed; falling back to deterministic: %s", error,
+        )
         return deterministic, SOURCE_DETERMINISTIC

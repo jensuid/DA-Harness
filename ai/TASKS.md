@@ -885,6 +885,7 @@ checklist; the gate comes first because a phase is done when a gate says so.
 | Task ID | Capability | Priority | Status | Dependencies | Verification |
 |---------|-----------|----------|--------|--------------|--------------|
 | P4-VERIFY-001 | Verification (P3 gate) | M | DONE | P3 complete | One journey exercises multi-dataset joins, the hard sandbox and all four assistant slices end to end |
+| P4-RELIABILITY-002 | Reliability | M | DONE | P4-VERIFY-001 | Input errors answer 400 with the engine's message; a harness fault answers 500 instead of a 400 that blamed the analyst |
 
 ### P4-VERIFY-001 contract
 
@@ -949,4 +950,78 @@ VERIFICATION: server/.venv/bin/python verification/p3/verify_p3.py -> PASS
       (verification/p3/REPORT.md, all 15 exit criteria PASS).
 STATE UPDATE: mark P4-VERIFY-001 done on pass; P4's checklist item 1 is
       complete.
+```
+
+### P4-RELIABILITY-002 contract
+
+```
+TASK ID: P4-RELIABILITY-002
+MILESTONE: P4 Production Candidate
+CAPABILITY: Reliability
+GOAL: An input error always answers 400 with a reason, and a server failure
+      always answers 500 and gets logged - never the other way round.
+
+CONTEXT: five API endpoints (single SQL run, multi SQL run, Python run, EDA,
+         chart render) end in `except Exception as error: raise 400`,
+         "... failed: {error}". That clause is doing two jobs at once: it is
+         the only thing turning a user's SQL syntax error into a 400 (DuckDB
+         raises duckdb.Error, which is not a ValueError, so the `except
+         ValueError` above it does not catch it), and it is also flattening
+         every real server fault - a sqlite error, an unreadable stored file, a
+         KeyError in our own code - into a 400 that blames the user. A bug in
+         the harness currently looks like bad input, to the analyst and in the
+         logs. Separately, the five LLM fallback paths catch `except Exception`
+         deliberately - degradation is the contract - but silently, so a bug in
+         our own code vanishes into source=deterministic and is never surfaced.
+INPUTS: any request to the five engine endpoints, plus the LLM fallback paths.
+RELEVANT FILES: server/app/errors.py (NEW), server/app/main.py,
+                server/app/planner.py, server/app/interpreter.py,
+                server/app/drafter.py, server/app/generator.py,
+                server/app/assistant.py,
+                server/tests/test_error_semantics.py (NEW)
+REQUIRED CHANGE:
+  - app/errors.py owns the taxonomy once: INPUT_ERROR_TYPES is the tuple of
+    exception families that mean the input cannot be honoured - ValueError
+    (every engine's own validation: the read-only gate, unknown columns, a
+    sandbox rejection, a missing result) and duckdb.Error (SQL that cannot
+    parse or bind, which is not a ValueError). Those answer 400. Everything
+    else is a server failure and is let through to FastAPI's 500, which logs
+    the traceback instead of hiding it in a 400.
+  - the five engine sites become `except INPUT_ERROR_TYPES as error:
+    raise 400`; the broad clause goes away. The chart site keeps ValueError
+    alone, because render_chart validates everything itself and raises
+    ValueError for all of it.
+  - the five LLM fallbacks stay broad - an unavailable or misbehaving LLM may
+    never block the loop - but the reason is logged at warning level, so a
+    fallback caused by our own bug is visible instead of silent.
+NON-GOALS: changing any success-path behaviour or response shape; touching the
+           validation endpoints, whose `except (ValueError, Exception)` is
+           correct - a finding that no longer reproduces must answer 200 with a
+           failed check, never a 500; rewriting the duckdb error text; a global
+           error handler or structured logging framework (that is observability,
+           a later P4 item); the two `referenced run/dataset is missing` 500s
+           and the plan-validation 500, which are integrity violations the
+           server allowed and where 500 is the honest answer.
+CONSTRAINTS: no existing endpoint contract changes - every request that
+             answers 400 today still answers 400, with the engine's own message
+             rather than the generic "X failed: ..." wrapper; the LLM
+             degradation contract is unchanged (any failure still falls back).
+ACCEPTANCE CRITERIA:
+- [x] SQL that cannot parse, and SQL naming an unknown column, answer 400 with
+      the engine's message - narrowing the catch did not make bad input a 500
+- [x] a sandbox rejection (script with no result, write attempt) still answers
+      400
+- [x] an injected server-side fault in each of the five engines answers 500
+      instead of a 400 that blames the input
+- [x] an LLM that raises anything - expected or not - still falls back to
+      source=deterministic, and the reason is logged
+- [x] no success path changed; full suite, the P2 gate and the P3 gate pass
+TESTS: server/tests/test_error_semantics.py - bad SQL (syntax and unknown
+       column), injected 500s for all five engines (run_query, run_query_multi,
+       run_python, run_eda, render_chart), and the LLM fallback on an
+       unexpected error type. Uses a TestClient with raise_server_exceptions
+       off, which is the only way a 500 is observable in process.
+VERIFICATION: pytest green + verification/p2/verify_p2.py PASS +
+              verification/p3/verify_p3.py PASS.
+STATE UPDATE: mark P4-RELIABILITY-002 done on pass.
 ```

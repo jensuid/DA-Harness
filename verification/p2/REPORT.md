@@ -1,6 +1,6 @@
 # P2 MVP Milestone Verification
 
-Run: 2026-09-19T10:04:19.254134+00:00
+Run: 2026-09-19T11:34:03.424966+00:00
 
 ## Journey under test
 
@@ -31,7 +31,7 @@ real question -> load data -> profile -> SQL -> Python -> chart -> AI plan
 | Import package round trip | PASS | 2 run(s) restored with fresh IDs |
 | Reproduce analysis on restored data | PASS | rows=[['north', 325.0], ['south', 161.0]] |
 | Serve restored chart artifact | PASS | HTTP 200 |
-| Test suite runs | PASS | 211 passed, 2 warnings in 81.73s (0:01:21) |
+| Test suite runs | PASS | 223 passed, 2 warnings in 178.19s (0:02:58) |
 
 ## Exit criteria (P2 gate: real problem, data, SQL/Python, visualization,
 AI, evidence, validation, export, reproducibility)

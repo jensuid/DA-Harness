@@ -33,6 +33,7 @@ from pydantic import BaseModel
 import json
 
 from app.analysis import profile_csv, run_query, run_query_multi
+from app.errors import INPUT_ERROR_TYPES
 from app.eda import EDA_OPS, run_eda
 from app.evidence import build_evidence_graph
 from app.history import build_case_history
@@ -679,10 +680,10 @@ async def create_multi_dataset_run(
     paths = [by_id[dataset_id]["stored_path"] for dataset_id in payload.dataset_ids]
     try:
         result = run_query_multi(paths, payload.sql)
-    except ValueError as error:
+    except INPUT_ERROR_TYPES as error:
+        # A join's SQL is the analyst's too: duckdb.Error for a bad statement,
+        # ValueError for a placeholder or read-only-gate violation.
         raise HTTPException(status_code=400, detail=str(error))
-    except Exception as error:
-        raise HTTPException(status_code=400, detail=f"query failed: {error}")
 
     run = Run(
         id=str(uuid4()),
@@ -838,10 +839,9 @@ async def run_exploratory_analysis(
     dataset = _require_dataset(db, case_id, dataset_id)
     try:
         result = run_eda(dataset.stored_path, payload.op, payload.model_dump())
-    except ValueError as error:
+    except INPUT_ERROR_TYPES as error:
+        # EDA compiles to DuckDB, so its failures are the same two families.
         raise HTTPException(status_code=400, detail=str(error))
-    except Exception as error:
-        raise HTTPException(status_code=400, detail=f"eda failed: {error}")
 
     return EdaResult(
         op=payload.op,
@@ -873,10 +873,11 @@ async def create_run(
 
     try:
         result = run_query(dataset.stored_path, payload.sql)
-    except ValueError as error:
+    except INPUT_ERROR_TYPES as error:
+        # Bad SQL - a syntax error, an unknown column - reaches here as a
+        # duckdb.Error rather than a ValueError; both are the input's fault and
+        # answer 400. Anything else is a server fault and propagates as a 500.
         raise HTTPException(status_code=400, detail=str(error))
-    except Exception as error:
-        raise HTTPException(status_code=400, detail=f"query failed: {error}")
 
     run = Run(
         id=str(uuid4()),
@@ -935,10 +936,10 @@ async def create_python_run(
 
     try:
         result = run_python(dataset.stored_path, payload.code)
-    except ValueError as error:
+    except INPUT_ERROR_TYPES as error:
+        # run_python normalises every sandbox rejection to ValueError; a fault
+        # in the harness itself is not one and may not answer 400.
         raise HTTPException(status_code=400, detail=str(error))
-    except Exception as error:
-        raise HTTPException(status_code=400, detail=f"analysis failed: {error}")
 
     run = Run(
         id=str(uuid4()),
@@ -1643,9 +1644,9 @@ async def create_chart(
             fmt=fmt,
         )
     except ValueError as error:
+        # render_chart validates everything it is given and raises ValueError
+        # for it; a drawing failure underneath is a server fault, not bad input.
         raise HTTPException(status_code=400, detail=str(error))
-    except Exception as error:
-        raise HTTPException(status_code=400, detail=f"chart failed: {error}")
 
     chart_id = str(uuid4())
     case_dir = db_module.DATA_DIR / case_id

@@ -31,6 +31,7 @@ swapping provider means implementing `answer(message, history, facts)`.
 """
 
 import json
+import logging
 import os
 import re
 from typing import Any
@@ -489,7 +490,13 @@ def create_answer(message: str, history: list[dict], facts: dict) -> tuple[dict,
             )
         candidate.setdefault("grounds", [])
         return candidate, SOURCE_LLM
-    except Exception:
+    except Exception as error:
         # An unavailable or misbehaving LLM degrades to the deterministic
-        # answer rather than producing nothing.
+        # answer rather than producing nothing. The breadth stays - the contract
+        # is "any failure falls back" - but the reason is logged, so a fallback
+        # caused by a bug in our own code surfaces instead of vanishing into
+        # source=deterministic (P4-RELIABILITY-002).
+        logging.getLogger(__name__).warning(
+            "llm answer failed; falling back to deterministic: %s", error,
+        )
         return deterministic, SOURCE_DETERMINISTIC

@@ -2,6 +2,24 @@
 
 ## What was completed
 
+- P4-RELIABILITY-002 PASSED: an input error now answers 400 with the engine's
+  own message, and a fault in the harness answers 500 - before this, five
+  engine endpoints ended in `except Exception as error: raise 400`, which did
+  two jobs at once and got them both subtly wrong. It was the *only* thing
+  keeping a user's SQL syntax error a 400 (DuckDB raises `duckdb.Error`, which
+  is not a `ValueError`, so the `except ValueError` above it never fired), and
+  it also flattened every real server fault - sqlite, an unreadable stored file,
+  a KeyError in our own code - into a 400 that blamed the analyst. `app/errors.py`
+  now owns the taxonomy once: `INPUT_ERROR_TYPES` is `(ValueError, duckdb.Error)`,
+  the families that mean the input cannot be honoured; each site catches only
+  those and anything else propagates to an honest 500 that uvicorn logs with a
+  traceback. The five LLM fallbacks were deliberately broad and stay broad -
+  degradation is the contract - but each now logs the reason at warning level,
+  so a fallback caused by our own bug surfaces instead of vanishing into
+  `source=deterministic`. 12 new tests pin both directions: bad SQL, an unknown
+  column and a sandbox rejection stay 400, while an injected fault in all five
+  engines answers 500.
+
 - P4-VERIFY-001 PASSED (first P4 task): P3 now has a gate of its own. `verification/p3/verify_p3.py`
   walks one journey in-process - a question, a CSV and a Parquet attached to the
   same case, both profiled, the assistant proposing the query and creating
@@ -177,6 +195,31 @@
 Create Case -> Question -> Load CSV -> Profile -> SQL Analysis
 -> Finding -> Evidence chain -> Validation (rerun) -> Save -> Reopen
 ```
+
+## What changed (P4-RELIABILITY-002)
+
+- server/app/errors.py (NEW): the taxonomy in one place. `INPUT_ERROR_TYPES`
+  is `(ValueError, duckdb.Error)` - the former is what every engine raises for
+  what it validates, the latter is what DuckDB raises for SQL that cannot run
+  and is deliberately *not* a ValueError. Importing duckdb here keeps that
+  knowledge in the module that owns it.
+- server/app/main.py: the five engine sites (single SQL run, multi-dataset SQL
+  run, Python run, EDA, chart render) drop `except Exception -> 400` for
+  `except INPUT_ERROR_TYPES`. The chart site catches ValueError alone, since
+  render_chart validates everything itself.
+- server/app/{planner,interpreter,drafter,generator,assistant}.py: the LLM
+  fallback keeps catching everything but logs the reason first. `import
+  logging` added to each.
+- server/tests/test_error_semantics.py (NEW): 12 tests. Input errors stay 400
+  (bad SQL, unknown column, multi-dataset bad SQL, a sandbox rejection, an
+  unknown EDA op, an unknown chart kind); an injected harness fault answers 500
+  in all five engines, via a TestClient with `raise_server_exceptions=False`
+  - the only way a 500 is observable in process. Plus one pinning that an
+  unexpected LLM failure still falls back *and* is logged.
+- One nuance worth carrying: a 500 answers with Starlette's plain-text
+  "Internal Server Error", not JSON. That is honest and logged, but the React
+  shell does `res.json()` on errors, so the UX task should give it a JSON
+  envelope - noted in CURRENT_STATE.md rather than expanded into this task.
 
 ## What changed (P4-VERIFY-001)
 
@@ -544,7 +587,7 @@ reported as unsupported (clear 400) rather than faked; that gate is future work.
 
 ## Tests performed (current)
 
-- server pytest: 211 passed (199 + 12 conversation)
+- server pytest: 223 passed (199 + 12 conversation + 12 error semantics)
 - desktop shell: 7 Rust tests - `cd desktop/src-tauri && cargo test` (5 unit)
   and `cargo test --features e2e` (+2 live-core tests)
 - web: 2 passed
@@ -557,7 +600,7 @@ reported as unsupported (clear 400) rather than faked; that gate is future work.
 
 - Every P3 task is one atomic commit, all pushed to `origin/master`
   (github.com/jensuid/DA-Harness), plus the phase close; P4 opens with
-  P4-VERIFY-001 as its own commit.
+  P4-VERIFY-001 and P4-RELIABILITY-002 as their own commits.
   `dfb115b` P3-SEC-001, `2c7b11f` P3-CHART-002, `f5df5d1` P3-DATA-003,
   `967544b` P3-FLOW-004, `7b7e49f` P3-ANALYSIS-005, `ebaa30e` P3-EVIDENCE-006,
   P3-CASE-007, P3-SHELL-008, P3-DATA-009, P3-VALID-010, P3-AI-011,
@@ -594,10 +637,9 @@ a case answers questions about itself with citations (P3-AI-014). Each assistant
 slice stops one step short of writing state - the human runs, accepts or rejects
 - so the assistant proposes and never decides.
 
-Next is P4, Production Candidate - reliability, security, performance, UX and
-observability. Its entry checklist in ai/ROADMAP.md is a proposal for the user
-to reorder; item 1 is done - the P3 gate (P4-VERIFY-001) - and the rest have
-not been started. A candidate ordering for what remains, oldest risk first:
+Two of P4's checklist items are done - the P3 gate (P4-VERIFY-001) and error
+semantics (P4-RELIABILITY-002). What remains of the checklist, oldest risk
+first:
 
 - error handling and resilience: every broad `except` narrowed where it still
   swallows, and a 500 that is never the answer to bad input;

@@ -22,6 +22,7 @@ swapping provider means implementing `interpret(question, run, profile)`.
 """
 
 import json
+import logging
 import os
 from typing import Any
 
@@ -286,7 +287,13 @@ def create_interpretation(
         candidate.setdefault("observations", [])
         candidate.setdefault("caveats", [])
         return candidate, SOURCE_LLM
-    except Exception:
-        # An unavailable or misbehaving LLM degrades to the deterministic read
-        # rather than blocking the loop.
+    except Exception as error:
+        # An unavailable or misbehaving LLM degrades to the deterministic
+        # read rather than producing nothing. The breadth stays - the contract
+        # is "any failure falls back" - but the reason is logged, so a fallback
+        # caused by a bug in our own code surfaces instead of vanishing into
+        # source=deterministic (P4-RELIABILITY-002).
+        logging.getLogger(__name__).warning(
+            "llm read failed; falling back to deterministic: %s", error,
+        )
         return deterministic, SOURCE_DETERMINISTIC

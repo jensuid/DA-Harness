@@ -30,6 +30,7 @@ swapping provider means implementing `generate(question, profile, kind)`.
 """
 
 import json
+import logging
 import os
 import re
 from typing import Any
@@ -501,7 +502,13 @@ def create_code(
             candidate["code"], kind, profile
         )
         return candidate, SOURCE_LLM
-    except Exception:
+    except Exception as error:
         # An unavailable or misbehaving LLM degrades to the deterministic
-        # proposal rather than producing nothing.
+        # proposal rather than producing nothing. The breadth stays - the contract
+        # is "any failure falls back" - but the reason is logged, so a fallback
+        # caused by a bug in our own code surfaces instead of vanishing into
+        # source=deterministic (P4-RELIABILITY-002).
+        logging.getLogger(__name__).warning(
+            "llm proposal failed; falling back to deterministic: %s", error,
+        )
         return deterministic, SOURCE_DETERMINISTIC

@@ -13,8 +13,8 @@ P2 MVP                 DONE  ✓   (all gates green)
 P3 V1                  DONE  ✓   (all 10 entry-checklist items, 211 tests;
                               verification/p3/REPORT.md PASS)
 P4 Production Candidate IN PROGRESS  ← we are here
-                              (P4-VERIFY-001 done; reliability, UX,
-                              performance, distribution remain)
+                              (P4-VERIFY-001 and P4-RELIABILITY-002 done;
+                              UX, performance, distribution remain)
 P5 Production Grade    NOT STARTED
 P6 Evolution           NOT STARTED
 ```
@@ -54,11 +54,12 @@ repeatable**.
   case management (rename/duplicate/delete); structured AI planning
   (deterministic default, LLM behind `DAH_LLM_API_KEY`); case export/import
   round trip.
-- **Test status:** server 211 passed; web 2 passed; desktop shell 7 Rust tests (5 unit + 2 e2e);
-  P3 gate `verification/p3/verify_p3.py` PASS (23 journey steps + the suite).
-- **Active task:** P4-VERIFY-001 DONE - the P3 gate. It walks multi-dataset
-  joins, the hard sandbox and all four assistant slices as one journey and is
-  now the standing P3 regression check alongside the P2 gate.
+- **Test status:** server 223 passed; web 2 passed; desktop shell 7 Rust tests (5 unit + 2 e2e);
+  P2 and P3 gates PASS.
+- **Active task:** P4-RELIABILITY-002 DONE - error semantics. Input errors
+  answer 400 with the engine's own message and a harness fault answers 500,
+  where before a single broad `except Exception` flattened both into a 400
+  that blamed the analyst.
 - **Known issues / blockers:** none.
 - **Repository:** private, `master` tracks `origin/master`.
 
@@ -95,7 +96,7 @@ starts. P3 has no gate of its own yet, so that comes first.
 | # | Capability | Why now | Roadmap section |
 |---|-----------|---------|-----------------|
 | 1 | P3 gate script (`verification/p3/verify_p3.py`) — **DONE (P4-VERIFY-001)**: 23 steps joining a CSV and a Parquet, refusing a sandbox escape, firing all four assistant slices, validating a join finding and round-tripping through export/import | The P2 gate re-verifies the suite but nothing walked the P3 capabilities end to end; a phase is done when a gate says so. Now it does | P4 Verification |
-| 2 | Narrow the broad exception handlers; no input error may answer 500 | P3 added four LLM fallback paths, each intentionally broad; P4 is where that breadth stops hiding real bugs | P4 Reliability |
+| 2 | Error semantics - **DONE (P4-RELIABILITY-002)**: input errors answer 400 with the engine's own message; a harness fault answers 500 instead of the old broad `except Exception -> 400` that blamed the analyst for our own bugs. The five LLM fallbacks stay broad (degradation is the contract) but now log the reason | P3 added four LLM fallback paths, each intentionally broad; P4 is where that breadth stops hiding real bugs | P4 Reliability |
 | 3 | Assistant surfaces in the React shell (generate-code, draft-finding, interpret, chat) | The widest gap between what DAH can do and what it shows; the backend is complete, the UI is still the P0/P1 surface | P4 UX |
 | 4 | Large-dataset behaviour: result caps, profiling cost, export package size | P3 caps results at 1000 rows but nothing has been measured at scale | P4 Performance |
 | 5 | Desktop shell lifecycle under CI; app signing decision (sign now, or formally defer to P5) | The shell is tested locally; the unsigned first launch is the carried P3 item | P4 Distribution |

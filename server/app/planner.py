@@ -21,6 +21,7 @@ swapping it for another provider means implementing `plan(question, profile)`.
 """
 
 import json
+import logging
 import os
 from typing import Any
 
@@ -338,7 +339,13 @@ def create_plan(question: str, profile: dict) -> tuple[dict, str]:
         if problems:
             raise ValueError(f"LLM plan failed validation: {'; '.join(problems[:3])}")
         return candidate, SOURCE_LLM
-    except Exception:
-        # An unavailable or misbehaving LLM degrades to the deterministic plan
-        # rather than blocking the analysis loop.
+    except Exception as error:
+        # An unavailable or misbehaving LLM degrades to the deterministic
+        # plan rather than producing nothing. The breadth stays - the contract
+        # is "any failure falls back" - but the reason is logged, so a fallback
+        # caused by a bug in our own code surfaces instead of vanishing into
+        # source=deterministic (P4-RELIABILITY-002).
+        logging.getLogger(__name__).warning(
+            "llm plan failed; falling back to deterministic: %s", error,
+        )
         return deterministic, SOURCE_DETERMINISTIC
