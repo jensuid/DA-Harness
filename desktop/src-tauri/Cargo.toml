@@ -26,3 +26,6 @@ tauri-build = { version = "2", features = [] }
 # and waits for /health. Off by default so `cargo test` stays fast and
 # network-free; the desktop shell itself never needs it.
 e2e = []
+
+[dev-dependencies]
+serial_test = "4.0.1"

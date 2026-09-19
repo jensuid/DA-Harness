@@ -208,6 +208,15 @@ mod tests {
     use super::*;
     use std::fs;
 
+    // Both lifecycle tests start a real core on PORT and assert that port is
+    // theirs alone afterwards (the orphan check depends on it). Cargo runs
+    // tests in parallel by default, so without serialization the two would
+    // race for the bind - one would win, the other would die with "address
+    // already in use", and the failure would look like a flaky core. Marking
+    // them serial makes the port exclusive by construction. CI hit this; a
+    // local run passed only by timing luck.
+    use serial_test::serial;
+
     #[test]
     fn dev_resolution_uses_the_project_virtualenv() {
         // A shell directory with no sidecar beside it is a dev checkout.
@@ -286,6 +295,7 @@ mod tests {
 
     #[test]
     #[cfg(feature = "e2e")]
+    #[serial]
     fn core_starts_and_answers_health() {
         // Proves the whole dev path: resolve the real command for this
         // checkout, spawn it, and wait for the core to answer.
@@ -336,6 +346,7 @@ mod tests {
 
     #[test]
     #[cfg(feature = "e2e")]
+    #[serial]
     fn sidecar_core_stops_without_orphaning() {
         // The dev path is one process; the PyInstaller sidecar is two - a
         // bootloader and the server it forks. Only this test catches an orphan.
