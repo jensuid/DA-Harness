@@ -48,8 +48,9 @@ KIND_FINDING = "finding"
 KIND_PLAN = "plan"
 KIND_CHART = "chart"
 KIND_COLUMN = "column"
+KIND_CASE = "case"  # a previous case, added by P6-MEMORY-001
 
-_GROUND_RE = re.compile(r"^(dataset|run|finding|plan|chart|column):(.+)$")
+_GROUND_RE = re.compile(r"^(dataset|run|finding|plan|chart|column|case):(.+)$")
 _WORD_RE = re.compile(r"[A-Za-z0-9_]+")
 
 
@@ -67,12 +68,17 @@ def _profile_of(db, dataset_id: str) -> dict | None:
     }
 
 
-def summarize_case(db, case_id: str) -> dict:
+def summarize_case(db, case_id: str, message: str = "") -> dict:
     """Everything an answer about this case may draw on.
 
     Read from the case's own rows, so the facts cannot drift from what is on
     disk. Runs carry their columns and row counts but not their result rows - a
     conversation points at evidence, it does not replay it.
+
+    `message` is the question being answered, and it is what memory is built
+    against (P6-MEMORY-001): which previous cases bear on *this* question is
+    not a property of the case, it depends on what was asked. Optional because
+    the facts are also read for purposes that have no question to match.
     """
     from app.workflow import case_progress
 
@@ -141,6 +147,13 @@ def summarize_case(db, case_id: str) -> dict:
         ).fetchall()
     ]
     facts["progress"] = case_progress(db, case_id)
+
+    # P6-MEMORY-001: what previous cases found. Derived per question, not
+    # stored - the message decides which prior cases are relevant, so memory is
+    # built alongside the answer rather than ahead of it.
+    from app.memory import summarize_memory
+
+    facts["memory"] = summarize_memory(db, case_id, message)
     return facts
 
 
@@ -157,6 +170,7 @@ def _references(facts: dict) -> dict[str, set[str]]:
         KIND_PLAN: set(),
         KIND_CHART: set(),
         KIND_COLUMN: set(),
+        KIND_CASE: set(),
     }
     for dataset in facts.get("datasets") or []:
         by_kind[KIND_DATASET].add(dataset["id"])
@@ -173,6 +187,15 @@ def _references(facts: dict) -> dict[str, set[str]]:
         by_kind[KIND_PLAN].add(plan["id"])
     for chart in facts.get("charts") or []:
         by_kind[KIND_CHART].add(chart["id"])
+    # A previous case is citable by id and by its question, and its findings
+    # are citable too - the recall is only useful if the citation resolves to
+    # a real row in a real other case (P6-MEMORY-001).
+    for memory in facts.get("memory") or []:
+        by_kind[KIND_CASE].add(memory["case_id"])
+        if memory.get("question"):
+            by_kind[KIND_CASE].add(memory["question"])
+        for finding in memory.get("findings") or []:
+            by_kind[KIND_FINDING].add(finding["id"])
     return by_kind
 
 
@@ -247,6 +270,35 @@ def answer_question(message: str, history: list[dict], facts: dict) -> dict:
         grounds = _artifact_grounds(facts, kinds=(KIND_DATASET, KIND_RUN, KIND_FINDING, KIND_CHART))
         return {
             "answer": f"The case has {', '.join(parts)}.",
+            "grounds": grounds,
+        }
+
+    # P6-MEMORY-001: what previous cases found. Two ways in, both deliberate:
+    #  - the question is *about* prior work (before/previous/earlier/...). This
+    #    is checked before the column and dataset branches on purpose: a
+    #    question like "what did I find before about revenue?" names a column
+    #    and would otherwise be answered with this case's column stats - a true
+    #    answer to a question nobody asked.
+    #  - this case has nothing of its own yet, so the alternative answer would
+    #    be "attach a dataset" - true, but useless to someone who has already
+    #    investigated this question and would rather know what they found.
+    # A case with its own artifacts and no prior-work framing gets its own
+    # stage and next action instead, because its own state is the more
+    # actionable thing. Memory is threshold-filtered in summarize_memory, so
+    # present means relevant.
+    memory = facts.get("memory") or []
+    asks_about_prior = re.search(
+        r"\b(before|previous|prior|earlier|last time|already|"
+        r"another case|other case|same)\b", lowered
+    )
+    if memory and (asks_about_prior or not _has_artifacts(facts)):
+        first = memory[0]
+        grounds = [f"{KIND_CASE}:{first['case_id']}"]
+        for finding in (first.get("findings") or [])[:1]:
+            grounds.append(f"{KIND_FINDING}:{finding['id']}")
+        return {
+            "answer": f"Before this case, {_memory_sentence(first)}. "
+                      f"It shares {', '.join(first.get('shared') or [])} with your question.",
             "grounds": grounds,
         }
 
@@ -375,6 +427,17 @@ def validate_answer(payload: Any, facts: dict) -> list[str]:
         problems.append("an answer about a case with artifacts must cite at least one")
     return problems
 
+def _memory_sentence(memory: dict) -> str:
+    """One prior case as a sentence, quoting its strongest finding."""
+    findings = memory.get("findings") or []
+    if not findings:
+        return f"a previous case, \"{memory.get('question') or 'untitled'}\""
+    strongest = findings[0]
+    return (
+        f"a previous case, \"{memory.get('question') or 'untitled'}\", which found "
+        f"\"{strongest['statement']}\" (validation: {strongest['status']})"
+    )
+
 
 class LLMAssistant:
     """OpenAI-compatible assistant; dormant without configuration.
@@ -411,6 +474,19 @@ class LLMAssistant:
              "status": finding["status"]}
             for finding in facts.get("findings") or []
         ]
+        memory = [
+            {
+                "case_id": item["case_id"],
+                "question": item["question"],
+                "shared": item["shared"],
+                "findings": [
+                    {"id": finding["id"], "statement": finding["statement"],
+                     "status": finding["status"]}
+                    for finding in (item.get("findings") or [])
+                ],
+            }
+            for item in facts.get("memory") or []
+        ]
         progress = facts.get("progress") or {}
         turns = history[-_MAX_HISTORY_TURNS:]
         prompt = (
@@ -422,16 +498,20 @@ class LLMAssistant:
             '  "grounds": [string]\n'
             "}\n"
             "Every entry in `grounds` is a citation of the form `kind:name` "
-            "where kind is one of dataset, run, finding, plan, chart, column "
-            "and name is an id or column from the artifacts below. Cite every "
-            "claim. Quote no artifact that is not listed. Do not add fields or "
-            "commentary.\n\n"
+            "where kind is one of dataset, run, finding, plan, chart, column, "
+            "case and name is an id, a column, or a case question from the "
+            "artifacts below. Cite every claim. Quote no artifact that is not "
+            "listed - a previous case is citable only when it appears under "
+            "`memory`, and only for what its listed findings actually found. "
+            "Do not add fields or commentary.\n\n"
             f"Case question: {facts.get('question') or '(none given)'}\n"
             f"Stage: {progress.get('stage')}; next action: "
             f"{progress.get('next_action') or 'none'}.\n\n"
             f"Datasets: {json.dumps(described, default=str)[:_MAX_LLM_CHARS // 2]}\n"
             f"Runs: {json.dumps(runs, default=str)[:_MAX_LLM_CHARS // 4]}\n"
-            f"Findings: {json.dumps(findings, default=str)[:_MAX_LLM_CHARS // 4]}\n\n"
+            f"Findings: {json.dumps(findings, default=str)[:_MAX_LLM_CHARS // 4]}\n"
+            f"Memory (previous cases that may bear on this question): "
+            f"{json.dumps(memory, default=str)[:_MAX_LLM_CHARS // 4]}\n\n"
             f"Conversation so far: {json.dumps(turns, default=str)[:_MAX_LLM_CHARS // 4]}\n"
             f"Question: {message}\n"
         )

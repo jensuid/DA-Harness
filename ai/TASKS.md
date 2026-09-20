@@ -1777,3 +1777,74 @@ LESSON: two independent bugs compounded. The `env` context is unavailable in
         been blocked all session, which is how three commits shipped without
         anyone noticing CI had stopped entirely.
 ```
+
+```
+TASK: P6-MEMORY-001 - cross-case recall: let an answer cite previous cases
+ID: P6-MEMORY-001
+PRIORITY: high
+STATUS: DONE
+SUMMARY: A case could already cite its own artifacts - runs, datasets, findings -
+         via the grounds budget in assistant.py. Nothing let it cite a PREVIOUS
+         case: summarize_case read exactly one case's rows, so every
+         investigation started from scratch even when the same anomaly was
+         found and explained last month. Analysis memory closes that. New
+         app/memory.py derives, per question, which prior cases bear on it;
+         the assistant can now cite `case:<id>` and the prior finding, both
+         validated against real rows.
+WHAT CHANGED:
+- server/app/memory.py (NEW): summarize_memory is a pure projection over cases
+  and findings. Relevance is a shared-content-word count against the question,
+  the dataset label and every finding statement, with a hand-written stoplist
+  and a threshold of 2 shared words - deliberately not an embedding: no
+  dependency, no network, deterministic, and it makes the "nothing bears on
+  this" answer honest. A case with no findings is skipped however similar its
+  question sounds; there is nothing to recall. Writes nothing.
+- server/app/assistant.py: a new KIND_CASE ground and a recall branch in the
+  deterministic answer. It fires when the question is *about* prior work
+  (before/previous/earlier/...) or when the case has nothing of its own - and
+  it sits ahead of the column/dataset branches on purpose, because "what did I
+  find before about revenue?" names a column and would otherwise be answered
+  with this case's column stats: a true answer to a question nobody asked. A
+  case with its own artifacts and no prior framing still gets its own stage.
+  _references admits case: and the prior finding's id, so an invented
+  cross-case citation is rejected exactly as an invented column is. The LLM
+  prompt carries memory and its citation budget names the case kind.
+- server/app/main.py: the chat endpoint passes the message to summarize_case,
+  because which prior cases are relevant depends on what was asked.
+- server/tests/test_memory.py (NEW): 11 tests.
+NON-GOALS: replaying another case's result rows (a conversation points at
+           evidence, it does not replay it), writing anything on read, a vector
+           store (SQLite already holds everything), cloud sync.
+CONSTRAINTS held: the P3 honesty budgets survive - a cross-case ground must
+             resolve to a real finding in a real other case or be rejected;
+             the deterministic path needs no LLM key; nothing logs what the
+             analyst typed; no new runtime dependency.
+ACCEPTANCE CRITERIA:
+- [x] a question whose answer is in another case is answered citing that case
+      by name, deterministically (source=deterministic)
+- [x] an invented cross-case citation is rejected by validate_answer, exactly
+      as an invented in-case ground is
+- [x] an answer that no other case supports says so plainly rather than
+      dragging in a weakly-related case
+- [x] no read path writes; the memory is a projection over existing rows
+- [x] the LLM path degrades to deterministic on any failure and records source
+- [x] the P4 gate and the full suite stay green; new tests pin every criterion
+TESTS: 11 in server/tests/test_memory.py - the headline recall, the cited case
+       and finding are real rows, invented case and invented prior finding both
+       rejected, an off-topic prior case is not dragged in, a case with its own
+       artifacts answers from its own state, an explicit prior question recalls
+       anyway, the LLM receives memory and validates, a malformed LLM memory
+       answer falls back, recalling writes nothing, and a case is never its own
+       previous case.
+VERIFICATION: server suite 267 passed (was 256, +11); P4 gate PASS on all 18
+              steps and all 10 exit criteria; P3 gate PASS; web 21 passed;
+              desktop 12 Rust tests. All green locally.
+LESSON: three of the eleven tests failed first run for the same reason - the
+        test's own fixture. The helper hardcoded a finding about "revenue" in
+        "sales.csv" while the question was about revenue, so an allegedly
+        off-topic prior case still shared two content words and was correctly
+        recalled. The code was right; the test was asserting a separation its
+        own data did not have. A relevance threshold is only as honest as the
+        corpus it is measured against - and a fixture that says "weather" while
+        quoting "sales" is not a weather fixture.
+```

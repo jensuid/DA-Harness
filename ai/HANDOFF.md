@@ -696,49 +696,70 @@ reported as unsupported (clear 400) rather than faked; that gate is future work.
 
 ## Next action
 
-P5 is **CLOSED**. The user decided DAH is for their own use for the foreseeable
-future, which dissolved the last open item rather than leaving it blocked:
-signing and notarization move from "P5 required, blocked on a Developer ID" to
-**indefinitely deferred by intent** (DEC-006). The right-click > Open cost is
-paid once per machine by the one person who uses the app; the release pipeline
-keeps the slot between build and upload if that ever changes, and the README
-and generated notes still document the workaround.
+P6-MEMORY-001 is **DONE**: cross-case recall. A case could already cite its own
+artifacts - runs, datasets, findings - through the grounds budget in
+`assistant.py`, but `summarize_case` read exactly one case's rows, so every
+investigation started from scratch even when the same anomaly was found and
+explained last month. Now an answer can cite a *previous* case.
 
-So P6 Post-Launch Evolution is open, and its entry checklist is written
-(`ai/ROADMAP.md`). It is deliberately not the roadmap's full P6 list: the scale
-half (cloud, team collaboration, warehouse connectors, enterprise governance)
-is deferred, not dropped - none of it pays for itself at a user count of one.
-What is on the checklist is the intelligence half, ordered by what the one
-user gains first.
+Three pieces:
 
-**The proposed first task is P6-MEMORY-001: cross-case recall.**
+- **`server/app/memory.py` (new)** - `summarize_memory` is a pure projection
+  over the cases and findings already on disk. Relevance is a
+  shared-content-word count against the prior case's question, dataset label
+  and finding statements, with a hand-written stoplist and a threshold of two
+  shared words. Deliberately not an embedding: no dependency, no network call,
+  deterministic, and it makes the "nothing bears on this" answer honest rather
+  than a confident stretch. A case with no findings is skipped however similar
+  its question sounds - there is nothing to recall. It writes nothing; memory
+  is derived, never stored, so it cannot drift from what is on disk any more
+  than the evidence graph can.
+- **`server/app/assistant.py`** - a new `case:` ground kind, a recall branch in
+  the deterministic answer, and `_references` admitting both the prior case and
+  its finding id. The recall branch fires when the question is *about* prior
+  work (before/previous/earlier/...) or when the case has nothing of its own.
+  It sits **ahead** of the column and dataset branches on purpose: "what did I
+  find before about revenue?" names a column, and would otherwise be answered
+  with this case's column stats - a true answer to a question nobody asked. A
+  case with its own artifacts and no prior framing still gets its own stage and
+  next action, because its own state is the more actionable thing. The LLM
+  prompt now carries memory and its citation budget names the case kind.
+- **`server/app/main.py`** - the chat endpoint passes the message through to
+  `summarize_case`, because which prior cases are relevant depends on what was
+  asked, not on the case.
 
-The premise: a case already cites its own artifacts through the grounds budget
-in `assistant.py`, but `summarize_case` reads exactly one case's rows, so the
-assistant answers from that case alone. Every investigation starts from
-scratch even when the same anomaly was found and explained last month. The
-master spec's own ladder puts Analysis Memory at level 4 - after the case
-builder, the workbench and evidence + validation, all of which are done - and
-before agentic analysis at level 5. Building the agent first means building it
-amnesiac.
+The honesty budgets from P3-AI-011..014 survive by construction: a cross-case
+ground must resolve to a real finding in a real other case or the answer is
+rejected, exactly as an invented column is. The deterministic path needs no LLM
+key, nothing logs what the analyst typed, and no new runtime dependency was
+added - SQLite already holds everything.
 
-The contract is in `ai/TASKS.md`. The constraints that matter: the honesty
-budgets from P3-AI-011..014 must survive (a cross-case ground resolves to a
-real finding in a real other case or is rejected, exactly as an invented column
-is), the deterministic path stays available with no LLM key, nothing may log
-what the analyst typed, and no new runtime dependency - SQLite already holds
-everything.
+**Verified:** server suite 267 passed (was 256, +11 in
+`server/tests/test_memory.py`); the P4 gate PASS on all 18 journey steps and
+all 10 exit criteria; the P3 gate PASS; web 21 passed; desktop 12 Rust tests.
+Everything green locally; CI will run it on push.
 
-**P6-MEMORY-001 is proposed, not started. Say the word and I begin.**
+One lesson worth carrying: three of the eleven tests failed on the first run
+for a reason that was the *test's* fault, not the code's. The helper hardcoded
+a finding about revenue in sales.csv while the question was about revenue, so
+an allegedly off-topic prior case still shared two content words and was
+correctly recalled. The code was right; the test asserted a separation its own
+data did not have. A relevance threshold is only as honest as the corpus it is
+measured against, and a fixture that says "weather" while quoting "sales" is
+not a weather fixture.
 
-The rest of the P6 checklist, in order: agentic analysis (a plan that executes
-itself over the existing endpoints - the highest capability-per-risk item, and
-only safe because P4 pinned the honesty budgets and P5 made faults observable),
-case templates that carry the analytical shape not just the question, a
-versioned migration path before memory adds tables, and a Tauri update flow
-now that releases publish per tag.
+**Next on the P6 checklist: agentic analysis** - a plan that executes itself
+over the endpoints that already exist (generate code, run it, interpret, draft,
+accept), with the human approving each write. It is the highest
+capability-per-risk item left, and it is only safe because P4 pinned the
+honesty budgets and P5 made faults observable. Its contract is not yet written;
+the memory it will need is now in place, which is exactly why it was second.
+
+After that: case templates carrying the analytical shape rather than just the
+question, a versioned migration path before memory grows new tables, and a
+Tauri update flow now that releases publish per tag.
 
 Releasing: tag `v<x.y.z>` where x.y.z matches server/pyproject.toml. The
-published build is arm64 and unsigned, flagged pre-release.
+published build is arm64 and unsigned, flagged pre-release (DEC-006).
 
 Nothing is unblocked-but-undone.

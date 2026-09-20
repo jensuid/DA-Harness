@@ -1908,17 +1908,21 @@ async def chat_about_case(
     """Answer a question about the case, and remember the exchange.
 
     The case's own artifacts - datasets with their profiles, runs, findings,
-    plans, charts and the derived workflow stage - are the only things the
-    answer may draw on, and `grounds` cites the artifact behind each claim so a
-    reviewer can check it. The LLM answers when it is configured, with the recent
-    turns as context (that is the memory), and degrades to a deterministic
-    answer of the same facts on any failure - unavailable, malformed, or citing
-    an artifact the case does not have - so an answer is always returned and
-    `source` says which engine spoke (P3-AI-014).
+    plans, charts and the derived workflow stage - are the things the answer may
+    draw on, plus what *previous* cases found: memory is derived from the other
+    cases on disk against this question, so an answer may cite a prior finding
+    instead of re-deriving it (P6-MEMORY-001). `grounds` cites the artifact
+    behind each claim so a reviewer can check it, and a citation that does not
+    resolve to a real row - in this case or any other - is rejected. The LLM
+    answers when it is configured, with the recent turns as context (that is the
+    conversation memory), and degrades to a deterministic answer of the same
+    facts on any failure - unavailable, malformed, or citing an artifact that
+    does not exist - so an answer is always returned and `source` says which
+    engine spoke (P3-AI-014).
     """
     _require_case(db, case_id)
 
-    facts = summarize_case(db, case_id)
+    facts = summarize_case(db, case_id, payload.message)
     history = [
         {"message": row["message"], "answer": row["answer"]}
         for row in db.execute(

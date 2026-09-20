@@ -13,7 +13,7 @@
 case management - rename, duplicate, delete (P2-CASE-010);
 AI planning with structured output (P2-AI-011); case export as a self-contained
 JSON package with import round trip (P2-CASE-012)**
-- **Active task:** P5-UX-006 DONE - a "Reveal DAH Logs" menu item. The core
+- **Active task:** P6-MEMORY-001 DONE - cross-case recall, the first P6 task. A case can now cite a PREVIOUS case's finding, not only its own artifacts: `app/memory.py` derives which prior cases bear on the question (a shared-content-word threshold, no new dependency, writes nothing), the assistant gains a `case:` ground kind and a recall branch, and an invented cross-case citation is rejected exactly as an invented column is. Before it: P5 CLOSED - v0.1.0 published and checksum-verified, signing deferred indefinitely by DEC-006. Next on the P6 checklist: agentic analysis.
   answers `GET /logs` with a path, but a path in a JSON body is a terminal
   answer, and the shell exists because this user does not have a terminal. New
   `desktop/src-tauri/src/logs.rs` is the bridge: it asks the core, then hands
@@ -33,25 +33,22 @@ JSON package with import round trip (P2-CASE-012)**
   documented minimum but is no longer enforced by CI, and a green run no longer
   proves the exact Intel triple a local build produces. Restoring that needs a
   self-hosted Intel runner.
-- **Test status:** server 256 passed (211 + 16 error semantics + 2 validation
-  determinism + 6 large-dataset + 21 observability); web 17 passed (CaseList 5, CaseCreation 3,
-  CaseWorkspace 9);
-  desktop shell 7 Rust tests (5 unit + 2 e2e, `cd desktop/src-tauri && cargo test [--features e2e]`);
-  P2 and P3 gates PASS; first release v0.1.0 published from tag and checksum-verified
-- **Next task:** P6-MEMORY-001 - cross-case recall, letting an answer cite a previous case's finding. Proposed, not started: **say the word and I begin.** Signing is retired by DEC-006 (single-user), so nothing in P6 is blocked. The last P5 item was macOS signing + notarization,
-  formally deferred by DEC-004 and **blocked on an external dependency only you
-  can provision** - a $99 Apple Developer ID. The release job already has the
-  slot: signing goes between the build and the upload, and the `--prerelease`
-  flag is what to revisit once a build is notarized. Not agent work until the ID
-  exists. Everything else unblocked is smaller: an arm64 release lane (a second
-  runner and sidecar triple, unverifiable on this x86_64 machine except by CI
-  itself), a "Reveal logs" menu item in the desktop shell calling `GET /logs`,
-  and showing the request id's full value somewhere copyable - the one item
-  still open from the follow-up list.
-  Carried: a 500 still answers with Starlette's plain-text "Internal Server
-  Error"; the client handles it, but a JSON envelope is the last rough edge of
-  the error contract.
-- **Blockers:** none. Signing is deferred indefinitely by DEC-006 (DAH is single-user) - a decision, not a blocker.
+- **Test status:** server 267 passed (256 + 11 cross-case memory); web 21 passed
+  (CaseList 5, CaseCreation 3, CaseWorkspace 9); desktop shell 12 Rust tests
+  (`cd desktop/src-tauri && cargo test [--features e2e]`, 9 unit + 3 e2e);
+  P2, P3 and P4 gates PASS (P4: all 18 journey steps, all 10 exit criteria);
+  first release v0.1.0 published from tag and checksum-verified.
+- **Next task:** agentic analysis - a plan that executes itself over the
+  endpoints that already exist (run, interpret, draft, accept), with the human
+  approving each write. Item 2 on the P6 checklist and the highest
+  capability-per-risk work left; it is only safe because P4 pinned the honesty
+  budgets and P5 made faults observable. Before it, P6-MEMORY-001 (cross-case
+  recall) is DONE. The last P5 item was macOS signing + notarization,
+  retired indefinitely by DEC-006 - DAH is single-user, so the right-click >
+  Open cost is paid once per machine by the one person who uses the app. The
+  release job keeps the slot between the build and the upload if that changes.
+  Not blocked, and not agent work.
+- **Blockers:** none.
 
 ## P2 progress
 
