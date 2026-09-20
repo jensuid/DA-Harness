@@ -1,6 +1,6 @@
 # DAH - Current State
 
- - **Phase:** P5 Production Grade - COMPLETE. P6 Post-Launch Evolution - COMPLETE: all 5 entry-checklist items. P7 Product Modes is IN PROGRESS (0 of 4), opening with EVALUATE mode - the spec's third product mode, auditing existing analytical work against the nine axes the spec names. P4 Production Candidate was COMPLETE (all 5 checklist items: P4 Production Candidate was COMPLETE (all 5 checklist items:
+ - **Phase:** P5 Production Grade - COMPLETE. P6 Post-Launch Evolution - COMPLETE: all 5 entry-checklist items. P7 Product Modes is IN PROGRESS (1 of 4): EVALUATE mode is DONE - submitted analytical work is audited against the nine axes the spec names - and next is the web-shell gap, the distance between what the core can do and what the UI shows. P4 Production Candidate was COMPLETE (all 5 checklist items: P4 Production Candidate was COMPLETE (all 5 checklist items:
   P4-VERIFY-001, P4-RELIABILITY-002, P4-UX-003 + P4-UX-004, P4-VALID-005,
   P4-PERF-006, P4-CI-007). P3 V1 is COMPLETE: all 10 entry-checklist items,
   231 server tests, and a P3 gate of its own. P5 Production Grade is IN
@@ -22,60 +22,53 @@ a versioned, forward-only migration path for the store, so a database from
 any past release opens, upgrades and keeps its rows (P6-MIGRATE-004);
 and an update check that tells an installed app a newer build exists - or
 says honestly that it could not tell (P6-UPDATE-005)**
-- **Active task:** P6-UPDATE-005 DONE - the update check, and with it P6 closes.
-  The release pipeline publishes a build per tag, but an installed app had no
-  way to learn that. The check is what ships; the self-replacing install is
-  not, because the repository is private (an unauthenticated feed request
-  answers 404, verified) and the app is unsigned (DEC-006), so a payload cannot
-  be signature-verified. `GET /updates/latest` answers one of three truths -
-  current, available, or unknown with a reason - and the shell's **DAH > Check
-  for Updates...** menu item opens the release page or shows that sentence.
-  Every feed failure degrades to `unknown` with its own reason rather than a
-  silent `current`, because "could not check" and "is up to date" are different
-  statements. Before it: P6-MIGRATE-004 (the migration path) DONE,
-  P6-TEMPLATE-003 DONE, P6-AGENT-002 DONE, P6-MEMORY-001 DONE, P5 CLOSED.
-  answers `GET /logs` with a path, but a path in a JSON body is a terminal
-  answer, and the shell exists because this user does not have a terminal. New
-  `desktop/src-tauri/src/logs.rs` is the bridge: it asks the core, then hands
-  the answer to Finder with `open -R` (macOS-native, no new dependency -
-  serde_json is the only addition and it is already in the tree through tauri).
-  Everything degrades to a sentence: a core still booting, hung, or older than
-  the endpoint is "logging is off", and a body that is not the expected shape
-  cannot panic a menu. main.rs gets a real macOS menu bar - the app menu keeps
-  About and Cmd+Q, which setting any custom menu takes away, Edit keeps the
-  text editing a data tool needs, and DAH > Reveal DAH Logs is the one item DAH
-  adds. 5 new Rust tests (12 total, was 7), including an e2e test that starts
-  the real dev core and asserts the reported log is under the data dir the
-  shell pointed it at. Before it: P5-RELEASE-005, release automation.
+- **Active task:** P7-EVAL-001 DONE - EVALUATE mode, the spec's second product
+  mode. Until P7 every primitive DAH had served the analyst's *own* work; this
+  task turns them on work that came from elsewhere. A user submits an artifact
+  - its code (SQL or Python) and the claim it was offered to support - and
+  `POST /cases/{id}/datasets/{id}/evaluate` answers the nine questions the
+  specification names, each against the data rather than against the claim's
+  own confidence: question, data, quality, method, calculation, evidence,
+  claim, visualization, limitations. Verdicts are pass / concern / fail -
+  deliberately not a score, because a single number would imply a precision
+  nine heterogenous axes do not have - and every verdict carries a sentence a
+  reader can act on.
+  The artifact executes through the *existing* run engine, never a second code
+  path, so the read-only gate, the row cap and the hard sandbox are the ones
+  every other run answers to: EVALUATE earns no privilege, and untrusted code
+  is the premise of the mode. The Evidence axis reuses the drafter's honesty
+  budget unchanged, so a claim quoting a magnitude the run does not contain is
+  caught by the same standard a draft is judged by; the Data axis reuses the
+  generator's notion of a column read, so a name the dataset lacks is reported
+  rather than silently dropped. The artifact is stored as a run and the
+  evaluation beside it, so an audit is itself inspectable and reproducible -
+  the standard every other artifact in DAH is held to. Before it: P6 CLOSED
+  (memory, the agent, templates, the migration path, the update check).
 - **Known issues:** CI's runner is `macos-latest`, not the Ventura/Intel pin
   P5-CI-004 intended - GitHub retired the macos-13 pool, so the label hangs
   forever (probed empirically; see DEC-005). The Ventura floor stays the
   documented minimum but is no longer enforced by CI, and a green run no longer
   proves the exact Intel triple a local build produces. Restoring that needs a
   self-hosted Intel runner.
-- **Test status:** server 336 passed (315 + 21 update check); web 21 passed
-  (CaseList 5, CaseCreation 3, CaseWorkspace 9); desktop shell 12 Rust tests
-  (`cd desktop/src-tauri && cargo test [--features e2e]`, 9 unit + 3 e2e);
+- **Test status:** server 358 passed (336 + 22 evaluate); web 21 passed
+  (CaseList 5, CaseCreation 3, CaseWorkspace 9); desktop shell 22 Rust tests
+  (`cd desktop/src-tauri && cargo test [--features e2e]`, 19 unit + 3 e2e);
   P2, P3 and P4 gates PASS (P4: all 18 journey steps, all 10 exit criteria);
   first release v0.1.0 published from tag and checksum-verified.
-- **Next task:** P6 is CLOSED - all five entry-checklist items delivered. The
-  unbuilt product work is the spec's other two modes. **EVALUATE** is the bigger
-  one and the one DAH uniquely owns: import existing analytical work - SQL, a
-  notebook, a dashboard, a spreadsheet, an AI-generated analysis - as the thing
-  *under inspection* and audit it against question / data / quality / method /
-  calculation / evidence / claim / visualization / limitations. Most of the
-  machinery exists (read-only execution, profiling, validation, the evidence
-  graph); what is missing is importing an artifact as a claim rather than as
-  data. **LEARN** is the other: a guided Why -> What -> How -> Validate walk,
-  which is a sequencing layer over the workflow stages that already exist. The
-  deferred scale items (cloud sync, collaboration, warehouse connectors,
-  enterprise governance) stay deferred at a user count of one.
-  The last completed task was P6-UPDATE-005 (the update check). Before it,
-  P6-MIGRATE-004, P6-TEMPLATE-003, P6-AGENT-002 and P6-MEMORY-001 were DONE.
-  The last P5 item was macOS signing + notarization, retired indefinitely by
-  DEC-006 - DAH is single-user, so the right-click > Open cost is paid once per
-  machine by the one person who uses the app. The release job keeps the slot
-  between the build and the upload if that changes. Not blocked.
+- **Next task:** P7 item 2 - **the web shell is behind the core.** These
+  endpoints have no UI at all: the agent (`/agent`), templates (`/templates`,
+  `/from-template`), cross-case memory, EDA (`/eda`), the evidence graph
+  (`/evidence-graph`), case history, rename/duplicate/delete,
+  `/schema-version`, `/updates/latest` - and now `/evaluate`. The core can do
+  all of it; the shell is the distance between "works" and "usable", and it is
+  the highest-value work left that needs no new core capability. After it:
+  **LEARN** mode, a guided Why -> What -> How -> Validate walk, mostly a
+  sequencing and presentation layer over the workflow stages that already
+  exist (P3-FLOW-004); then multi-agent workflows, which only make sense after
+  EVALUATE, because that is how an agent's own output gets audited.
+  Deferred, not dropped: signing (DEC-006, the slot is in `release.yml`), cloud
+  sync, team collaboration, warehouse connectors, enterprise governance. None
+  pays for itself at a user count of one.
 - **Blockers:** none.
 
 ## P2 progress
@@ -113,6 +106,16 @@ says honestly that it could not tell (P6-UPDATE-005)**
 - P1 verification: `server/.venv/bin/python verification/p1/verify_p1.py` (in-process)
 - P2 verification: `server/.venv/bin/python verification/p2/verify_p2.py` (in-process)
 - Python analysis run: `POST /cases/{id}/datasets/{id}/runs/python` with `{"code": "..."}`
+- Audit submitted work (EVALUATE mode): `POST /cases/{id}/datasets/{id}/evaluate`
+  with `{code, claim, kind?: "sql"|"python"}` - the code and the claim it was
+  offered to support, judged on nine axes (question, data, quality, method,
+  calculation, evidence, claim, visualization, limitations), each a
+  pass / concern / fail verdict with a sentence. The artifact runs under the
+  same read-only gate, row cap and sandbox as any other run, is stored as a
+  run, and the evaluation beside it; audits at `GET .../evaluations` newest
+  first. A non-read-only artifact is a 400 before anything executes; a
+  read-only artifact that fails at run time is a Calculation *finding*, not
+  a 400, because the work is not the user's to fix.
 - Delete a dataset: `DELETE /cases/{id}/datasets/{id}` (removes the row, profile, plans and file; 400 while a run still binds it)
 - Export: `GET /cases/{id}/export` (self-contained JSON package); `POST /cases/import`
   reconstructs it with fresh IDs
@@ -148,7 +151,7 @@ says honestly that it could not tell (P6-UPDATE-005)**
 
 | Task | Status |
 |------|--------|
-| P7-EVAL-001 EVALUATE mode | PROPOSED |
+| P7-EVAL-001 EVALUATE mode | DONE |
 
 ## P6 progress
 

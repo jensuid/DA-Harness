@@ -2099,3 +2099,180 @@ LESSON: a safety check whose input is collected at the wrong moment is a
         artifact, not only against the path that consumes it.
 
 ```
+
+### P6-MIGRATE-004 contract
+
+```
+TASK ID: P6-MIGRATE-004
+MILESTONE: P6 Post-Launch Evolution
+CAPABILITY: Maintainability
+GOAL: Give the store a versioned, forward-only migration path, so a database
+      written by any past release is brought to the current shape by a recorded
+      chain of named migrations - and the app can state which shape it opened.
+
+CONTEXT: the store grew by seven `_ensure_column` in-place additions across
+         P2-P6, each guarded and each correct, but nothing records which of them
+         a given database has had. There is no version number anywhere in the
+         file, so no code can tell "is this store current?" - it can only probe
+         for each column and hope. That was tolerable while the schema only ever
+         gained nullable columns; it stops being tolerable the moment a task
+         renames, splits or backfills anything, which is exactly what P6's
+         remaining items (memory tables, release metadata) are about to do.
+
+INPUTS: a SQLite store at DAH_DB_PATH, of any age (including one written by a
+        release older than this task, which has no version recorded at all).
+RELEVANT FILES: server/app/db.py, server/app/main.py, server/app/models.py,
+                server/tests/test_migrations.py (NEW)
+REQUIRED CHANGE:
+  - a schema version number lives in the file itself, via SQLite's
+    `user_version` (stored in the header, so it survives without a table), and
+    a `schema_migrations` row records each migration actually applied, with its
+    name and timestamp - the audit trail the `_ensure_column` list could never
+    give. A fresh store records nothing: it was created whole at the current
+    shape and nothing was applied to it, which is the truth.
+  - an ordered `MIGRATIONS` list; each entry is a version, a name and a call.
+    The seven historical additions become migrations 1-7, still guarded, so a
+    store at any intermediate state converges instead of erroring on a column
+    it already has. Migration N runs only when the recorded version is below N.
+  - opening a store upgrades it in place, one migration per transaction, the
+    version advanced after each; a failure mid-chain leaves a consistent store
+    at the last good version, and the next open resumes from there rather than
+    restarting. That resumability is the property that makes an in-place
+    upgrade safe to run at request time.
+  - the store refuses to operate against a version NEWER than the app knows
+    (an older binary opening a newer store), rather than silently treating it
+    as current; a downgrade against a schema it does not understand is how data
+    is corrupted quietly.
+  - `GET /schema-version` reports the recorded version, the target, and the
+    applied migrations - the one way a user can ask "is my data safe with this
+    build", and the answer a release note can point at.
+NON-GOALS: down migrations (the store is forward-only, always; a local
+           single-user database's rollback path is a backup, not a second
+           schema to maintain and get wrong), destructive or backfilling
+           migrations (this task establishes the mechanism; the first migration
+           that moves data is a later one), online/rolling upgrades across a
+           server fleet (one process, one store), a migration CLI (the app
+           upgrades on open; a CLI is ceremony for a single-user tool).
+CONSTRAINTS: an upgrade runs on the ordinary open path, so it must be
+             idempotent (running it on an already-current store is a no-op that
+             writes nothing), fast on the warm path (one PRAGMA read), and safe
+             to interleave with reads; existing rows survive every migration
+             unmodified; no existing test may change; nothing the analyst typed
+             is logged; no new runtime dependency; a store written by v0.1.0 -
+             which has no version and a pre-migration shape - must open, upgrade
+             and work, because that is the one store that actually exists in the
+             wild.
+ACCEPTANCE CRITERIA:
+- [x] a fresh store is created at the current version with an empty migration
+      table, without running the historical ALTERs
+- [x] a store written by a pre-migration release upgrades to the current shape
+      and every historical column is present afterwards
+- [x] existing rows survive the upgrade, byte for byte in value
+- [x] reopening a current store is a no-op: version unchanged, no new migration
+      rows, no writes
+- [x] a partially-upgraded store (some migrations applied, version recorded
+      mid-chain) resumes from where it stopped and reaches the current shape
+- [x] a store claiming a version newer than the app is refused with a clear
+      error, not silently downgraded
+- [x] a fresh store and an upgraded store have identical table shapes - the
+      schema and the migration chain agree
+- [x] `GET /schema-version` reports the recorded version, whether it is
+      current, and the applied migrations
+- [x] the full server suite, the P2/P3/P4 gates and the web suite stay green
+TESTS: server/tests/test_migrations.py - the fresh-store baseline, the legacy
+       upgrade over a store built with the pre-migration schema, row survival,
+       the no-op reopen, mid-chain resumption, the newer-than-app refusal, the
+       fresh-vs-upgraded shape equivalence across every table, and the endpoint.
+VERIFICATION: server suite + verification/p2/verify_p2.py +
+              verification/p3/verify_p3.py + verification/p4/verify_p4.py PASS.
+STATE UPDATE: mark P6-MIGRATE-004 done on pass; ROADMAP item 4 flips to DONE.
+```
+
+```
+TASK: P6-MIGRATE-004 - a versioned, forward-only migration path for the store
+ID: P6-MIGRATE-004
+PRIORITY: high
+STATUS: DONE
+SUMMARY: The store grew by seven ad-hoc `_ensure_column` additions across P2-P6.
+         Each was guarded and each was correct, but nothing anywhere recorded
+         which of them a given database had received. There was no version
+         number in the file, so no code could answer "is this store current?" -
+         it could only probe for each column and hope. That was tolerable while
+         the schema only ever gained nullable columns; it stopped being
+         tolerable the moment a task needed to rename, split or backfill
+         anything, which is exactly what P6's remaining items do.
+
+Four pieces, all in `server/app/db.py`:
+
+- **The version lives in the file itself**, via SQLite's `PRAGMA user_version`.
+  It is stored in the database header rather than a table, so it is readable
+  before the schema exists and survives a crash that leaves tables half-made.
+  `LATEST_SCHEMA_VERSION` is the shape this build understands.
+- **`MIGRATIONS`** - an ordered, named, forward-only chain. The seven
+  historical additions become migrations 1-7, still guarded, so a store at any
+  intermediate state converges instead of erroring on a column it already has.
+  Migration N runs only when the recorded version is below N. Entries are
+  appended, never edited or renumbered.
+- **`_migrate`** - one transaction per migration: the change, its audit row in
+  `schema_migrations` and its version stamp land together or none of them does.
+  A failure mid-chain leaves a consistent store at the last good version and
+  the next open resumes there. Idempotent: a current store runs no migration
+  and writes nothing but the pragma read.
+- **`GET /schema-version`** - the one place to ask whether the local data is
+  safe with the build being run. It reports the recorded version, the target,
+  whether they match, and the audit trail. Read-only.
+
+Two deliberate behaviours worth stating. A store whose recorded version is
+*above* what this build knows is refused with a clear `SchemaVersionError`
+naming both numbers, never silently treated as current - an older binary
+writing against a schema it does not understand is how a store is corrupted
+quietly. And a store created by this build is stamped current with an empty
+migration table, because the truth is that nothing was applied to it: it was
+born current. The audit trail records what *ran*, not a padding of entries that
+never did.
+
+One real constraint the implementation had to respect: SQLite refuses to add a
+`NOT NULL` column to a table that already has rows unless the statement carries
+a default. So `datasets.format` migrates as `TEXT NOT NULL DEFAULT 'unknown'`
+and `profiles.duplicate_rows` as `INTEGER NOT NULL DEFAULT 0`, and SCHEMA
+declares the same defaults so that a fresh store and an upgraded store are
+identical - not merely compatible. A test pins that equivalence across every
+table, because "the two agree by construction" is exactly the kind of claim
+that silently stops being true when the next migration lands.
+
+NON-GOALS held: no down migrations (forward-only, always; a local single-user
+             store's rollback path is a backup, not a second schema to maintain
+             and get wrong), no destructive or backfilling migration (this task
+             establishes the mechanism; the first migration that moves data is
+             a later one), no online/rolling upgrade across a fleet (one
+             process, one store), no migration CLI (the app upgrades on open).
+CONSTRAINTS held: an upgrade runs on the ordinary open path and is idempotent
+             (a current store writes nothing but a pragma read), fast on the
+             warm path, and safe to interleave with reads; existing rows survive
+             every migration unmodified (verified against the real dev store,
+             34 cases); no existing test changed; nothing the analyst typed is
+             logged; no new runtime dependency; the v0.1.0 store - no version,
+             pre-migration shape - opens, upgrades and works, because that is
+             the one store that exists in the wild.
+ACCEPTANCE CRITERIA: all 9 - see the checked boxes above.
+TESTS: 13 in server/tests/test_migrations.py - the fresh-store baseline, the
+       legacy upgrade over a store built with the pre-migration schema, the
+       audit trail, row survival, the no-op reopen, mid-chain resumption, the
+       newer-than-app refusal, fresh-vs-upgraded shape equivalence across every
+       table, the endpoint, and the empty-legacy edge.
+VERIFICATION: server suite 315 passed (was 302, +13); P2, P3 and P4 gates all
+              PASS (each re-ran the suite at 315); web 21 passed; desktop 12
+              Rust tests. All green locally; CI will run it on push. The real
+              dev store was upgraded in place as a live check, not only a
+              synthetic one: 34 cases intact, 7 migrations recorded.
+LESSON: the first version of `_migrate` decided "is this store new?" by counting
+        tables - after running SCHEMA, which creates the `schema_migrations`
+        table. Every newborn store therefore looked like an old one that needed
+        the whole chain, and three tests failed on the empty-audit-trail
+        assertion. The fix was to decide emptiness *before* creating anything.
+        The general shape: a freshness check that runs after the thing it
+        detects has been created cannot detect freshness. State inspected for a
+        decision must be read before the action that would change it - the same
+        lesson as P6-TEMPLATE-003's `columns_used`, in a different costume.
+
+```

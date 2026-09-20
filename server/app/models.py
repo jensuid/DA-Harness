@@ -553,6 +553,44 @@ class LogView(BaseModel):
     lines: list[str]
 
 
+class AxisFinding(BaseModel):
+    """One axis of an EVALUATE audit: a verdict and a sentence."""
+
+    axis: str
+    verdict: str
+    detail: str
+
+
+class Evaluation(BaseModel):
+    """An EVALUATE-mode audit of submitted analytical work (P7-EVAL-001).
+
+    Nine axes, each a verdict and a sentence a reader can act on. The verdicts
+    are pass / concern / fail rather than a score, because a single number would
+    imply a precision nine heterogenous axes do not have. Every verdict is
+    derived from the profile, the code or the run the code produced - never from
+    the claim's own confidence.
+    """
+
+    id: str
+    case_id: str
+    dataset_id: str
+    run_id: str | None
+    artifact_kind: str
+    code: str
+    claim: str
+    findings: list[AxisFinding]
+    source: str
+    created_at: str
+
+
+class EvaluationCreate(BaseModel):
+    """A submitted artifact and the claim it is offered as evidence for."""
+
+    code: str
+    claim: str
+    kind: str = "sql"
+
+
 class UpdateCheckResult(BaseModel):
     """Whether a newer published build exists (P6-UPDATE-005).
 

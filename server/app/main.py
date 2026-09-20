@@ -67,6 +67,8 @@ SOURCE_TEMPLATE = "template"
 from app import agent as agent_module
 import app.db as db_module
 from app.db import get_connection, LATEST_SCHEMA_VERSION
+from app.evaluator import evaluate as evaluate_artifact
+from app.analysis import _is_read_only
 from app.updates import (
     DEFAULT_FEED,
     UpdateStatus,
@@ -125,6 +127,9 @@ from app.models import (
     SchemaMigrationRecord,
     SchemaVersion,
     UpdateCheckResult,
+    AxisFinding,
+    Evaluation,
+    EvaluationCreate,
 )
 
 # Give the core's output somewhere to go. Under the desktop shell the core is a
@@ -1190,6 +1195,269 @@ async def create_python_run(
         ),
     )
     return run
+
+
+def _profile_row(db, dataset_id: str) -> dict | None:
+    """A stored profile as the evaluator consumes it, or None."""
+    row = db.execute(
+        "SELECT rows, columns_json, stats_json, duplicate_rows FROM profiles "
+        "WHERE dataset_id = ?",
+        (dataset_id,),
+    ).fetchone()
+    if row is None:
+        return None
+    return {
+        "rows": row["rows"],
+        "columns": json.loads(row["columns_json"]),
+        "stats": json.loads(row["stats_json"]),
+        "duplicate_rows": row["duplicate_rows"],
+    }
+
+
+def _ordered(sql: str) -> bool:
+    """Does a SQL statement pin its own row order?
+
+    A result whose order is not a property of the data cannot be checked by
+    doing the work again: the engine may return the same rows in another order,
+    and nothing in the data changed. An ORDER BY (inside the statement, not in
+    a subquery the outer query discards) is what makes a ranking a ranking.
+    """
+    if not isinstance(sql, str):
+        return False
+    return "order by" in sql.lower()
+
+
+@app.post(
+    "/cases/{case_id}/datasets/{dataset_id}/evaluate",
+    status_code=201,
+    response_model=Evaluation,
+)
+async def evaluate_dataset(
+    case_id: str,
+    dataset_id: str,
+    payload: EvaluationCreate,
+    db=Depends(get_db),
+) -> Evaluation:
+    """Audit submitted analytical work against the nine EVALUATE axes.
+
+    The user hands DAH work that came from elsewhere - a query or a script and
+    the claim it was offered to support - and this endpoint answers the nine
+    questions the specification names, each against the data rather than against
+    the claim's own confidence.
+
+    The artifact executes through the same engine the run endpoints use, under
+    the same read-only gate, row cap and hard sandbox. EVALUATE earns no
+    privilege, and untrusted code is the *premise* of the mode. The artifact is
+    stored as a run and the evaluation beside it, so an audit is itself
+    inspectable and reproducible - the standard every other artifact is held to.
+    """
+    dataset = _require_dataset(db, case_id, dataset_id)
+    if not payload.code or not payload.code.strip():
+        raise HTTPException(status_code=400, detail="the artifact's code is empty")
+    if not payload.claim or not payload.claim.strip():
+        raise HTTPException(status_code=400, detail="no claim was submitted to audit")
+    if payload.kind not in ("sql", "python"):
+        raise HTTPException(
+            status_code=400,
+            detail="the artifact's kind must be 'sql' or 'python'",
+        )
+    if payload.kind == "sql" and not _is_read_only(payload.code):
+        # The same gate run_query applies, checked here so the refusal happens
+        # before the engine is asked to do anything with the code. EVALUATE
+        # turns untrusted code on its own premise; it does not earn the
+        # privilege of running it.
+        raise HTTPException(
+            status_code=400,
+            detail="the artifact is not a single read-only query, so it cannot "
+            "be executed or audited",
+        )
+
+    # The profile is what the Data and Quality axes judge against. Without one,
+    # a claim about the dataset is a guess, and the evaluation says so rather
+    # than inventing columns.
+    profile = _profile_row(db, dataset_id)
+
+    run_error: str | None = None
+    result: dict | None = None
+    try:
+        if payload.kind == "sql":
+            result = run_query(dataset.stored_path, payload.code)
+        else:
+            result = run_python(dataset.stored_path, payload.code)
+    except INPUT_ERROR_TYPES as error:
+        # A rejected artifact is an evaluation finding, not a failed request:
+        # the Calculation axis reports it and the audit is still recorded.
+        run_error = str(error)
+
+    # Reproduction is the standard a finding's validation holds (P4-VALID-005):
+    # the work is executed twice and the two results must agree.
+    reproduced = False
+    if run_error is None and result is not None:
+        try:
+            if payload.kind == "sql":
+                again = run_query(dataset.stored_path, payload.code)
+            else:
+                again = run_python(dataset.stored_path, payload.code)
+            reproduced = _results_agree(result, again)
+        except INPUT_ERROR_TYPES:
+            reproduced = False
+
+    run_id: str | None = None
+    if result is not None and run_error is None:
+        run = Run(
+            id=str(uuid4()),
+            case_id=case_id,
+            dataset_id=dataset_id,
+            kind=payload.kind,
+            sql=payload.code if payload.kind == "sql" else None,
+            code=payload.code if payload.kind == "python" else None,
+            columns=result["columns"],
+            rows=result["rows"],
+            row_count=result["row_count"],
+            truncated=result["truncated"],
+            executed_at=datetime.now(timezone.utc),
+        )
+        db.execute(
+            "INSERT INTO runs (id, case_id, dataset_id, kind, sql, code, "
+            "dataset_ids_json, columns_json, rows_json, row_count, truncated, "
+            "executed_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (
+                run.id,
+                run.case_id,
+                run.dataset_id,
+                run.kind,
+                run.sql,
+                run.code,
+                json.dumps([run.dataset_id]),
+                json.dumps(run.columns),
+                json.dumps(run.rows),
+                run.row_count,
+                1 if run.truncated else 0,
+                run.executed_at.isoformat(),
+            ),
+        )
+        run_id = run.id
+        run_result = result
+        deterministic = True
+        if payload.kind == "sql":
+            deterministic = _ordered(payload.code) or result["row_count"] <= 1
+    else:
+        run_result = {"columns": [], "rows": [], "truncated": False}
+        deterministic = True
+
+    chart_axes: list[str] | None = None
+    if run_id is not None:
+        chart_row = db.execute(
+            "SELECT x, y, series FROM charts WHERE run_id = ? "
+            "ORDER BY created_at DESC LIMIT 1",
+            (run_id,),
+        ).fetchone()
+        if chart_row is not None:
+            # The axes a chart plots, in the order the chart declares them. A
+            # chart over this run's own columns supports the result; a chart
+            # over names the result does not have contradicts it.
+            chart_axes = [
+                name for name in (chart_row["x"], chart_row["y"], chart_row["series"])
+                if name
+            ]
+
+    audit = evaluate_artifact(
+        artifact_kind=payload.kind,
+        code=payload.code,
+        claim=payload.claim,
+        profile=profile,
+        run=run_result,
+        reproduced=reproduced,
+        run_error=run_error,
+        deterministic=deterministic,
+        chart_axes=chart_axes,
+    )
+
+    now = datetime.now(timezone.utc)
+    evaluation_id = str(uuid4())
+    db.execute(
+        "INSERT INTO evaluations (id, case_id, dataset_id, run_id, artifact_kind, "
+        "code, claim, findings_json, source, created_at) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (
+            evaluation_id,
+            case_id,
+            dataset_id,
+            run_id,
+            payload.kind,
+            payload.code,
+            payload.claim,
+            json.dumps([finding.__dict__ for finding in audit.findings]),
+            "deterministic",
+            now.isoformat(),
+        ),
+    )
+    return Evaluation(
+        id=evaluation_id,
+        case_id=case_id,
+        dataset_id=dataset_id,
+        run_id=run_id,
+        artifact_kind=payload.kind,
+        code=payload.code,
+        claim=payload.claim,
+        findings=[AxisFinding(**finding.__dict__) for finding in audit.findings],
+        source="deterministic",
+        created_at=now.isoformat(),
+    )
+
+
+def _results_agree(first: dict, second: dict) -> bool:
+    """Do two executions of the same artifact produce the same result?
+
+    Rows are compared as a multiset rather than positionally, the same correction
+    P4-VALID-005 made to finding validation: an unordered GROUP BY may return its
+    groups in either order across connections, and a disagreement about *order*
+    is not a disagreement about *data*. The columns are compared positionally,
+    because a different column set is a different result.
+    """
+    if first.get("columns") != second.get("columns"):
+        return False
+    left = sorted(json.dumps(row, sort_keys=True) for row in first.get("rows", []))
+    right = sorted(json.dumps(row, sort_keys=True) for row in second.get("rows", []))
+    return left == right
+
+
+@app.get(
+    "/cases/{case_id}/datasets/{dataset_id}/evaluations",
+    response_model=list[Evaluation],
+)
+async def list_evaluations(
+    case_id: str,
+    dataset_id: str,
+    db=Depends(get_db),
+) -> list[Evaluation]:
+    """List the audits of submitted work over this dataset, newest first."""
+    _require_dataset(db, case_id, dataset_id)
+    rows = db.execute(
+        "SELECT id, case_id, dataset_id, run_id, artifact_kind, code, claim, "
+        "findings_json, source, created_at FROM evaluations "
+        "WHERE case_id = ? AND dataset_id = ? ORDER BY created_at DESC",
+        (case_id, dataset_id),
+    ).fetchall()
+    return [
+        Evaluation(
+            id=row["id"],
+            case_id=row["case_id"],
+            dataset_id=row["dataset_id"],
+            run_id=row["run_id"],
+            artifact_kind=row["artifact_kind"],
+            code=row["code"],
+            claim=row["claim"],
+            findings=[
+                AxisFinding(**item)
+                for item in json.loads(row["findings_json"])
+            ],
+            source=row["source"],
+            created_at=row["created_at"],
+        )
+        for row in rows
+    ]
 
 
 @app.get("/cases/{case_id}/runs", response_model=list[RunSummary])

@@ -1,6 +1,6 @@
 # P4 Production Candidate Verification
 
-Run: 2026-09-20T14:10:44.104390+00:00
+Run: 2026-09-20T15:51:54.719034+00:00
 
 ## Journey under test
 
@@ -42,8 +42,8 @@ path, and both are what 'production candidate' has to mean.
 | Validation is deterministic across reruns | PASS | verdicts={'supported'} (a flake would show more than one) |
 | Render the chart the evidence stage needs | PASS | HTTP 201, image bytes=17021 |
 | The loop closes at scale | PASS | stage=validated, loop_closed=True |
-| The case reproduces elsewhere | PASS | totals={'east': 60000.0, 'north': 100000.0, 'south': 80000.0, 'west': 40000.0, 'central': 20000.0} |
-| Test suite runs | PASS | 336 passed, 2 warnings in 94.42s (0:01:34) |
+| The case reproduces elsewhere | PASS | totals={'east': 60000.0, 'south': 80000.0, 'west': 40000.0, 'central': 20000.0, 'north': 100000.0} |
+| Test suite runs | PASS | 358 passed, 2 warnings in 138.17s (0:02:18) |
 
 ## Exit criteria (P4 gate: error semantics, determinism, scale,
 the read-only and sandbox boundaries, graceful degradation)

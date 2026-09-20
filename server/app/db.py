@@ -162,6 +162,22 @@ CREATE TABLE IF NOT EXISTS schema_migrations (
     name TEXT NOT NULL,
     applied_at TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS evaluations (
+    id TEXT PRIMARY KEY,
+    case_id TEXT NOT NULL,
+    dataset_id TEXT NOT NULL,
+    run_id TEXT,
+    artifact_kind TEXT NOT NULL,
+    code TEXT NOT NULL,
+    claim TEXT NOT NULL,
+    findings_json TEXT NOT NULL,
+    source TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (case_id) REFERENCES cases(id),
+    FOREIGN KEY (dataset_id) REFERENCES datasets(id),
+    FOREIGN KEY (run_id) REFERENCES runs(id)
+);
 """
 
 
@@ -184,7 +200,7 @@ def _ensure_column(conn, table: str, column: str, definition: str) -> None:
 # opening one above it is refused (see _check_version) rather than silently
 # treated as current, because a downgrade against an unknown schema is how a
 # store is corrupted quietly.
-LATEST_SCHEMA_VERSION = 7
+LATEST_SCHEMA_VERSION = 8
 
 
 class Migration:
@@ -231,6 +247,28 @@ def _m_cases_template_id(conn: sqlite3.Connection) -> None:
     _ensure_column(conn, "cases", "template_id", "TEXT")
 
 
+def _m_evaluations_table(conn: sqlite3.Connection) -> None:
+    # EVALUATE mode's own store (P7-EVAL-001). Created here rather than relying
+    # on SCHEMA alone so a store upgraded from an older release gets it too -
+    # the same standard every other new table is held to.
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS evaluations ("
+        "id TEXT PRIMARY KEY, "
+        "case_id TEXT NOT NULL, "
+        "dataset_id TEXT NOT NULL, "
+        "run_id TEXT, "
+        "artifact_kind TEXT NOT NULL, "
+        "code TEXT NOT NULL, "
+        "claim TEXT NOT NULL, "
+        "findings_json TEXT NOT NULL, "
+        "source TEXT NOT NULL, "
+        "created_at TEXT NOT NULL, "
+        "FOREIGN KEY (case_id) REFERENCES cases(id), "
+        "FOREIGN KEY (dataset_id) REFERENCES datasets(id), "
+        "FOREIGN KEY (run_id) REFERENCES runs(id))"
+    )
+
+
 # The history of the store, oldest first. Each entry corresponds to a change
 # that once shipped as an ad-hoc `_ensure_column` call; the chain is the same
 # set of changes, now named, ordered and recorded. Append here - never edit an
@@ -243,6 +281,7 @@ MIGRATIONS: tuple[Migration, ...] = (
     Migration(5, "runs gain the full dataset list of a join", _m_runs_dataset_ids_json),
     Migration(6, "templates gain the analytical shape they carry", _m_templates_shape_json),
     Migration(7, "cases gain the template they came from", _m_cases_template_id),
+    Migration(8, "evaluations: EVALUATE mode stores its audits", _m_evaluations_table),
 )
 
 

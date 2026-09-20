@@ -1,6 +1,44 @@
 # DAH - Handoff
 
 ## What was completed
+- P7-EVAL-001 PASSED: EVALUATE mode, the spec's second product mode, and the
+  largest capability DAH did not have. Until P7, every primitive served the
+  analyst's *own* work - read-only execution, deep profiling, rerun validation,
+  the evidence graph, the honesty budgets. This task turns those primitives on
+  work that came from elsewhere, and that turn is the whole product difference:
+  a user submits an artifact (its SQL or Python code) and the claim that code
+  was offered to support, and DAH answers the nine questions the specification
+  names, each against the data rather than against the claim's own confidence.
+  Verdicts are pass / concern / fail - deliberately not a score, because a
+  single number would imply a precision nine heterogenous axes do not have -
+  and every verdict carries a sentence a reader can act on.
+
+  Three pieces. `server/app/evaluator.py` is a pure module (like evidence.py
+  and workflow.py) returning nine `AxisFinding`s; `POST .../evaluate` executes
+  the artifact through the *existing* run engine - never a second code path, so
+  the read-only gate, the row cap and the hard sandbox are the ones every other
+  run answers to, and EVALUATE earns no privilege while untrusted code is the
+  premise of the mode; and the `evaluations` table (migration 8) stores the
+  artifact as a run and the audit beside it, so an audit is itself inspectable
+  and reproducible - the standard every other artifact is held to.
+
+  Four judgement calls the contract left open, each written into the code. A
+  **non-read-only artifact is a 400 before anything executes** (a mutation is a
+  request the store must never honour, not an artifact to audit), but a
+  read-only artifact that **fails at run time is a Calculation finding, not a
+  400** - the work came from elsewhere, it is not the user's to fix, and "this
+  does not run" is the answer an auditor exists to give. An **unknown column is
+  a Data fail, never a silent pass**: the first version of that check
+  intersected the code's identifiers with the profile's columns, which drops
+  every name the dataset lacks - the axis passed on exactly the case it exists
+  to catch, and the fix reuses the generator's own notion of a column read. A
+  **chart is not required**: the contract's baseline is a clean artifact
+  passing all nine axes, and "no chart, and none needed" is a valid verdict -
+  what *is* a fail is a chart whose axes are not the result's own columns, a
+  check the previous `has_chart` boolean could not make because a boolean
+  cannot be wrong. And a **single-row result is deterministic without an ORDER
+  BY**, because one row has no row order to disagree about.
+
 - P6-UPDATE-005 PASSED, and with it P6 closes: a new release tag reaches an
   installed app. The release pipeline publishes a build per tag, but the app
   had no way to learn that. `GET /updates/latest` answers one of three truths -
@@ -754,6 +792,75 @@ reported as unsupported (clear 400) rather than faked; that gate is future work.
 - P2 gate: `server/.venv/bin/python verification/p2/verify_p2.py` PASS on all
   18 steps
 
+## Repository state
+
+- Every P3 task is one atomic commit, all pushed to `origin/master`
+  (github.com/jensuid/DA-Harness), plus the phase close; P4 opens with
+  P4-VERIFY-001, P4-RELIABILITY-002, P4-UX-003, P4-UX-004, P4-VALID-005,
+  P4-PERF-006 and P4-CI-007 as their own commits, then the P4 phase close.
+  `dfb115b` P3-SEC-001, `2c7b11f` P3-CHART-002, `f5df5d1` P3-DATA-003,
+  `967544b` P3-FLOW-004, `7b7e49f` P3-ANALYSIS-005, `ebaa30e` P3-EVIDENCE-006,
+  P3-CASE-007, P3-SHELL-008, P3-DATA-009, P3-VALID-010, P3-AI-011,
+  P3-AI-012, P3-AI-013, P3-AI-014, and the phase close
+  `bffc6ad docs: mark P3 V1 complete...`
+- `.gitignore` covers `web/dist-desktop/`, `server/build/` (the 98MB PyInstaller
+  tree) and `desktop/src-tauri/{target,gen,binaries}` - the 85MB sidecar is
+  never committed.
+- `.git` is writable under the current permission profile (this changed
+  mid-session; the earlier read-only restriction is gone).
+
+## Unresolved problems
+
+- A test-isolation hole is closed but worth remembering: `app.main` skips
+  loading `server/.env` under pytest, but that only stops the *file* load. If
+  `DAH_LLM_API_KEY` is already in the environment - as it was for the pytest
+  subprocess the P2 gate spawns, because the gate itself does load .env - the
+  planner silently switches to the LLM inside the suite. That made the gate
+  both slow (a live call per plan) and flaky (a fast LLM flipped an assertion
+  that expected `source=deterministic`; a slow one fell back and passed). Fixed
+  three ways: the P2 gate scrubs the LLM vars from its subprocess, the P3
+  gate scrubs them from its own process as well (its journey would otherwise
+  make a live call per assistant step), and `test_export.py` deletes them. Any
+  future runner that spawns the suite must do the same.
+
+## Next action
+
+**P7-EVAL-001 is DONE**, and with it the first of P7's four checklist items.
+EVALUATE mode audits submitted work against the nine axes the specification
+names; the core can now be pointed at an analysis it did not write and answer
+whether it holds up. Everything below was verified green: 358 server tests
+(was 336, +22 in `server/tests/test_evaluator.py`), the P2, P3 and P4 gates
+each re-running the suite at 358, the web suite at 21 and the desktop shell at
+22 Rust tests.
+
+### What is unbuilt, in priority order
+
+- **The web shell is behind the core** - P7 item 2, and the highest-value work
+  left that needs no new core capability. These endpoints have no UI at all:
+  the agent (`/agent`), templates (`/templates`, `/from-template`), cross-case
+  memory, EDA (`/eda`), the evidence graph (`/evidence-graph`), case history,
+  rename/duplicate/delete, `/schema-version`, `/updates/latest` - and now
+  `/evaluate`, which currently answers only through the API. The core can do
+  all of it; the shell is the distance between "works" and "usable".
+- **LEARN mode** - a guided Why -> What -> How -> Validate walk over a dataset.
+  Mostly a sequencing and presentation layer over the workflow stages that
+  already exist (P3-FLOW-004), which is why it follows the shell gap.
+- **Multi-agent workflows** - the spec's ladder above the single driver that
+  exists (P6-AGENT-002). Only after EVALUATE, which is how an agent's own
+  output gets audited.
+- **Deferred, not dropped:** signing (DEC-006, the slot is in `release.yml`),
+  cloud sync, team collaboration, warehouse connectors, enterprise governance.
+  None pays for itself at a user count of one, and the architecture is
+  deliberately not shaped around them.
+
+### If the next step is a release
+
+Tag `v<x.y.z>` where x.y.z matches server/pyproject.toml. The published build
+is arm64 and unsigned, flagged pre-release (DEC-006). The version has not been
+bumped since v0.1.0; five tasks have landed since, so a `0.2.0` is the honest
+next label when a release is wanted.
+
+Nothing is unblocked-but-undone.
 ## Repository state
 
 - Every P3 task is one atomic commit, all pushed to `origin/master`
