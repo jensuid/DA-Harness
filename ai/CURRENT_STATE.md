@@ -1,6 +1,6 @@
 # DAH - Current State
 
- - **Phase:** P5 Production Grade - COMPLETE (all deliverables; signing retired indefinitely by DEC-006 - DAH is single-user, not blocked). P6 Post-Launch Evolution is IN PROGRESS, with P6-MEMORY-001 (cross-case recall), P6-AGENT-002 (agentic analysis), P6-TEMPLATE-003 (templates that carry the analytical shape) and P6-MIGRATE-004 (versioned migration path) all DONE. P4 Production Candidate was COMPLETE (all 5 checklist items:
+ - **Phase:** P5 Production Grade - COMPLETE (all deliverables; signing retired indefinitely by DEC-006 - DAH is single-user, not blocked). P6 Post-Launch Evolution is COMPLETE: all 5 entry-checklist items - cross-case recall, agentic analysis, analytical-shape templates, the versioned migration path and the update check - all DONE. P4 Production Candidate was COMPLETE (all 5 checklist items:
   P4-VERIFY-001, P4-RELIABILITY-002, P4-UX-003 + P4-UX-004, P4-VALID-005,
   P4-PERF-006, P4-CI-007). P3 V1 is COMPLETE: all 10 entry-checklist items,
   231 server tests, and a P3 gate of its own. P5 Production Grade is IN
@@ -19,20 +19,21 @@ case templates that carry the analytical shape of a finished case - its plan,
 its proposals and how its findings validated - not just its question
 (P6-TEMPLATE-003);
 a versioned, forward-only migration path for the store, so a database from
-any past release opens, upgrades and keeps its rows (P6-MIGRATE-004)**
-- **Active task:** P6-MIGRATE-004 DONE - a versioned migration path. The store had
-  grown by seven ad-hoc `_ensure_column` additions across P2-P6, each guarded
-  and correct, with no version recorded anywhere in the file - so no code could
-  answer "is this store current?", only probe for each column and hope. Now the
-  version lives in SQLite's `user_version` (in the file header, readable before
-  the schema exists), an ordered named chain replays the seven historical
-  additions one transaction each (change + audit row + stamp together, so a
-  crash mid-chain resumes at the next open), a store newer than the build is
-  refused rather than silently downgraded, and `GET /schema-version` reports the
-  state. A store created by this build is stamped current with an empty audit
-  trail, because nothing was applied to it. Before it: P6-TEMPLATE-003
-  (analytical-shape templates) DONE, P6-AGENT-002 (agentic analysis) DONE,
-  P6-MEMORY-001 (cross-case recall) DONE, P5 CLOSED.
+any past release opens, upgrades and keeps its rows (P6-MIGRATE-004);
+and an update check that tells an installed app a newer build exists - or
+says honestly that it could not tell (P6-UPDATE-005)**
+- **Active task:** P6-UPDATE-005 DONE - the update check, and with it P6 closes.
+  The release pipeline publishes a build per tag, but an installed app had no
+  way to learn that. The check is what ships; the self-replacing install is
+  not, because the repository is private (an unauthenticated feed request
+  answers 404, verified) and the app is unsigned (DEC-006), so a payload cannot
+  be signature-verified. `GET /updates/latest` answers one of three truths -
+  current, available, or unknown with a reason - and the shell's **DAH > Check
+  for Updates...** menu item opens the release page or shows that sentence.
+  Every feed failure degrades to `unknown` with its own reason rather than a
+  silent `current`, because "could not check" and "is up to date" are different
+  statements. Before it: P6-MIGRATE-004 (the migration path) DONE,
+  P6-TEMPLATE-003 DONE, P6-AGENT-002 DONE, P6-MEMORY-001 DONE, P5 CLOSED.
   answers `GET /logs` with a path, but a path in a JSON body is a terminal
   answer, and the shell exists because this user does not have a terminal. New
   `desktop/src-tauri/src/logs.rs` is the bridge: it asks the core, then hands
@@ -52,24 +53,29 @@ any past release opens, upgrades and keeps its rows (P6-MIGRATE-004)**
   documented minimum but is no longer enforced by CI, and a green run no longer
   proves the exact Intel triple a local build produces. Restoring that needs a
   self-hosted Intel runner.
-- **Test status:** server 315 passed (302 + 13 migrations); web 21 passed
+- **Test status:** server 336 passed (315 + 21 update check); web 21 passed
   (CaseList 5, CaseCreation 3, CaseWorkspace 9); desktop shell 12 Rust tests
   (`cd desktop/src-tauri && cargo test [--features e2e]`, 9 unit + 3 e2e);
   P2, P3 and P4 gates PASS (P4: all 18 journey steps, all 10 exit criteria);
   first release v0.1.0 published from tag and checksum-verified.
-- **Next task:** the Tauri update flow (ROADMAP item 5) - releases now publish a
-  build per tag, but an installed app has no way to know. `tauri-plugin-updater`
-  against the GitHub releases feed, with a version compare and a download-and-
-  replace that respects the unsigned-app first-launch step. It is the last item
-  on the P6 entry checklist; after P6 closes, the unbuilt product work is
-  EVALUATE mode (audit existing SQL/notebook/dashboard work - the spec's third
-  mode, and the one DAH uniquely owns) and LEARN mode. P6-MIGRATE-004 (the
-  versioned migration path) is DONE. Before it, P6-TEMPLATE-003, P6-AGENT-002
-  and P6-MEMORY-001 were DONE. The last P5 item was macOS signing +
-  notarization, retired indefinitely by DEC-006 - DAH is single-user, so the
-  right-click > Open cost is paid once per machine by the one person who uses
-  the app. The release job keeps the slot between the build and the upload if
-  that changes. Not blocked, and not agent work.
+- **Next task:** P6 is CLOSED - all five entry-checklist items delivered. The
+  unbuilt product work is the spec's other two modes. **EVALUATE** is the bigger
+  one and the one DAH uniquely owns: import existing analytical work - SQL, a
+  notebook, a dashboard, a spreadsheet, an AI-generated analysis - as the thing
+  *under inspection* and audit it against question / data / quality / method /
+  calculation / evidence / claim / visualization / limitations. Most of the
+  machinery exists (read-only execution, profiling, validation, the evidence
+  graph); what is missing is importing an artifact as a claim rather than as
+  data. **LEARN** is the other: a guided Why -> What -> How -> Validate walk,
+  which is a sequencing layer over the workflow stages that already exist. The
+  deferred scale items (cloud sync, collaboration, warehouse connectors,
+  enterprise governance) stay deferred at a user count of one.
+  The last completed task was P6-UPDATE-005 (the update check). Before it,
+  P6-MIGRATE-004, P6-TEMPLATE-003, P6-AGENT-002 and P6-MEMORY-001 were DONE.
+  The last P5 item was macOS signing + notarization, retired indefinitely by
+  DEC-006 - DAH is single-user, so the right-click > Open cost is paid once per
+  machine by the one person who uses the app. The release job keeps the slot
+  between the build and the upload if that changes. Not blocked.
 - **Blockers:** none.
 
 ## P2 progress
@@ -130,6 +136,10 @@ any past release opens, upgrades and keeps its rows (P6-MIGRATE-004)**
 - Check the store's schema: `GET /schema-version` (read-only; reports the
   recorded version, whether it is current for this build, and the migrations
   that were applied - the answer to "is my data safe with this build")
+- Check for a newer build: `GET /updates/latest` (read-only, GET-only,
+  unauthenticated; answers `current`, `available` with the tag and the release
+  page, or `unknown` with a reason - a private repository answers `unknown`,
+  never a silent `current`)
 - Chart from a run: `POST /cases/{id}/runs/{id}/charts` with `{"kind": "bar|line", "x": ..., "y": ..., "series": ...}`; image at `GET /cases/{id}/charts/{id}/image`
 - Rename: `PATCH /cases/{id}` with `{question?, dataset?}`; duplicate: `POST /cases/{id}/duplicate`;
   delete: `DELETE /cases/{id}` (removes the case row, all children, and its on-disk data)
@@ -142,6 +152,7 @@ any past release opens, upgrades and keeps its rows (P6-MIGRATE-004)**
 | P6-AGENT-002 agentic analysis | DONE |
 | P6-TEMPLATE-003 templates carry the analytical shape | DONE |
 | P6-MIGRATE-004 versioned migration path | DONE |
+| P6-UPDATE-005 update check for the packaged app | DONE |
 
 ## P4 progress
 

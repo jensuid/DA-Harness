@@ -553,6 +553,27 @@ class LogView(BaseModel):
     lines: list[str]
 
 
+class UpdateCheckResult(BaseModel):
+    """Whether a newer published build exists (P6-UPDATE-005).
+
+    Three answers, and they are not interchangeable: `current` is the claim
+    that the feed was reached and nothing newer exists; `available` is the
+    claim that it was reached and something newer does exist, carrying the
+    tag, the release page and the published notes; `unknown` is the honest
+    "could not tell", and its `reason` is the sentence to show a user. An
+    unreachable feed, a private repository, a rate limit and a malformed body
+    are all `unknown` - never a silent `current`, because "could not check"
+    and "is up to date" are different statements and only one is true.
+    """
+
+    status: str
+    current: str
+    latest: str | None = None
+    page_url: str | None = None
+    notes: str | None = None
+    reason: str | None = None
+
+
 class SchemaMigrationRecord(BaseModel):
     """One migration that actually ran against this store."""
 

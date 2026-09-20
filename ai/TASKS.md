@@ -105,165 +105,7 @@ the gate comes first because a phase is done when a gate says so.
 
 Contracts for the rolling window (the two most recent). Older blocks are in
 `ai/TASKS-ARCHIVE.md`.
-### P6-TEMPLATE-003 contract
-
-```
-TASK ID: P6-TEMPLATE-003
-MILESTONE: P6 Post-Launch Evolution
-CAPABILITY: Case reuse
-GOAL: Promote a finished investigation into a reusable template carrying its
-      analytical shape - its plan, its proposals and how its findings validated
-      - not just its question, and let a case started from it inherit that shape
-      as validated starting proposals.
-
-CONTEXT: P3-CASE-007 shipped templates that copy the question and the dataset
-         label alone. The template machinery exists; the investigation does not
-         travel with it, so "same analysis, new month's file" still means
-         re-deriving the plan and re-typing the query that worked last time.
-         The plan, the proposals and the finding outcomes are all already on
-         disk; nothing new needs to be computed to carry them.
-
-INPUTS: a case with a plan, runs and/or findings.
-RELEVANT FILES: server/app/main.py, server/app/models.py, server/app/db.py,
-                server/app/exporter.py, server/tests/test_case_templates.py
-REQUIRED CHANGE:
-  - promotion captures a shape: a pure projection over the case's artifacts -
-    its latest plan and which engine produced it, the code proposals its agent
-    run made (falling back to its runs when the case was hand-run), and its
-    findings' statements with their validation status. A case with nothing to
-    carry promotes a shapeless template and behaves exactly as before.
-  - the template row gains a nullable shape_json; the Template model exposes it.
-  - a case created from a template records its lineage (template_id), so the
-    case knows where it came from rather than the connection being implicit.
-  - the plan step prefers the template's plan when the case has one and has no
-    plan of its own yet, validated through the same validate_plan and falling
-    back to the normal derivation on any problem, with source recorded as
-    "template" so a reviewer sees the plan came from history, not this dataset.
-  - generate-code prefers a template proposal whose every column exists in the
-    profiled dataset - the profile check is what makes a historical proposal
-    safe to offer against different data - and falls back to the generator
-    otherwise, again recording source="template".
-  - export carries the lineage; import preserves it; duplicate keeps it.
-NON-GOALS: copying data, runs, findings or charts into the templated case (it
-           still starts clean; the shape is proposals a human accepts, not
-           artifacts it inherits), reusing a proposal that names a column the
-           new dataset lacks, autonomous application of a shape (every write
-           is still a POST the human makes), a template editor, sharing
-           templates between installs.
-CONSTRAINTS: the honesty budgets are untouched - a reused plan is still just a
-             plan, and a draft or interpretation still only quotes numbers the
-             actual run produced; a shapeless or missing template degrades to
-             the existing deterministic path with no error; nothing the
-             analyst typed is logged; no new runtime dependency; the existing
-             template tests must pass unmodified.
-ACCEPTANCE CRITERIA:
-- [x] promoting a case with a plan, runs and findings captures all three in the
-      shape
-- [x] promoting an empty case yields a shapeless template indistinguishable
-      from today's
-- [x] a templated case starts clean and records its template id
-- [x] the plan step offers the template's plan, validated, with source=template
-- [x] a malformed or missing template plan falls back to derivation
-- [x] generate-code offers a template proposal only when every column it reads
-      exists in the profiled dataset, with source=template
-- [x] a proposal naming a column the new dataset lacks is never offered; the
-      generator answers instead
-- [x] every shape-derived answer records source=template
-- [x] a shapeless older template still promotes, lists and instantiates
-- [x] deleting a template a case points at degrades to the normal path, not an
-      error
-- [x] export/import and duplicate carry the lineage
-- [x] the full server suite, the P2/P3/P4 gates and the web suite stay green
-TESTS: server/tests/test_case_templates.py - shape capture for a finished case,
-       a shapeless promotion, lineage recorded on instantiation, the plan step
-       preferring the template plan, the fallbacks, a proposal accepted and
-       refused by column existence, source propagation, a deleted template
-       degrading, the export/import and duplicate round trips, and the
-       unmodified existing behaviours.
-VERIFICATION: server suite + verification/p2/verify_p2.py +
-              verification/p3/verify_p3.py + verification/p4/verify_p4.py PASS.
-STATE UPDATE: mark P6-TEMPLATE-003 done on pass; ROADMAP item 3 flips to DONE.
-```
-```
-TASK: P6-TEMPLATE-003 - templates carry the analytical shape of a finished case
-ID: P6-TEMPLATE-003
-PRIORITY: high
-STATUS: DONE
-SUMMARY: P3-CASE-007 shipped templates that copied the question and the dataset
-         label alone, so "same analysis, new month's file" still meant
-         re-deriving the plan and re-typing the query that worked last time. A
-         template now carries the *shape* of a finished investigation too, and
-         a case started from it inherits that shape as validated starting
-         proposals - not as artifacts, and never applied without a human.
-
-Five pieces, all projections over what is already on disk:
-
-- **`_capture_shape` (main.py)** - a pure projection, nothing computed. The
-  case's latest plan and which engine produced it; the code proposals its
-  agent run made, falling back to its runs when a human drove the case; and
-  its findings' statements with the verdicts validation already gave them. A
-  case with none of these promotes the shapeless skeleton it always promoted
-  and behaves exactly as before.
-- **`templates.shape_json` + `cases.template_id` (db.py, models.py)** - the
-  shape has somewhere to live and a case knows where it came from. Both
-  nullable, both added to `_ensure_column`, so an older database migrates in
-  place.
-- **the plan step** prefers the template's plan when the case has none of its
-  own, validated through the same `validate_plan` and falling back to the
-  normal derivation on any problem, with `source="template"` so a reviewer
-  sees the plan came from history rather than this dataset.
-- **generate-code** prefers a template proposal only when every column it
-  reads exists in the profiled dataset - that profile check is what makes a
-  historical proposal safe to offer against different data - and falls back
-  to the generator otherwise, again recording `source="template"`.
-- **exporter.py** - the lineage travels with the package, import preserves it,
-  and a duplicated case keeps it.
-
-Two real bugs the tests found. `SOURCE_TEMPLATE` was referenced in two
-helpers but its definition silently never landed, so the first request to a
-templated case's plan step raised a `NameError` - a compile-time name in a
-module that imports cleanly is still a runtime error when the path is never
-exercised, and only a test that walked the path caught it. And hand-run
-cases' proposals captured `columns_used: []`, which made the column-existence
-safety check pass *vacuously* - a template query could be offered against a
-dataset lacking its columns, which is exactly the one thing the check existed
-to prevent. Proposals now compute their reach at capture time through
-`generator._columns_referenced`, so a hand-run proposal carries the same
-reach an agent's does. A guard that is never fed the data it guards is not a
-guard.
-
-NON-GOALS held: no data, runs, findings or charts are copied into a templated
-             case (it starts clean; the shape is proposals a human accepts),
-             no proposal naming a column the new dataset lacks is ever
-             offered, no shape is applied autonomously (every write is still a
-             POST the human makes), no template editor, no cross-install
-             sharing.
-CONSTRAINTS held: the honesty budgets are untouched (a reused plan is still
-             just a plan, and a draft or interpretation still only quotes
-             numbers the actual run produced); a shapeless, malformed or
-             deleted template degrades to the existing deterministic path with
-             no error; nothing the analyst typed is logged; no new runtime
-             dependency; the 10 existing template tests pass unmodified.
-ACCEPTANCE CRITERIA: all 12 - see the checked boxes above.
-TESTS: 11 appended to server/tests/test_case_templates.py (21 total, the first
-       10 unmodified) - shape capture for a finished case, a shapeless
-       promotion, lineage recorded on instantiation, the plan step preferring
-       the template plan, both fallbacks, a proposal accepted and refused by
-       column existence, source propagation, a deleted template degrading, and
-       the export/import and duplicate round trips.
-VERIFICATION: server suite 302 passed (was 291, +11); P2, P3 and P4 gates all
-              PASS (the P4 gate re-ran the suite at 302); web 21 passed;
-              desktop 12 Rust tests. All green locally; CI will run it on push.
-LESSON: a safety check whose input is collected at the wrong moment is a
-        safety check that does not run. `columns_used` was captured empty for
-        hand-run cases, so the column-existence gate passed vacuously and would
-        have offered a template's query against a dataset that lacked its
-        columns - the single failure the gate was written to prevent. The guard
-        was in the right place; the data never reached it. Any check over a
-        historical artifact must be verified against the path that created the
-        artifact, not only against the path that consumes it.
-
-```
+### P6-MIGRATE-004 contract
 
 ```
 TASK ID: P6-MIGRATE-004
@@ -437,5 +279,194 @@ LESSON: the first version of `_migrate` decided "is this store new?" by counting
         detects has been created cannot detect freshness. State inspected for a
         decision must be read before the action that would change it - the same
         lesson as P6-TEMPLATE-003's `columns_used`, in a different costume.
+
+```
+### P6-UPDATE-005 contract
+
+```
+TASK ID: P6-UPDATE-005
+MILESTONE: P6 Post-Launch Evolution
+CAPABILITY: Distribution
+GOAL: A new release tag reaches an installed app: the app says a newer build
+      exists and puts the download in front of the user, and when it cannot
+      know, it says so instead of claiming the app is current.
+
+CONTEXT: the release pipeline now publishes a versioned build per tag, but an
+         installed app has no way to learn that. Two facts constrain what is
+         buildable now, and both are already decisions rather than gaps: the
+         repository is PRIVATE (an unauthenticated release-feed request answers
+         404, verified), and the app is UNSIGNED (DEC-006), so an update payload
+         cannot be signature-verified and a self-replacing updater cannot be
+         tested end to end. So the task delivers the half that is verifiable -
+         the check - and leaves the install half as a documented slot, exactly
+         as DEC-004/006 left signing.
+
+INPUTS: the version this build was published at; a release feed.
+RELEVANT FILES: server/app/updates.py (NEW), server/app/main.py,
+                server/app/models.py, server/tests/test_updates.py (NEW),
+                desktop/src-tauri/src/updates.rs (NEW),
+                desktop/src-tauri/src/main.rs, .github/workflows/release.yml
+REQUIRED CHANGE:
+  - the core learns its own version, one source of truth: the version the
+    release workflow already stamps from server/pyproject.toml. Resolved by
+    importlib.metadata when installed or bundled, falling back to reading the
+    pyproject beside the source in a dev checkout, and finally to "unknown" -
+    never to a guessed number.
+  - server/app/updates.py: pure functions. `parse_version` and
+    `is_update_available` (semver-style tuple comparison, no dependency), and
+    `latest_release` over an injected HTTP client, so the parsing and the
+    comparison are tested without a network and the transport is a seam.
+  - GET /updates/latest: read-only, no body accepted, nothing the caller
+    supplies is written anywhere. It answers one of three truths:
+    `current` (the feed named a version and it is not newer),
+    `available` (it named a newer one, with its tag, its page URL and the
+    published notes), or `unknown` - and `unknown` carries a reason: the feed
+    was unreachable, the repository is private, the rate limit was hit, or the
+    body was not the shape expected. An unknown answer is never reported as
+    current, because "could not check" and "is up to date" are different
+    statements and only one of them is true.
+  - the shell bridges it the way it bridges /logs: a DAH > Check for
+    Updates... menu item asks the core, opens the release page in the user's
+    browser when one exists, and otherwise shows the reason it could not tell.
+    It degrades to a sentence rather than an error at every step, and never
+    panics on a body it does not recognise.
+  - release.yml publishes the version, the page URL and the notes the check
+    reads, so the feed and the pipeline cannot drift apart.
+NON-GOALS: a self-replacing updater (unsigned builds cannot verify a payload,
+           DEC-006; tauri-plugin-updater slots in when signing does, and the
+           check it would consume is what this task builds), background or
+           scheduled checks (a single user does not need a poller burning
+           battery and network; the menu item is the trigger), auto-download
+           or auto-install, a channel/staging mechanism (one release stream),
+           update notifications in the web bundle.
+CONSTRAINTS: the check is read-only and makes no authenticated request - no
+             token is shipped and none ever can be, so a private repository is
+             answered with `unknown` and a reason, never with a silent guess;
+             the network call is bounded by a timeout so a hung feed cannot
+             freeze a menu; nothing the analyst typed is logged; no new runtime
+             dependency (httpx is already in the tree; the browser opens
+             through `open`, as the reveal-logs menu already does, so the shell
+             gains no crate); the existing test suites stay green and hermetic.
+ACCEPTANCE CRITERIA:
+- [x] the core resolves its own version from the pyproject, and the endpoint
+      reports it, never a guess
+- [x] a newer published version is reported as available with its tag, its
+      page URL and its notes
+- [x] an equal or older published version is reported as current
+- [x] an unreachable or private feed is reported as unknown WITH a reason, and
+      never as current
+- [x] a rate-limited feed and a malformed body are each reported as unknown
+      with their own reason
+- [x] the comparison is a pure function, tested without a network
+- [x] the endpoint is read-only: it accepts no body and writes nothing
+- [x] the menu item opens the release page when an update exists and shows a
+      sentence when it cannot tell
+- [x] the shell degrades on every failure path, including a body it does not
+      recognise, without panicking
+- [x] release.yml publishes the fields the check reads
+- [x] the full server suite, the P2/P3/P4 gates, the web suite and the desktop
+      tests stay green
+TESTS: server/tests/test_updates.py - version resolution, the pure comparison
+       across older/equal/newer and malformed inputs, the three feed outcomes
+       and every failure reason, each driven through an injected client so no
+       test touches a network; desktop/src-tauri unit tests for the parse and
+       the degradation table.
+VERIFICATION: server suite + verification/p2/verify_p2.py +
+              verification/p3/verify_p3.py + verification/p4/verify_p4.py PASS;
+              cd desktop/src-tauri && cargo test PASS.
+STATE UPDATE: mark P6-UPDATE-005 done on pass; ROADMAP item 5 flips to DONE and
+              P6 closes.
+```
+
+```
+TASK: P6-UPDATE-005 - a new release tag reaches an installed app
+ID: P6-UPDATE-005
+PRIORITY: high
+STATUS: DONE
+SUMMARY: The release pipeline publishes a build per tag, but an installed app
+         had no way to learn that. This task delivers the half of an update
+         flow that is verifiable today: the app says a newer build exists and
+         puts its download page in front of the user - and when it cannot know,
+         it says so, instead of claiming the app is current.
+
+Two facts decided the scope, and both are recorded decisions rather than gaps:
+the repository is **private**, so an unauthenticated release-feed request
+answers 404 (verified, not assumed), and the app is **unsigned** (DEC-006), so
+an update payload cannot be signature-verified and a self-replacing updater
+cannot be tested end to end. A full `tauri-plugin-updater` integration would
+have been unverifiable code claiming a capability it cannot prove. The check
+ships; the install slots in when signing does, exactly as DEC-004/006 left
+signing itself.
+
+Three pieces:
+
+- **`server/app/updates.py` (new)** - the honest core of it. `parse_version` and
+  `is_update_available` are pure functions (semver-style tuple comparison, no
+  dependency, tolerant of a leading `v` and a pre-release suffix); `latest_release`
+  runs over an *injected* HTTP client, so the parsing is tested without a
+  network and the transport is a seam. `check_for_update` answers one of three
+  truths - `current`, `available`, or `unknown` - and `unknown` always carries a
+  reason: the feed was unreachable, the repository may be private, the rate
+  limit was hit, or the body was not the shape expected.
+- **`GET /updates/latest`** - read-only, GET-only, unauthenticated, accepts no
+  body and writes nothing. The core resolves its own version from the pyproject
+  (importlib metadata when installed or bundled, the file beside the source in a
+  dev checkout, then "unknown" - never a guessed number).
+- **`desktop/src-tauri/src/updates.rs` (new)** - the bridge, shaped exactly like
+  the reveal-logs menu it sits beside: it asks the core, opens the release page
+  in the browser through `open` when one exists, and otherwise shows the
+  sentence. **DAH > Check for Updates...** is the menu item. Every failure path,
+  including a body it does not recognise, degrades to a sentence rather than
+  panicking.
+
+The property the tests actually pin is not "does it find an update" but "does
+it tell the truth". An unreachable feed, a 404, a 403, a 503, a non-JSON body, a
+body without a tag and a transport timeout are each `unknown` with their own
+reason - never a silent `current`, because "could not check" and "is up to
+date" are different statements and only one of them is true. Verified live
+against the real private repository: the answer is `unknown`, "the release feed
+is not reachable; the repository may be private" - the honest one, and it
+answers properly the day the repository goes public with no code change.
+
+NON-GOALS held: no self-replacing updater (unsigned builds cannot verify a
+             payload, DEC-006; the plugin slots in when signing does, and the
+             check it would consume is what this task builds), no background or
+             scheduled checks (a single user does not need a poller), no
+             auto-download or auto-install, no channel mechanism, no web-bundle
+             notification surface.
+CONSTRAINTS held: read-only and unauthenticated - no token is shipped and none
+             ever can be, so a private repository is a *state to report*; the
+             network call is bounded by a timeout so a hung feed cannot freeze
+             a menu; nothing the analyst typed is logged; no new runtime
+             dependency (httpx was already in the tree, and the browser opens
+             through `open` as the reveal-logs menu already does, so the shell
+             gains no crate); the existing suites stayed green and hermetic -
+             every feed outcome in the tests is driven through the injected
+             client, so no test touches a network.
+ACCEPTANCE CRITERIA: all 11 - see the checked boxes above.
+TESTS: 21 in server/tests/test_updates.py - version resolution, the pure
+       comparison across older/equal/newer and malformed inputs, and every feed
+       outcome and failure reason through the injected client; 7 in
+       desktop/src-tauri/src/updates.rs - the parse table and the degradation
+       cases, including a body that is not JSON and a newer build with no page.
+VERIFICATION: server suite 336 passed (was 315, +21); P2, P3 and P4 gates all
+              PASS (each re-ran the suite at 336); web 21 passed; desktop 22
+              Rust tests (19 unit + 3 e2e, was 12). The live check against the
+              real private repository was run by hand and answered `unknown`
+              with the private-repository reason, not a false "current".
+LESSON: two of the first tests failed for the same reason, and it was the
+        tests' fault both times. The endpoint holds its own *imported* reference
+        to `httpx_client` (`from app.updates import httpx_client`), so
+        monkeypatching `updates.httpx_client` patched a name the endpoint had
+        already copied - the call escaped the fake and hit the real network.
+        The seam is the module the call site reads, not the module the symbol
+        came from. The same misreading produced the second failure: the test
+        passed `json=` to a GET, asserting a property ("no body accepted") that
+        a GET cannot even express. The real property is that the route is
+        GET-only, so a POST is refused with 405 before any handler runs - and
+        that is what the test now asserts. A test that fails because it
+        misstates the contract is still a test failure worth having, but the
+        contract is verified against the route, not against an assumption about
+        it.
 
 ```

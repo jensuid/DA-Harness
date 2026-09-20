@@ -49,6 +49,19 @@ first launch. To open it:
 This is needed **once per machine** and does not affect anything afterwards.
 It is a documented behaviour of the pre-release build, not a defect.
 
+## Checking for updates
+
+The **DAH > Check for Updates...** menu item asks the release feed whether a
+newer build exists, and either opens the release page in your browser or says
+why it could not tell.
+
+While the repository is private, an unauthenticated feed request cannot reach
+it, so the item reports "could not check - the repository may be private". That
+is the honest answer rather than a silent claim that the app is current, and it
+answers properly the moment the repository is public, with no code change. The
+reasoning and the deliberate scope - the *check* ships, the self-replacing
+*install* waits on signing - are in `ai/DECISIONS.md` (DEC-007).
+
 ## When something goes wrong
 
 The core keeps a log next to your cases, so a failure leaves something behind

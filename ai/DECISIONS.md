@@ -231,3 +231,68 @@ workaround for the day someone else does want a copy.
 - **Buy the ID anyway.** Real money and real pipeline work (identity, secret
   rotation, notarization stapling) for a user base of one. The ROI is negative
   until distribution is real.
+
+## DEC-007: ship the update check, not the self-replacing updater
+
+**Date:** 2026-09-20 · **Status:** ACCEPTED
+
+### Context
+
+P6-UPDATE-005 is the last P6 item: "an update flow for the packaged app." The
+roadmap's framing assumed `tauri-plugin-updater` with a local release channel.
+
+Two facts, both already recorded rather than open, constrain what is
+verifiable:
+
+- **The repository is private.** An unauthenticated request to the release feed
+  answers 404 - verified empirically before designing, not assumed. No token can
+  be shipped in an unsigned app to work around it, and shipping one would be a
+  secret in a binary anyone can read.
+- **The app is unsigned** (DEC-006). Tauri's updater validates a payload against
+  a signature, and a build that cannot be signature-verified cannot verify an
+  update either. A self-replacing updater could not be tested end to end even if
+  the feed were reachable.
+
+So the full updater is unverifiable code claiming a capability it cannot prove -
+precisely the failure mode this project's verification discipline exists to
+prevent.
+
+### Decision
+
+Ship the **check** and not the **install**. `GET /updates/latest` answers one of
+three truths - `current`, `available` (with tag, page URL and notes), or
+`unknown` with a reason - and the shell's **DAH > Check for Updates...** menu
+item opens the release page or shows that sentence. The self-replacing install
+is a documented slot: `tauri-plugin-updater` consumes exactly this check when
+signing lands, and nothing built now has to be undone to add it.
+
+The load-bearing design rule: **"could not check" is never reported as "is up to
+date."** A 404, a 403, a 503, a timeout, a non-JSON body and a body without a
+version are each `unknown` with their own reason. A check that silently claims
+current when it could not reach the feed is worse than no check, because it
+converts "I do not know" into a false assurance the user cannot inspect.
+
+### Consequences
+
+- The check works correctly against a private repository by design: it reports
+  `unknown`, "the release feed is not reachable; the repository may be private".
+  When the repository goes public it answers properly with **no code change**.
+- The release notes now carry a "Checking for updates" section stating the
+  private-repository behaviour, so the honest answer is documented where a user
+  reads it rather than only in the codebase.
+- No new runtime dependency: httpx was already in the tree, and the shell opens
+  the browser through `open`, as the reveal-logs menu already opens Finder.
+- The install path stays manual (download and replace), which the unsigned
+  first-launch step already covers in the README and the generated notes.
+
+### Alternatives considered
+
+- **Ship `tauri-plugin-updater` anyway.** Unverifiable: the feed is unreachable
+  and the payload cannot be signed. It would add a dependency nothing exercises
+  and a capability nothing proves.
+- **Ship no update surface until signing lands.** Leaves the one genuine
+  distribution gap - "how do I know a new build exists" - closed by nothing, when
+  the honest half of it is cheap and safe today.
+- **Poll on a schedule in the background.** A single user does not need a
+  poller burning battery and network, and a background check that reports nothing
+  visible is a check nobody asked for. The menu item is the trigger.

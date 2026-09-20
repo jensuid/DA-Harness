@@ -9,17 +9,20 @@
 
 mod core_server;
 mod logs;
+mod updates;
 
 use std::path::PathBuf;
 use std::sync::Mutex;
 
 use core_server::{health_url, resolve_server_command, wait_for_health, PORT, ServerChild};
 use logs::reveal_core_logs;
+use updates::{check_for_update, open_in_browser, update_summary, UpdateAnswer};
 use tauri::menu::{Menu, SubmenuBuilder};
 use tauri::{Manager, WindowEvent};
 
-/// The menu item's id; the event handler matches on this.
+/// The menu items' ids; the event handler matches on these.
 const REVEAL_LOGS_ID: &str = "reveal_logs";
+const CHECK_UPDATES_ID: &str = "check_updates";
 
 fn main() {
     let app = tauri::Builder::default()
@@ -42,6 +45,18 @@ fn main() {
                     ),
                 }
                 let _ = app;
+            } else if event.id().as_ref() == CHECK_UPDATES_ID {
+                // Ask the core, which alone has the network egress and the
+                // version, then put the answer in front of the user.
+                match check_for_update(PORT) {
+                    UpdateAnswer::Available { page_url, .. } => {
+                        match open_in_browser(&page_url) {
+                            Ok(url) => eprintln!("DAH shell: opened the release page at {url}"),
+                            Err(err) => eprintln!("DAH shell: {err}"),
+                        }
+                    }
+                    answer => eprintln!("DAH shell: {}", update_summary(&answer)),
+                }
             }
         })
         .setup(|app| {
@@ -51,6 +66,7 @@ fn main() {
             let app_menu = SubmenuBuilder::new(app, "DAH")
                 .about(None)
                 .separator()
+                .text(CHECK_UPDATES_ID, "Check for Updates...")
                 .text(REVEAL_LOGS_ID, "Reveal DAH Logs")
                 .separator()
                 .quit()

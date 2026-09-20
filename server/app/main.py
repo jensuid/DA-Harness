@@ -67,6 +67,13 @@ SOURCE_TEMPLATE = "template"
 from app import agent as agent_module
 import app.db as db_module
 from app.db import get_connection, LATEST_SCHEMA_VERSION
+from app.updates import (
+    DEFAULT_FEED,
+    UpdateStatus,
+    check_for_update,
+    current_version,
+    httpx_client,
+)
 from app.models import (
     Case,
     CaseCreate,
@@ -117,6 +124,7 @@ from app.models import (
     TemplateFindingSummary,
     SchemaMigrationRecord,
     SchemaVersion,
+    UpdateCheckResult,
 )
 
 # Give the core's output somewhere to go. Under the desktop shell the core is a
@@ -257,6 +265,30 @@ def schema_version(db=Depends(get_db)) -> SchemaVersion:
         ],
     )
 
+@app.get("/updates/latest", response_model=UpdateCheckResult)
+def updates_latest() -> UpdateCheckResult:
+    """Whether a newer published build of DAH exists.
+
+    Read-only, and deliberately unauthenticated: the check ships no token and
+    never can (a private repository answers 404, which is a *state to report*,
+    not a fault), accepts no body, and writes nothing. What the caller supplies
+    cannot reach the filesystem, the store or an engine.
+
+    Three answers are possible and they are not interchangeable. `available`
+    names the newer tag, the release page and the notes, so a shell can put the
+    download in front of the user. `current` is the claim that the feed was
+    reached and nothing newer exists. `unknown` is the honest "could not tell",
+    carrying a reason - an unreachable feed, a private repository, a rate limit
+    or a malformed body - because a check that silently reports "up to date"
+    when it could not check is worse than no check at all.
+    """
+    return UpdateCheckResult(
+        **check_for_update(
+            DEFAULT_FEED,
+            current_version(),
+            httpx_client(),
+        ).__dict__
+    )
 
 def _insert_case(db, question: str, dataset: str) -> Case:
     """Persist a fresh case row and return it (P3-CASE-007).

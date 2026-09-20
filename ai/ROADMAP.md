@@ -4,7 +4,7 @@ Source of truth for **where we are** on the global roadmap
 (`docs/Implementation Roadmap.md`). Every phase completion must update this
 file together with `CURRENT_STATE.md` and `TASKS.md`.
 
-**Current stage: P6 Post-Launch Evolution — IN PROGRESS (P5 closed; checklist proposed below).**
+**Current stage: P6 Post-Launch Evolution — COMPLETE (all 5 checklist items; P0-P6 all delivered).**
 
 ```
 P0 Foundation          DONE  ✓
@@ -16,7 +16,7 @@ P4 Production Candidate DONE  ✓   (all 6 checklist items; CI runs every
                               layer)
 P5 Production Grade    DONE  ✓   (all deliverables; signing deferred
                               indefinitely by DEC-006 - DAH is single-user)
-P6 Evolution           IN PROGRESS (4 of 5)  ← we are here
+P6 Evolution           COMPLETE ✓  (all 5 checklist items)
 ```
 
 North-star progression: prove the loop → make it useful → make it repeatable
@@ -34,7 +34,7 @@ production-grade**.
 | P3 V1 | Repeated real-world use: multi-dataset, joins, richer EDA, contextual AI | DONE | P2 gate PASS (re-verified during close, 211 tests) | hard sandbox, raster charts, multi-dataset joins, workflow, EDA, evidence graph, case reuse, desktop shell and all four contextual AI slices DONE |
 | P4 Production Candidate | Serious software: reliability, security, performance, UX, observability | DONE | P3 gate PASS | `verification/p3/REPORT.md` (23 journey steps, 15 exit criteria, all PASS); CI runs every layer (P4-CI-007); signing deferred to P5 by DEC-004 |
 | P5 Production Grade | Maintainable, distributable, secure product | DONE | — | P4 gate, observability, the 500 envelope, release automation, the Reveal-logs menu and the CI repair (P5-CI-FIX-007) DONE; v0.1.0 published. Only signing remains, blocked on the Apple Developer ID (DEC-004). CI runs on macos-latest - macos-13 is retired (DEC-005) |
-| P6 Post-Launch Evolution | Scale and intelligence | IN PROGRESS | — | 4 of 5 checklist items done: cross-case recall (P6-MEMORY-001), agentic analysis (P6-AGENT-002), templates carrying the analytical shape (P6-TEMPLATE-003) and the versioned migration path (P6-MIGRATE-004) |
+| P6 Post-Launch Evolution | Scale and intelligence | DONE | — | all 5 checklist items: cross-case recall (P6-MEMORY-001), agentic analysis (P6-AGENT-002), analytical-shape templates (P6-TEMPLATE-003), the versioned migration path (P6-MIGRATE-004) and the update check (P6-UPDATE-005) |
 
 ## Phase gate definitions (what "done" means)
 
@@ -146,7 +146,7 @@ of a shrug.
 | 4 | Give the 500 a JSON envelope — **DONE (P5-RELIABILITY-003)**: a fault answers `{"detail": "internal error", "request_id": ...}`, the id finds the traceback in the log, the exception's own message stays in the log and never the body, and the 4xx contract is untouched | The client tolerated the plain text; now it gets the same shape as every other error, plus an id a user can quote | P5 Reliability |
 | 5 | Release automation — **DONE (P5-RELEASE-005)**: a `v<x.y.z>` tag matching `server/pyproject.toml` builds, smokes and publishes an unsigned `.app` as a flagged pre-release with its checksum and generated notes; the version has one source of truth and a tag that disagrees with it fails before any build | The `packaging` job already built and smoked the sidecar on a clean machine, but its output went nowhere; now a user can download instead of build. Signing is the slot this job leaves open — it goes between the build and the upload | P5 Distribution |
 
-## P6 Post-Launch Evolution — entry checklist (4 of 5 done)
+## P6 Post-Launch Evolution — entry checklist (COMPLETE, 5 of 5)
 
 Ordered by what makes the product more useful to its one current user first,
 which is also the order the roadmap's own dependency chain dictates: memory
@@ -166,7 +166,7 @@ here is the half of "make it intelligent" that pays off for one person.
 | 2 | **Agentic analysis** — **DONE (P6-AGENT-002)**: a plan that executes itself. `app/agent.py` derives the next step as a pure projection over the case's artifacts, a human approves that step by id, and the write runs through the endpoint that already owns it. An empty result rotates to a different query, three empty attempts end the run at a stated reason, and every step records which engine proposed it. Every piece existed as an endpoint; the loop did not | The loop is currently driven by a human clicking through panels. The deterministic planner, generator, interpreter and drafter are all already composable, so an agent is orchestration over existing validated primitives - the highest capability-per-risk item left, and it is only safe because P4 pinned the honesty budgets and P5 made faults observable | P6 Agentic Analysis |
 | 3 | **Case templates from real history** — **DONE (P6-TEMPLATE-003)**: promote a finished investigation into a reusable template *including its plan and validation shape, not just its question*. A nullable `templates.shape_json` carries a pure projection over the case's artifacts - its latest plan and source engine, the proposals its agent run made (falling back to its runs), and its findings' statements with their verdicts. A case started from a template records its lineage, the plan step offers the template's plan through the same `validate_plan`, and generate-code offers a template proposal only when every column it reads exists in the profiled dataset. Both record `source="template"` and both degrade to the deterministic path on any problem, so a shapeless, malformed or deleted template is never an error | Repeat use is the stated premise of P3/V1 and the one thing a single user actually does repeatedly; a template that carries the analytical shape is the difference between reuse and retyping | P6 Case reuse |
 | 4 | **Schema evolution / migration story** — **DONE (P6-MIGRATE-004)**: the store's version lives in SQLite's `user_version` (the file header, readable before any table exists), the seven historical `_ensure_column` additions are an ordered, named, forward-only chain applied one transaction each - change, audit row and version stamp land together, so a crash mid-chain resumes at the next open - a store newer than the build is refused rather than silently downgraded, and `GET /schema-version` reports whether the local data is current for the build being run | P6 adds memory, which means new tables. Doing it after the tables exist is how the in-place additions became untrackable in the first place - now a future task appends a named migration instead | P6 Maintainability |
-| 5 | **Update flow for the packaged app** — Tauri's updater with a local release channel, so a new tag reaches an installed app without a manual download-and-replace | The release pipeline now publishes a build per tag, but the installed app has no way to know. Genuinely useful to one user across machines, and cheap now that releases exist | P6 Distribution |
+| 5 | **Update flow for the packaged app** — **DONE (P6-UPDATE-005)**: `GET /updates/latest` answers one of three truths - `current`, `available` (with the tag, the release page and the notes) or `unknown` with a reason - and the shell's **DAH > Check for Updates...** opens the release page or shows that sentence. The self-replacing install is deliberately not shipped: the repository is private (an unauthenticated feed answers 404, verified) and the app is unsigned (DEC-006), so a payload cannot be signature-verified. `tauri-plugin-updater` slots in when signing does, and the check it would consume is what this task built. Every failure degrades to `unknown` with a reason rather than a silent `current`, because "could not check" and "is up to date" are different statements | The release pipeline now publishes a build per tag, but the installed app has no way to know. Genuinely useful to one user across machines, and cheap now that releases exist | P6 Distribution |
 
 Deferred (not dropped): cloud storage and sync, team collaboration, warehouse
 connectors (Postgres/Snowflake/BigQuery/Databricks), enterprise governance.

@@ -171,7 +171,9 @@ jobs:
 
       - name: Write the release notes
         # The body is generated rather than freehand, so the unsigned warning
-        # and the architecture cannot be forgotten on a hurry-up release.
+        # and the architecture cannot be forgotten on a hurry-up release. It is
+        # also the text `GET /updates/latest` surfaces in the app, so a note
+        # written here is what a user reads when they check for an update.
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           SHA="$(cut -d' ' -f1 "$STAGE/DAH_${VERSION}_macos_${ARCH}.zip.sha256")"
@@ -202,6 +204,15 @@ jobs:
           Developer ID is provisioned.
 
           ${ARCH_NOTE}
+
+          ### Checking for updates
+
+          The app's **DAH > Check for Updates...** menu item reads the release
+          feed and either opens this page or says why it could not tell. While
+          the repository is private, an unauthenticated feed request cannot
+          reach it, so the item reports "could not check - the repository may be
+          private"; that is the honest answer, not a failure. The check answers
+          properly the moment the repository is public, with no code change.
 
           If something goes wrong, the core keeps a log next to your cases - see
           \`docs/Observability.md\`. Quote the error id the app shows you; it finds

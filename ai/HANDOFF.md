@@ -1,6 +1,47 @@
 # DAH - Handoff
 
 ## What was completed
+- P6-UPDATE-005 PASSED, and with it P6 closes: a new release tag reaches an
+  installed app. The release pipeline publishes a build per tag, but the app
+  had no way to learn that. `GET /updates/latest` answers one of three truths -
+  `current`, `available` (with the tag, the release page and the notes), or
+  `unknown` with a reason - and the shell's new **DAH > Check for Updates...**
+  menu item opens the release page or shows that sentence. Everything degrades
+  to a sentence, the way the reveal-logs menu does, and never panics on a body
+  it does not recognise.
+  What is deliberately *not* here is the self-replacing install, and the reason
+  is two recorded facts rather than two gaps: the repository is private, so an
+  unauthenticated feed request answers 404 (verified, not assumed), and the app
+  is unsigned (DEC-006), so an update payload cannot be signature-verified.
+  `tauri-plugin-updater` slots in when signing does, and the check it would
+  consume is what this task built. The whole design turns on one distinction:
+  "could not check" and "is up to date" are different statements, and only one
+  of them is true - so every failure (404, 403, 503, a timeout, a non-JSON body,
+  a body without a tag) is `unknown` with its own reason, never a silent
+  `current`. Verified live against the real private repository: `unknown`,
+  "the release feed is not reachable; the repository may be private".
+- P6-MIGRATE-004 PASSED: a versioned, forward-only migration path for the store.
+  The database had grown by seven ad-hoc `_ensure_column` additions across P2-P6
+  - each guarded, each correct, and no version recorded anywhere in the file, so
+  no code could answer "is this store current?" but only probe for each column
+  and hope. That was tenable while the schema only ever gained nullable columns;
+  it stopped being tenable the moment a task needed to rename, split or backfill
+  anything. Now the version lives in SQLite's `user_version` (the file header,
+  readable before any table exists and durable across a crash that leaves
+  tables half-made), the seven historical additions are an ordered named chain
+  applied one transaction at a time - the change, its audit row and its version
+  stamp land together or none does, so a failure mid-chain leaves a consistent
+  store that the next open resumes - and `GET /schema-version` reports the state
+  so a user can ask whether their data is safe with the build they are running.
+  Two deliberate behaviours: a store *newer* than the build is refused with both
+  numbers named, never silently downgraded, and a store created by this build is
+  stamped current with an empty audit trail, because the truth is that nothing
+  was applied to it. SQLite itself set one constraint the implementation had to
+  respect: a `NOT NULL` column cannot be added to a populated table without a
+  default, so the historical migrations carry defaults that SCHEMA declares too -
+  a test pins that a fresh store and an upgraded one are identical, not merely
+  compatible, because "they agree by construction" is exactly the claim that
+  silently stops being true when the next migration lands.
 - P6-MIGRATE-004 PASSED: a versioned, forward-only migration path for the store.
   The database had grown by seven ad-hoc `_ensure_column` additions across P2-P6
   - each guarded, each correct, and no version recorded anywhere in the file, so
@@ -690,7 +731,7 @@ reported as unsupported (clear 400) rather than faked; that gate is future work.
 
 ## Tests performed (current)
 
-- server pytest: 315 passed (302 + 13 migrations; verified again on a clean
+- server pytest: 336 passed (315 + 21 update check; verified again on a clean
   venv built from pyproject - the install path CI uses)
 - CI on GitHub's own runners: ALL FOUR JOBS GREEN
   (run 35490199963, the first green run since ae0ba33 - server suite + P2/P3/P4
@@ -746,61 +787,54 @@ reported as unsupported (clear 400) rather than faked; that gate is future work.
 
 ## Next action
 
-P6-MIGRATE-004 is **DONE**: a versioned, forward-only migration path. The store
-grew by seven ad-hoc `_ensure_column` additions across P2-P6, and nothing
-recorded which of them a given database had received. Now the version lives in
-the file itself (`PRAGMA user_version`, in SQLite's header), and an ordered
-named chain replays the history one transaction at a time.
+**P6 is CLOSED.** All five entry-checklist items are delivered: cross-case
+recall, agentic analysis, analytical-shape templates, the versioned migration
+path, and the update check. P0 through P6 are complete.
 
-Three pieces:
+The last task, P6-UPDATE-005, delivered the half of an update flow that is
+verifiable and deliberately not the other half. `GET /updates/latest` answers
+one of three truths and the shell's **DAH > Check for Updates...** menu item
+opens the release page or shows why it could not tell. The self-replacing
+install did not ship, because the repository is private (an unauthenticated
+feed answers 404, verified) and the app is unsigned (DEC-006), so a payload
+cannot be signature-verified. That is a slot, not a gap: `tauri-plugin-updater`
+consumes exactly this check when signing lands, and the design's core
+distinction - "could not check" is never reported as "is up to date" - is what
+makes the slot safe to fill later.
 
-- **`db.py`** - `LATEST_SCHEMA_VERSION`, the `MIGRATIONS` chain (the seven
-  historical additions, now named and still guarded so a store at any
-  intermediate state converges), and `_migrate`, which applies each pending
-  migration in its own transaction: the ALTER, its `schema_migrations` audit row
-  and its version stamp commit together, so a crash mid-chain leaves a
-  consistent store at the last good version and the next open resumes. Opening
-  a store above what this build knows raises `SchemaVersionError` naming both
-  numbers - a downgrade against an unknown schema is how data is corrupted
-  quietly, and the loud failure is the honest one.
-- **`main.py`** - `GET /schema-version` reports the recorded version, the
-  target, whether they match and the audit trail. Read-only. This is the answer
-  to "is my data safe with this build", and the thing a release note can point
-  at.
-- **Freshness is decided before SCHEMA runs**, because SCHEMA itself creates
-  `schema_migrations` and would make a newborn store look old. A store created
-  by this build is stamped current with an empty audit trail - nothing was
-  applied to it, and the trail records what *ran*, not a padding of entries that
-  never did.
+### What is unbuilt, in priority order
 
-One constraint SQLite set: a `NOT NULL` column cannot be added to a table that
-already has rows without a default, so `datasets.format` migrates as
-`TEXT NOT NULL DEFAULT 'unknown'` and SCHEMA declares the same default. A test
-pins fresh-vs-upgraded equivalence across every table.
+- **EVALUATE mode** - the spec's third product mode, and the one DAH uniquely
+  owns. Import existing analytical work (SQL, a Python script, a notebook, a
+  dashboard export, a spreadsheet, an AI-generated analysis) as the *thing under
+  inspection*, and audit it against nine axes the spec names: question, data,
+  quality, method, calculation, evidence, claim, visualization, limitations.
+  Most of the machinery already exists - read-only execution, deep profiling,
+  rerun validation, the evidence graph, the honesty budgets. What does not is
+  importing an artifact *as a claim being evaluated* rather than as data to
+  analyse. This is the largest genuine capability left, and it is the one that
+  separates DAH from a notebook.
+- **LEARN mode** - a guided Why -> What -> How -> Validate walk over a dataset.
+  Mostly a sequencing and presentation layer over the workflow stages that
+  already exist (P3-FLOW-004), which is why it is second.
+- **The web shell is behind the core.** These endpoints have no UI at all: the
+  agent (`/agent`), templates (`/templates`, `/from-template`), cross-case
+  memory, EDA (`/eda`), the evidence graph (`/evidence-graph`), case history,
+  rename/duplicate/delete, `/schema-version` and `/updates/latest`. The core
+  can do all of it; the shell is the distance between "works" and "usable".
+- **Multi-agent workflows** - the spec's ladder above the single driver that
+  exists. Only after EVALUATE, which is how an agent's own output gets audited.
+- **Deferred, not dropped:** signing (DEC-006, the slot is in `release.yml`),
+  cloud sync, team collaboration, warehouse connectors, enterprise governance.
+  None pays for itself at a user count of one, and the architecture is
+  deliberately not shaped around them.
 
-**Verified:** server suite 315 passed (was 302, +13 in
-`server/tests/test_migrations.py`); web 21 passed; desktop 12 Rust tests; P2,
-P3 and P4 gates all PASS - each re-ran the full suite at 315. The real dev
-store was upgraded in place as a live check rather than only a synthetic one:
-34 cases intact, all 7 migrations recorded, `GET /schema-version` current.
-Everything green locally; CI will run it on push.
+### If the next step is a release
 
-**Next on the P6 checklist: the Tauri update flow** (item 5, the last one) -
-releases publish a build per tag, but an installed app has no way to know. The
-shape is `tauri-plugin-updater` against the GitHub releases feed, a version
-compare, and a download-and-replace that respects the unsigned-app first-launch
-step (DEC-006), with the checksum the release already published as the trust
-boundary. After P6 closes, the unbuilt product work is **EVALUATE mode** - the
-spec's third product mode, where existing analytical work (SQL, a notebook, a
-dashboard, an AI-generated analysis) is imported as the thing under inspection
-and audited against question / data / quality / method / calculation / evidence
-/ claim / visualization / limitations. Most of the machinery already exists
-(read-only execution, profiling, validation, the evidence graph); what is
-missing is importing an artifact *as the claim being evaluated* rather than as
-data. Then LEARN mode, which is a sequencing layer over the workflow stages.
-
-Releasing: tag `v<x.y.z>` where x.y.z matches server/pyproject.toml. The
-published build is arm64 and unsigned, flagged pre-release (DEC-006).
+Tag `v<x.y.z>` where x.y.z matches server/pyproject.toml. The published build is
+arm64 and unsigned, flagged pre-release (DEC-006). The version has not been
+bumped since v0.1.0; four tasks have landed since, so a `0.2.0` is the honest
+next label when a release is wanted.
 
 Nothing is unblocked-but-undone.
 ## Repository state

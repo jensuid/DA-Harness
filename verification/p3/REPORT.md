@@ -1,6 +1,6 @@
 # P3 V1 Milestone Verification
 
-Run: 2026-09-20T12:55:01.516972+00:00
+Run: 2026-09-20T14:08:23.646337+00:00
 
 ## Journey under test
 
@@ -36,7 +36,7 @@ real question -> attach CSV + Parquet -> profile both
 | Validate the finding closes the loop | PASS | status=supported, reproducibility passed |
 | Evidence graph traces claim to both datasets | PASS | counts={'datasets': 2, 'runs': 1, 'charts': 1, 'plans': 1, 'findings': 1, 'edges': 5}, reached=['orders.csv', 'targets.parquet'] |
 | Workflow reports the loop closed | PASS | stage=validated, loop_closed=True |
-| Assistant answers with citations | PASS | source=deterministic, grounds=['dataset:orders.csv', 'dataset:targets.parquet', 'run:114149a8-dfa6-418f-a8ae-cae5810254d2', 'finding:4e68a6f0-4d7a-4b00-ad69-1861956a7c73', 'chart:656a1340-53b2-4abc-bd98-81aefba0102b'] |
+| Assistant answers with citations | PASS | source=deterministic, grounds=['dataset:orders.csv', 'dataset:targets.parquet', 'run:8492318a-d7f8-4683-97d6-624a26181cc7', 'finding:96a3954a-e9a2-47b7-b3cb-bf336dce6460', 'chart:8fac6e6e-bfa5-44f3-94bf-8bc6e719dd07'] |
 | Explore data without a query | PASS | op=segment, row_count=3 |
 | Replay the case history | PASS | events=9, ordered=True |
 | Search finds the case | PASS | matches=1 |
@@ -44,7 +44,7 @@ real question -> attach CSV + Parquet -> profile both
 | Dataset deletion blocked by its evidence | PASS | primary HTTP 400, join member HTTP 400 |
 | Export package carries the join | PASS | sections=['agent_steps', 'case', 'charts', 'datasets', 'findings', 'plans', 'profiles', 'runs'] |
 | Import reproduces the join elsewhere | PASS | rows=[['east', 60.0, 100.0], ['north', 325.0, 300.0], ['south', 170.5, 250.0]] |
-| Test suite runs | PASS | 315 passed, 2 warnings in 203.69s (0:03:23) |
+| Test suite runs | PASS | 336 passed, 2 warnings in 86.62s (0:01:26) |
 
 ## Exit criteria (P3 gate: multi-dataset joins, hard sandbox, the four
 assistant slices, raster charts, validation, evidence, workflow, reuse)
