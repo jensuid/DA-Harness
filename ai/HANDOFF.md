@@ -1,6 +1,26 @@
 # DAH - Handoff
 
 ## What was completed
+- P7-SHELL-003 PASSED: the agent, as a surface. P6-AGENT-002 shipped a driver
+  that proposes a step and waits for a human's approval, and four endpoints
+  served it - a read-only GET, an idempotent proposing POST, /approve and
+  /reject - with no panel anywhere. The workspace now carries an **Agent**
+  panel beside the workflow it drives: the pending proposal renders as a
+  sentence built from the step's own payload ("Accept the draft as a finding:
+  North leads revenue"), and Approve / Reject - with an optional reason that is
+  recorded on the step - are buttons. Every other panel is a step; this one is
+  the sequence, and it is the capability that most changes what the workspace
+  is for.
+  The guarantees did not move: the write still waits for the button, still runs
+  through the endpoint that owns it, and the GET never proposes, so a page
+  refresh commits nothing. A stale approval is a 409 shown as a sentence before
+  the panel resyncs - never a second write.
+  The panel exposed one real gap in the typed client: the agent's 409 answers
+  with an OBJECT as its detail, and the client copied `body.detail` straight
+  into the message, so a stale approval would have rendered as "[object
+  Object]". The client now unwraps a nested detail, and the sentence the core
+  wrote reaches the user.
+
 - P7-SHELL-002 PASSED: the EVALUATE surface, the first panel of the web-shell
   gap. `POST .../evaluate` shipped with P7-EVAL-001 and nothing in the shell
   could reach it - the workspace walked the ANALYZE loop (data, runs, findings,
@@ -812,6 +832,66 @@ reported as unsupported (clear 400) rather than faked; that gate is future work.
 - P2 gate: `server/.venv/bin/python verification/p2/verify_p2.py` PASS on all
   18 steps
 
+## Repository state
+
+- Every P3 task is one atomic commit, all pushed to `origin/master`
+  (github.com/jensuid/DA-Harness), plus the phase close; P4 opens with
+  P4-VERIFY-001, P4-RELIABILITY-002, P4-UX-003, P4-UX-004, P4-VALID-005,
+  P4-PERF-006 and P4-CI-007 as their own commits, then the P4 phase close.
+  `dfb115b` P3-SEC-001, `2c7b11f` P3-CHART-002, `f5df5d1` P3-DATA-003,
+  `967544b` P3-FLOW-004, `7b7e49f` P3-ANALYSIS-005, `ebaa30e` P3-EVIDENCE-006,
+  P3-CASE-007, P3-SHELL-008, P3-DATA-009, P3-VALID-010, P3-AI-011,
+  P3-AI-012, P3-AI-013, P3-AI-014, and the phase close
+  `bffc6ad docs: mark P3 V1 complete...`
+- `.gitignore` covers `web/dist-desktop/`, `server/build/` (the 98MB PyInstaller
+  tree) and `desktop/src-tauri/{target,gen,binaries}` - the 85MB sidecar is
+  never committed.
+- `.git` is writable under the current permission profile (this changed
+  mid-session; the earlier read-only restriction is gone).
+
+## Unresolved problems
+
+- A test-isolation hole is closed but worth remembering: `app.main` skips
+  loading `server/.env` under pytest, but that only stops the *file* load. If
+  `DAH_LLM_API_KEY` is already in the environment - as it was for the pytest
+  subprocess the P2 gate spawns, because the gate itself does load .env - the
+  planner silently switches to the LLM inside the suite. That made the gate
+  both slow (a live call per plan) and flaky (a fast LLM flipped an assertion
+  that expected `source=deterministic`; a slow one fell back and passed). Fixed
+  three ways: the P2 gate scrubs the LLM vars from its subprocess, the P3
+  gate scrubs them from its own process as well (its journey would otherwise
+  make a live call per assistant step), and `test_export.py` deletes them. Any
+  future runner that spawns the suite must do the same.
+
+## Next action
+
+**P7-SHELL-003 is DONE**: the agent has a surface as well as a core. The web
+suite is 34 tests (was 27, +6 in `CaseWorkspace.test.tsx` and +1 in
+`api.test.ts` for the nested-detail unwrap), `npm run build` passes and the
+desktop bundle builds from the same source. The server side is untouched and
+stays at 358.
+
+### What is unbuilt, in priority order
+
+- **The rest of the web-shell gap** - P7 item 2, now two surfaces closed.
+  Still no UI: templates (`/templates`, `/from-template`), cross-case memory,
+  EDA (`/eda`), the evidence graph (`/evidence-graph`), case history, and
+  rename/duplicate/delete. Each is a panel over an existing contract; none
+  needs a new endpoint.
+- **LEARN mode** - a guided Why -> What -> How -> Validate walk. Mostly a
+  sequencing layer over the workflow stages that already exist (P3-FLOW-004).
+- **Multi-agent workflows** - only after EVALUATE, which is the audit layer an
+  agent's own output has to survive.
+- **Deferred, not dropped:** signing (DEC-006, the slot is in `release.yml`),
+  cloud sync, team collaboration, warehouse connectors, enterprise governance.
+
+### If the next step is a release
+
+Tag `v<x.y.z>` where x.y.z matches server/pyproject.toml. The published build is
+arm64 and unsigned, flagged pre-release (DEC-006). Seven tasks have landed
+since v0.1.0, so `0.2.0` is the honest next label when a release is wanted.
+
+Nothing is unblocked-but-undone.
 ## Repository state
 
 - Every P3 task is one atomic commit, all pushed to `origin/master`

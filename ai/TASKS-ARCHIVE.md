@@ -2466,3 +2466,182 @@ LESSON: two of the first tests failed for the same reason, and it was the
         it.
 
 ```
+
+### P7-SHELL-002 contract
+
+```
+TASK ID: P7-SHELL-002
+MILESTONE: P7 Product Modes
+CAPABILITY: UX (the web-shell gap)
+GOAL: A user can hand DAH work that came from elsewhere and read the nine-axis
+      audit without a terminal. POST .../evaluate answers nine verdicts and
+      nothing in the shell reaches it today; this task puts a surface in front
+      of it.
+
+CONTEXT: P7-EVAL-001 shipped the core half of EVALUATE mode. The web shell
+         walks the ANALYZE loop one panel per step - data, runs, findings,
+         chat - and every one of those panels posts to the endpoint that owns
+         its write. The evaluate endpoint is the first endpoint with no panel
+         at all, and it is the flagship capability of the phase, so closing
+         that one gap is the slice of the web-shell work that pays first. The
+         other un-UI'd endpoints (the agent, templates, memory, EDA, the
+         evidence graph, case history, case management) are later tasks in the
+         same checklist item, not this one.
+
+INPUTS: a case with at least one attached, profiled dataset; the artifact's
+        code, its kind (SQL or Python) and the claim it was offered to support,
+        typed or pasted.
+RELEVANT FILES: web/src/api.ts, web/src/CaseWorkspace.tsx,
+                web/src/CaseWorkspace.test.tsx, web/src/index.css
+REQUIRED CHANGE:
+  - web/src/api.ts: `AxisFinding` and `Evaluation` interfaces matching the
+    core's models, plus `evaluateDataset(caseId, datasetId, code, claim, kind)`
+    and `listEvaluations(caseId, datasetId)`. Failures travel as `ApiError`, so
+    a 400's `detail` and a 500's `request_id` reach the panel unchanged - the
+    existing error contract, not a new one.
+  - web/src/CaseWorkspace.tsx: an `EvaluatePanel`, shown once the case has a
+    profiled dataset (an unprofiled case has no columns to audit against, and
+    the panel says so rather than offering a submission that cannot succeed).
+    A kind toggle between SQL and Python, a textarea for the code, an input for
+    the claim, and a submit that posts to the evaluate endpoint and nothing
+    else. The audit renders as nine rows, one per axis in the spec's order,
+    each with its verdict as a badge - pass / concern / fail - and its sentence;
+    the verdict is the summary and the sentence is the substance, so neither is
+    rendered without the other. Audits already recorded over that dataset are
+    listed below, newest first, so an audit is itself inspectable from the
+    workspace the way a run is.
+  - The panel degrades rather than breaking: a 400 (a non-read-only artifact,
+    an empty code or claim, an unknown kind) shows the core's own message
+    inline and the panel stays usable, because that message is the actionable
+    thing - "only single read-only SELECT queries are supported" tells the
+    user what to change. A 500 shows the message with its request id, as every
+    other panel does.
+  - When the case has several datasets the panel offers a chooser, because the
+    axis verdicts are per-dataset - an artifact audited against the wrong file
+    would fail every column check for a reason that is not the artifact's.
+NON-GOALS: ingesting a whole notebook, dashboard, spreadsheet or report as a
+           file (this task takes the code and the claim, the common core, as
+           P7-EVAL-001 did), editing or re-running a past audit's artifact (the
+           artifact is already stored as a run and appears in the Runs panel),
+           a chart or score over the audit (the core deliberately returns no
+           score), an LLM phrasing of the verdicts (deterministic, as the core
+           is), a mode switcher that reorganises the workspace around ANALYZE /
+           EVALUATE / LEARN (the workspace is ANALYZE's loop; EVALUATE is a
+           labelled panel beside it, and a mode architecture is a later
+           design), the other un-UI'd endpoints (each is its own task).
+CONSTRAINTS: every write posts to the evaluate endpoint - the panel proposes
+             nothing else and creates no run, finding or chart of its own;
+             deterministic; no new dependency; the existing panels and their
+             tests are unchanged; `tsc -b` passes (the build is CI's type gate,
+             and a type error the jsdom tests cannot see fails it); the desktop
+             bundle builds from the same source, so nothing may assume a
+             browser-only environment; nothing the analyst typed is logged by
+             the core (P5-OBSERVE-002) and the shell adds no logging of its
+             own; the server suite and the gates are untouched by this change
+             and stay green.
+ACCEPTANCE CRITERIA:
+- [x] a case with a profiled dataset shows the EVALUATE panel; a case with no
+      dataset or no profile does not
+- [x] submitting clean work shows all nine axes, each with a pass verdict and
+      its sentence, in the spec's order
+- [x] a claim quoting a magnitude the run does not contain shows a fail on
+      Evidence, with the value and the sentence
+- [x] a non-read-only artifact shows the core's 400 message inline; the panel
+      stays usable and no audit was recorded
+- [x] an audit is recorded and listed afterwards, newest first, with its claim
+      and its nine verdicts
+- [x] the kind toggle switches the submission between SQL and Python
+- [x] a failed request never crashes the workspace: the error is a sentence
+- [x] `tsc -b` and the web suite stay green
+TESTS: web/src/CaseWorkspace.test.tsx - the clean nine-axis baseline, the
+       invented magnitude on Evidence, the read-only refusal rendered as a
+       sentence, the recorded audit listed newest first, the panel's absence
+       without a profiled dataset, and the kind toggle.
+VERIFICATION: cd web && npm test PASS; cd web && npm run build PASS (tsc -b
+              runs first, so a type error the jsdom tests cannot see fails
+              it). The server suite and the three gates are unchanged.
+STATE UPDATE: mark P7-SHELL-002 done on pass; ROADMAP item 2 records EVALUATE's
+              surface as delivered.
+```
+
+
+```
+
+TASK: P7-SHELL-002 - EVALUATE mode in the web shell
+ID: P7-SHELL-002
+PRIORITY: high
+STATUS: DONE
+SUMMARY: The core half of EVALUATE mode shipped with P7-EVAL-001 and nothing
+         in the shell could reach it. The web workspace walks the ANALYZE loop
+         one panel per step - data, runs, findings, chat - and the evaluate
+         endpoint was the first one with no panel at all, in the phase whose
+         flagship capability it is. This task puts a surface in front of it
+         without adding a single endpoint, contract or dependency: the panel
+         only renders what the core already answers.
+
+Two files of substance:
+
+- **`web/src/api.ts`** - `AxisFinding` and `Evaluation` interfaces matching the
+  core's models, and the two functions the panel needs: `evaluateDataset` (the
+  submission) and `listEvaluations` (so an audit is inspectable after the fact,
+  the way a run is). Failures travel as `ApiError`, so a 400's `detail` and a
+  500's `request_id` reach the panel unchanged - the error contract the rest of
+  the shell already uses, not a new one.
+- **`web/src/CaseWorkspace.tsx`** - an `EvaluatePanel` placed after the loop it
+  audits and before the assistant. It appears once a dataset is profiled (an
+  unprofiled case has no columns to audit against, so the panel says so rather
+  than offering a submission that cannot succeed); offers a kind toggle, a code
+  textarea and a claim input; and renders nine rows - one per axis in the
+  spec's own order - each a verdict badge and its sentence, because the verdict
+  is the summary and the sentence is the substance and neither is rendered
+  without the other. Recorded audits list below, newest first. With several
+  datasets there is a chooser, because the verdicts are per-dataset and an
+  artifact audited against the wrong file fails every column check for a reason
+  that is not the artifact's.
+
+The panel holds to the discipline every other panel keeps: the submit posts to
+the evaluate endpoint and nothing else. The panel never runs code and never
+decides whether work is sound - the endpoint does, under the same read-only
+gate, row cap and hard sandbox as any other run. A 400 is part of the contract
+rather than a failure: a non-read-only artifact is refused before anything
+executes, and its detail ("only single read-only SELECT queries are supported")
+is shown as a sentence next to a panel still ready for corrected work.
+
+NON-GOALS held: no whole-file ingestion of notebooks, dashboards or
+             spreadsheets (the code and the claim, as P7-EVAL-001 took them),
+             no editing or re-running a past audit's artifact (it is already a
+             run, in the Runs panel), no chart or score over the audit (the core
+             returns neither), no LLM phrasing of verdicts, no mode switcher
+             reorganising the workspace around ANALYZE/EVALUATE/LEARN - the
+             workspace is ANALYZE's loop and EVALUATE is a labelled panel
+             beside it; a mode architecture is a later design, and the other
+             un-UI'd endpoints (the agent, templates, memory, EDA, the evidence
+             graph, case history, case management) are their own tasks.
+CONSTRAINTS held: every write posts to the evaluate endpoint alone; the panel
+             creates no run, finding or chart of its own; deterministic; no new
+             dependency; the existing panels and their tests are unchanged;
+             `tsc -b` passes (the build is CI's type gate, and a type error the
+             jsdom tests cannot see fails it); the desktop bundle builds from
+             the same source and nothing assumes a browser-only environment;
+             the shell adds no logging of its own.
+ACCEPTANCE CRITERIA: all 8 - see the checked boxes above.
+TESTS: 6 added to web/src/CaseWorkspace.test.tsx (21 -> 27) - the clean
+       nine-axis baseline scoped to the audit container, the failing Evidence
+       axis with its value, the read-only refusal rendered as a sentence with
+       the panel still usable, the recorded-audit listing newest first, the
+       kind toggle reaching the endpoint with kind: "python", and the panel's
+       absence without a profile.
+VERIFICATION: cd web && npm test - 27 passed; cd web && npm run build PASS
+              (tsc -b + vite build); cd web && npm run build:desktop PASS; the
+              server suite is untouched by this change and stays at 358 passed.
+LESSON: two of the six tests failed first for the same reason - the query, not
+        the component. The nine verdict badges and the workflow's stage list
+        both render a checkmark and an axis name ("✓ question"), so a page-wide
+        `getByText` found two elements; and userEvent parses `[` and `]` as key
+        descriptors, so typing `result = []` was read as a key sequence. The
+        fix for the first was to scope the query to the audit's own container
+        with `within` - an assertion should name where it is looking, because a
+        page is not a component. The second is a reminder that `user.type`
+        types *keys*, not text: fixtures that stay clear of `[]{}` are cheaper
+        than escaping them.
+```

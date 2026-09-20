@@ -4,6 +4,8 @@ import {
   type CaseProgress,
   type ConversationTurn,
   type Dataset,
+  type AgentState,
+  type AgentStep,
   type DraftFinding,
   type Evaluation,
   type Finding,
@@ -15,8 +17,10 @@ import {
   acceptFinding,
   attachDataset,
   draftFinding,
+  approveAgentStep,
   evaluateDataset,
   generateCode,
+  getAgentState,
   getCase,
   getProgress,
   interpretRun,
@@ -27,6 +31,8 @@ import {
   listRuns,
   postChat,
   profileDataset,
+  proposeAgentStep,
+  rejectAgentStep,
   runSql,
   validateFinding,
 } from './api'
@@ -47,6 +53,7 @@ export function CaseWorkspace({ caseId, onBack }: { caseId: string; onBack: () =
   const [findings, setFindings] = useState<Finding[]>([])
   const [turns, setTurns] = useState<ConversationTurn[]>([])
   const [evaluations, setEvaluations] = useState<Evaluation[]>([])
+  const [agent, setAgent] = useState<AgentState | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   async function load() {
@@ -77,6 +84,9 @@ export function CaseWorkspace({ caseId, onBack }: { caseId: string; onBack: () =
         ),
       )
       setEvaluations(audited.flat().map(([, evaluation]) => evaluation))
+      // The agent's state is read-only here: a GET never proposes, so loading a
+      // page commits nothing.
+      setAgent(await getAgentState(caseId))
       // Profiles are read-only context for the generator; a dataset without
       // one is unprofiled, and the UI says so rather than guessing.
       const profiled = await Promise.all(
@@ -119,6 +129,12 @@ export function CaseWorkspace({ caseId, onBack }: { caseId: string; onBack: () =
       {error && <p role="alert">Something went wrong: {error}</p>}
 
       <Workflow progress={progress} />
+      <AgentPanel
+        caseId={caseId}
+        agent={agent}
+        onAgent={setAgent}
+        onChanged={() => void load()}
+      />
       <DataPanel
         caseId={caseId}
         datasets={datasets}
@@ -921,5 +937,218 @@ function RecordedAudit({ evaluation }: { evaluation: Evaluation }) {
         {summary.length > 0 ? summary.join(', ') : 'every axis passed'}
       </p>
     </div>
+  )
+}
+
+// The agent: the loop's driver, as a surface (P7-SHELL-003). Every other panel
+// in this workspace is a step; this one is the sequence. It proposes the next
+// step from the case's own artifacts, and the human's yes or no is a button -
+// the write never happens without it, and the write then runs through the
+// endpoint that owns it, so the agent earns no privilege a hand-run case has.
+function AgentPanel({
+  caseId,
+  agent,
+  onAgent,
+  onChanged,
+}: {
+  caseId: string
+  agent: AgentState | null
+  onAgent: (state: AgentState) => void
+  onChanged: () => void
+}) {
+  const [busy, setBusy] = useState(false)
+  const [reason, setReason] = useState('')
+  const [error, setError] = useState<string | null>(null)
+
+  async function refresh() {
+    setError(null)
+    try {
+      onAgent(await getAgentState(caseId))
+    } catch (err) {
+      setError(messageOf(err))
+    }
+  }
+
+  async function propose() {
+    if (busy) return
+    setBusy(true)
+    setError(null)
+    try {
+      // Idempotent by contract: a pending step comes back unchanged, so an
+      // impatient second click is a no-op rather than a second write.
+      onAgent(await proposeAgentStep(caseId))
+    } catch (err) {
+      setError(messageOf(err))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function decide(approve: boolean) {
+    const stepId = agent?.pending?.id
+    if (busy || !stepId) return
+    setBusy(true)
+    setError(null)
+    try {
+      if (approve) {
+        // Approving runs the step and the response carries the next proposal,
+        // so there is no second call to see what comes next.
+        onAgent(await approveAgentStep(caseId, stepId))
+      } else {
+        onAgent(await rejectAgentStep(caseId, stepId, reason))
+        setReason('')
+      }
+      // The write changed the case's artifacts, so the whole workspace reloads -
+      // a rejected draft leaves no finding behind, and an approved run appears
+      // in the Runs panel.
+      onChanged()
+    } catch (err) {
+      // A 409 means the step is no longer the case's pending one: another
+      // approval moved the case on while this page sat open. Resync, then show
+      // the sentence - refresh clears the error, so it runs first or the
+      // message would vanish a tick after it appeared.
+      await refresh()
+      setError(messageOf(err))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  if (!agent) {
+    return (
+      <div className="panel">
+        <h2>Agent</h2>
+        <p className="muted">Loading the agent's state…</p>
+      </div>
+    )
+  }
+
+  const pending = agent.pending
+  const finished = !pending && agent.history.some((s) => s.kind === 'end')
+  const end = finished ? agent.history[agent.history.length - 1] : null
+
+  return (
+    <div className="panel">
+      <h2>Agent</h2>
+      <p className="muted">
+        A plan that executes itself one approved write at a time. It proposes
+        the next step from what the case already has; nothing is written until
+        you approve it, and every write goes through the same endpoint a
+        hand-written call would.
+      </p>
+      <div className="row">
+        <button
+          type="button"
+          onClick={propose}
+          disabled={busy}
+          className="small"
+        >
+          {busy ? 'Working…' : pending ? 'Re-derive the next step' : 'Propose the next step'}
+        </button>
+      </div>
+      {error && <p role="alert">The agent could not proceed: {error}</p>}
+      {pending ? (
+        <div className="proposal">
+          <p className="muted">
+            proposed by {pending.source} — approve to run it, or reject with your
+            reason
+          </p>
+          <p><strong>{stepSentence(pending)}</strong></p>
+          <div className="row">
+            <button
+              type="button"
+              onClick={() => void decide(true)}
+              disabled={busy}
+              className="small"
+            >
+              {busy ? 'Running…' : 'Approve and run'}
+            </button>
+            <button
+              type="button"
+              onClick={() => void decide(false)}
+              disabled={busy}
+              className="small"
+            >
+              {busy ? 'Recording…' : 'Reject'}
+            </button>
+          </div>
+          <input
+            aria-label="Reason for rejecting (optional)"
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder="Why this step is wrong - recorded with it"
+            disabled={busy}
+          />
+        </div>
+      ) : end ? (
+        <p className="muted">
+          The agent stopped:{' '}
+          {end.note || 'no further step is derivable from the case as it stands'}
+        </p>
+      ) : (
+        <p className="muted">
+          Nothing is pending. Propose a step, or work the panels below by hand.
+        </p>
+      )}
+      {agent.history.length > 0 && (
+        <div className="subpanel">
+          <h3>What the agent has done</h3>
+          <ul className="items">
+            {agent.history
+              .slice()
+              .reverse()
+              .map((step) => (
+                <li key={step.id} className="run">
+                  <StepStatus step={step} />
+                </li>
+              ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// What a step will do, as a sentence built from the payload the core settled at
+// proposal time. The human approves something concrete, not a promise - and
+// the sentence is the same one the step's own write produced, so the proposal
+// and the record cannot drift apart.
+function stepSentence(step: AgentStep): string {
+  const p = step.payload
+  const str = (key: string) => String(p[key] ?? '')
+  switch (step.kind) {
+    case 'profile':
+      return `Profile ${str('filename') || 'the attached dataset'}`
+    case 'plan':
+      return 'Plan the analysis from the profile'
+    case 'analyze':
+      return `Run ${str('kind') || 'the'} analysis${p.variant ? ` (variant ${p.variant})` : ''}`
+    case 'interpret':
+      return 'Interpret the last run'
+    case 'accept':
+      return `Accept the draft as a finding${str('statement') ? `: ${str('statement')}` : ''}`
+    case 'chart':
+      return `Render a ${str('kind') || 'bar'} chart of ${str('y')} by ${str('x')}`
+    case 'validate':
+      return 'Validate the finding'
+    case 'end':
+      return step.note || 'stop'
+    default:
+      return step.kind
+  }
+}
+
+function StepStatus({ step }: { step: AgentStep }) {
+  const mark = step.status === 'done' ? '✓' : step.status === 'rejected' ? '✗' : '○'
+  return (
+    <p>
+      <span className={`verdict ${step.status === 'done' ? 'pass' : step.status === 'rejected' ? 'fail' : 'concern'}`}>
+        {mark} {step.kind}
+      </span>
+      <span className="muted"> — {step.note || stepSentence(step)}</span>
+      {step.status === 'rejected' && step.note && (
+        <span className="muted"> (rejected: {step.note})</span>
+      )}
+    </p>
   )
 }

@@ -138,6 +138,30 @@ export interface Evaluation {
   created_at: string
 }
 
+// The agent (P6-AGENT-002 / P7-SHELL-003): a driver over the loop the
+// workspace's panels are steps of. It proposes; the human disposes. `payload`
+// is exactly what the step will write, settled when it was proposed, so the
+// human approves something concrete rather than a promise. `status` is pending
+// until the human answers; `note` is what the write produced, or the reason it
+// was refused.
+export interface AgentStep {
+  id: string
+  case_id: string
+  kind: string
+  payload: Record<string, unknown>
+  source: string
+  status: string
+  note: string
+  created_at: string
+  decided_at: string | null
+}
+
+export interface AgentState {
+  case_id: string
+  pending: AgentStep | null
+  history: AgentStep[]
+}
+
 export interface ConversationTurn {
   id: string
   case_id: string
@@ -179,8 +203,17 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     const contentType = res.headers.get('content-type') ?? ''
     if (contentType.includes('application/json')) {
       try {
-        const body = JSON.parse(text) as { detail?: string; request_id?: string }
-        if (body.detail) message = body.detail
+        const body = JSON.parse(text) as {
+          detail?: string | { detail?: string }
+          request_id?: string
+        }
+        if (body.detail) {
+          // A nested detail is the agent's 409: it names the pending step the
+          // approval should have carried, so the inner sentence is the
+          // actionable one.
+          message =
+            typeof body.detail === 'string' ? body.detail : (body.detail.detail ?? '')
+        }
         requestId = body.request_id
       } catch {
         // An unparseable JSON body keeps its raw text as the message.
@@ -359,4 +392,43 @@ export function listEvaluations(
   return request<Evaluation[]>(
     `/cases/${caseId}/datasets/${datasetId}/evaluations`,
   )
+}
+
+// --- the agent: the loop's driver -----------------------------------------
+
+// The GET is read-only and never proposes, so a page refresh commits nothing.
+export function getAgentState(caseId: string): Promise<AgentState> {
+  return request<AgentState>(`/cases/${caseId}/agent`)
+}
+
+// Idempotent: a pending step is returned unchanged, so two calls never yield
+// two writes.
+export function proposeAgentStep(caseId: string): Promise<AgentState> {
+  return request<AgentState>(`/cases/${caseId}/agent`, { method: 'POST' })
+}
+
+// The approval must name the case's CURRENT pending step; an id from a stale
+// page is a 409, never a second write. Approving runs the step's write through
+// the endpoint that owns it and returns the next proposal with it, so the
+// human needs no second call to see what comes next.
+export function approveAgentStep(caseId: string, stepId: string): Promise<AgentState> {
+  return request<AgentState>(`/cases/${caseId}/agent/approve`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ step_id: stepId }),
+  })
+}
+
+// Rejection never writes case state: the proposal is marked rejected with the
+// analyst's reason, and the next step is derived.
+export function rejectAgentStep(
+  caseId: string,
+  stepId: string,
+  reason = '',
+): Promise<AgentState> {
+  return request<AgentState>(`/cases/${caseId}/agent/reject`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ step_id: stepId, reason }),
+  })
 }

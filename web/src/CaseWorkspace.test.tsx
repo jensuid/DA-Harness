@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest'
+import { beforeEach, describe, it, expect, vi } from 'vitest'
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { CaseWorkspace } from './CaseWorkspace'
@@ -25,6 +25,10 @@ vi.mock('./api', async (importOriginal) => {
     postChat: vi.fn(),
     evaluateDataset: vi.fn(),
     listEvaluations: vi.fn(),
+    getAgentState: vi.fn(),
+    proposeAgentStep: vi.fn(),
+    approveAgentStep: vi.fn(),
+    rejectAgentStep: vi.fn(),
   }
 })
 
@@ -74,6 +78,26 @@ function mockEmptyCase() {
   vi.mocked(api.listChat).mockResolvedValue([])
   vi.mocked(api.profileDataset).mockResolvedValue(profile)
   vi.mocked(api.listEvaluations).mockResolvedValue([])
+  vi.mocked(api.getAgentState).mockResolvedValue(agentIdle())
+}
+
+function agentStep(overrides: object = {}): api.AgentStep {
+  return {
+    id: 's1',
+    case_id: 'c1',
+    kind: 'analyze',
+    payload: { kind: 'sql', code: 'SELECT 1', variant: 0 },
+    source: 'deterministic',
+    status: 'pending',
+    note: '',
+    created_at: '',
+    decided_at: null,
+    ...overrides,
+  }
+}
+
+function agentIdle(state: object = {}): api.AgentState {
+  return { case_id: 'c1', pending: null, history: [], ...state }
 }
 
 function finding(axis: string, verdict: string, detail: string) {
@@ -123,6 +147,12 @@ async function submitAudit(user: Awaited<ReturnType<typeof userEvent.setup>>) {
 }
 
 describe('CaseWorkspace', () => {
+  beforeEach(() => {
+    // The api spies are module-level and persist, so the call record is cleared
+    // per test - otherwise a "not called" assertion answers for every test that
+    // ran before it.
+    vi.clearAllMocks()
+  })
   it('shows the question, the derived stage, the next action and the artifacts', async () => {
     mockEmptyCase()
     render(<CaseWorkspace caseId="c1" onBack={() => {}} />)
@@ -438,5 +468,170 @@ describe('CaseWorkspace', () => {
     render(<CaseWorkspace caseId="c1" onBack={() => {}} />)
     expect(await screen.findByText(/attach and profile a dataset first/i)).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /audit this work/i })).not.toBeInTheDocument()
+  })
+
+  it('shows the agent state and a pending proposal as a sentence', async () => {
+    mockEmptyCase()
+    vi.mocked(api.getAgentState).mockResolvedValue(
+      agentIdle({
+        pending: agentStep({
+          id: 's7',
+          kind: 'accept',
+          payload: { run_id: 'r1', statement: 'North leads revenue' },
+        }),
+      }),
+    )
+
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} />)
+    expect(await screen.findByText(/north leads revenue/i)).toBeInTheDocument()
+    expect(screen.getByText(/proposed by deterministic/i)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /approve and run/i })).toBeInTheDocument()
+  })
+
+  it('proposes idempotently and a second call writes nothing more', async () => {
+    mockEmptyCase()
+    const proposed = agentIdle({ pending: agentStep({ id: 's7' }) })
+    vi.mocked(api.proposeAgentStep).mockResolvedValue(proposed)
+
+    const user = userEvent.setup()
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} />)
+    await screen.findByText(/nothing is pending/i)
+
+    await user.click(screen.getByRole('button', { name: /propose the next step/i }))
+    await waitFor(() => expect(api.proposeAgentStep).toHaveBeenCalledTimes(1))
+
+    // The same button again: the contract returns the same pending step, and
+    // the panel still holds exactly one proposal.
+    await user.click(screen.getByRole('button', { name: /re-derive the next step/i }))
+    await waitFor(() => expect(api.proposeAgentStep).toHaveBeenCalledTimes(2))
+    expect(await screen.findByText(/approve to run it/i)).toBeInTheDocument()
+  })
+
+  it('approves a step and the next proposal arrives with it', async () => {
+    mockEmptyCase()
+    // The workspace reloads the state after the write, so the second read must
+    // show the world the approval produced, not the one it replaced.
+    vi.mocked(api.getAgentState)
+      .mockResolvedValueOnce(agentIdle({ pending: agentStep({ id: 's7' }) }))
+      .mockResolvedValue(
+        agentIdle({
+          pending: agentStep({ id: 's8', kind: 'interpret' }),
+          history: [
+            agentStep({
+              id: 's7',
+              kind: 'analyze',
+              status: 'done',
+              note: 'ran sql variant 0: 2 row(s)',
+            }),
+          ],
+        }),
+      )
+    vi.mocked(api.approveAgentStep).mockResolvedValue(
+      agentIdle({
+        pending: agentStep({ id: 's8', kind: 'interpret' }),
+        history: [
+          agentStep({
+            id: 's7',
+            kind: 'analyze',
+            status: 'done',
+            note: 'ran sql variant 0: 2 row(s)',
+          }),
+        ],
+      }),
+    )
+
+    const user = userEvent.setup()
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} />)
+    await user.click(await screen.findByRole('button', { name: /approve and run/i }))
+
+    expect(await waitFor(() => expect(api.approveAgentStep).toHaveBeenCalledWith('c1', 's7')))
+    // The response carried the next proposal, so no second call is needed.
+    expect(api.proposeAgentStep).not.toHaveBeenCalled()
+    expect(await screen.findByText(/interpret the last run/i)).toBeInTheDocument()
+    expect(screen.getByText(/ran sql variant 0: 2 row\(s\)/i)).toBeInTheDocument()
+  })
+
+  it('rejects with a reason and writes nothing', async () => {
+    mockEmptyCase()
+    vi.mocked(api.getAgentState)
+      .mockResolvedValueOnce(agentIdle({ pending: agentStep({ id: 's7' }) }))
+      .mockResolvedValue(
+        agentIdle({
+          history: [
+            agentStep({
+              id: 's7',
+              status: 'rejected',
+              note: 'wrong direction',
+            }),
+          ],
+        }),
+      )
+    vi.mocked(api.rejectAgentStep).mockResolvedValue(
+      agentIdle({
+        history: [
+          agentStep({
+            id: 's7',
+            status: 'rejected',
+            note: 'wrong direction',
+          }),
+        ],
+      }),
+    )
+
+    const user = userEvent.setup()
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} />)
+    await screen.findByRole('button', { name: /reject/i })
+
+    await user.type(screen.getByLabelText(/reason for rejecting/i), 'wrong direction')
+    await user.click(screen.getByRole('button', { name: /reject/i }))
+
+    await waitFor(() =>
+      expect(api.rejectAgentStep).toHaveBeenCalledWith('c1', 's7', 'wrong direction'),
+    )
+    // No write of case state: the workspace reloaded, but no approval ran.
+    expect(api.approveAgentStep).not.toHaveBeenCalled()
+    expect(await screen.findByText(/✗ analyze/i)).toBeInTheDocument()
+  })
+
+  it('shows a stale approval as a sentence, never "[object Object]"', async () => {
+    mockEmptyCase()
+    vi.mocked(api.getAgentState)
+      .mockResolvedValueOnce(agentIdle({ pending: agentStep({ id: 's7' }) }))
+      .mockResolvedValue(agentIdle({ pending: null, history: [] }))
+    // The core answers 409 with an object as the detail.
+    vi.mocked(api.approveAgentStep).mockRejectedValue(
+      new api.ApiError(409, "the step id is not this case's pending step"),
+    )
+
+    const user = userEvent.setup()
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} />)
+    await user.click(await screen.findByRole('button', { name: /approve and run/i }))
+
+    const alert = await screen.findByRole('alert')
+    expect(alert).toHaveTextContent(/not this case's pending step/i)
+    expect(alert.textContent).not.toContain('[object Object]')
+  })
+
+  it('states why the agent stopped when nothing is pending', async () => {
+    mockEmptyCase()
+    vi.mocked(api.getAgentState).mockResolvedValue(
+      agentIdle({
+        history: [
+          agentStep({
+            id: 's9',
+            kind: 'end',
+            status: 'done',
+            note: 'the budget is exhausted: 12 steps',
+          }),
+        ],
+      }),
+    )
+
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} />)
+    // The note rides in both the stopped sentence and the history's last step,
+    // so the sentence is the unique thing to assert on.
+    expect(
+      await screen.findByText(/the agent stopped: the budget is exhausted/i),
+    ).toBeInTheDocument()
   })
 })

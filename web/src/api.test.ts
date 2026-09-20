@@ -59,6 +59,31 @@ describe('api client', () => {
     expect(error.requestId).toBeUndefined()
   })
 
+  it('unwraps a nested detail the agent 409 sends as an object', async () => {
+    // The agent's approve and reject answer 409 with an object as the detail -
+    // {"detail": {...}, "expected": ..., "given": ...} - because the refusal
+    // names the pending step the approval should have carried. The inner
+    // sentence is the actionable one; without this the UI would show
+    // "[object Object]" for a stale approval.
+    globalThis.fetch = vi.fn().mockReturnValue(
+      respond(
+        409,
+        JSON.stringify({
+          detail: {
+            detail: "the step id is not this case's pending step",
+            expected: 's8',
+            given: 's7',
+          },
+        }),
+        'application/json',
+      ),
+    )
+
+    const error = await failureOf(getCase('c1'))
+    expect(error.status).toBe(409)
+    expect(error.message).toBe("the step id is not this case's pending step")
+  })
+
   it('survives a 500 that is not JSON', async () => {
     // A proxy, a timeout, or an older core can still answer plain text. The
     // message is the text and the id is absent - but nothing throws twice.
