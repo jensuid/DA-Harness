@@ -643,9 +643,14 @@ reported as unsupported (clear 400) rather than faked; that gate is future work.
 - server pytest: 256 passed (231 + 21 observability + 4 error envelope; verified again on a clean venv built
   from pyproject - the install path CI uses)
 - CI on GitHub's own runners: ALL FOUR JOBS GREEN
-  (https://github.com/jensuid/DA-Harness/actions) - server suite + P2/P3/P4
-  gates, web suite + build, sidecar packaging + /health smoke, desktop shell
-  lifecycle (7 Rust tests, both e2e tests running against the real sidecar)
+  (run 35490199963, the first green run since ae0ba33 - server suite + P2/P3/P4
+  gates, web suite + build, sidecar packaging + the /health and packaged-log
+  smoke, desktop shell lifecycle with both e2e tests against the real sidecar).
+  The runner is macos-latest; macos-13 is retired from the hosted pool (DEC-005)
+- Release pipeline: v0.1.0 published end to end from tag (run 35490519483).
+  The 79MB zip's sha256 verified against its checksum asset, Info.plist reads
+  0.1.0, and the bundle carries dah-shell (15MB) + dah-core (78MB). The build
+  is arm64 and unsigned, flagged pre-release
 - P4 gate: `server/.venv/bin/python verification/p4/verify_p4.py` PASS on all
   18 journey steps and all 10 exit criteria (the last step re-runs the suite)
 - desktop shell: 7 Rust tests, now stable - five are #[serial] after CI caught
@@ -691,52 +696,51 @@ reported as unsupported (clear 400) rather than faked; that gate is future work.
 
 ## Next action
 
-P5-UX-006 is done: a user can find the log from the app's own menu bar. The P5
-checklist has one item left and it is the blocked one. What remains:
+P5-CI-FIX-007 is done. CI had been **silently dead for three commits** - every
+push since `5e68fbb` failed at parse time, 0s, no job started, both workflows,
+reported only as "a workflow file issue". Two bugs, one hiding the other:
 
-- macOS code signing + notarization - deferred by DEC-004 and **blocked on an
-  external dependency only you can provision**: a $99 Apple Developer ID. The
-  release job already has the slot - signing goes between the build and the
-  upload, and the `--prerelease` flag is the thing to revisit once a build is
-  notarized. Not agent work until the ID exists.
-- smaller unblocked items: an arm64 release lane (a second runner and sidecar
-  triple; this machine is x86_64 so CI is the only place it can be verified),
-  and showing the request id's full value somewhere copyable - the UI shows the
-  first 8 characters, which finds the log line but does not paste verbatim.
+1. **`env` in `runs-on`.** P5-CI-004 wrote `runs-on: ${{ env.MACOS_RUNNER }}`.
+   GitHub does not expand the `env` context there. Inlined the literal; both
+   headers now record why `runs-on` is never an env reference, because a
+   parse-time failure blocks every job and reports nothing - it hid itself for
+   three commits, and CI visibility had been blocked all session.
+2. **The label it resolved to no longer exists.** Fixing (1) unblocked the jobs
+   straight into a queue they never left: **GitHub retired the macos-13 hosted
+   pool.** Proved with a throwaway two-job workflow - `macos-latest` finished in
+   under a minute while `macos-13` sat queued with zero steps for 18 minutes.
+   All jobs now run on `macos-latest` (DEC-005). The Ventura floor remains the
+   documented minimum supported macOS, but CI no longer enforces it, and a
+   green run no longer proves the Intel triple a local build produces -
+   restoring that needs a self-hosted Intel runner.
+3. **The release job could not build.** Its web install ran `npm ci` in
+   `desktop/` only, but Tauri's beforeBuildCommand is
+   `npm --prefix ../web run build:desktop`, a script whose deps live in
+   `web/node_modules`. Exit 127. Both trees are now installed.
+
+Verified: run 35490199963 is four-for-four green (server + P2/P3/P4 gates, web
++ build, sidecar smoke, desktop lifecycle with both e2e tests) - the first
+green CI since `ae0ba33`. Then `v0.1.0` exercised release.yml end to end for
+the first time (run 35490519483): the tag/version check, server suite, sidecar,
+packaged-core log assertions, Tauri build and published pre-release all passed.
+The 79MB zip's sha256 matches its checksum asset, `Info.plist` reads 0.1.0, and
+`Contents/MacOS/` carries both `dah-shell` (15MB) and `dah-core` (78MB).
+
+What remains:
+
+- macOS code signing + notarization - the last P5 checklist item, deferred by
+  DEC-004 and **blocked on an external dependency only you can provision**: a
+  $99 Apple Developer ID. Signing slots into release.yml between the build and
+  the upload; `--prerelease` is the flag to revisit once a build is notarized.
+  Not agent work until the ID exists.
+- an Intel/self-hosted CI lane, if the exact-triple guarantee matters again
+  (DEC-005). Hardware provisioning, same class as the Developer ID.
+- low-value follow-up, recommended skipped: making the request id fully
+  copyable - the 8-char prefix already finds the log line.
 
 Releasing: tag `v<x.y.z>` where x.y.z matches server/pyproject.toml. A
-mismatching tag fails before any build. The published artifact is Intel and
-unsigned, flagged as a pre-release with the Gatekeeper steps in its notes.
+mismatching tag fails before any build. The published build is arm64
+(`aarch64-apple-darwin`) and unsigned, flagged pre-release with the Gatekeeper
+steps and the real architecture in its notes.
 
 Nothing is unblocked-but-undone.
-## Important context
-
-- Server venv: server/.venv (Python 3.14). There is no `pip` module - install
-  with `uv pip install --python .venv/bin/python <package>`; PyPI is reachable.
-- LLM config: `server/.env` is auto-loaded at server startup (see
-  `docs/LLM Configuration.md`), so `uvicorn app.main:app` alone picks up
-  DAH_LLM_API_KEY / DAH_LLM_BASE_URL / DAH_LLM_MODEL. The load is skipped under
-  pytest so a configured key never makes test-time live calls; an exported
-  variable always overrides the file.
-- Run tests: `cd server && .venv/bin/python -m pytest -q`
-- P3 gate: `server/.venv/bin/python verification/p3/verify_p3.py` (~3-4 min; it
-  re-runs the suite, and its journey is deterministic - the LLM vars are
-  scrubbed, so no assistant step makes a live call)
-- P2 gate: `server/.venv/bin/python verification/p2/verify_p2.py` (~70-90s; it
-  re-runs the suite)
-- P1 gate (in-process): `server/.venv/bin/python verification/p1/verify_p1.py`
-- P0 gate binds a port - run it outside the sandbox if it fails
-- Web: `cd web && npm run dev` (deps installed; UI is P0/P1 scope, case creation
-  only). The vite dev server is pinned to port **5273** with `strictPort` -
-  5173 collides with another local dev server here, and a silent hop to the
-  next free port is what made the shell show an empty window.
-- Desktop shell: `cd desktop && npm install` once, then `npm run dev` (serves
-  the embedded bundle - what the packaged app serves) or `npm run dev:hmr`
-  (vite dev server, port 5273, true HMR). Packaged: `cd server &&
-  ./build_sidecar.sh && cd ../desktop && npm run build`. Tests:
-  `cd desktop/src-tauri && cargo test --features e2e`.
-- A uvicorn server may still be running on port 8123 from the MVP demo - check
-  `curl -s localhost:8123/health` before starting another
-- python-multipart installed; DATA_DIR gitignored
-- No pandas/numpy available - the Python engine is dependency-free and works on
-  plain dicts

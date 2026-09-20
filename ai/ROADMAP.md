@@ -15,8 +15,7 @@ P3 V1                  DONE  ✓   (all 10 entry-checklist items, 211 tests;
 P4 Production Candidate DONE  ✓   (all 6 checklist items; CI runs every
                               layer, signing formally deferred to P5 by
                               DEC-004)
-P5 Production Grade    NOT STARTED  ← we are here
-P5 Production Grade    NOT STARTED
+P5 Production Grade    IN PROGRESS  ← we are here (only signing remains, blocked on the Developer ID)
 P6 Evolution           NOT STARTED
 ```
 
@@ -34,7 +33,7 @@ production-grade**.
 | P2 MVP | Usable analytical application; inspectable, reproducible case | DONE | PASS | `verification/p2/REPORT.md` (16 steps, 10 exit criteria) |
 | P3 V1 | Repeated real-world use: multi-dataset, joins, richer EDA, contextual AI | DONE | P2 gate PASS (re-verified during close, 211 tests) | hard sandbox, raster charts, multi-dataset joins, workflow, EDA, evidence graph, case reuse, desktop shell and all four contextual AI slices DONE |
 | P4 Production Candidate | Serious software: reliability, security, performance, UX, observability | DONE | P3 gate PASS | `verification/p3/REPORT.md` (23 journey steps, 15 exit criteria, all PASS); CI runs every layer (P4-CI-007); signing deferred to P5 by DEC-004 |
-| P5 Production Grade | Maintainable, distributable, secure product | NOT STARTED | — | — |
+| P5 Production Grade | Maintainable, distributable, secure product | IN PROGRESS | — | P4 gate, observability, the 500 envelope, release automation, the Reveal-logs menu and the CI repair (P5-CI-FIX-007) DONE; v0.1.0 published. Only signing remains, blocked on the Apple Developer ID (DEC-004). CI runs on macos-latest - macos-13 is retired (DEC-005) |
 | P6 Post-Launch Evolution | Scale and intelligence | NOT STARTED | — | — |
 
 ## Phase gate definitions (what "done" means)

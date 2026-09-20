@@ -168,27 +168,27 @@
     "semantic_hash": ""
   },
   "ai/CURRENT_STATE.md": {
-    "mtime": 1789876579.4649866,
-    "seen": 1789876737.177021,
-    "ast_hash": "e3e1b8325c8eecefa3273bef78ce46ef",
+    "mtime": 1789881432.8700511,
+    "seen": 1789881502.478925,
+    "ast_hash": "7d21ce24674aec0784ac6bd20aae36da",
     "semantic_hash": ""
   },
   "ai/DECISIONS.md": {
-    "mtime": 1789826154.4501662,
-    "seen": 1789826954.741857,
-    "ast_hash": "a0bcacdc24fa3be1eb953133150e3757",
+    "mtime": 1789881356.986933,
+    "seen": 1789881502.47893,
+    "ast_hash": "2b167c4dbf8746c05b9080927f720015",
     "semantic_hash": ""
   },
   "ai/HANDOFF.md": {
-    "mtime": 1789876697.7953672,
-    "seen": 1789876737.177033,
-    "ast_hash": "ad70de2ec9c549fe4d39fc59841da8c5",
+    "mtime": 1789881465.4758058,
+    "seen": 1789881502.478936,
+    "ast_hash": "d4b733941e167c0ff0f6387c0b80d93e",
     "semantic_hash": ""
   },
   "ai/TASKS.md": {
-    "mtime": 1789876466.685346,
-    "seen": 1789876737.177043,
-    "ast_hash": "a292f7f9de164ec7c381992d1fd1e789",
+    "mtime": 1789881425.621832,
+    "seen": 1789881502.478946,
+    "ast_hash": "e7ba91e58f7901f723838fe3324a6b9f",
     "semantic_hash": ""
   },
   "verification/p0/REPORT.md": {
@@ -324,9 +324,9 @@
     "semantic_hash": ""
   },
   "ai/ROADMAP.md": {
-    "mtime": 1789876466.69137,
-    "seen": 1789876737.1770382,
-    "ast_hash": "10acc793c1bdf056cdcd8bf7c7df626d",
+    "mtime": 1789881475.3453994,
+    "seen": 1789881502.478941,
+    "ast_hash": "a0492bb6a329ca4fa1d8c564ba8190f2",
     "semantic_hash": ""
   },
   "server/tests/test_charts_raster.py": {
@@ -594,9 +594,9 @@
     "semantic_hash": ""
   },
   ".github/workflows/ci.yml": {
-    "mtime": 1789869762.32457,
-    "seen": 1789876737.176998,
-    "ast_hash": "f6f7406a52754137143011cc3d9ec0a3",
+    "mtime": 1789879894.7697458,
+    "seen": 1789881502.478899,
+    "ast_hash": "aa5b50b97a66bfd615aaee9fe7ec1757",
     "semantic_hash": ""
   },
   "README.md": {
@@ -648,9 +648,9 @@
     "semantic_hash": ""
   },
   ".github/workflows/release.yml": {
-    "mtime": 1789874125.8060255,
-    "seen": 1789876737.177005,
-    "ast_hash": "019a4a707bcbf08d3fe36e87a0354a95",
+    "mtime": 1789880354.8009923,
+    "seen": 1789881502.4789062,
+    "ast_hash": "9c2c29ea0d92268d55e77f4b3fde75ee",
     "semantic_hash": ""
   }
 }

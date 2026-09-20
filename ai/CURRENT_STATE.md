@@ -27,15 +27,18 @@ JSON package with import round trip (P2-CASE-012)**
   adds. 5 new Rust tests (12 total, was 7), including an e2e test that starts
   the real dev core and asserts the reported log is under the data dir the
   shell pointed it at. Before it: P5-RELEASE-005, release automation.
-- **Known issues:** none. CI runs green on GitHub's own runners after five
-  local-state bugs it exposed were fixed (see ai/HANDOFF.md, "What the first
-  CI runs caught").
+- **Known issues:** CI's runner is `macos-latest`, not the Ventura/Intel pin
+  P5-CI-004 intended - GitHub retired the macos-13 pool, so the label hangs
+  forever (probed empirically; see DEC-005). The Ventura floor stays the
+  documented minimum but is no longer enforced by CI, and a green run no longer
+  proves the exact Intel triple a local build produces. Restoring that needs a
+  self-hosted Intel runner.
 - **Test status:** server 256 passed (211 + 16 error semantics + 2 validation
   determinism + 6 large-dataset + 21 observability); web 17 passed (CaseList 5, CaseCreation 3,
   CaseWorkspace 9);
   desktop shell 7 Rust tests (5 unit + 2 e2e, `cd desktop/src-tauri && cargo test [--features e2e]`);
-  P2 and P3 gates PASS
-- **Next task:** the last P5 checklist item is macOS signing + notarization,
+  P2 and P3 gates PASS; first release v0.1.0 published from tag and checksum-verified
+- **Next task:** P5-CI-FIX-007 is done (CI green for the first time since ae0ba33, and v0.1.0 published). The last P5 checklist item remains macOS signing + notarization,
   formally deferred by DEC-004 and **blocked on an external dependency only you
   can provision** - a $99 Apple Developer ID. The release job already has the
   slot: signing goes between the build and the upload, and the `--prerelease`
@@ -139,3 +142,4 @@ JSON package with import round trip (P2-CASE-012)**
 | P5-CI-004 CI floor (Ventura) | DONE |
 | P5-RELEASE-005 Release automation | DONE |
 | P5-UX-006 Reveal logs menu | DONE |
+| P5-CI-FIX-007 CI repair + first real release | DONE |

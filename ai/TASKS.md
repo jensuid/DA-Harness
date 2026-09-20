@@ -1726,3 +1726,54 @@ VERIFICATION: cargo test --features e2e green; the built app smoke-tested by
 STATE UPDATE: mark P5-UX-006 done on pass; the "Reveal logs" follow-up is
               closed.
 ```
+
+```
+TASK: P5-CI-FIX-007 - repair CI: it had not run for three commits
+ID: P5-CI-FIX-007
+PRIORITY: high
+STATUS: DONE
+SUMMARY: CI was silently broken since 5e68fbb (P5-CI-004). Every push failed at
+         parse time - 0s, no job ever started, both workflows - reported only as
+         "a workflow file issue". Two separate bugs, one hiding the other.
+WHAT CHANGED:
+- 3ad554b: the immediate cause. P5-CI-004 referenced the runner label as
+  `${{ env.MACOS_RUNNER }}` in every job's `runs-on`, and GitHub does not
+  expand the `env` context there. Inlined the literal; the env entry and the
+  misleading comment went with it. Recorded in both headers why runs-on is a
+  literal, because a parse-time failure reports nothing and blocks all jobs at
+  once - it had hidden itself for three commits.
+- 37c6e16: the deeper cause the first fix exposed. GitHub has retired the
+  macos-13 hosted pool, so the Ventura floor P5-CI-004 targeted was never
+  provisionable - with the parse bug fixed, the jobs unblocked into a queue
+  they never left. A throwaway probe workflow settled it: an identical pair of
+  jobs, macos-latest completed in under a minute while macos-13 sat queued with
+  zero steps for 18 minutes. All jobs moved to macos-latest; the Ventura floor
+  stays documented as the minimum supported macOS but is no longer enforced by
+  CI. See DEC-005 for what a green run no longer proves (the Intel triple) and
+  what restoring it costs (a self-hosted runner).
+- 4dca009: the release job's web install ran `npm ci` in desktop/ only, but the
+  Tauri beforeBuildCommand is `npm --prefix ../web run build:desktop` - a
+  script in web/package.json whose deps (vite, tsc) live in web/node_modules.
+  desktop/ carries only the Tauri CLI, so the prefixed script had nothing to
+  run and the build died with exit code 127. Both trees are now installed.
+- The release notes no longer assert the build is Intel: the paragraph is
+  chosen from the runner's actual triple, so an arm64 or Intel lane both
+  describe themselves.
+ACCEPTANCE CRITERIA:
+- [x] all four ci.yml jobs pass on GitHub's own runners (server + 3 gates, web,
+      packaging sidecar smoke, desktop lifecycle incl. both e2e tests)
+- [x] release.yml runs end to end from a tag for the first time
+- [x] the published zip's sha256 matches its checksum asset
+- [x] the .app bundle carries the sidecar and the version the tag verified
+VERIFICATION: run 35490199963 four-for-four green; run 35490519483 published
+              v0.1.0. `shasum -a 256 -c` OK on the downloaded 79MB zip;
+              Info.plist CFBundleShortVersionString 0.1.0; Contents/MacOS/
+              carries dah-shell (15MB) and dah-core (78MB).
+LESSON: two independent bugs compounded. The `env` context is unavailable in
+        runs-on, and that silent parse failure masked a second problem - the
+        label it was finally resolving to no longer exists. Fixing a reported
+        error is not the same as fixing the underlying state; verify the
+        workflow actually *runs*, not merely that it parses. CI visibility had
+        been blocked all session, which is how three commits shipped without
+        anyone noticing CI had stopped entirely.
+```

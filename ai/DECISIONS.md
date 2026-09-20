@@ -112,3 +112,66 @@ and distribution is its definition.
 - When P5 signs, the pipeline lands in one place: the `packaging` job in
   `.github/workflows/ci.yml` gains the identity secret and the notarization
   step, and the unsigned build stays available as a fallback target.
+
+---
+
+## DEC-005: the CI runner is macos-latest, not a pinned Ventura (Intel) runner
+
+**Date:** 2026-09-20 · **Status:** ACCEPTED
+
+### Context
+
+P5-CI-004 pinned every CI and release job to `macos-13` (Ventura), for two
+reasons: to build and test against the documented minimum supported macOS, and
+because macos-13 was the last Intel hosted runner - matching the development
+machine and the `x86_64-apple-darwin` sidecar triple, so a green run proved the
+exact binary a local build produces.
+
+That pin never ran. The commit that introduced it also referenced the label
+through `${{ env.MACOS_RUNNER }}` in `runs-on`, and the `env` context is not
+available there, so the whole workflow failed at parse time - zero seconds,
+every job, reported only as "a workflow file issue". Three commits shipped with
+no CI at all before it was caught.
+
+Fixing the expression exposed the real problem: **GitHub has retired the
+macos-13 hosted runner pool.** Verified empirically against this repository with
+a throwaway probe workflow holding two identical jobs - the `macos-latest` job
+completed in under a minute while the `macos-13` job sat *queued with zero
+steps for eighteen minutes* and never picked up a runner. A label nothing
+provisions is not a floor, it is a hang.
+
+### Decision
+
+All jobs in `.github/workflows/ci.yml` and `.github/workflows/release.yml` run
+on `macos-latest`, as a literal `runs-on:` - never an env reference.
+
+### Consequences
+
+- **The Ventura floor is documented, not enforced.** The minimum supported
+  macOS stays Ventura in the README; CI builds on whatever macos-latest
+  resolves to (Apple Silicon today). A green run proves the code, the gates and
+  the packaging path. It does **not** prove the Intel triple a local build
+  produces.
+- **The published build is arm64.** The first real release (v0.1.0) produced
+  `DAH_0.1.0_macos_aarch64-apple-darwin.zip`. The release notes derive their
+  architecture paragraph from the runner's actual triple rather than asserting
+  Intel, so an arm64 or Intel lane both describe themselves correctly.
+- **Restoring the Intel lane needs a self-hosted runner** (a spare Intel Mac
+  with the actions runner) or an explicit cross-compile lane. Neither is
+  current work; the Apple Silicon build covers the machines the user actually
+  runs, and Rosetta covers the rest.
+- **The `env`-in-`runs-on` lesson is recorded in both workflow headers** so the
+  indirection is not reintroduced. Silent parse-time failures are the worst
+  failure mode here: they report nothing and block every job at once.
+
+### Alternatives considered
+
+- **Keep pinning macos-13.** Not an option - the pool is gone; the jobs would
+  queue forever and CI would never run again.
+- **Pin macos-14 / macos-15.** Available, but pins CI to a version that will
+  itself be retired, and reintroduces the exact maintenance burden this avoids.
+  macos-latest moves with GitHub's pool; the architecture is recorded in the
+  release artifact's name either way.
+- **A self-hosted Intel runner now.** Correct in principle, and the only way to
+  restore the Intel-in-CI property, but it is hardware provisioning - the same
+  class of external dependency as the Apple Developer ID. Deferred.

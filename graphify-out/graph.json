@@ -13143,7 +13143,7 @@
       "node_kind": "heading",
       "norm_label": "current position detail",
       "source_file": "ai/ROADMAP.md",
-      "source_location": "L50"
+      "source_location": "L49"
     },
     {
       "id": "ai_roadmap_dah_global_roadmap_status",
@@ -13167,7 +13167,7 @@
       "node_kind": "heading",
       "norm_label": "p3 v1 \u2014 entry checklist (complete)",
       "source_file": "ai/ROADMAP.md",
-      "source_location": "L76"
+      "source_location": "L75"
     },
     {
       "id": "ai_roadmap_p4_production_candidate_entry_checklist_complete",
@@ -13179,7 +13179,7 @@
       "node_kind": "heading",
       "norm_label": "p4 production candidate \u2014 entry checklist (complete)",
       "source_file": "ai/ROADMAP.md",
-      "source_location": "L101"
+      "source_location": "L100"
     },
     {
       "id": "ai_roadmap_p5_production_grade_entry_checklist_4_of_5_done",
@@ -13191,7 +13191,7 @@
       "node_kind": "heading",
       "norm_label": "p5 production grade \u2014 entry checklist (4 of 5 done)",
       "source_file": "ai/ROADMAP.md",
-      "source_location": "L133"
+      "source_location": "L132"
     },
     {
       "id": "ai_roadmap_phase_gate_definitions_what_done_means",
@@ -13203,7 +13203,7 @@
       "node_kind": "heading",
       "norm_label": "phase gate definitions (what \"done\" means)",
       "source_file": "ai/ROADMAP.md",
-      "source_location": "L40"
+      "source_location": "L39"
     },
     {
       "id": "ai_roadmap_phase_status",
@@ -13215,7 +13215,7 @@
       "node_kind": "heading",
       "norm_label": "phase status",
       "source_file": "ai/ROADMAP.md",
-      "source_location": "L28"
+      "source_location": "L27"
     },
     {
       "id": "ai_roadmap_rules_this_file_enforces",
@@ -13227,7 +13227,7 @@
       "node_kind": "heading",
       "norm_label": "rules this file enforces",
       "source_file": "ai/ROADMAP.md",
-      "source_location": "L120"
+      "source_location": "L119"
     },
     {
       "id": "server_tests_test_dataset_delete",
@@ -36447,7 +36447,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "ai/ROADMAP.md",
-      "source_location": "L101",
+      "source_location": "L100",
       "weight": 1.0
     },
     {
@@ -36458,7 +36458,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "ai/ROADMAP.md",
-      "source_location": "L120",
+      "source_location": "L119",
       "weight": 1.0
     },
     {
@@ -36469,7 +36469,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "ai/ROADMAP.md",
-      "source_location": "L133",
+      "source_location": "L132",
       "weight": 1.0
     },
     {
@@ -36480,7 +36480,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "ai/ROADMAP.md",
-      "source_location": "L28",
+      "source_location": "L27",
       "weight": 1.0
     },
     {
@@ -36491,7 +36491,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "ai/ROADMAP.md",
-      "source_location": "L40",
+      "source_location": "L39",
       "weight": 1.0
     },
     {
@@ -36502,7 +36502,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "ai/ROADMAP.md",
-      "source_location": "L50",
+      "source_location": "L49",
       "weight": 1.0
     },
     {
@@ -36513,7 +36513,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "ai/ROADMAP.md",
-      "source_location": "L76",
+      "source_location": "L75",
       "weight": 1.0
     },
     {
@@ -57444,5 +57444,5 @@
       "source_file": "verification/p0/REPORT.md"
     }
   ],
-  "built_at_commit": "d78f040fe9403e6dbd40d81a838389498569b18b"
+  "built_at_commit": "4dca009c741b285f8a917655a206ddd4a8e47fdc"
 }
