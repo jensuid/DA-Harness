@@ -551,3 +551,28 @@ class LogView(BaseModel):
     size_bytes: int
     rotated: list[str]
     lines: list[str]
+
+
+class SchemaMigrationRecord(BaseModel):
+    """One migration that actually ran against this store."""
+
+    version: int
+    name: str
+    applied_at: str
+
+
+class SchemaVersion(BaseModel):
+    """The shape of the local store, and whether this build understands it.
+
+    The answer to "is my data safe with this build": `current` is True when the
+    store's recorded schema is the one this core knows. A store above the
+    target is not downgraded and not served - `GET /schema-version` still
+    reports it, so the mismatch is visible rather than silent. `migrations` is
+    the audit trail of what was applied and when; it is empty for a store
+    created by this build, which was born current and had nothing applied.
+    """
+
+    version: int
+    target: int
+    current: bool
+    migrations: list[SchemaMigrationRecord]

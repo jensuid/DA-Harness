@@ -66,7 +66,7 @@ from app.generator import _columns_referenced as _columns_referenced_module
 SOURCE_TEMPLATE = "template"
 from app import agent as agent_module
 import app.db as db_module
-from app.db import get_connection
+from app.db import get_connection, LATEST_SCHEMA_VERSION
 from app.models import (
     Case,
     CaseCreate,
@@ -115,6 +115,8 @@ from app.models import (
     TemplateShape,
     TemplateProposal,
     TemplateFindingSummary,
+    SchemaMigrationRecord,
+    SchemaVersion,
 )
 
 # Give the core's output somewhere to go. Under the desktop shell the core is a
@@ -228,6 +230,32 @@ def recent_logs(lines: int = 200) -> LogView:
 def get_db() -> Iterator[object]:
     with get_connection() as connection:
         yield connection
+
+
+@app.get("/schema-version", response_model=SchemaVersion)
+def schema_version(db=Depends(get_db)) -> SchemaVersion:
+    """Which schema shape the local store is on, and whether it is current.
+
+    Read-only: a GET reports the state, it never changes it (the upgrade
+    happens on the ordinary open path, once, and is a no-op when current).
+    This is the one place a user can ask whether their data is safe with the
+    build they are running, and the one a release note can point at.
+    """
+    version = int(db.execute("PRAGMA user_version").fetchone()[0])
+    rows = db.execute(
+        "SELECT version, name, applied_at FROM schema_migrations ORDER BY version"
+    ).fetchall()
+    return SchemaVersion(
+        version=version,
+        target=LATEST_SCHEMA_VERSION,
+        current=version == LATEST_SCHEMA_VERSION,
+        migrations=[
+            SchemaMigrationRecord(
+                version=row["version"], name=row["name"], applied_at=row["applied_at"]
+            )
+            for row in rows
+        ],
+    )
 
 
 def _insert_case(db, question: str, dataset: str) -> Case:

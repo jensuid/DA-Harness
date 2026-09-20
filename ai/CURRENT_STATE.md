@@ -1,6 +1,6 @@
 # DAH - Current State
 
- - **Phase:** P5 Production Grade - COMPLETE (all deliverables; signing retired indefinitely by DEC-006 - DAH is single-user, not blocked). P6 Post-Launch Evolution is IN PROGRESS, with P6-MEMORY-001 (cross-case recall), P6-AGENT-002 (agentic analysis) and P6-TEMPLATE-003 (templates that carry the analytical shape) all DONE. P4 Production Candidate was COMPLETE (all 5 checklist items:
+ - **Phase:** P5 Production Grade - COMPLETE (all deliverables; signing retired indefinitely by DEC-006 - DAH is single-user, not blocked). P6 Post-Launch Evolution is IN PROGRESS, with P6-MEMORY-001 (cross-case recall), P6-AGENT-002 (agentic analysis), P6-TEMPLATE-003 (templates that carry the analytical shape) and P6-MIGRATE-004 (versioned migration path) all DONE. P4 Production Candidate was COMPLETE (all 5 checklist items:
   P4-VERIFY-001, P4-RELIABILITY-002, P4-UX-003 + P4-UX-004, P4-VALID-005,
   P4-PERF-006, P4-CI-007). P3 V1 is COMPLETE: all 10 entry-checklist items,
   231 server tests, and a P3 gate of its own. P5 Production Grade is IN
@@ -17,22 +17,22 @@ JSON package with import round trip (P2-CASE-012);
 human-approved write at a time (P6-AGENT-002);
 case templates that carry the analytical shape of a finished case - its plan,
 its proposals and how its findings validated - not just its question
-(P6-TEMPLATE-003)**
-- **Active task:** P6-TEMPLATE-003 DONE - templates that carry the analytical
-  shape of a finished case. A template promoted today copies the question and
-  the dataset label; now it also carries a pure projection over the case's
-  artifacts - its latest plan and the engine that produced it, the code
-  proposals its agent run made (falling back to its runs when a human drove
-  it), and its findings' statements with the verdicts validation already gave
-  them - in a nullable `templates.shape_json`. A case created from a template
-  records its lineage (`cases.template_id`), and two steps prefer that history
-  when they have nothing better: the plan step offers the template's plan
-  through the same `validate_plan`, and generate-code offers a template
-  proposal only when every column it reads exists in the profiled dataset.
-  Both record `source="template"`, and both fall back to the existing
-  deterministic derivation on any problem - a shapeless, malformed or deleted
-  template degrades rather than erroring. Before it: P6-AGENT-002 (agentic
-  analysis) DONE, P6-MEMORY-001 (cross-case recall) DONE, P5 CLOSED.
+(P6-TEMPLATE-003);
+a versioned, forward-only migration path for the store, so a database from
+any past release opens, upgrades and keeps its rows (P6-MIGRATE-004)**
+- **Active task:** P6-MIGRATE-004 DONE - a versioned migration path. The store had
+  grown by seven ad-hoc `_ensure_column` additions across P2-P6, each guarded
+  and correct, with no version recorded anywhere in the file - so no code could
+  answer "is this store current?", only probe for each column and hope. Now the
+  version lives in SQLite's `user_version` (in the file header, readable before
+  the schema exists), an ordered named chain replays the seven historical
+  additions one transaction each (change + audit row + stamp together, so a
+  crash mid-chain resumes at the next open), a store newer than the build is
+  refused rather than silently downgraded, and `GET /schema-version` reports the
+  state. A store created by this build is stamped current with an empty audit
+  trail, because nothing was applied to it. Before it: P6-TEMPLATE-003
+  (analytical-shape templates) DONE, P6-AGENT-002 (agentic analysis) DONE,
+  P6-MEMORY-001 (cross-case recall) DONE, P5 CLOSED.
   answers `GET /logs` with a path, but a path in a JSON body is a terminal
   answer, and the shell exists because this user does not have a terminal. New
   `desktop/src-tauri/src/logs.rs` is the bridge: it asks the core, then hands
@@ -52,20 +52,20 @@ its proposals and how its findings validated - not just its question
   documented minimum but is no longer enforced by CI, and a green run no longer
   proves the exact Intel triple a local build produces. Restoring that needs a
   self-hosted Intel runner.
-- **Test status:** server 302 passed (291 + 11 template shape); web 21 passed
+- **Test status:** server 315 passed (302 + 13 migrations); web 21 passed
   (CaseList 5, CaseCreation 3, CaseWorkspace 9); desktop shell 12 Rust tests
   (`cd desktop/src-tauri && cargo test [--features e2e]`, 9 unit + 3 e2e);
   P2, P3 and P4 gates PASS (P4: all 18 journey steps, all 10 exit criteria);
   first release v0.1.0 published from tag and checksum-verified.
-- **Next task:** a versioned migration path (ROADMAP item 4) - the DB has grown
-  by `_ensure_column` in-place additions across many tasks, including two this
-  task landed (`templates.shape_json`, `cases.template_id`), and the scheme is
-  untrackable by construction. P6's remaining items (memory tables, the Tauri
-  update flow) add tables and shipped state, so the migration story comes
-  before them rather than after. After that: the Tauri update flow now that
-  releases publish per tag. P6-TEMPLATE-003 (templates carrying the analytical
-  shape) is DONE. Before it, P6-AGENT-002 (agentic analysis) and P6-MEMORY-001
-  (cross-case recall) were DONE. The last P5 item was macOS signing +
+- **Next task:** the Tauri update flow (ROADMAP item 5) - releases now publish a
+  build per tag, but an installed app has no way to know. `tauri-plugin-updater`
+  against the GitHub releases feed, with a version compare and a download-and-
+  replace that respects the unsigned-app first-launch step. It is the last item
+  on the P6 entry checklist; after P6 closes, the unbuilt product work is
+  EVALUATE mode (audit existing SQL/notebook/dashboard work - the spec's third
+  mode, and the one DAH uniquely owns) and LEARN mode. P6-MIGRATE-004 (the
+  versioned migration path) is DONE. Before it, P6-TEMPLATE-003, P6-AGENT-002
+  and P6-MEMORY-001 were DONE. The last P5 item was macOS signing +
   notarization, retired indefinitely by DEC-006 - DAH is single-user, so the
   right-click > Open cost is paid once per machine by the one person who uses
   the app. The release job keeps the slot between the build and the upload if
@@ -127,6 +127,9 @@ its proposals and how its findings validated - not just its question
   step's write through the endpoint that owns it and proposes the next one;
   `POST .../agent/reject {step_id, reason?}` records the analyst's no and
   writes nothing. An id that is not the case's current pending step is a 409.
+- Check the store's schema: `GET /schema-version` (read-only; reports the
+  recorded version, whether it is current for this build, and the migrations
+  that were applied - the answer to "is my data safe with this build")
 - Chart from a run: `POST /cases/{id}/runs/{id}/charts` with `{"kind": "bar|line", "x": ..., "y": ..., "series": ...}`; image at `GET /cases/{id}/charts/{id}/image`
 - Rename: `PATCH /cases/{id}` with `{question?, dataset?}`; duplicate: `POST /cases/{id}/duplicate`;
   delete: `DELETE /cases/{id}` (removes the case row, all children, and its on-disk data)
@@ -138,6 +141,7 @@ its proposals and how its findings validated - not just its question
 | P6-MEMORY-001 cross-case recall | DONE |
 | P6-AGENT-002 agentic analysis | DONE |
 | P6-TEMPLATE-003 templates carry the analytical shape | DONE |
+| P6-MIGRATE-004 versioned migration path | DONE |
 
 ## P4 progress
 

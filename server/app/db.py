@@ -2,13 +2,20 @@
 
 Owns case STATE only. Analytical queries belong in analysis.py against DuckDB -
 the two stores stay separate by design (DEC-001).
+
+Schema evolution: opening a store upgrades it to the current shape through a
+recorded, forward-only chain (see MIGRATIONS and _migrate). The version lives in
+SQLite's `user_version` pragma, which is stored in the file header and so
+survives without a table; the `schema_migrations` rows are the audit trail of
+what actually ran and when.
 """
 
 import os
 import sqlite3
 from contextlib import contextmanager
+from datetime import datetime, timezone
 from pathlib import Path
-from typing import Iterator
+from typing import Callable, Iterator
 
 DB_PATH = Path(os.environ.get("DAH_DB_PATH", Path(__file__).resolve().parent.parent / "dah.db"))
 
@@ -30,7 +37,7 @@ CREATE TABLE IF NOT EXISTS datasets (
     case_id TEXT NOT NULL,
     filename TEXT NOT NULL,
     stored_path TEXT NOT NULL,
-    format TEXT NOT NULL,
+    format TEXT NOT NULL DEFAULT 'unknown',
     created_at TEXT NOT NULL,
     FOREIGN KEY (case_id) REFERENCES cases(id)
 );
@@ -149,11 +156,22 @@ CREATE TABLE IF NOT EXISTS conversations (
     created_at TEXT NOT NULL,
     FOREIGN KEY (case_id) REFERENCES cases(id)
 );
+
+CREATE TABLE IF NOT EXISTS schema_migrations (
+    version INTEGER PRIMARY KEY,
+    name TEXT NOT NULL,
+    applied_at TEXT NOT NULL
+);
 """
 
 
 def _ensure_column(conn, table: str, column: str, definition: str) -> None:
-    """Add a column to an older schema; a no-op on current ones."""
+    """Add a column to an older schema; a no-op on current ones.
+
+    Guarded by PRAGMA table_info rather than assuming: a store may have arrived
+    at a partial state through any earlier release, and a re-run after a
+    crashed upgrade must not error on the column it already added.
+    """
     existing = {
         row["name"]
         for row in conn.execute(f"PRAGMA table_info({table})")
@@ -162,32 +180,169 @@ def _ensure_column(conn, table: str, column: str, definition: str) -> None:
         conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
 
 
+# The current shape of the store. Opening a store below this upgrades it;
+# opening one above it is refused (see _check_version) rather than silently
+# treated as current, because a downgrade against an unknown schema is how a
+# store is corrupted quietly.
+LATEST_SCHEMA_VERSION = 7
+
+
+class Migration:
+    """One forward-only schema change.
+
+    A migration is a version number, a name a reader can understand, and a
+    call that makes the change. Every historical migration is guarded, so it
+    is a no-op on a store that already has its result - which is what makes an
+    upgrade resumable: after a crash, the next open re-runs the pending
+    migration without erroring on the part it already finished.
+    """
+
+    def __init__(self, version: int, name: str, apply: Callable[[sqlite3.Connection], None]):
+        self.version = version
+        self.name = name
+        self.apply = apply
+
+
+def _m_datasets_format(conn: sqlite3.Connection) -> None:
+    _ensure_column(conn, "datasets", "format", "TEXT NOT NULL DEFAULT 'unknown'")
+
+
+def _m_profiles_duplicate_rows(conn: sqlite3.Connection) -> None:
+    _ensure_column(conn, "profiles", "duplicate_rows", "INTEGER NOT NULL DEFAULT 0")
+
+
+def _m_runs_kind(conn: sqlite3.Connection) -> None:
+    _ensure_column(conn, "runs", "kind", "TEXT NOT NULL DEFAULT 'sql'")
+
+
+def _m_runs_code(conn: sqlite3.Connection) -> None:
+    _ensure_column(conn, "runs", "code", "TEXT")
+
+
+def _m_runs_dataset_ids_json(conn: sqlite3.Connection) -> None:
+    _ensure_column(conn, "runs", "dataset_ids_json", "TEXT")
+
+
+def _m_templates_shape_json(conn: sqlite3.Connection) -> None:
+    _ensure_column(conn, "templates", "shape_json", "TEXT")
+
+
+def _m_cases_template_id(conn: sqlite3.Connection) -> None:
+    _ensure_column(conn, "cases", "template_id", "TEXT")
+
+
+# The history of the store, oldest first. Each entry corresponds to a change
+# that once shipped as an ad-hoc `_ensure_column` call; the chain is the same
+# set of changes, now named, ordered and recorded. Append here - never edit an
+# entry, never renumber - when a future task changes the shape.
+MIGRATIONS: tuple[Migration, ...] = (
+    Migration(1, "datasets gain a format column", _m_datasets_format),
+    Migration(2, "profiles gain a duplicate-row count", _m_profiles_duplicate_rows),
+    Migration(3, "runs gain a kind (sql or python)", _m_runs_kind),
+    Migration(4, "runs gain the python code they executed", _m_runs_code),
+    Migration(5, "runs gain the full dataset list of a join", _m_runs_dataset_ids_json),
+    Migration(6, "templates gain the analytical shape they carry", _m_templates_shape_json),
+    Migration(7, "cases gain the template they came from", _m_cases_template_id),
+)
+
+
+class SchemaVersionError(RuntimeError):
+    """The store's schema is newer than this build understands."""
+
+
+def _recorded_version(conn: sqlite3.Connection) -> int:
+    """The version stamped into the store's header, 0 for a pre-migration one.
+
+    `user_version` lives in the file header rather than a table, so it is
+    readable before the schema exists and survives a crash that leaves the
+    tables half-made.
+    """
+    return int(conn.execute("PRAGMA user_version").fetchone()[0])
+
+
+def _store_is_fresh(conn: sqlite3.Connection) -> bool:
+    """No table has ever been created in this file.
+
+    A store that predates the migration chain has tables but no recorded
+    version; a store created now has neither. The distinction decides whether
+    the historical migrations are replayed or simply stamped as already-had.
+    """
+    row = conn.execute(
+        "SELECT COUNT(*) AS n FROM sqlite_master "
+        "WHERE type = 'table' AND name NOT LIKE 'sqlite_%'"
+    ).fetchone()
+    return int(row["n"]) == 0
+
+
+def _migrate(conn: sqlite3.Connection, fresh: bool) -> int:
+    """Bring the store to the current shape, and return the version reached.
+
+    `fresh` means the file had no table in it at all before this connection
+    created them, and is decided by the caller - before SCHEMA runs, since
+    SCHEMA itself creates the migration table and would make a newborn store
+    look old.
+
+    Idempotent: a store already at the current version runs no migration and
+    writes nothing but the pragma read. A store below it applies each pending
+    migration in its own transaction, stamping the version after each, so a
+    failure mid-chain leaves a consistent store at the last good version and
+    the next open resumes from there.
+    """
+    current = _recorded_version(conn)
+    if current > LATEST_SCHEMA_VERSION:
+        raise SchemaVersionError(
+            f"the case store is at schema version {current}, but this build "
+            f"only understands up to {LATEST_SCHEMA_VERSION}. A newer DAH "
+            "wrote this store; use that version or later rather than letting "
+            "this one guess at a schema it does not know."
+        )
+    if current == LATEST_SCHEMA_VERSION:
+        return current
+
+    if fresh:
+        # The schema created the store whole at the current shape, so there is
+        # nothing to replay. The migration table stays empty, which is the
+        # truth: nothing was applied, the store was born current.
+        conn.execute(f"PRAGMA user_version = {LATEST_SCHEMA_VERSION}")
+        return LATEST_SCHEMA_VERSION
+
+    for migration in MIGRATIONS:
+        if migration.version <= current:
+            continue
+        now = datetime.now(timezone.utc).isoformat()
+        # One transaction per migration: the change, its audit row and its
+        # version stamp land together, or none of them do.
+        with conn:  # commits on exit, rolls back on any exception
+            migration.apply(conn)
+            conn.execute(
+                "INSERT INTO schema_migrations (version, name, applied_at) "
+                "VALUES (?, ?, ?)",
+                (migration.version, migration.name, now),
+            )
+            conn.execute(f"PRAGMA user_version = {migration.version}")
+    return LATEST_SCHEMA_VERSION
+
+
 @contextmanager
 def get_connection(db_path: Path = DB_PATH) -> Iterator[sqlite3.Connection]:
-    """Open a connection, ensuring the schema exists, and commit on success."""
-    # FastAPI runs sync endpoints in a threadpool, so connections must be
-    # usable across threads. Each request gets its own connection and commits
-    # before closing, so sharing one connection across threads is safe here.
+    """Open a connection, ensuring the schema exists and is current.
+
+    FastAPI runs sync endpoints in a threadpool, so connections must be usable
+    across threads. Each request gets its own connection and commits before
+    closing, so sharing one connection across threads is safe here.
+    """
     conn = sqlite3.connect(db_path, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     try:
+        # The schema creates the tables at the current shape; the migration
+        # chain then brings a store written by any older release up to it. The
+        # two agree by construction: every column SCHEMA declares is either
+        # created by it or added by a migration below, and nothing else.
+        # Emptiness is decided before SCHEMA creates anything, otherwise a
+        # newborn store would look like an old one that needs the chain.
+        fresh = _store_is_fresh(conn)
         conn.executescript(SCHEMA)
-        # Databases created before the format column existed need it added.
-        # Guarded so it is a no-op on current schemas.
-        _ensure_column(conn, "datasets", "format", "TEXT")
-        _ensure_column(conn, "profiles", "duplicate_rows", "INTEGER DEFAULT 0")
-        # Runs created before P2-ANALYSIS-008 were SQL-only.
-        _ensure_column(conn, "runs", "kind", "TEXT NOT NULL DEFAULT 'sql'")
-        _ensure_column(conn, "runs", "code", "TEXT")
-        # Runs created before P3-DATA-003 touch a single dataset; the JSON list
-        # is the full set, dataset_id kept as the primary for old code paths.
-        _ensure_column(conn, "runs", "dataset_ids_json", "TEXT")
-        # Templates promoted before P6-TEMPLATE-003 carry a question alone; the
-        # shape is what a finished investigation leaves behind for the next one.
-        _ensure_column(conn, "templates", "shape_json", "TEXT")
-        # A case created from a template records which one, so its plan and
-        # code steps can offer its shape instead of deriving from scratch.
-        _ensure_column(conn, "cases", "template_id", "TEXT")
+        _migrate(conn, fresh)
         yield conn
         conn.commit()
     finally:

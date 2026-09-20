@@ -1,6 +1,28 @@
 # DAH - Handoff
 
 ## What was completed
+- P6-MIGRATE-004 PASSED: a versioned, forward-only migration path for the store.
+  The database had grown by seven ad-hoc `_ensure_column` additions across P2-P6
+  - each guarded, each correct, and no version recorded anywhere in the file, so
+  no code could answer "is this store current?" but only probe for each column
+  and hope. That was tenable while the schema only ever gained nullable columns;
+  it stopped being tenable the moment a task needed to rename, split or backfill
+  anything. Now the version lives in SQLite's `user_version` (the file header,
+  readable before any table exists and durable across a crash that leaves
+  tables half-made), the seven historical additions are an ordered named chain
+  applied one transaction at a time - the change, its audit row and its version
+  stamp land together or none does, so a failure mid-chain leaves a consistent
+  store that the next open resumes - and `GET /schema-version` reports the state
+  so a user can ask whether their data is safe with the build they are running.
+  Two deliberate behaviours: a store *newer* than the build is refused with both
+  numbers named, never silently downgraded, and a store created by this build is
+  stamped current with an empty audit trail, because the truth is that nothing
+  was applied to it. SQLite itself set one constraint the implementation had to
+  respect: a `NOT NULL` column cannot be added to a populated table without a
+  default, so the historical migrations carry defaults that SCHEMA declares too -
+  a test pins that a fresh store and an upgraded one are identical, not merely
+  compatible, because "they agree by construction" is exactly the claim that
+  silently stops being true when the next migration lands.
 - P6-TEMPLATE-003 PASSED: a template carries the analytical shape of a finished
   case, not just its question. The plan, the proposals and the finding outcomes
   were all already on disk, so promotion is a pure projection over them
@@ -668,7 +690,7 @@ reported as unsupported (clear 400) rather than faked; that gate is future work.
 
 ## Tests performed (current)
 
-- server pytest: 302 passed (291 + 11 template shape; verified again on a clean
+- server pytest: 315 passed (302 + 13 migrations; verified again on a clean
   venv built from pyproject - the install path CI uses)
 - CI on GitHub's own runners: ALL FOUR JOBS GREEN
   (run 35490199963, the first green run since ae0ba33 - server suite + P2/P3/P4
@@ -724,68 +746,58 @@ reported as unsupported (clear 400) rather than faked; that gate is future work.
 
 ## Next action
 
-P6-TEMPLATE-003 is **DONE**: templates that carry the analytical shape of a
-finished case, not just its question. P3-CASE-007 shipped a template that
-copied the question and the dataset label, so "same analysis, new month's
-file" still meant re-deriving the plan and re-typing the query that worked
-last time. The plan, the proposals and the finding outcomes were all already
-on disk; nothing new needed computing to carry them.
+P6-MIGRATE-004 is **DONE**: a versioned, forward-only migration path. The store
+grew by seven ad-hoc `_ensure_column` additions across P2-P6, and nothing
+recorded which of them a given database had received. Now the version lives in
+the file itself (`PRAGMA user_version`, in SQLite's header), and an ordered
+named chain replays the history one transaction at a time.
 
-Four pieces:
+Three pieces:
 
-- **`_capture_shape` (main.py)** - a pure projection, nothing computed or
-  guessed. The case's latest plan and which engine produced it; the code
-  proposals its agent run made, falling back to its runs when a human drove
-  it; and its findings' statements with the verdicts validation already gave
-  them. Returns None when the case has none of these, so an empty case
-  promotes the question-only skeleton it always promoted and behaves exactly
-  as before.
-- **`templates.shape_json` + `cases.template_id`** - the shape has somewhere to
-  live and a case knows where it came from. Both nullable, both added to
-  `_ensure_column`, so an older database migrates in place. `_template_of`
-  treats a deleted template as no template, so pointing at a gone row degrades
-  to the normal path instead of erroring.
-- **the plan step** offers the template's plan only when the case has none of
-  its own, validated through the same `validate_plan` the planner uses, and
-  falls back to derivation on any problem - with `source="template"` recorded,
-  so a reviewer sees the plan came from history rather than this dataset.
-- **generate-code** offers a template proposal only when every column it reads
-  exists in the profiled dataset - that profile check is what makes a
-  historical proposal safe against different data - and falls back to the
-  generator otherwise, again with `source="template"`.
+- **`db.py`** - `LATEST_SCHEMA_VERSION`, the `MIGRATIONS` chain (the seven
+  historical additions, now named and still guarded so a store at any
+  intermediate state converges), and `_migrate`, which applies each pending
+  migration in its own transaction: the ALTER, its `schema_migrations` audit row
+  and its version stamp commit together, so a crash mid-chain leaves a
+  consistent store at the last good version and the next open resumes. Opening
+  a store above what this build knows raises `SchemaVersionError` naming both
+  numbers - a downgrade against an unknown schema is how data is corrupted
+  quietly, and the loud failure is the honest one.
+- **`main.py`** - `GET /schema-version` reports the recorded version, the
+  target, whether they match and the audit trail. Read-only. This is the answer
+  to "is my data safe with this build", and the thing a release note can point
+  at.
+- **Freshness is decided before SCHEMA runs**, because SCHEMA itself creates
+  `schema_migrations` and would make a newborn store look old. A store created
+  by this build is stamped current with an empty audit trail - nothing was
+  applied to it, and the trail records what *ran*, not a padding of entries that
+  never did.
 
-The shape is proposals a human accepts, not artifacts a case inherits: no data,
-runs, findings or charts are copied into a templated case, and every write is
-still a POST the human makes. The honesty budgets are untouched - a reused
-plan is still just a plan, and a draft or interpretation still only quotes
-numbers the actual run produced.
+One constraint SQLite set: a `NOT NULL` column cannot be added to a table that
+already has rows without a default, so `datasets.format` migrates as
+`TEXT NOT NULL DEFAULT 'unknown'` and SCHEMA declares the same default. A test
+pins fresh-vs-upgraded equivalence across every table.
 
-Two real bugs the tests found, both worth carrying. `SOURCE_TEMPLATE` was
-referenced in two helpers but its definition silently never landed, so the
-first request to a templated case's plan step raised a `NameError` at request
-time - a module can import cleanly and still be broken on a path no test
-walked. And hand-run cases' proposals captured `columns_used: []`, which made
-the column-existence safety check pass **vacuously**: a template query could
-be offered against a dataset lacking its columns, which is the single failure
-the check existed to prevent. Proposals now compute their reach at capture
-time through `generator._columns_referenced`. A guard that is never fed the
-data it guards is not a guard.
+**Verified:** server suite 315 passed (was 302, +13 in
+`server/tests/test_migrations.py`); web 21 passed; desktop 12 Rust tests; P2,
+P3 and P4 gates all PASS - each re-ran the full suite at 315. The real dev
+store was upgraded in place as a live check rather than only a synthetic one:
+34 cases intact, all 7 migrations recorded, `GET /schema-version` current.
+Everything green locally; CI will run it on push.
 
-**Verified:** server suite 302 passed (was 291, +11 in
-`server/tests/test_case_templates.py`, the first 10 unmodified); web 21
-passed; desktop 12 Rust tests; P2, P3 and P4 gates all PASS - the P4 gate's
-own last step re-ran the suite at 302. Everything green locally; CI will run
-it on push.
-
-**Next on the P6 checklist: a versioned migration path** (item 4) - the DB has
-grown by `_ensure_column` in-place additions across many tasks, including two
-this task landed, and the scheme is untrackable by construction: there is no
-record of which database version a given install is on, so there is no way to
-know whether a given column exists except by trying it. P6's remaining items
-add tables and shipped state (memory's store; the update flow's release
-metadata), and doing the migration story *after* those tables exist is how
-the in-place additions became untrackable in the first place. After that:
-the Tauri update flow (item 5), now that releases publish per tag.
+**Next on the P6 checklist: the Tauri update flow** (item 5, the last one) -
+releases publish a build per tag, but an installed app has no way to know. The
+shape is `tauri-plugin-updater` against the GitHub releases feed, a version
+compare, and a download-and-replace that respects the unsigned-app first-launch
+step (DEC-006), with the checksum the release already published as the trust
+boundary. After P6 closes, the unbuilt product work is **EVALUATE mode** - the
+spec's third product mode, where existing analytical work (SQL, a notebook, a
+dashboard, an AI-generated analysis) is imported as the thing under inspection
+and audited against question / data / quality / method / calculation / evidence
+/ claim / visualization / limitations. Most of the machinery already exists
+(read-only execution, profiling, validation, the evidence graph); what is
+missing is importing an artifact *as the claim being evaluated* rather than as
+data. Then LEARN mode, which is a sequencing layer over the workflow stages.
 
 Releasing: tag `v<x.y.z>` where x.y.z matches server/pyproject.toml. The
 published build is arm64 and unsigned, flagged pre-release (DEC-006).
