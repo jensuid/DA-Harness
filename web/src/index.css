@@ -208,3 +208,58 @@ button.small {
 .warn {
   color: #a03a2a;
 }
+
+.verdict {
+  display: inline-block;
+  margin: 0.15rem 0.3rem 0.15rem 0;
+  padding: 0.05rem 0.5rem;
+  border-radius: 1rem;
+  font-size: 0.8rem;
+  font-family: ui-monospace, monospace;
+  border: 1px solid #bbb;
+  background: #f4f4f4;
+}
+
+.verdict.pass {
+  color: #2a7a2a;
+  border-color: #9cc29c;
+  background: #f2f9f2;
+}
+
+.verdict.concern {
+  color: #8a6a1a;
+  border-color: #d9c48a;
+  background: #faf6ec;
+}
+
+.verdict.fail {
+  color: #a03a2a;
+  border-color: #d9a094;
+  background: #faf0ee;
+}
+
+.kind-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-weight: 400;
+  margin: 0;
+}
+
+.kind-toggle input {
+  width: auto;
+}
+
+textarea {
+  width: 100%;
+  padding: 0.5rem;
+  font: inherit;
+  font-family: ui-monospace, monospace;
+  font-size: 0.9rem;
+}
+
+select {
+  width: 100%;
+  padding: 0.5rem;
+  font: inherit;
+}

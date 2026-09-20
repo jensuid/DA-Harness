@@ -114,6 +114,30 @@ export interface ValidationResult {
   validated_at: string
 }
 
+// EVALUATE mode (P7-EVAL-001 / P7-SHELL-002): work that came from elsewhere,
+// audited against the nine axes the specification names. The verdicts are
+// pass / concern / fail - never a score, because a single number would imply a
+// precision nine heterogenous axes do not have - and every verdict carries a
+// sentence a reader can act on.
+export interface AxisFinding {
+  axis: string
+  verdict: string
+  detail: string
+}
+
+export interface Evaluation {
+  id: string
+  case_id: string
+  dataset_id: string
+  run_id: string | null
+  artifact_kind: string
+  code: string
+  claim: string
+  findings: AxisFinding[]
+  source: string
+  created_at: string
+}
+
 export interface ConversationTurn {
   id: string
   case_id: string
@@ -302,4 +326,37 @@ export function validateFinding(caseId: string, findingId: string): Promise<Vali
 
 export function listFindings(caseId: string): Promise<Finding[]> {
   return request<Finding[]>(`/cases/${caseId}/findings`)
+}
+
+// --- EVALUATE: audit work that came from elsewhere -------------------------
+
+// The submission executes through the same engine the runs endpoints use, so
+// the read-only gate, the row cap and the hard sandbox are the ones every other
+// run answers to. A 400 is part of the contract rather than a failure: a
+// non-read-only artifact is refused before anything executes, and the detail
+// says what to change.
+export function evaluateDataset(
+  caseId: string,
+  datasetId: string,
+  code: string,
+  claim: string,
+  kind = 'sql',
+): Promise<Evaluation> {
+  return request<Evaluation>(
+    `/cases/${caseId}/datasets/${datasetId}/evaluate`,
+    {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ code, claim, kind }),
+    },
+  )
+}
+
+export function listEvaluations(
+  caseId: string,
+  datasetId: string,
+): Promise<Evaluation[]> {
+  return request<Evaluation[]>(
+    `/cases/${caseId}/datasets/${datasetId}/evaluations`,
+  )
 }

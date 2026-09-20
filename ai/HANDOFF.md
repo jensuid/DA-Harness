@@ -1,6 +1,26 @@
 # DAH - Handoff
 
 ## What was completed
+- P7-SHELL-002 PASSED: the EVALUATE surface, the first panel of the web-shell
+  gap. `POST .../evaluate` shipped with P7-EVAL-001 and nothing in the shell
+  could reach it - the workspace walked the ANALYZE loop (data, runs, findings,
+  chat) and the evaluate endpoint was the first one with no panel at all, in
+  the phase whose flagship capability it is. The workspace now carries an
+  **Audit submitted work (EVALUATE)** panel: paste the artifact's code and the
+  claim it was offered to support, and read the nine axes - question, data,
+  quality, method, calculation, evidence, claim, visualization, limitations -
+  each as a verdict badge and its sentence, in the spec's own order. Recorded
+  audits list below, newest first, so an audit is itself inspectable the way a
+  run is; with several datasets there is a chooser, because the verdicts are
+  per-dataset.
+  No new endpoint, contract or dependency - the panel only renders what the
+  core already answers. It keeps the discipline every other panel keeps: the
+  submit posts to the evaluate endpoint and nothing else, and the panel never
+  runs code and never decides whether work is sound. A 400 is part of the
+  contract rather than a failure - a non-read-only artifact is refused before
+  anything executes, and its own message is shown as a sentence beside a panel
+  still ready for corrected work.
+
 - P7-EVAL-001 PASSED: EVALUATE mode, the spec's second product mode, and the
   largest capability DAH did not have. Until P7, every primitive served the
   analyst's *own* work - read-only execution, deep profiling, rerun validation,
@@ -792,6 +812,68 @@ reported as unsupported (clear 400) rather than faked; that gate is future work.
 - P2 gate: `server/.venv/bin/python verification/p2/verify_p2.py` PASS on all
   18 steps
 
+## Repository state
+
+- Every P3 task is one atomic commit, all pushed to `origin/master`
+  (github.com/jensuid/DA-Harness), plus the phase close; P4 opens with
+  P4-VERIFY-001, P4-RELIABILITY-002, P4-UX-003, P4-UX-004, P4-VALID-005,
+  P4-PERF-006 and P4-CI-007 as their own commits, then the P4 phase close.
+  `dfb115b` P3-SEC-001, `2c7b11f` P3-CHART-002, `f5df5d1` P3-DATA-003,
+  `967544b` P3-FLOW-004, `7b7e49f` P3-ANALYSIS-005, `ebaa30e` P3-EVIDENCE-006,
+  P3-CASE-007, P3-SHELL-008, P3-DATA-009, P3-VALID-010, P3-AI-011,
+  P3-AI-012, P3-AI-013, P3-AI-014, and the phase close
+  `bffc6ad docs: mark P3 V1 complete...`
+- `.gitignore` covers `web/dist-desktop/`, `server/build/` (the 98MB PyInstaller
+  tree) and `desktop/src-tauri/{target,gen,binaries}` - the 85MB sidecar is
+  never committed.
+- `.git` is writable under the current permission profile (this changed
+  mid-session; the earlier read-only restriction is gone).
+
+## Unresolved problems
+
+- A test-isolation hole is closed but worth remembering: `app.main` skips
+  loading `server/.env` under pytest, but that only stops the *file* load. If
+  `DAH_LLM_API_KEY` is already in the environment - as it was for the pytest
+  subprocess the P2 gate spawns, because the gate itself does load .env - the
+  planner silently switches to the LLM inside the suite. That made the gate
+  both slow (a live call per plan) and flaky (a fast LLM flipped an assertion
+  that expected `source=deterministic`; a slow one fell back and passed). Fixed
+  three ways: the P2 gate scrubs the LLM vars from its subprocess, the P3
+  gate scrubs them from its own process as well (its journey would otherwise
+  make a live call per assistant step), and `test_export.py` deletes them. Any
+  future runner that spawns the suite must do the same.
+
+## Next action
+
+**P7-SHELL-002 is DONE**: EVALUATE mode now has a surface as well as a core.
+The web suite is 27 tests (was 21, +6 in `CaseWorkspace.test.tsx`), `npm run
+build` passes - `tsc -b` runs first, so a type error the jsdom tests cannot see
+fails it - and the desktop bundle builds from the same source. The server side
+is untouched by this change and stayed at 358 tests.
+
+### What is unbuilt, in priority order
+
+- **The rest of the web-shell gap** - P7 item 2, partly closed. Still no UI:
+  the agent (`/agent`, with its approve/reject loop - the highest-value of
+  them, because a plan executing itself one approved write at a time is
+  observable today only through the API), templates (`/templates`,
+  `/from-template`), cross-case memory, EDA (`/eda`), the evidence graph
+  (`/evidence-graph`), case history, and rename/duplicate/delete. Each is a
+  panel over an existing contract; none needs a new endpoint.
+- **LEARN mode** - a guided Why -> What -> How -> Validate walk. Mostly a
+  sequencing layer over the workflow stages that already exist (P3-FLOW-004).
+- **Multi-agent workflows** - only after EVALUATE, which is the audit layer an
+  agent's own output has to survive.
+- **Deferred, not dropped:** signing (DEC-006, the slot is in `release.yml`),
+  cloud sync, team collaboration, warehouse connectors, enterprise governance.
+
+### If the next step is a release
+
+Tag `v<x.y.z>` where x.y.z matches server/pyproject.toml. The published build is
+arm64 and unsigned, flagged pre-release (DEC-006). Six tasks have landed since
+v0.1.0, so `0.2.0` is the honest next label when a release is wanted.
+
+Nothing is unblocked-but-undone.
 ## Repository state
 
 - Every P3 task is one atomic commit, all pushed to `origin/master`

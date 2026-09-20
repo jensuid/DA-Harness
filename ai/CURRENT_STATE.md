@@ -1,6 +1,6 @@
 # DAH - Current State
 
- - **Phase:** P5 Production Grade - COMPLETE. P6 Post-Launch Evolution - COMPLETE: all 5 entry-checklist items. P7 Product Modes is IN PROGRESS (1 of 4): EVALUATE mode is DONE - submitted analytical work is audited against the nine axes the spec names - and next is the web-shell gap, the distance between what the core can do and what the UI shows. P4 Production Candidate was COMPLETE (all 5 checklist items: P4 Production Candidate was COMPLETE (all 5 checklist items:
+ - **Phase:** P5 Production Grade - COMPLETE. P6 Post-Launch Evolution - COMPLETE: all 5 entry-checklist items. P7 Product Modes is IN PROGRESS (1 of 4, with EVALUATE's own UI delivered): EVALUATE mode is DONE in the core and now in the shell - submitted work is audited against the nine axes the spec names, and the workspace renders the verdicts. The web-shell gap is item 2 and is partly closed; the agent, templates, memory, EDA, the evidence graph, case history and case management still have endpoints and no UI. P4 Production Candidate was COMPLETE (all 5 checklist items: P4 Production Candidate was COMPLETE (all 5 checklist items:
   P4-VERIFY-001, P4-RELIABILITY-002, P4-UX-003 + P4-UX-004, P4-VALID-005,
   P4-PERF-006, P4-CI-007). P3 V1 is COMPLETE: all 10 entry-checklist items,
   231 server tests, and a P3 gate of its own. P5 Production Grade is IN
@@ -22,50 +22,42 @@ a versioned, forward-only migration path for the store, so a database from
 any past release opens, upgrades and keeps its rows (P6-MIGRATE-004);
 and an update check that tells an installed app a newer build exists - or
 says honestly that it could not tell (P6-UPDATE-005)**
-- **Active task:** P7-EVAL-001 DONE - EVALUATE mode, the spec's second product
-  mode. Until P7 every primitive DAH had served the analyst's *own* work; this
-  task turns them on work that came from elsewhere. A user submits an artifact
-  - its code (SQL or Python) and the claim it was offered to support - and
-  `POST /cases/{id}/datasets/{id}/evaluate` answers the nine questions the
-  specification names, each against the data rather than against the claim's
-  own confidence: question, data, quality, method, calculation, evidence,
-  claim, visualization, limitations. Verdicts are pass / concern / fail -
-  deliberately not a score, because a single number would imply a precision
-  nine heterogenous axes do not have - and every verdict carries a sentence a
-  reader can act on.
-  The artifact executes through the *existing* run engine, never a second code
-  path, so the read-only gate, the row cap and the hard sandbox are the ones
-  every other run answers to: EVALUATE earns no privilege, and untrusted code
-  is the premise of the mode. The Evidence axis reuses the drafter's honesty
-  budget unchanged, so a claim quoting a magnitude the run does not contain is
-  caught by the same standard a draft is judged by; the Data axis reuses the
-  generator's notion of a column read, so a name the dataset lacks is reported
-  rather than silently dropped. The artifact is stored as a run and the
-  evaluation beside it, so an audit is itself inspectable and reproducible -
-  the standard every other artifact in DAH is held to. Before it: P6 CLOSED
-  (memory, the agent, templates, the migration path, the update check).
+- **Active task:** P7-SHELL-002 DONE - the EVALUATE surface, the first panel of
+  the web-shell gap. `POST .../evaluate` shipped with P7-EVAL-001 and nothing in
+  the shell reached it; the workspace now has an **Audit submitted work
+  (EVALUATE)** panel that pastes an artifact's code and the claim it supports,
+  posts to that endpoint alone, and renders the nine axes - question, data,
+  quality, method, calculation, evidence, claim, visualization, limitations -
+  each a verdict badge and its sentence, in the spec's own order. Recorded
+  audits list below, newest first, so an audit is inspectable the way a run is.
+  The panel earns no privilege: it never runs code and never decides whether
+  work is sound; a non-read-only artifact is refused by the core before
+  anything executes and the refusal's message is shown as a sentence beside a
+  panel still ready for corrected work.
+  Before it: P7-EVAL-001 (EVALUATE in the core) DONE, P6 CLOSED.
 - **Known issues:** CI's runner is `macos-latest`, not the Ventura/Intel pin
   P5-CI-004 intended - GitHub retired the macos-13 pool, so the label hangs
   forever (probed empirically; see DEC-005). The Ventura floor stays the
   documented minimum but is no longer enforced by CI, and a green run no longer
   proves the exact Intel triple a local build produces. Restoring that needs a
   self-hosted Intel runner.
-- **Test status:** server 358 passed (336 + 22 evaluate); web 21 passed
-  (CaseList 5, CaseCreation 3, CaseWorkspace 9); desktop shell 22 Rust tests
+- **Test status:** server 358 passed (336 + 22 evaluate); web 27 passed
+  (CaseList 5, CaseCreation 3, CaseWorkspace 12 - the workspace gained the
+  EVALUATE panel's 6); desktop shell 22 Rust tests
   (`cd desktop/src-tauri && cargo test [--features e2e]`, 19 unit + 3 e2e);
   P2, P3 and P4 gates PASS (P4: all 18 journey steps, all 10 exit criteria);
   first release v0.1.0 published from tag and checksum-verified.
-- **Next task:** P7 item 2 - **the web shell is behind the core.** These
-  endpoints have no UI at all: the agent (`/agent`), templates (`/templates`,
-  `/from-template`), cross-case memory, EDA (`/eda`), the evidence graph
-  (`/evidence-graph`), case history, rename/duplicate/delete,
-  `/schema-version`, `/updates/latest` - and now `/evaluate`. The core can do
-  all of it; the shell is the distance between "works" and "usable", and it is
-  the highest-value work left that needs no new core capability. After it:
-  **LEARN** mode, a guided Why -> What -> How -> Validate walk, mostly a
-  sequencing and presentation layer over the workflow stages that already
-  exist (P3-FLOW-004); then multi-agent workflows, which only make sense after
-  EVALUATE, because that is how an agent's own output gets audited.
+- **Next task:** the rest of the web-shell gap (P7 item 2). EVALUATE's surface
+  is delivered; these endpoints still have no UI: the agent (`/agent`, with its
+  approve/reject loop), templates (`/templates`, `/from-template`), cross-case
+  memory, EDA (`/eda`), the evidence graph (`/evidence-graph`), case history,
+  and rename/duplicate/delete. Each is a panel over an existing contract - no
+  new endpoints - and the agent is the highest-value of them, because a plan
+  that executes itself one approved write at a time is currently observable
+  only through the API. After item 2: **LEARN** mode, a guided Why -> What ->
+  How -> Validate walk (mostly sequencing over P3-FLOW-004), then multi-agent
+  workflows, which only make sense after EVALUATE - that is how an agent's own
+  output gets audited.
   Deferred, not dropped: signing (DEC-006, the slot is in `release.yml`), cloud
   sync, team collaboration, warehouse connectors, enterprise governance. None
   pays for itself at a user count of one.
@@ -152,6 +144,7 @@ says honestly that it could not tell (P6-UPDATE-005)**
 | Task | Status |
 |------|--------|
 | P7-EVAL-001 EVALUATE mode | DONE |
+| P7-SHELL-002 EVALUATE in the web shell | DONE |
 
 ## P6 progress
 

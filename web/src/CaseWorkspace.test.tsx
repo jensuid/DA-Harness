@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { CaseWorkspace } from './CaseWorkspace'
 import * as api from './api'
@@ -23,6 +23,8 @@ vi.mock('./api', async (importOriginal) => {
     acceptFinding: vi.fn(),
     validateFinding: vi.fn(),
     postChat: vi.fn(),
+    evaluateDataset: vi.fn(),
+    listEvaluations: vi.fn(),
   }
 })
 
@@ -71,6 +73,53 @@ function mockEmptyCase() {
   vi.mocked(api.listFindings).mockResolvedValue([])
   vi.mocked(api.listChat).mockResolvedValue([])
   vi.mocked(api.profileDataset).mockResolvedValue(profile)
+  vi.mocked(api.listEvaluations).mockResolvedValue([])
+}
+
+function finding(axis: string, verdict: string, detail: string) {
+  return { axis, verdict, detail }
+}
+
+function cleanFindings() {
+  return [
+    finding('question', 'pass', 'the claim states a position over 3 profiled column(s)'),
+    finding('data', 'pass', 'the artifact reads 2 column(s) present in the profile: region, revenue'),
+    finding('quality', 'pass', 'no material null or duplicate load'),
+    finding('method', 'pass', 'the artifact is read-only, bounded, and reproducible'),
+    finding('calculation', 'pass', 'a second execution produced the same result'),
+    finding('evidence', 'pass', 'every magnitude the claim quotes appears in the result'),
+    finding('claim', 'pass', 'the claim states a direction, so the data can disagree'),
+    finding('visualization', 'pass', 'no chart exists and none is required'),
+    finding('limitations', 'pass', 'no material limitations: every axis passed'),
+  ]
+}
+
+function evaluation(overrides: object = {}): api.Evaluation {
+  return {
+    id: 'e1',
+    case_id: 'c1',
+    dataset_id: 'd1',
+    run_id: 'r9',
+    artifact_kind: 'sql',
+    code: 'SELECT region, SUM(revenue) AS total FROM read_csv_auto(?) GROUP BY region',
+    claim: 'Revenue is higher in north than south',
+    findings: cleanFindings(),
+    source: 'deterministic',
+    created_at: '',
+    ...overrides,
+  }
+}
+
+async function submitAudit(user: Awaited<ReturnType<typeof userEvent.setup>>) {
+  await user.type(
+    screen.getByLabelText(/artifact's code/i),
+    'SELECT region, SUM(revenue) AS total FROM read_csv_auto(?) GROUP BY region',
+  )
+  await user.type(
+    screen.getByLabelText(/the claim it supports/i),
+    'Revenue is higher in north than south',
+  )
+  await user.click(screen.getByRole('button', { name: /audit this work/i }))
 }
 
 describe('CaseWorkspace', () => {
@@ -257,5 +306,137 @@ describe('CaseWorkspace', () => {
     await user.click(screen.getByRole('button', { name: 'Ask' }))
 
     expect(await screen.findByRole('alert')).toHaveTextContent(/could not answer/i)
+  })
+
+  it('audits submitted work and shows all nine axes with their sentences', async () => {
+    mockEmptyCase()
+    vi.mocked(api.evaluateDataset).mockResolvedValue(evaluation())
+
+    const user = userEvent.setup()
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} />)
+    await screen.findByText(/audit submitted work/i)
+    await submitAudit(user)
+
+    // Scoped to the audit: the workflow's stage list also renders a checkmark
+    // and an axis name, so the badge must be found inside the audit it belongs to.
+    const audit = await screen.findByTestId('audit')
+    // Nine axes in the spec's own order, each with its verdict and its sentence.
+    for (const [mark, axis] of [
+      ['✓', 'question'], ['✓', 'data'], ['✓', 'quality'], ['✓', 'method'],
+      ['✓', 'calculation'], ['✓', 'evidence'], ['✓', 'claim'],
+      ['✓', 'visualization'], ['✓', 'limitations'],
+    ] as const) {
+      expect(within(audit).getByText(`${mark} ${axis}`)).toBeInTheDocument()
+    }
+    expect(within(audit).getByText(/every magnitude the claim quotes appears/i)).toBeInTheDocument()
+    expect(api.evaluateDataset).toHaveBeenCalledWith(
+      'c1', 'd1',
+      'SELECT region, SUM(revenue) AS total FROM read_csv_auto(?) GROUP BY region',
+      'Revenue is higher in north than south',
+      'sql',
+    )
+  })
+
+  it('shows a failing axis with its value, not only its name', async () => {
+    mockEmptyCase()
+    vi.mocked(api.evaluateDataset).mockResolvedValue(
+      evaluation({
+        findings: cleanFindings().map((f) =>
+          f.axis === 'evidence'
+            ? finding('evidence', 'fail', 'the claim quotes values absent from the result: 999')
+            : f,
+        ),
+      }),
+    )
+
+    const user = userEvent.setup()
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} />)
+    await screen.findByText(/audit submitted work/i)
+    await submitAudit(user)
+
+    const audit = await screen.findByTestId('audit')
+    expect(within(audit).getByText(/✗ evidence/i)).toBeInTheDocument()
+    expect(within(audit).getByText(/absent from the result: 999/i)).toBeInTheDocument()
+  })
+
+  it('shows the core refusal as a sentence and records nothing', async () => {
+    mockEmptyCase()
+    vi.mocked(api.evaluateDataset).mockRejectedValue(
+      new api.ApiError(400, 'the artifact is not a single read-only query'),
+    )
+
+    const user = userEvent.setup()
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} />)
+    await screen.findByText(/audit submitted work/i)
+    await submitAudit(user)
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      /not a single read-only query/i,
+    )
+    // The panel is still there, ready for corrected work.
+    expect(screen.getByRole('button', { name: /audit this work/i })).toBeInTheDocument()
+  })
+
+  it('lists the audits already recorded over the dataset, newest first', async () => {
+    mockEmptyCase()
+    vi.mocked(api.listEvaluations).mockResolvedValue([
+      evaluation({
+        id: 'e2',
+        claim: 'North totals 999.0, more than south',
+        findings: [
+          ...cleanFindings().slice(0, 5),
+          finding('evidence', 'fail', 'the claim quotes values absent from the result: 999'),
+          ...cleanFindings().slice(6),
+        ],
+      }),
+      evaluation({ id: 'e1', claim: 'Revenue is higher in north than south' }),
+    ])
+
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} />)
+    const recorded = await screen.findByText(/recorded audits/i)
+    const claims = within(recorded.parentElement!)
+      .getAllByRole('listitem')
+      .map((item) => item.textContent ?? '')
+    // Newest first, as the core's listing orders them.
+    expect(claims[0]).toContain('North totals 999.0')
+    expect(claims[0]).toContain('evidence: fail')
+    expect(claims[1]).toContain('Revenue is higher in north than south')
+    expect(claims[1]).toContain('every axis passed')
+  })
+
+  it('switches the submission between SQL and Python', async () => {
+    mockEmptyCase()
+    vi.mocked(api.evaluateDataset).mockResolvedValue(evaluation({ artifact_kind: 'python' }))
+
+    const user = userEvent.setup()
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} />)
+    await screen.findByText(/audit submitted work/i)
+
+    await user.click(screen.getByLabelText(/python/i))
+    await user.type(screen.getByLabelText(/artifact's code/i), 'result = 42')
+    await user.type(screen.getByLabelText(/the claim it supports/i), 'A python claim')
+    await user.click(screen.getByRole('button', { name: /audit this work/i }))
+
+    await waitFor(() => expect(api.evaluateDataset).toHaveBeenCalled())
+    expect(api.evaluateDataset).toHaveBeenCalledWith(
+      'c1', 'd1', 'result = 42', 'A python claim', 'python',
+    )
+  })
+
+  it('waits for a profile before offering an audit', async () => {
+    vi.mocked(api.getCase).mockResolvedValue({
+      id: 'c1', question: 'Q?', dataset: 'sales.csv', created_at: '', updated_at: '',
+    })
+    vi.mocked(api.getProgress).mockResolvedValue(progress)
+    vi.mocked(api.listDatasets).mockResolvedValue([dataset])
+    vi.mocked(api.listRuns).mockResolvedValue([])
+    vi.mocked(api.listFindings).mockResolvedValue([])
+    vi.mocked(api.listChat).mockResolvedValue([])
+    // No profile yet, so the dataset is not auditable.
+    vi.mocked(api.profileDataset).mockRejectedValue(new api.ApiError(404, 'no profile'))
+
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} />)
+    expect(await screen.findByText(/attach and profile a dataset first/i)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /audit this work/i })).not.toBeInTheDocument()
   })
 })

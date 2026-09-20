@@ -110,6 +110,7 @@ the gate comes first because a phase is done when a gate says so.
 | Task ID | Capability | Status | Verification |
 |---------|-----------|--------|--------------|
 | P7-EVAL-001 | EVALUATE mode (audit existing work) | DONE | 22 tests in test_evaluator.py; P2/P3/P4 gates PASS |
+| P7-SHELL-002 | UX (EVALUATE in the web shell) | DONE | +6 tests in CaseWorkspace.test.tsx; web build PASS |
 
 Contracts for the rolling window (the two most recent). Older blocks are in
 `ai/TASKS-ARCHIVE.md`.
@@ -336,192 +337,181 @@ LESSON: three of the eleven criteria were satisfied by code that had not been
         and a check that cannot fail cannot pass either.
 ```
 
-### P6-UPDATE-005 contract
+### P7-SHELL-002 contract
 
 ```
-TASK ID: P6-UPDATE-005
-MILESTONE: P6 Post-Launch Evolution
-CAPABILITY: Distribution
-GOAL: A new release tag reaches an installed app: the app says a newer build
-      exists and puts the download in front of the user, and when it cannot
-      know, it says so instead of claiming the app is current.
+TASK ID: P7-SHELL-002
+MILESTONE: P7 Product Modes
+CAPABILITY: UX (the web-shell gap)
+GOAL: A user can hand DAH work that came from elsewhere and read the nine-axis
+      audit without a terminal. POST .../evaluate answers nine verdicts and
+      nothing in the shell reaches it today; this task puts a surface in front
+      of it.
 
-CONTEXT: the release pipeline now publishes a versioned build per tag, but an
-         installed app has no way to learn that. Two facts constrain what is
-         buildable now, and both are already decisions rather than gaps: the
-         repository is PRIVATE (an unauthenticated release-feed request answers
-         404, verified), and the app is UNSIGNED (DEC-006), so an update payload
-         cannot be signature-verified and a self-replacing updater cannot be
-         tested end to end. So the task delivers the half that is verifiable -
-         the check - and leaves the install half as a documented slot, exactly
-         as DEC-004/006 left signing.
+CONTEXT: P7-EVAL-001 shipped the core half of EVALUATE mode. The web shell
+         walks the ANALYZE loop one panel per step - data, runs, findings,
+         chat - and every one of those panels posts to the endpoint that owns
+         its write. The evaluate endpoint is the first endpoint with no panel
+         at all, and it is the flagship capability of the phase, so closing
+         that one gap is the slice of the web-shell work that pays first. The
+         other un-UI'd endpoints (the agent, templates, memory, EDA, the
+         evidence graph, case history, case management) are later tasks in the
+         same checklist item, not this one.
 
-INPUTS: the version this build was published at; a release feed.
-RELEVANT FILES: server/app/updates.py (NEW), server/app/main.py,
-                server/app/models.py, server/tests/test_updates.py (NEW),
-                desktop/src-tauri/src/updates.rs (NEW),
-                desktop/src-tauri/src/main.rs, .github/workflows/release.yml
+INPUTS: a case with at least one attached, profiled dataset; the artifact's
+        code, its kind (SQL or Python) and the claim it was offered to support,
+        typed or pasted.
+RELEVANT FILES: web/src/api.ts, web/src/CaseWorkspace.tsx,
+                web/src/CaseWorkspace.test.tsx, web/src/index.css
 REQUIRED CHANGE:
-  - the core learns its own version, one source of truth: the version the
-    release workflow already stamps from server/pyproject.toml. Resolved by
-    importlib.metadata when installed or bundled, falling back to reading the
-    pyproject beside the source in a dev checkout, and finally to "unknown" -
-    never to a guessed number.
-  - server/app/updates.py: pure functions. `parse_version` and
-    `is_update_available` (semver-style tuple comparison, no dependency), and
-    `latest_release` over an injected HTTP client, so the parsing and the
-    comparison are tested without a network and the transport is a seam.
-  - GET /updates/latest: read-only, no body accepted, nothing the caller
-    supplies is written anywhere. It answers one of three truths:
-    `current` (the feed named a version and it is not newer),
-    `available` (it named a newer one, with its tag, its page URL and the
-    published notes), or `unknown` - and `unknown` carries a reason: the feed
-    was unreachable, the repository is private, the rate limit was hit, or the
-    body was not the shape expected. An unknown answer is never reported as
-    current, because "could not check" and "is up to date" are different
-    statements and only one of them is true.
-  - the shell bridges it the way it bridges /logs: a DAH > Check for
-    Updates... menu item asks the core, opens the release page in the user's
-    browser when one exists, and otherwise shows the reason it could not tell.
-    It degrades to a sentence rather than an error at every step, and never
-    panics on a body it does not recognise.
-  - release.yml publishes the version, the page URL and the notes the check
-    reads, so the feed and the pipeline cannot drift apart.
-NON-GOALS: a self-replacing updater (unsigned builds cannot verify a payload,
-           DEC-006; tauri-plugin-updater slots in when signing does, and the
-           check it would consume is what this task builds), background or
-           scheduled checks (a single user does not need a poller burning
-           battery and network; the menu item is the trigger), auto-download
-           or auto-install, a channel/staging mechanism (one release stream),
-           update notifications in the web bundle.
-CONSTRAINTS: the check is read-only and makes no authenticated request - no
-             token is shipped and none ever can be, so a private repository is
-             answered with `unknown` and a reason, never with a silent guess;
-             the network call is bounded by a timeout so a hung feed cannot
-             freeze a menu; nothing the analyst typed is logged; no new runtime
-             dependency (httpx is already in the tree; the browser opens
-             through `open`, as the reveal-logs menu already does, so the shell
-             gains no crate); the existing test suites stay green and hermetic.
+  - web/src/api.ts: `AxisFinding` and `Evaluation` interfaces matching the
+    core's models, plus `evaluateDataset(caseId, datasetId, code, claim, kind)`
+    and `listEvaluations(caseId, datasetId)`. Failures travel as `ApiError`, so
+    a 400's `detail` and a 500's `request_id` reach the panel unchanged - the
+    existing error contract, not a new one.
+  - web/src/CaseWorkspace.tsx: an `EvaluatePanel`, shown once the case has a
+    profiled dataset (an unprofiled case has no columns to audit against, and
+    the panel says so rather than offering a submission that cannot succeed).
+    A kind toggle between SQL and Python, a textarea for the code, an input for
+    the claim, and a submit that posts to the evaluate endpoint and nothing
+    else. The audit renders as nine rows, one per axis in the spec's order,
+    each with its verdict as a badge - pass / concern / fail - and its sentence;
+    the verdict is the summary and the sentence is the substance, so neither is
+    rendered without the other. Audits already recorded over that dataset are
+    listed below, newest first, so an audit is itself inspectable from the
+    workspace the way a run is.
+  - The panel degrades rather than breaking: a 400 (a non-read-only artifact,
+    an empty code or claim, an unknown kind) shows the core's own message
+    inline and the panel stays usable, because that message is the actionable
+    thing - "only single read-only SELECT queries are supported" tells the
+    user what to change. A 500 shows the message with its request id, as every
+    other panel does.
+  - When the case has several datasets the panel offers a chooser, because the
+    axis verdicts are per-dataset - an artifact audited against the wrong file
+    would fail every column check for a reason that is not the artifact's.
+NON-GOALS: ingesting a whole notebook, dashboard, spreadsheet or report as a
+           file (this task takes the code and the claim, the common core, as
+           P7-EVAL-001 did), editing or re-running a past audit's artifact (the
+           artifact is already stored as a run and appears in the Runs panel),
+           a chart or score over the audit (the core deliberately returns no
+           score), an LLM phrasing of the verdicts (deterministic, as the core
+           is), a mode switcher that reorganises the workspace around ANALYZE /
+           EVALUATE / LEARN (the workspace is ANALYZE's loop; EVALUATE is a
+           labelled panel beside it, and a mode architecture is a later
+           design), the other un-UI'd endpoints (each is its own task).
+CONSTRAINTS: every write posts to the evaluate endpoint - the panel proposes
+             nothing else and creates no run, finding or chart of its own;
+             deterministic; no new dependency; the existing panels and their
+             tests are unchanged; `tsc -b` passes (the build is CI's type gate,
+             and a type error the jsdom tests cannot see fails it); the desktop
+             bundle builds from the same source, so nothing may assume a
+             browser-only environment; nothing the analyst typed is logged by
+             the core (P5-OBSERVE-002) and the shell adds no logging of its
+             own; the server suite and the gates are untouched by this change
+             and stay green.
 ACCEPTANCE CRITERIA:
-- [x] the core resolves its own version from the pyproject, and the endpoint
-      reports it, never a guess
-- [x] a newer published version is reported as available with its tag, its
-      page URL and its notes
-- [x] an equal or older published version is reported as current
-- [x] an unreachable or private feed is reported as unknown WITH a reason, and
-      never as current
-- [x] a rate-limited feed and a malformed body are each reported as unknown
-      with their own reason
-- [x] the comparison is a pure function, tested without a network
-- [x] the endpoint is read-only: it accepts no body and writes nothing
-- [x] the menu item opens the release page when an update exists and shows a
-      sentence when it cannot tell
-- [x] the shell degrades on every failure path, including a body it does not
-      recognise, without panicking
-- [x] release.yml publishes the fields the check reads
-- [x] the full server suite, the P2/P3/P4 gates, the web suite and the desktop
-      tests stay green
-TESTS: server/tests/test_updates.py - version resolution, the pure comparison
-       across older/equal/newer and malformed inputs, the three feed outcomes
-       and every failure reason, each driven through an injected client so no
-       test touches a network; desktop/src-tauri unit tests for the parse and
-       the degradation table.
-VERIFICATION: server suite + verification/p2/verify_p2.py +
-              verification/p3/verify_p3.py + verification/p4/verify_p4.py PASS;
-              cd desktop/src-tauri && cargo test PASS.
-STATE UPDATE: mark P6-UPDATE-005 done on pass; ROADMAP item 5 flips to DONE and
-              P6 closes.
+- [x] a case with a profiled dataset shows the EVALUATE panel; a case with no
+      dataset or no profile does not
+- [x] submitting clean work shows all nine axes, each with a pass verdict and
+      its sentence, in the spec's order
+- [x] a claim quoting a magnitude the run does not contain shows a fail on
+      Evidence, with the value and the sentence
+- [x] a non-read-only artifact shows the core's 400 message inline; the panel
+      stays usable and no audit was recorded
+- [x] an audit is recorded and listed afterwards, newest first, with its claim
+      and its nine verdicts
+- [x] the kind toggle switches the submission between SQL and Python
+- [x] a failed request never crashes the workspace: the error is a sentence
+- [x] `tsc -b` and the web suite stay green
+TESTS: web/src/CaseWorkspace.test.tsx - the clean nine-axis baseline, the
+       invented magnitude on Evidence, the read-only refusal rendered as a
+       sentence, the recorded audit listed newest first, the panel's absence
+       without a profiled dataset, and the kind toggle.
+VERIFICATION: cd web && npm test PASS; cd web && npm run build PASS (tsc -b
+              runs first, so a type error the jsdom tests cannot see fails
+              it). The server suite and the three gates are unchanged.
+STATE UPDATE: mark P7-SHELL-002 done on pass; ROADMAP item 2 records EVALUATE's
+              surface as delivered.
 ```
 
+
 ```
-TASK: P6-UPDATE-005 - a new release tag reaches an installed app
-ID: P6-UPDATE-005
+TASK: P7-SHELL-002 - EVALUATE mode in the web shell
+ID: P7-SHELL-002
 PRIORITY: high
 STATUS: DONE
-SUMMARY: The release pipeline publishes a build per tag, but an installed app
-         had no way to learn that. This task delivers the half of an update
-         flow that is verifiable today: the app says a newer build exists and
-         puts its download page in front of the user - and when it cannot know,
-         it says so, instead of claiming the app is current.
+SUMMARY: The core half of EVALUATE mode shipped with P7-EVAL-001 and nothing
+         in the shell could reach it. The web workspace walks the ANALYZE loop
+         one panel per step - data, runs, findings, chat - and the evaluate
+         endpoint was the first one with no panel at all, in the phase whose
+         flagship capability it is. This task puts a surface in front of it
+         without adding a single endpoint, contract or dependency: the panel
+         only renders what the core already answers.
 
-Two facts decided the scope, and both are recorded decisions rather than gaps:
-the repository is **private**, so an unauthenticated release-feed request
-answers 404 (verified, not assumed), and the app is **unsigned** (DEC-006), so
-an update payload cannot be signature-verified and a self-replacing updater
-cannot be tested end to end. A full `tauri-plugin-updater` integration would
-have been unverifiable code claiming a capability it cannot prove. The check
-ships; the install slots in when signing does, exactly as DEC-004/006 left
-signing itself.
+Two files of substance:
 
-Three pieces:
+- **`web/src/api.ts`** - `AxisFinding` and `Evaluation` interfaces matching the
+  core's models, and the two functions the panel needs: `evaluateDataset` (the
+  submission) and `listEvaluations` (so an audit is inspectable after the fact,
+  the way a run is). Failures travel as `ApiError`, so a 400's `detail` and a
+  500's `request_id` reach the panel unchanged - the error contract the rest of
+  the shell already uses, not a new one.
+- **`web/src/CaseWorkspace.tsx`** - an `EvaluatePanel` placed after the loop it
+  audits and before the assistant. It appears once a dataset is profiled (an
+  unprofiled case has no columns to audit against, so the panel says so rather
+  than offering a submission that cannot succeed); offers a kind toggle, a code
+  textarea and a claim input; and renders nine rows - one per axis in the
+  spec's own order - each a verdict badge and its sentence, because the verdict
+  is the summary and the sentence is the substance and neither is rendered
+  without the other. Recorded audits list below, newest first. With several
+  datasets there is a chooser, because the verdicts are per-dataset and an
+  artifact audited against the wrong file fails every column check for a reason
+  that is not the artifact's.
 
-- **`server/app/updates.py` (new)** - the honest core of it. `parse_version` and
-  `is_update_available` are pure functions (semver-style tuple comparison, no
-  dependency, tolerant of a leading `v` and a pre-release suffix); `latest_release`
-  runs over an *injected* HTTP client, so the parsing is tested without a
-  network and the transport is a seam. `check_for_update` answers one of three
-  truths - `current`, `available`, or `unknown` - and `unknown` always carries a
-  reason: the feed was unreachable, the repository may be private, the rate
-  limit was hit, or the body was not the shape expected.
-- **`GET /updates/latest`** - read-only, GET-only, unauthenticated, accepts no
-  body and writes nothing. The core resolves its own version from the pyproject
-  (importlib metadata when installed or bundled, the file beside the source in a
-  dev checkout, then "unknown" - never a guessed number).
-- **`desktop/src-tauri/src/updates.rs` (new)** - the bridge, shaped exactly like
-  the reveal-logs menu it sits beside: it asks the core, opens the release page
-  in the browser through `open` when one exists, and otherwise shows the
-  sentence. **DAH > Check for Updates...** is the menu item. Every failure path,
-  including a body it does not recognise, degrades to a sentence rather than
-  panicking.
+The panel holds to the discipline every other panel keeps: the submit posts to
+the evaluate endpoint and nothing else. The panel never runs code and never
+decides whether work is sound - the endpoint does, under the same read-only
+gate, row cap and hard sandbox as any other run. A 400 is part of the contract
+rather than a failure: a non-read-only artifact is refused before anything
+executes, and its detail ("only single read-only SELECT queries are supported")
+is shown as a sentence next to a panel still ready for corrected work.
 
-The property the tests actually pin is not "does it find an update" but "does
-it tell the truth". An unreachable feed, a 404, a 403, a 503, a non-JSON body, a
-body without a tag and a transport timeout are each `unknown` with their own
-reason - never a silent `current`, because "could not check" and "is up to
-date" are different statements and only one of them is true. Verified live
-against the real private repository: the answer is `unknown`, "the release feed
-is not reachable; the repository may be private" - the honest one, and it
-answers properly the day the repository goes public with no code change.
-
-NON-GOALS held: no self-replacing updater (unsigned builds cannot verify a
-             payload, DEC-006; the plugin slots in when signing does, and the
-             check it would consume is what this task builds), no background or
-             scheduled checks (a single user does not need a poller), no
-             auto-download or auto-install, no channel mechanism, no web-bundle
-             notification surface.
-CONSTRAINTS held: read-only and unauthenticated - no token is shipped and none
-             ever can be, so a private repository is a *state to report*; the
-             network call is bounded by a timeout so a hung feed cannot freeze
-             a menu; nothing the analyst typed is logged; no new runtime
-             dependency (httpx was already in the tree, and the browser opens
-             through `open` as the reveal-logs menu already does, so the shell
-             gains no crate); the existing suites stayed green and hermetic -
-             every feed outcome in the tests is driven through the injected
-             client, so no test touches a network.
-ACCEPTANCE CRITERIA: all 11 - see the checked boxes above.
-TESTS: 21 in server/tests/test_updates.py - version resolution, the pure
-       comparison across older/equal/newer and malformed inputs, and every feed
-       outcome and failure reason through the injected client; 7 in
-       desktop/src-tauri/src/updates.rs - the parse table and the degradation
-       cases, including a body that is not JSON and a newer build with no page.
-VERIFICATION: server suite 336 passed (was 315, +21); P2, P3 and P4 gates all
-              PASS (each re-ran the suite at 336); web 21 passed; desktop 22
-              Rust tests (19 unit + 3 e2e, was 12). The live check against the
-              real private repository was run by hand and answered `unknown`
-              with the private-repository reason, not a false "current".
-LESSON: two of the first tests failed for the same reason, and it was the
-        tests' fault both times. The endpoint holds its own *imported* reference
-        to `httpx_client` (`from app.updates import httpx_client`), so
-        monkeypatching `updates.httpx_client` patched a name the endpoint had
-        already copied - the call escaped the fake and hit the real network.
-        The seam is the module the call site reads, not the module the symbol
-        came from. The same misreading produced the second failure: the test
-        passed `json=` to a GET, asserting a property ("no body accepted") that
-        a GET cannot even express. The real property is that the route is
-        GET-only, so a POST is refused with 405 before any handler runs - and
-        that is what the test now asserts. A test that fails because it
-        misstates the contract is still a test failure worth having, but the
-        contract is verified against the route, not against an assumption about
-        it.
-
+NON-GOALS held: no whole-file ingestion of notebooks, dashboards or
+             spreadsheets (the code and the claim, as P7-EVAL-001 took them),
+             no editing or re-running a past audit's artifact (it is already a
+             run, in the Runs panel), no chart or score over the audit (the core
+             returns neither), no LLM phrasing of verdicts, no mode switcher
+             reorganising the workspace around ANALYZE/EVALUATE/LEARN - the
+             workspace is ANALYZE's loop and EVALUATE is a labelled panel
+             beside it; a mode architecture is a later design, and the other
+             un-UI'd endpoints (the agent, templates, memory, EDA, the evidence
+             graph, case history, case management) are their own tasks.
+CONSTRAINTS held: every write posts to the evaluate endpoint alone; the panel
+             creates no run, finding or chart of its own; deterministic; no new
+             dependency; the existing panels and their tests are unchanged;
+             `tsc -b` passes (the build is CI's type gate, and a type error the
+             jsdom tests cannot see fails it); the desktop bundle builds from
+             the same source and nothing assumes a browser-only environment;
+             the shell adds no logging of its own.
+ACCEPTANCE CRITERIA: all 8 - see the checked boxes above.
+TESTS: 6 added to web/src/CaseWorkspace.test.tsx (21 -> 27) - the clean
+       nine-axis baseline scoped to the audit container, the failing Evidence
+       axis with its value, the read-only refusal rendered as a sentence with
+       the panel still usable, the recorded-audit listing newest first, the
+       kind toggle reaching the endpoint with kind: "python", and the panel's
+       absence without a profile.
+VERIFICATION: cd web && npm test - 27 passed; cd web && npm run build PASS
+              (tsc -b + vite build); cd web && npm run build:desktop PASS; the
+              server suite is untouched by this change and stays at 358 passed.
+LESSON: two of the six tests failed first for the same reason - the query, not
+        the component. The nine verdict badges and the workflow's stage list
+        both render a checkmark and an axis name ("✓ question"), so a page-wide
+        `getByText` found two elements; and userEvent parses `[` and `]` as key
+        descriptors, so typing `result = []` was read as a key sequence. The
+        fix for the first was to scope the query to the audit's own container
+        with `within` - an assertion should name where it is looking, because a
+        page is not a component. The second is a reminder that `user.type`
+        types *keys*, not text: fixtures that stay clear of `[]{}` are cheaper
+        than escaping them.
 ```
+
