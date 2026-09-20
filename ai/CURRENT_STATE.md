@@ -1,6 +1,6 @@
 # DAH - Current State
 
- - **Phase:** P5 Production Grade - COMPLETE. P6 Post-Launch Evolution - COMPLETE: all 5 entry-checklist items. P7 Product Modes is IN PROGRESS (1 of 4, with two web surfaces delivered): EVALUATE mode is DONE in the core and in the shell, and the agent now has a surface too - a plan that executes itself one approved write at a time is observable from the workspace rather than only through the API. The web-shell gap is item 2 and is partly closed; templates, memory, EDA, the evidence graph, case history and case management still have endpoints and no UI. P4 Production Candidate was COMPLETE (all 5 checklist items: P4 Production Candidate was COMPLETE (all 5 checklist items:
+ - **Phase:** P5 Production Grade - COMPLETE. P6 Post-Launch Evolution - COMPLETE: all 5 entry-checklist items. P7 Product Modes is IN PROGRESS (1 of 4, with three web surfaces delivered): EVALUATE mode is DONE in the core and in the shell, the agent has a surface, and a case can now be renamed, duplicated and deleted from the list. The web-shell gap is item 2 and is partly closed; templates, cross-case memory, EDA, the evidence graph and case history still have endpoints and no UI. P4 Production Candidate was COMPLETE (all 5 checklist items: P4 Production Candidate was COMPLETE (all 5 checklist items:
   P4-VERIFY-001, P4-RELIABILITY-002, P4-UX-003 + P4-UX-004, P4-VALID-005,
   P4-PERF-006, P4-CI-007). P3 V1 is COMPLETE: all 10 entry-checklist items,
   231 server tests, and a P3 gate of its own. P5 Production Grade is IN
@@ -22,40 +22,37 @@ a versioned, forward-only migration path for the store, so a database from
 any past release opens, upgrades and keeps its rows (P6-MIGRATE-004);
 and an update check that tells an installed app a newer build exists - or
 says honestly that it could not tell (P6-UPDATE-005)**
-- **Active task:** P7-SHELL-003 DONE - the agent as a surface. P6-AGENT-002
-  shipped a driver that proposes a step and waits for a human's approval, and
-  four endpoints served it with no panel. The workspace now carries an **Agent**
-  panel beside the workflow it drives: it renders the pending proposal as a
-  sentence built from the step's own payload, and Approve / Reject (with an
-  optional recorded reason) are buttons. Every other panel is a step; this one
-  is the sequence - and it changes none of the guarantees, because the write
-  still runs through the endpoint that owns it and never without the button.
-  The panel also exposed a real gap in the typed client: the agent's 409 sends
-  an OBJECT as its detail, so a stale approval would have rendered as
-  "[object Object]". The client now unwraps a nested detail, and the sentence
-  the core wrote reaches the user.
-  Before it: P7-SHELL-002 (EVALUATE's surface), P7-EVAL-001 (EVALUATE's core),
-  P6 CLOSED.
+- **Active task:** P7-SHELL-004 DONE - case management in the shell. The three
+  everyday operations on the front door answered only through the API; the list
+  rendered a row whose only affordance was opening it. Each row now keeps
+  opening the case as its primary action and gains **Rename** (inline, with
+  Save and Cancel - a correction never needs a second screen), **Duplicate**
+  and **Delete**. Delete asks twice because the core's deletion is final and
+  takes the case's on-disk directory: the first click arms the row, the second
+  is labelled with the case's own question, and the armed state is per row so
+  confirming one case never endangers another.
+  Before it: P7-SHELL-003 (the agent surface), P7-SHELL-002 (EVALUATE's
+  surface), P7-EVAL-001 (EVALUATE's core), P6 CLOSED.
 - **Known issues:** CI's runner is `macos-latest`, not the Ventura/Intel pin
   P5-CI-004 intended - GitHub retired the macos-13 pool, so the label hangs
   forever (probed empirically; see DEC-005). The Ventura floor stays the
   documented minimum but is no longer enforced by CI, and a green run no longer
   proves the exact Intel triple a local build produces. Restoring that needs a
   self-hosted Intel runner.
-- **Test status:** server 358 passed (336 + 22 evaluate); web 34 passed
-  (CaseList 5, CaseCreation 3, CaseWorkspace 21, api 5 - the workspace gained
-  the EVALUATE and Agent panels); desktop shell 22 Rust tests
+- **Test status:** server 358 passed (336 + 22 evaluate); web 39 passed
+  (CaseList 10, CaseCreation 3, CaseWorkspace 21, api 5 - the list gained the
+  case-management actions); desktop shell 22 Rust tests
   (`cd desktop/src-tauri && cargo test [--features e2e]`, 19 unit + 3 e2e);
   P2, P3 and P4 gates PASS (P4: all 18 journey steps, all 10 exit criteria);
   first release v0.1.0 published from tag and checksum-verified.
-- **Next task:** the rest of the web-shell gap (P7 item 2). EVALUATE and the
-  agent have surfaces; these still do not: templates (`/templates`,
-  `/from-template`), cross-case memory, EDA (`/eda`), the evidence graph
-  (`/evidence-graph`), case history, and rename/duplicate/delete. Each is a
-  panel over an existing contract - no new endpoints. After item 2: **LEARN**
-  mode, a guided Why -> What -> How -> Validate walk (mostly sequencing over
-  P3-FLOW-004), then multi-agent workflows, which only make sense after
-  EVALUATE - that is how an agent's own output gets audited.
+- **Next task:** the rest of the web-shell gap (P7 item 2). EVALUATE, the agent
+  and case management have surfaces; these still do not: templates
+  (`/templates`, `/from-template`, `/cases/{id}/template`), cross-case memory,
+  EDA (`/eda`), the evidence graph (`/evidence-graph`), and case history. Each
+  is a panel over an existing contract - no new endpoints. After item 2:
+  **LEARN** mode, a guided Why -> What -> How -> Validate walk (mostly
+  sequencing over P3-FLOW-004), then multi-agent workflows, which only make
+  sense after EVALUATE - that is how an agent's own output gets audited.
   Deferred, not dropped: signing (DEC-006, the slot is in `release.yml`), cloud
   sync, team collaboration, warehouse connectors, enterprise governance. None
   pays for itself at a user count of one.
@@ -144,6 +141,7 @@ says honestly that it could not tell (P6-UPDATE-005)**
 | P7-EVAL-001 EVALUATE mode | DONE |
 | P7-SHELL-002 EVALUATE in the web shell | DONE |
 | P7-SHELL-003 the agent in the web shell | DONE |
+| P7-SHELL-004 rename, duplicate, delete a case | DONE |
 
 ## P6 progress
 

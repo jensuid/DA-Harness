@@ -10,6 +10,9 @@ export interface Case {
   id: string
   question: string
   dataset: string
+  // Advisory: a template outlives its source case and may be deleted first, so
+  // a missing template degrades to normal derivation rather than an error.
+  template_id?: string
   created_at: string
   updated_at: string
 }
@@ -243,6 +246,33 @@ export function listCases(q?: string): Promise<Case[]> {
 
 export function getCase(id: string): Promise<Case> {
   return request<Case>(`/cases/${id}`)
+}
+
+// --- case management (P2-CASE-010 / P7-SHELL-004) --------------------------
+
+// Omitted fields are left as they are, and updated_at moves so a rename shows
+// up as case activity.
+export function updateCase(
+  caseId: string,
+  changes: { question?: string; dataset?: string },
+): Promise<Case> {
+  return request<Case>(`/cases/${caseId}`, {
+    method: 'PATCH',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(changes),
+  })
+}
+
+// A copy is a self-contained case: its datasets, profiles, runs and findings
+// arrive with fresh ids, so it may be mutated without touching the original.
+export function duplicateCase(caseId: string): Promise<Case> {
+  return request<Case>(`/cases/${caseId}/duplicate`, { method: 'POST' })
+}
+
+// Irreversible: the case row, every child and the case's on-disk directory go
+// together. The caller asks twice.
+export function deleteCase(caseId: string): Promise<void> {
+  return request<void>(`/cases/${caseId}`, { method: 'DELETE' })
 }
 
 export function getProgress(id: string): Promise<CaseProgress> {

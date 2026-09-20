@@ -112,6 +112,7 @@ the gate comes first because a phase is done when a gate says so.
 | P7-EVAL-001 | EVALUATE mode (audit existing work) | DONE | 22 tests in test_evaluator.py; P2/P3/P4 gates PASS |
 | P7-SHELL-002 | UX (EVALUATE in the web shell) | DONE | +6 tests in CaseWorkspace.test.tsx; web build PASS |
 | P7-SHELL-003 | UX (the agent in the web shell) | DONE | +7 tests; web build PASS |
+| P7-SHELL-004 | UX (rename, duplicate, delete a case) | DONE | +5 tests; web build PASS |
 
 Contracts for the rolling window (the two most recent). Older blocks are in
 `ai/TASKS-ARCHIVE.md`.
@@ -338,154 +339,129 @@ LESSON: three of the eleven criteria were satisfied by code that had not been
         and a check that cannot fail cannot pass either.
 ```
 
-### P7-SHELL-003 contract
+### P7-SHELL-004 contract
 
 ```
-TASK ID: P7-SHELL-003
+TASK ID: P7-SHELL-004
 MILESTONE: P7 Product Modes
 CAPABILITY: UX (the web-shell gap)
-GOAL: A plan that executes itself one approved write at a time is observable
-      only through the API today. This task gives it a surface: the workspace
-      shows what the agent proposes, and the human's yes or no is a button
-      rather than a curl.
+GOAL: A case can be renamed, duplicated and deleted from the shell. These are
+      the everyday operations on the front door, and today all three answer
+      only through the API.
 
-CONTEXT: P6-AGENT-002 shipped the driver. It proposes a step; the human
-         approves it by id; the write runs through the endpoint that already
-         owns it. Four endpoints serve it - a read-only GET, an idempotent
-         proposing POST, /approve and /reject - and not one of them has a
-         panel. This is the highest-value of the un-UI'd endpoints, because the
-         agent is the capability that most changes what the workspace is for:
-         every other panel is a step, and this one is the loop.
+CONTEXT: the three endpoints have existed since P2-CASE-010 and are tested in
+         the core, but the case list renders a row per case whose only
+         affordance is opening it. A user who mistyped a question cannot fix
+         it; a finished investigation cannot be copied as a starting point for
+         a variant; and a case that has served its purpose cannot be removed,
+         so the list only ever grows. This is the cheapest slice of the
+         web-shell gap, and it is the one a user meets first.
 
-INPUTS: a case with artifacts (or none - the agent's first step is to profile,
-        if a dataset is attached but unprofiled).
-RELEVANT FILES: web/src/api.ts, web/src/CaseWorkspace.tsx,
-                web/src/CaseWorkspace.test.tsx, web/src/index.css
+INPUTS: the case list; for a rename, the edited question and the dataset label.
+RELEVANT FILES: web/src/api.ts, web/src/CaseList.tsx, web/src/CaseList.test.tsx,
+                web/src/index.css
 REQUIRED CHANGE:
-  - web/src/api.ts: `AgentStep` and `AgentState` interfaces matching the core's
-    models, and the four functions - `getAgentState` (read-only),
-    `proposeAgentStep` (idempotent), `approveAgentStep(stepId)` and
-    `rejectAgentStep(stepId, reason?)`.
-  - api.ts also fixes a real gap the 409 exposes: the agent's approve/reject
-    answer 409 with an OBJECT as the detail (`{detail, expected, given}`), not
-    a string. The existing client copies `body.detail` straight into the
-    message, so a stale approval would render as "[object Object]". The client
-    now unwraps a nested `detail` when the body sends one, so the sentence the
-    core wrote reaches the user - the same standard every other failure path
-    already meets.
-  - web/src/CaseWorkspace.tsx: an `AgentPanel`, placed beside the workflow it
-    drives. It loads the read-only state, a button proposes the next step
-    (idempotent, so a second click is a no-op rather than a second write), and
-    a pending step renders what it WILL do - one sentence per kind, built from
-    the step's own payload, so the human approves something concrete rather
-    than a promise, together with Approve and Reject buttons and an optional
-    rejection reason that is recorded on the step. The history lists every
-    step with its status and the note the write produced, so an agent-run case
-    states what it did at every point. When nothing is pending and the trail
-    ends in `end`, the panel shows why the agent stopped, because an abandoned
-    case should say so rather than fall silent.
-  - A stale approval is a 409, never a second write: the panel shows the
-    sentence and reloads, because the pending step it was looking at is no
-    longer the case's pending step.
-NON-GOALS: autonomy (the write never happens without the button; that is
-           P6-AGENT-002's contract and this task does not relax it), editing a
-           proposal before approving it (the payload is settled at proposal
-           time by design - rejecting and re-proposing is the path), running
-           the agent in the background or on a timer, an agent over multiple
-           cases, the other un-UI'd endpoints (templates, memory, EDA, the
-           evidence graph, case history, case management - each its own task).
-CONSTRAINTS: the panel writes only through the four agent endpoints, and each
-             write those endpoints perform still goes through the endpoint
-             that owns it - the panel introduces no new write path, so the
-             read-only gate, the row cap and the single finding-creation path
-             are all still in force; the GET never proposes, so a page refresh
-             commits nothing; deterministic; no new dependency; `tsc -b`
-             passes; the existing panels and tests are unchanged; the desktop
+  - web/src/api.ts: `updateCase(caseId, {question?, dataset?})` for the PATCH,
+    `duplicateCase(caseId)` for the POST, `deleteCase(caseId)` for the DELETE.
+    The core's `Case` also carries `template_id`, which the shell's type now
+    admits as optional so a templated case round-trips without the type
+    disagreeing with the payload.
+  - web/src/CaseList.tsx: each row keeps opening the case as its primary
+    affordance and gains three actions - Rename, Duplicate, Delete. Rename is
+    an inline edit of the question and the dataset label with Save and Cancel,
+    so a correction never needs a second screen. Duplicate creates the copy and
+    the list reloads with it. Delete is irreversible - the core removes the
+    case row, every child and the case's on-disk directory - so it asks twice:
+    a first click arms the row and a second, labelled with what will be lost,
+    is the one that removes it. Nothing is deleted by a single click, and the
+    armed state is per row, so confirming one case never endangers another.
+  - Every action reports a failure as the core's own sentence and leaves the
+    list usable, the way the list already does for a failed load.
+NON-GOALS: bulk operations (a single-user tool with a handful of cases does not
+           need selection machinery), undo for a delete (the core's contract is
+           that deletion is final and its data dir goes with it; an undo would
+           be a second store to keep consistent), renaming a dataset label that
+           renames the file on disk (the label is a case property, not a
+           filename), templates (their own task), case history and the evidence
+           graph (read-only views, their own task).
+CONSTRAINTS: each action calls its endpoint and nothing else; the list reloads
+             after a write rather than mutating its own copy, so what it shows
+             is what the core has; `tsc -b` passes; no new dependency; the
+             existing list tests and the workspace stay green; the desktop
              bundle builds from the same source.
 ACCEPTANCE CRITERIA:
-- [x] the panel shows the agent's state: a pending proposal, or the absence of
-      one, with the history behind it
-- [x] proposing is idempotent: a second call returns the same pending step and
-      creates no second write
-- [x] a pending step states what it will do, in a sentence built from its own
-      payload, before the human decides
-- [x] approving runs the step and the next proposal appears without a second
-      click, with the step's note in the history
-- [x] rejecting records the reason and writes nothing: no run, no finding
-- [x] a stale approval is shown as a sentence, not "[object Object]", and the
-      panel reloads rather than writing twice
-- [x] a case the agent finished shows why it stopped
+- [x] a case can be renamed inline, and the list shows the corrected question
+- [x] a duplicate appears in the list after the action
+- [x] a delete needs two clicks, and the second names what it removes
+- [x] an armed delete is per row: confirming one case deletes no other
+- [x] a failed action shows the core's message and leaves the list usable
+- [x] opening a case is still the row's primary affordance
 - [x] `tsc -b` and the web suite stay green
-TESTS: web/src/CaseWorkspace.test.tsx - the state rendering, the idempotent
-       proposal, the payload sentence, the approve round trip, the reject with
-       a reason, the 409 degradation, and the end reason.
+TESTS: web/src/CaseList.test.tsx - the rename round trip, the duplicate
+       appearing, the two-click delete, the per-row isolation, and a failure
+       rendered as a sentence.
 VERIFICATION: cd web && npm test PASS; cd web && npm run build PASS. The server
               suite and the three gates are untouched by this change and stay
               green.
-STATE UPDATE: mark P7-SHELL-003 done on pass; ROADMAP item 2 records the agent
-              surface as delivered.
+STATE UPDATE: mark P7-SHELL-004 done on pass; ROADMAP item 2 records case
+              management as delivered.
 ```
 
 
 ```
-TASK: P7-SHELL-003 - the agent as a surface in the web shell
-ID: P7-SHELL-003
-PRIORITY: high
+TASK: P7-SHELL-004 - rename, duplicate and delete a case from the shell
+ID: P7-SHELL-004
+PRIORITY: medium
 STATUS: DONE
-SUMMARY: A plan that executes itself one approved write at a time was
-         observable only through the API. P6-AGENT-002 shipped the driver and
-         four endpoints serve it - a read-only GET, an idempotent proposing
-         POST, /approve and /reject - and not one had a panel. The workspace
-         now carries an Agent panel beside the workflow it drives: it shows the
-         pending proposal as a sentence built from the step's own payload, and
-         the human's yes or no is a button.
+SUMMARY: The three everyday operations on the front door answered only through
+         the API. The case list rendered a row per case whose only affordance
+         was opening it: a mistyped question could not be fixed, a finished
+         investigation could not be copied as the start of a variant, and a
+         case that had served its purpose could not be removed, so the list
+         only ever grew. All three are buttons now.
 
-Every other panel in the workspace is a step; this one is the sequence. It
-keeps the agent's contract exactly - the write never happens without the
-button, and the write then runs through the endpoint that owns it, so the
-read-only gate, the row cap and the single finding-creation path are all still
-in force for an agent-run case. The GET never proposes, so a page refresh
-commits nothing; the proposing POST is idempotent, so an impatient second
-click is a no-op rather than a second write; and approving a step that is no
-longer the case's pending one is a 409 the panel shows as a sentence before
-resyncing - never a second write.
+Each row keeps opening the case as its primary affordance and gains Rename,
+Duplicate and Delete:
 
-One real gap the panel exposed in the client itself: the agent's 409 answers
-with an OBJECT as the detail (`{detail, expected, given}`), and the typed
-client copied `body.detail` straight into the message, so a stale approval
-would have rendered as "[object Object]". The client now unwraps a nested
-detail, so the sentence the core wrote reaches the user - the same standard
-every other failure path already met.
+- **Rename** is inline - the question and the dataset label become inputs on
+  the row itself, with Save and Cancel, so a correction never needs a second
+  screen and a cancelled edit restores what was there.
+- **Duplicate** creates the copy and the list reloads with it.
+- **Delete** asks twice, because the core's deletion is final and takes the
+  case's on-disk directory with it. A first click arms the row; the second is
+  labelled with the case's own question ("Delete "Why did revenue decline?" for
+  good"), because the question is the thing a user would be sorry to lose. The
+  armed state is per row - confirming one case never endangers another, and an
+  armed row offers "Keep it" as an escape.
 
-NON-GOALS held: no autonomy (the write still waits for the button; that is
-             P6-AGENT-002's contract and this task does not relax it), no
-             editing a proposal before approving it (the payload is settled at
-             proposal time by design - reject and re-derive is the path), no
-             background or timer-driven running, no agent across cases, no new
-             endpoints for the other un-UI'd capabilities.
-CONSTRAINTS held: writes only through the four agent endpoints, each of which
-             still writes through the endpoint that owns it; no new write path;
-             deterministic; no new dependency; `tsc -b` passes; the existing
-             panels and tests unchanged; the desktop bundle builds from the
-             same source.
-ACCEPTANCE CRITERIA: all 8 - see the checked boxes above.
-TESTS: 7 added (web suite 27 -> 34) - six in CaseWorkspace.test.tsx: the state
-       rendering, the idempotent proposal, the payload sentence, the approve
-       round trip with the next proposal arriving in the same response, the
-       reject with a reason writing nothing, the 409 shown as a sentence and
-       never as "[object Object]", and the end reason; one in api.test.ts for
-       the nested-detail unwrap.
-VERIFICATION: cd web && npm test - 34 passed; cd web && npm run build PASS
+Every action reports a failure as the core's own sentence and leaves the list
+usable, the way a failed load already did.
+
+NON-GOALS held: no bulk operations (a single-user tool with a handful of cases
+             does not need selection machinery), no undo for a delete (the
+             core's contract is that deletion is final; an undo would be a
+             second store to keep consistent), no file rename behind a dataset
+             label (the label is a case property), no templates, history or
+             evidence-graph surfaces (their own tasks).
+CONSTRAINTS held: each action calls its endpoint and nothing else, and the list
+             reloads after a write rather than mutating its own copy, so what
+             it shows is what the core has; `tsc -b` passes; no new dependency;
+             the existing list and workspace tests stay green; the desktop
+             bundle builds from the same source.
+ACCEPTANCE CRITERIA: all 7 - see the checked boxes above.
+TESTS: 5 added to web/src/CaseList.test.tsx (web suite 34 -> 39) - the rename
+       round trip, the duplicate appearing, the two-click delete whose second
+       click names the case, the per-row isolation of an armed delete, and a
+       failed delete rendered as a sentence with the case still present.
+VERIFICATION: cd web && npm test - 39 passed; cd web && npm run build PASS
               (tsc -b + vite build); cd web && npm run build:desktop PASS. The
               server suite and the three gates are untouched and stay green.
-LESSON: the suite had no spy-reset between tests, so the module-level mocks
-        accumulated call history across the file; the first negative assertion
-        ("approve was not called") therefore answered for every test that had
-        run before it. A beforeEach with vi.clearAllMocks is what makes "not
-        called" mean "not called in this test". The same class of bug hid
-        inside the component too: the panel's refresh() cleared the error
-        before resyncing, so a 409 message was set and then erased a tick
-        later - an error handler that runs after the thing it prepared for.
-        Both are the same shape: state that outlives the action that produced
-        it, read as though it were fresh.
+LESSON: the two-click delete and the aria-labels solved each other. The first
+        draft named the buttons "Rename"/"Duplicate"/"Delete" and the tests
+        could not address one case among two; per-row aria-labels naming the
+        question fixed the tests AND are the accessible thing to do - an action
+        button that does not say which case it acts on is ambiguous to a screen
+        reader for exactly the reason it was ambiguous to a test. The same
+        spy-accumulation bug CaseWorkspace hit recurred here, and for the same
+        reason: this file's module-level mocks had no reset between tests.
 ```

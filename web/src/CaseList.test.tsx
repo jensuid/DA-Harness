@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest'
+import { beforeEach, describe, it, expect, vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { CaseList } from './CaseList'
@@ -8,7 +8,13 @@ import * as api from './api'
 // paths can throw the class the client actually throws.
 vi.mock('./api', async (importOriginal) => {
   const actual = await importOriginal<typeof import('./api')>()
-  return { ...actual, listCases: vi.fn() }
+  return {
+    ...actual,
+    listCases: vi.fn(),
+    updateCase: vi.fn(),
+    duplicateCase: vi.fn(),
+    deleteCase: vi.fn(),
+  }
 })
 
 const cases = [
@@ -17,6 +23,10 @@ const cases = [
 ]
 
 describe('CaseList', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
   it('lists cases from the core', async () => {
     vi.mocked(api.listCases).mockResolvedValue(cases)
     render(<CaseList onOpen={() => {}} onCreate={() => {}} />)
@@ -64,5 +74,121 @@ describe('CaseList', () => {
     await waitFor(() =>
       expect(screen.getByRole('alert')).toHaveTextContent(/internal server error/i),
     )
+  })
+
+  it('renames a case inline and the list shows the correction', async () => {
+    const renamed = [
+      { ...cases[0], question: 'Why did revenue double?' },
+      cases[1],
+    ]
+    vi.mocked(api.listCases)
+      .mockResolvedValueOnce(cases)
+      .mockResolvedValue(renamed)
+    vi.mocked(api.updateCase).mockResolvedValue({
+      ...cases[0],
+      question: 'Why did revenue double?',
+    })
+
+    const user = userEvent.setup()
+    render(<CaseList onOpen={() => {}} onCreate={() => {}} />)
+    await screen.findByText('Why did revenue decline?')
+
+    await user.click(screen.getByRole('button', { name: /rename why did revenue decline/i }))
+    const question = screen.getByLabelText(/case question/i)
+    await user.clear(question)
+    await user.type(question, 'Why did revenue double?')
+    await user.click(screen.getByRole('button', { name: /save/i }))
+
+    await waitFor(() =>
+      expect(api.updateCase).toHaveBeenCalledWith('a', {
+        question: 'Why did revenue double?',
+        dataset: 'sales.csv',
+      }),
+    )
+    expect(await screen.findByText('Why did revenue double?')).toBeInTheDocument()
+    expect(screen.queryByText('Why did revenue decline?')).not.toBeInTheDocument()
+  })
+
+  it('duplicates a case and the copy appears', async () => {
+    vi.mocked(api.listCases)
+      .mockResolvedValueOnce(cases)
+      .mockResolvedValueOnce([
+        ...cases,
+        { id: 'c', question: 'Why did revenue decline?', dataset: 'sales.csv', created_at: '', updated_at: '' },
+      ])
+    vi.mocked(api.duplicateCase).mockResolvedValue({ ...cases[0], id: 'c' })
+
+    const user = userEvent.setup()
+    render(<CaseList onOpen={() => {}} onCreate={() => {}} />)
+    await screen.findByText('Why did revenue decline?')
+
+    await user.click(screen.getByRole('button', { name: /duplicate why did revenue decline/i }))
+
+    await waitFor(() => expect(api.duplicateCase).toHaveBeenCalledWith('a'))
+    expect(await screen.findAllByText('Why did revenue decline?')).toHaveLength(2)
+  })
+
+  it('deletes only after a second click that names what it removes', async () => {
+    vi.mocked(api.listCases).mockResolvedValueOnce(cases).mockResolvedValueOnce([cases[1]])
+    vi.mocked(api.deleteCase).mockResolvedValue(undefined)
+
+    const user = userEvent.setup()
+    render(<CaseList onOpen={() => {}} onCreate={() => {}} />)
+    await screen.findByText('Why did revenue decline?')
+
+    // One click arms; nothing is removed yet.
+    await user.click(screen.getByRole('button', { name: /^delete why did revenue decline/i }))
+    expect(api.deleteCase).not.toHaveBeenCalled()
+    const confirm = screen.getByRole('button', {
+      name: /confirm deleting why did revenue decline/i,
+    })
+    expect(confirm).toBeInTheDocument()
+
+    // The second click is the one that removes, and its label names the case.
+    await user.click(confirm)
+    await waitFor(() => expect(api.deleteCase).toHaveBeenCalledWith('a'))
+    expect(await screen.findByText('Which region leads?')).toBeInTheDocument()
+    expect(screen.queryByText('Why did revenue decline?')).not.toBeInTheDocument()
+  })
+
+  it('keeps every other case safe while one delete is armed', async () => {
+    vi.mocked(api.listCases).mockResolvedValue(cases)
+    vi.mocked(api.deleteCase).mockResolvedValue(undefined)
+
+    const user = userEvent.setup()
+    render(<CaseList onOpen={() => {}} onCreate={() => {}} />)
+    await screen.findByText('Why did revenue decline?')
+
+    // Arm the first case's delete.
+    await user.click(
+      screen.getByRole('button', { name: /^delete why did revenue decline/i }),
+    )
+    expect(screen.getAllByRole('button', { name: /confirm deleting/i })).toHaveLength(1)
+
+    // Arming the second case leaves the first armed but unconfirmed, and
+    // neither is deleted.
+    await user.click(screen.getByRole('button', { name: /^delete which region leads/i }))
+    expect(screen.getAllByRole('button', { name: /confirm deleting/i })).toHaveLength(2)
+    // Arming the second did not confirm the first.
+    expect(api.deleteCase).not.toHaveBeenCalled()
+  })
+
+  it('shows the core refusal as a sentence and keeps the list usable', async () => {
+    vi.mocked(api.listCases).mockResolvedValue(cases)
+    vi.mocked(api.deleteCase).mockRejectedValue(new api.ApiError(409, 'the case is busy'))
+
+    const user = userEvent.setup()
+    render(<CaseList onOpen={() => {}} onCreate={() => {}} />)
+    await screen.findByText('Why did revenue decline?')
+
+    await user.click(screen.getByRole('button', { name: /^delete why did revenue decline/i }))
+    await user.click(
+      screen.getByRole('button', { name: /confirm deleting why did revenue decline/i }),
+    )
+
+    const alert = await screen.findByRole('alert')
+    expect(alert).toHaveTextContent(/the case is busy/i)
+    // The case is still there: a failed delete removed nothing.
+    expect(screen.getByText('Why did revenue decline?')).toBeInTheDocument()
   })
 })

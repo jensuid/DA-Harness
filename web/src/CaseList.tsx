@@ -1,5 +1,12 @@
 import { useEffect, useState } from 'react'
-import { ApiError, type Case, listCases } from './api'
+import {
+  ApiError,
+  type Case,
+  deleteCase,
+  duplicateCase,
+  listCases,
+  updateCase,
+} from './api'
 
 // The list is the front door: find a case again, or start a new one. The search
 // box is the API's q parameter - a literal substring over question and dataset.
@@ -15,13 +22,21 @@ export function CaseList({
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
+  async function reload() {
     setLoading(true)
     setError(null)
-    listCases(term)
-      .then(setCases)
-      .catch((err) => setError(messageOf(err)))
-      .finally(() => setLoading(false))
+    try {
+      setCases(await listCases(term))
+    } catch (err) {
+      setError(messageOf(err))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    void reload()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [term])
 
   return (
@@ -46,10 +61,11 @@ export function CaseList({
       <ul className="case-list">
         {cases.map((item) => (
           <li key={item.id}>
-            <button type="button" onClick={() => onOpen(item.id)} className="case">
-              <span className="case-question">{item.question}</span>
-              <span className="case-dataset">{item.dataset}</span>
-            </button>
+            <CaseRow
+              caseRow={item}
+              onOpen={() => onOpen(item.id)}
+              onChanged={() => void reload()}
+            />
           </li>
         ))}
       </ul>
@@ -66,4 +82,190 @@ export function messageOf(err: unknown): string {
     return `${err.message} (HTTP ${err.status}${id})`
   }
   return err instanceof Error ? err.message : 'unknown error'
+}
+
+// One case: opening it is the primary affordance, and the three everyday
+// operations sit beside it. Rename is inline - a correction should not need a
+// second screen - and delete asks twice, because the core's deletion is final
+// and takes the case's on-disk data with it.
+function CaseRow({
+  caseRow,
+  onOpen,
+  onChanged,
+}: {
+  caseRow: Case
+  onOpen: () => void
+  onChanged: () => void
+}) {
+  const [editing, setEditing] = useState(false)
+  const [armed, setArmed] = useState(false)
+  const [question, setQuestion] = useState(caseRow.question)
+  const [dataset, setDataset] = useState(caseRow.dataset)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  async function save(event: React.FormEvent) {
+    event.preventDefault()
+    if (busy) return
+    setBusy(true)
+    setError(null)
+    try {
+      await updateCase(caseRow.id, { question: question.trim(), dataset: dataset.trim() })
+      setEditing(false)
+      onChanged()
+    } catch (err) {
+      setError(messageOf(err))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function duplicate() {
+    if (busy) return
+    setBusy(true)
+    setError(null)
+    try {
+      await duplicateCase(caseRow.id)
+      onChanged()
+    } catch (err) {
+      setError(messageOf(err))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function remove() {
+    if (busy) return
+    setBusy(true)
+    setError(null)
+    try {
+      await deleteCase(caseRow.id)
+      onChanged()
+    } catch (err) {
+      setError(messageOf(err))
+      setArmed(false)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  function cancelEdit() {
+    setQuestion(caseRow.question)
+    setDataset(caseRow.dataset)
+    setError(null)
+    setEditing(false)
+  }
+
+  if (editing) {
+    return (
+      <form className="case case-editing" onSubmit={save}>
+        <label className="visually-hidden" htmlFor={`question-${caseRow.id}`}>
+          Question
+        </label>
+        <input
+          id={`question-${caseRow.id}`}
+          aria-label="Case question"
+          value={question}
+          onChange={(e) => setQuestion(e.target.value)}
+          disabled={busy}
+        />
+        <label className="visually-hidden" htmlFor={`dataset-${caseRow.id}`}>
+          Dataset label
+        </label>
+        <input
+          id={`dataset-${caseRow.id}`}
+          aria-label="Dataset label"
+          value={dataset}
+          onChange={(e) => setDataset(e.target.value)}
+          disabled={busy}
+        />
+        <div className="row">
+          <button type="submit" className="small" disabled={busy || !question.trim() || !dataset.trim()}>
+            {busy ? 'Saving…' : 'Save'}
+          </button>
+          <button type="button" className="small" onClick={cancelEdit} disabled={busy}>
+            Cancel
+          </button>
+        </div>
+        {error && (
+          <p role="alert" className="warn">
+            Could not save: {error}
+          </p>
+        )}
+      </form>
+    )
+  }
+
+  return (
+    <div className="case">
+      <button type="button" onClick={onOpen} className="case-open" disabled={armed}>
+        <span className="case-question">{caseRow.question}</span>
+        <span className="case-dataset">{caseRow.dataset}</span>
+      </button>
+      {armed ? (
+        // The second click names what it removes: the question is the thing the
+        // user would be sorry to lose, so it is the confirmation's subject.
+        <div className="row">
+          <button
+            type="button"
+            onClick={() => void remove()}
+            className="small danger"
+            disabled={busy}
+            aria-label={`Confirm deleting ${caseRow.question}`}
+          >
+            {busy ? 'Deleting…' : `Delete “${caseRow.question}” for good`}
+          </button>
+          <button
+            type="button"
+            onClick={() => setArmed(false)}
+            className="small"
+            disabled={busy}
+          >
+            Keep it
+          </button>
+        </div>
+      ) : (
+        <div className="row case-actions">
+          <button
+            type="button"
+            onClick={() => {
+              setEditing(true)
+              setArmed(false)
+            }}
+            className="small"
+            disabled={busy}
+            aria-label={`Rename ${caseRow.question}`}
+          >
+            Rename
+          </button>
+          <button
+            type="button"
+            onClick={() => void duplicate()}
+            className="small"
+            disabled={busy}
+            aria-label={`Duplicate ${caseRow.question}`}
+          >
+            {busy ? 'Copying…' : 'Duplicate'}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setArmed(true)
+              setError(null)
+            }}
+            className="small danger"
+            disabled={busy}
+            aria-label={`Delete ${caseRow.question}`}
+          >
+            Delete
+          </button>
+        </div>
+      )}
+      {error && (
+        <p role="alert" className="warn">
+          The action failed: {error}
+        </p>
+      )}
+    </div>
+  )
 }

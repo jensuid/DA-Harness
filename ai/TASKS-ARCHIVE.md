@@ -2645,3 +2645,156 @@ LESSON: two of the six tests failed first for the same reason - the query, not
         types *keys*, not text: fixtures that stay clear of `[]{}` are cheaper
         than escaping them.
 ```
+
+### P7-SHELL-003 contract
+
+```
+TASK ID: P7-SHELL-003
+MILESTONE: P7 Product Modes
+CAPABILITY: UX (the web-shell gap)
+GOAL: A plan that executes itself one approved write at a time is observable
+      only through the API today. This task gives it a surface: the workspace
+      shows what the agent proposes, and the human's yes or no is a button
+      rather than a curl.
+
+CONTEXT: P6-AGENT-002 shipped the driver. It proposes a step; the human
+         approves it by id; the write runs through the endpoint that already
+         owns it. Four endpoints serve it - a read-only GET, an idempotent
+         proposing POST, /approve and /reject - and not one of them has a
+         panel. This is the highest-value of the un-UI'd endpoints, because the
+         agent is the capability that most changes what the workspace is for:
+         every other panel is a step, and this one is the loop.
+
+INPUTS: a case with artifacts (or none - the agent's first step is to profile,
+        if a dataset is attached but unprofiled).
+RELEVANT FILES: web/src/api.ts, web/src/CaseWorkspace.tsx,
+                web/src/CaseWorkspace.test.tsx, web/src/index.css
+REQUIRED CHANGE:
+  - web/src/api.ts: `AgentStep` and `AgentState` interfaces matching the core's
+    models, and the four functions - `getAgentState` (read-only),
+    `proposeAgentStep` (idempotent), `approveAgentStep(stepId)` and
+    `rejectAgentStep(stepId, reason?)`.
+  - api.ts also fixes a real gap the 409 exposes: the agent's approve/reject
+    answer 409 with an OBJECT as the detail (`{detail, expected, given}`), not
+    a string. The existing client copies `body.detail` straight into the
+    message, so a stale approval would render as "[object Object]". The client
+    now unwraps a nested `detail` when the body sends one, so the sentence the
+    core wrote reaches the user - the same standard every other failure path
+    already meets.
+  - web/src/CaseWorkspace.tsx: an `AgentPanel`, placed beside the workflow it
+    drives. It loads the read-only state, a button proposes the next step
+    (idempotent, so a second click is a no-op rather than a second write), and
+    a pending step renders what it WILL do - one sentence per kind, built from
+    the step's own payload, so the human approves something concrete rather
+    than a promise, together with Approve and Reject buttons and an optional
+    rejection reason that is recorded on the step. The history lists every
+    step with its status and the note the write produced, so an agent-run case
+    states what it did at every point. When nothing is pending and the trail
+    ends in `end`, the panel shows why the agent stopped, because an abandoned
+    case should say so rather than fall silent.
+  - A stale approval is a 409, never a second write: the panel shows the
+    sentence and reloads, because the pending step it was looking at is no
+    longer the case's pending step.
+NON-GOALS: autonomy (the write never happens without the button; that is
+           P6-AGENT-002's contract and this task does not relax it), editing a
+           proposal before approving it (the payload is settled at proposal
+           time by design - rejecting and re-proposing is the path), running
+           the agent in the background or on a timer, an agent over multiple
+           cases, the other un-UI'd endpoints (templates, memory, EDA, the
+           evidence graph, case history, case management - each its own task).
+CONSTRAINTS: the panel writes only through the four agent endpoints, and each
+             write those endpoints perform still goes through the endpoint
+             that owns it - the panel introduces no new write path, so the
+             read-only gate, the row cap and the single finding-creation path
+             are all still in force; the GET never proposes, so a page refresh
+             commits nothing; deterministic; no new dependency; `tsc -b`
+             passes; the existing panels and tests are unchanged; the desktop
+             bundle builds from the same source.
+ACCEPTANCE CRITERIA:
+- [x] the panel shows the agent's state: a pending proposal, or the absence of
+      one, with the history behind it
+- [x] proposing is idempotent: a second call returns the same pending step and
+      creates no second write
+- [x] a pending step states what it will do, in a sentence built from its own
+      payload, before the human decides
+- [x] approving runs the step and the next proposal appears without a second
+      click, with the step's note in the history
+- [x] rejecting records the reason and writes nothing: no run, no finding
+- [x] a stale approval is shown as a sentence, not "[object Object]", and the
+      panel reloads rather than writing twice
+- [x] a case the agent finished shows why it stopped
+- [x] `tsc -b` and the web suite stay green
+TESTS: web/src/CaseWorkspace.test.tsx - the state rendering, the idempotent
+       proposal, the payload sentence, the approve round trip, the reject with
+       a reason, the 409 degradation, and the end reason.
+VERIFICATION: cd web && npm test PASS; cd web && npm run build PASS. The server
+              suite and the three gates are untouched by this change and stay
+              green.
+STATE UPDATE: mark P7-SHELL-003 done on pass; ROADMAP item 2 records the agent
+              surface as delivered.
+```
+
+
+```
+
+TASK: P7-SHELL-003 - the agent as a surface in the web shell
+ID: P7-SHELL-003
+PRIORITY: high
+STATUS: DONE
+SUMMARY: A plan that executes itself one approved write at a time was
+         observable only through the API. P6-AGENT-002 shipped the driver and
+         four endpoints serve it - a read-only GET, an idempotent proposing
+         POST, /approve and /reject - and not one had a panel. The workspace
+         now carries an Agent panel beside the workflow it drives: it shows the
+         pending proposal as a sentence built from the step's own payload, and
+         the human's yes or no is a button.
+
+Every other panel in the workspace is a step; this one is the sequence. It
+keeps the agent's contract exactly - the write never happens without the
+button, and the write then runs through the endpoint that owns it, so the
+read-only gate, the row cap and the single finding-creation path are all still
+in force for an agent-run case. The GET never proposes, so a page refresh
+commits nothing; the proposing POST is idempotent, so an impatient second
+click is a no-op rather than a second write; and approving a step that is no
+longer the case's pending one is a 409 the panel shows as a sentence before
+resyncing - never a second write.
+
+One real gap the panel exposed in the client itself: the agent's 409 answers
+with an OBJECT as the detail (`{detail, expected, given}`), and the typed
+client copied `body.detail` straight into the message, so a stale approval
+would have rendered as "[object Object]". The client now unwraps a nested
+detail, so the sentence the core wrote reaches the user - the same standard
+every other failure path already met.
+
+NON-GOALS held: no autonomy (the write still waits for the button; that is
+             P6-AGENT-002's contract and this task does not relax it), no
+             editing a proposal before approving it (the payload is settled at
+             proposal time by design - reject and re-derive is the path), no
+             background or timer-driven running, no agent across cases, no new
+             endpoints for the other un-UI'd capabilities.
+CONSTRAINTS held: writes only through the four agent endpoints, each of which
+             still writes through the endpoint that owns it; no new write path;
+             deterministic; no new dependency; `tsc -b` passes; the existing
+             panels and tests unchanged; the desktop bundle builds from the
+             same source.
+ACCEPTANCE CRITERIA: all 8 - see the checked boxes above.
+TESTS: 7 added (web suite 27 -> 34) - six in CaseWorkspace.test.tsx: the state
+       rendering, the idempotent proposal, the payload sentence, the approve
+       round trip with the next proposal arriving in the same response, the
+       reject with a reason writing nothing, the 409 shown as a sentence and
+       never as "[object Object]", and the end reason; one in api.test.ts for
+       the nested-detail unwrap.
+VERIFICATION: cd web && npm test - 34 passed; cd web && npm run build PASS
+              (tsc -b + vite build); cd web && npm run build:desktop PASS. The
+              server suite and the three gates are untouched and stay green.
+LESSON: the suite had no spy-reset between tests, so the module-level mocks
+        accumulated call history across the file; the first negative assertion
+        ("approve was not called") therefore answered for every test that had
+        run before it. A beforeEach with vi.clearAllMocks is what makes "not
+        called" mean "not called in this test". The same class of bug hid
+        inside the component too: the panel's refresh() cleared the error
+        before resyncing, so a 409 message was set and then erased a tick
+        later - an error handler that runs after the thing it prepared for.
+        Both are the same shape: state that outlives the action that produced
+        it, read as though it were fresh.
+```
