@@ -1,23 +1,23 @@
 """Error semantics: an input error answers 400, a server fault answers 500
-(P4-RELIABILITY-002).
+(P4-RELIABILITY-002), and the 500 answers the same shape as everything else
+(P5-RELIABILITY-003).
 
-Before this task every engine endpoint ended in `except Exception: raise 400`,
-which flattened a genuine server fault into a client error that blamed the
-analyst. These tests pin both directions of the contract:
+Before P4 every engine endpoint ended in `except Exception: raise 400`, which
+flattened a genuine server fault into a client error that blamed the analyst.
+These tests pin both directions of the contract:
 
 - input the engines reject (bad SQL, an unknown column, a sandbox rejection)
   still answer 400 with the engine's own message - narrowing the catch must
   not turn bad input into a 500;
 - a fault inside the harness answers 500, so a real bug can never hide inside
-  a 400.
+  a 400;
+- and that 500 is JSON carrying a request id, not Starlette's plain text. The
+  id finds the traceback in the log, and the body carries nothing the fault
+  was holding.
 
 The 500s need a TestClient with `raise_server_exceptions=False`; with the
 default, Starlette re-raises unhandled exceptions in the test instead of
-letting the response carry the status. The propagating exception is what makes
-the 500 honest - a real run logs the traceback in the server console - and the
-body is Starlette's plain-text "Internal Server Error" rather than a JSON
-envelope. Giving a 500 a JSON body is an API-consistency concern for the UX
-work, not part of this task: what matters here is the status code.
+letting the response carry the status.
 """
 
 import logging
@@ -211,7 +211,12 @@ def test_harness_fault_answers_500(
                 json={"kind": "bar", "x": "region", "y": "order_id"},
             )
     assert response.status_code == 500, path_builder
-    assert b"Internal Server Error" in response.content
+    # The envelope every other error shape has (P5-RELIABILITY-003): a status,
+    # a detail and an id - never Starlette's bare "Internal Server Error".
+    assert response.headers["content-type"] == "application/json"
+    body = response.json()
+    assert body["detail"] == "internal error"
+    assert len(body["request_id"]) == 32, "the id is a uuid4 hex"
 
 
 # --- the LLM fallback stays broad, but stops being silent ------------------
@@ -237,3 +242,82 @@ def test_llm_fallback_logs_the_reason(tmp_path, monkeypatch, caplog) -> None:
         "falling back to deterministic" in record.message and record.levelno == logging.WARNING
         for record in caplog.records
     )
+
+
+# --- the 500 envelope (P5-RELIABILITY-003) ----------------------------------
+
+
+def test_a_faults_id_finds_its_traceback_in_the_log(
+    tmp_path, monkeypatch, caplog
+) -> None:
+    """The id the client receives is the key to the traceback in the log.
+
+    Catching the exception means uvicorn no longer logs it, so the handler has
+    to - otherwise the log P5-OBSERVE-002 promised would stop carrying the
+    traceback the moment the envelope arrived.
+    """
+    _temp_env(tmp_path, monkeypatch)
+    monkeypatch.setattr(main_module, "run_query", _Boom())
+    with caplog.at_level(logging.ERROR, logger="dah.core"):
+        with _client() as client:
+            case_id, dataset_id = _case_with_dataset(client)
+            response = client.post(
+                f"/cases/{case_id}/datasets/{dataset_id}/runs",
+                json={"sql": "SELECT * FROM read_csv_auto(?)"},
+            )
+
+    assert response.status_code == 500
+    request_id = response.json()["request_id"]
+
+    joined = caplog.text
+    assert request_id in joined, "the response id must appear in the log"
+    assert "unhandled error" in joined
+    assert "KeyError" in joined, "the exception type is recorded"
+    assert "the harness itself broke" in joined, "and so is the message"
+
+
+def test_the_faults_message_never_leaves_the_process(tmp_path, monkeypatch) -> None:
+    """A fault can be holding user data - an unknown column, a filename, a value
+    that failed to parse. The traceback stays in the log; only the id and a
+    fixed message leave."""
+    _temp_env(tmp_path, monkeypatch)
+    secret = "revenue-for-q3-is-42"
+
+    def leaking(_db, _case_id: str) -> None:
+        raise RuntimeError(f"could not parse {secret}")
+
+    monkeypatch.setattr(main_module, "_require_case", leaking)
+    with _client() as client:
+        response = client.get("/cases/nope/progress")
+
+    assert response.status_code == 500
+    assert secret not in response.text, "the body must not echo what it held"
+    assert response.json()["detail"] == "internal error"
+
+
+def test_a_404_keeps_its_own_detail_and_no_id(tmp_path, monkeypatch) -> None:
+    """The generic handler is for faults, not for HTTPException - a 404 still
+    names the thing that was not found."""
+    _temp_env(tmp_path, monkeypatch)
+    with _client() as client:
+        response = client.get("/cases/no-such-case")
+
+    assert response.status_code == 404
+    body = response.json()
+    assert "not found" in body["detail"]
+    assert "request_id" not in body
+
+
+def test_an_input_error_keeps_its_own_detail_and_no_id(tmp_path, monkeypatch) -> None:
+    """And a 400 still answers with the engine's own message, not the generic
+    one."""
+    _temp_env(tmp_path, monkeypatch)
+    with _client() as client:
+        case_id, dataset_id = _case_with_dataset(client)
+        response = client.post(
+            f"/cases/{case_id}/datasets/{dataset_id}/runs",
+            json={"sql": "SELECT FROM read_csv_auto(?)"},
+        )
+    body = response.json()
+    assert response.status_code == 400
+    assert "request_id" not in body

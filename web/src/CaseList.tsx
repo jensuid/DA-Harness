@@ -58,6 +58,12 @@ export function CaseList({
 }
 
 export function messageOf(err: unknown): string {
-  if (err instanceof ApiError) return `${err.message} (HTTP ${err.status})`
+  if (err instanceof ApiError) {
+    // The id finds this fault's traceback in the core's log, so it is worth
+    // showing: "error abc12345" is something someone can look up, and "HTTP
+    // 500" alone is not.
+    const id = err.requestId ? ` error ${err.requestId.slice(0, 8)}` : ''
+    return `${err.message} (HTTP ${err.status}${id})`
+  }
   return err instanceof Error ? err.message : 'unknown error'
 }

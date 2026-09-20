@@ -1,7 +1,32 @@
 # DAH - Handoff
 
 ## What was completed
-- P5-OBSERVE-002 PASSED: the packaged app's logs have somewhere to go. The core
+- P5-RELIABILITY-003 PASSED: a 500 answers the same shape as every other error.
+  It was the last carried item from P4-RELIABILITY-002: a fault answered
+  Starlette's plain-text "Internal Server Error" - the client tolerated it
+  (api.ts parsed JSON only when the core sent it) but it was the one rough edge
+  left in the error contract. A registered handler for `Exception` now answers
+  `{"detail": "internal error", "request_id": <uuid4 hex>}`. Two details are the
+  whole job:
+  - **The traceback had to be logged explicitly.** Catching the exception means
+    uvicorn never sees it, so the log P5-OBSERVE-002 promised would have stopped
+    carrying the traceback the moment the envelope arrived. The handler logs
+    `unhandled error request_id=...` with the traceback under the id the
+    response carries, so "I have error X" finds the failure in the file.
+  - **The body says less than the log on purpose.** A fault's message can quote
+    what it was holding - an unknown column, a filename, a value that failed to
+    parse - so only the id and a fixed message leave the process. Pinned by a
+    test: a fault whose message contains a marker answers the envelope, the
+    marker is in the log, and it is not in the body.
+  HTTPException has its own handler, so a 400/404 keep their own `detail` and
+  never gain a request id - also pinned. The client carries the id on ApiError
+  and `messageOf` shows it (`internal error (HTTP 500 error 3f239488)`), so a
+  user can quote something a support search resolves. 16 tests in the
+  error-semantics suite (was 12 - the parametrized 500 test now asserts the
+  envelope, plus the id-to-log round trip, the no-leak property, and both
+  unchanged 4xx paths) and 4 new web tests (21 total).
+
+- P5-OBSERVE-002 PASSED: the packaged app's logs have somewhere to go.: the packaged app's logs have somewhere to go. The core
   is a PyInstaller sidecar under the desktop shell, and its stderr goes nowhere
   a user can read - so P4's honest 500 logged a traceback into a void and a
   support question had nothing behind it. Now `configure_logging()` installs a
@@ -919,7 +944,7 @@ reported as unsupported (clear 400) rather than faked; that gate is future work.
 
 ## Tests performed (current)
 
-- server pytest: 252 passed (231 + 21 observability; verified again on a clean venv built
+- server pytest: 256 passed (231 + 21 observability + 4 error envelope; verified again on a clean venv built
   from pyproject - the install path CI uses)
 - CI on GitHub's own runners: ALL FOUR JOBS GREEN
   (https://github.com/jensuid/DA-Harness/actions) - server suite + P2/P3/P4
@@ -970,25 +995,23 @@ reported as unsupported (clear 400) rather than faked; that gate is future work.
 
 ## Next action
 
-P5-OBSERVE-002 is done: a packaged app's logs have somewhere to go and a
-read-only way to be read, without logging anything the analyst typed. P5 is
-2 of 5 checklist items in. What remains, oldest-risk first:
+P5-RELIABILITY-003 is done: the error contract has one shape now, and a fault's
+traceback is a log search away from the id in the response. P5 is 3 of 5
+checklist items in. What remains:
 
 - macOS code signing + notarization - formally deferred here by DEC-004 and
   **blocked on an external dependency only you can provision**: a $99 Apple
   Developer ID. The identity becomes a CI secret in the `packaging` job; the
   unsigned build stays as a fallback target. Not agent work until the ID
   exists.
-- the carried 500 JSON envelope - now the natural next pick, and small. The
-  log holds the traceback, but the client still receives Starlette's plain-text
-  "Internal Server Error"; `api.ts` already parses JSON only when the core sent
-  it, so a JSON envelope is the last rough edge of the error contract.
 - release automation - versioned artifacts published from CI, on top of the
   packaging job that already builds and smokes the sidecar.
-- a follow-up this task deliberately left out: a "Reveal logs" menu item in the
-  desktop shell calling `GET /logs`. The endpoint is the contract; the menu is
-  UI work, and no browser is registered with the computer-use surface here, so
-  it could not have been verified. Documented in `docs/Observability.md`.
+- smaller follow-ups, both deliberately left out: a "Reveal logs" menu item in
+  the desktop shell calling `GET /logs` (the endpoint is the contract; the menu
+  is UI work and no browser is registered with the computer-use surface here so
+  it could not have been verified), and showing the full request id somewhere
+  copyable - the UI shows the first 8 characters, which is enough to find the
+  log line but not to paste into a search verbatim.
 
 Nothing is unblocked-but-undone.
 

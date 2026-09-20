@@ -29,7 +29,7 @@ if "pytest" not in sys.modules:
 
 
 from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel
 
 import json
@@ -120,6 +120,37 @@ app = FastAPI(
     description="Deterministic core of the Data Analysis Harness.",
     version="0.1.0",
 )
+
+
+@app.exception_handler(Exception)
+async def handle_unexpected_error(request: Request, exc: Exception) -> JSONResponse:
+    """A fault in the harness answers 500 as JSON, with an id (P5-RELIABILITY-003).
+
+    Two jobs, and the second is the one that is easy to lose: catching the
+    exception means uvicorn never sees it, so the traceback P5-OBSERVE-002 made
+    recoverable would stop reaching the log. It is recorded here, under the id
+    the response carries, so "I have error <id>" finds the traceback in the
+    file.
+
+    The body deliberately says less than the log. A fault's message can quote
+    what it was holding - an unknown column, a filename, a value that failed to
+    parse - so only the id and a fixed message leave the process. The detail
+    stays local.
+
+    HTTPException has its own handler, so a 400 or a 404 never reaches here and
+    keeps answering with its own `detail`.
+    """
+    request_id = uuid4().hex
+    logging.getLogger("dah.core").exception(
+        "unhandled error request_id=%s method=%s path=%s",
+        request_id,
+        request.method,
+        request.url.path,
+    )
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "internal error", "request_id": request_id},
+    )
 
 
 @app.middleware("http")

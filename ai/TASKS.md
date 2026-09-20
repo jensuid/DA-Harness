@@ -1432,6 +1432,7 @@ the gate comes first because a phase is done when a gate says so.
 |---------|-----------|----------|--------|--------------|--------------|
 | P5-VERIFY-001 | Verification (P4 gate) | M | DONE | P4 complete | One journey walks the edges: the error taxonomy, rerun determinism, the result cap, graceful degradation |
 | P5-OBSERVE-002 | Observability | M | DONE | P5-VERIFY-001 | The core writes a size-capped rotating log into the user's data dir, `GET /logs` tails it read-only, and nothing the analyst typed ever lands in it |
+| P5-RELIABILITY-003 | Error contract | M | DONE | P5-OBSERVE-002 | A 500 answers a JSON envelope with a request id that maps to the traceback in the log, and the id is surfaced to the user |
 
 ### P5-OBSERVE-002 contract
 
@@ -1501,4 +1502,62 @@ VERIFICATION: `cd server && .venv/bin/python -m pytest -q` green (243 total);
               the P2, P3 and P4 gates still PASS; CI green.
 STATE UPDATE: mark P5-OBSERVE-002 done on pass; the P5 checklist's
               observability item is closed.
+```
+
+### P5-RELIABILITY-003 contract
+
+```
+TASK ID: P5-RELIABILITY-003
+MILESTONE: P5 Production Grade
+CAPABILITY: Reliability (the carried 500 envelope)
+GOAL: A 500 answers the same shape as every other error, and an id that finds
+      its traceback.
+
+CONTEXT: P4-RELIABILITY-002 made a fault answer 500 instead of a 400 that
+         blamed the analyst, and deliberately declined to change the body -
+         Starlette's plain-text "Internal Server Error". The client tolerates
+         it (api.ts parses JSON only when the core sent it), but it is the one
+         remaining rough edge in the error contract, and P5-OBSERVE-002 just
+         put the traceback somewhere an id can point at.
+INPUTS: an unhandled exception reaching the middleware stack.
+RELEVANT FILES: server/app/main.py (the exception handler), server/app/models.py,
+                server/tests/test_error_semantics.py, web/src/api.ts,
+                web/src/api.test.ts (NEW), docs/Observability.md,
+                ai/ROADMAP.md, ai/CURRENT_STATE.md, ai/HANDOFF.md
+REQUIRED CHANGE:
+  - A registered handler for `Exception` answers 500 with
+    `{"detail": "internal error", "request_id": "<hex>"}`, and logs the
+    traceback under that id. Logging matters as much as the envelope: catching
+    the exception means uvicorn no longer logs it, so without an explicit
+    record the traceback P5-OBSERVE-002 promised would stop reaching the file.
+  - The body carries no exception text. A fault's message can quote what it was
+    holding - an unknown column, a filename, a value that failed to parse - so
+    only the id and a fixed message leave the process. The traceback stays in
+    the log, on the user's machine.
+  - HTTPException is untouched: a 400/404 still answers its own `detail`.
+  - api.ts surfaces the id on ApiError so a user can quote it and the UI can
+    say "this is error <id>, it is in the log" instead of "request failed".
+NON-GOALS: retry, rate limiting, user-visible log browsing in the shell (the
+           endpoint exists; a menu item is a separate UI task), any change to
+           the 4xx contract, correlation ids threaded through the request
+           middleware (the handler's id is enough for a single-user local tool).
+CONSTRAINTS: the status code must stay 500 - the whole point of P4 was that a
+             fault is never flattened into a client error - and the P4 gate's
+             fault step must still pass.
+ACCEPTANCE CRITERIA:
+- [x] a fault answers 500 with `detail` and a `request_id`
+- [x] the same id is in the log line carrying the traceback
+- [x] the exception's own message is in the log and NOT in the body
+- [x] a 400 and a 404 are unchanged: their own `detail`, no request id
+- [x] the client turns the envelope into an ApiError carrying the id
+TESTS: server: the envelope, the id-in-log round trip, the no-leak property,
+       and the 4xx contract unchanged. web: 3 tests on api.ts - the 500
+       envelope yields an ApiError with the id, a plain 4xx is unchanged, and a
+       500 that is not JSON still works (the fallback path the envelope
+       replaced).
+VERIFICATION: `cd server && .venv/bin/python -m pytest -q` green (256 total);
+              `cd web && npm test` green (20 total); P2/P3/P4 gates PASS; CI
+              green.
+STATE UPDATE: mark P5-RELIABILITY-003 done on pass; the carried item from
+              P4-RELIABILITY-002 is closed.
 ```

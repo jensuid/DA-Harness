@@ -71,6 +71,27 @@ To find the thing that just went wrong, read the end:
 curl -s http://127.0.0.1:8123/logs | python3 -c "import json,sys; [print(l) for l in json.load(sys.stdin)['lines']]" | tail -40
 ```
 
+## Finding the failure behind an error
+
+When the core fails on a request it answers
+
+```json
+{"detail": "internal error", "request_id": "3f239488576c453cb61b9f38716d1bb7"}
+```
+
+That id is the key to the failure. Search the log for it and you land on the
+traceback:
+
+```bash
+curl -s http://127.0.0.1:8123/logs | python3 -c "import json,sys; [print(l) for l in json.load(sys.stdin)['lines']]" | grep -A 20 3f239488
+```
+
+The id is also what the desktop shell shows alongside the error, so quoting it
+is something a user can do without a terminal. The traceback stays in the log
+and never goes back in the body: a fault can be holding user data - an unknown
+column name, a filename, a value that failed to parse - so only the id and a
+fixed message leave the process.
+
 ## What is not in it
 
 The boundary is a property of what the code passes to a logger, not a

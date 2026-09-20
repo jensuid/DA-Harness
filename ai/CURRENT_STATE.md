@@ -4,15 +4,28 @@
   P4-VERIFY-001, P4-RELIABILITY-002, P4-UX-003 + P4-UX-004, P4-VALID-005,
   P4-PERF-006, P4-CI-007). P3 V1 is COMPLETE: all 10 entry-checklist items,
   231 server tests, and a P3 gate of its own. P5 Production Grade is IN
-  PROGRESS (2 of 5 checklist items: the P4 gate and observability are done;
-  signing, the 500 envelope and release automation remain).
+  PROGRESS (3 of 5 checklist items: the P4 gate, observability and the 500
+  envelope are done; signing and release automation remain).
 - **Global roadmap status:** ai/ROADMAP.md (phase tracker - current stage, phase table, next-phase entry checklist)
 - **Milestone status:** P1 Vertical Slice PASSED (verification/p1/REPORT.md); P0 PASSED
 - **Completed capabilities:** FastAPI core; SQLite case persistence; DuckDB engine; Vite/React shell; P0 verification harness; CSV dataset attachment; deterministic dataset profiling; read-only SQL analysis runs with persisted results; findings with evidence chain; validation via rerun; parquet + xlsx ingest; deep profiling; **read-only Python execution with persisted results (P2-ANALYSIS-008); chart images rendered and persisted from run results (P2-ANALYSIS-009);
 case management - rename, duplicate, delete (P2-CASE-010);
 AI planning with structured output (P2-AI-011); case export as a self-contained
 JSON package with import round trip (P2-CASE-012)**
-- **Active task:** P5-OBSERVE-002 DONE - observability. The packaged core is a
+- **Active task:** P5-RELIABILITY-003 DONE - the carried 500 envelope. A fault
+  used to answer Starlette's plain-text "Internal Server Error", which the
+  client tolerated but which was the last rough edge of the error contract. Now
+  a registered handler for `Exception` answers
+  `{"detail": "internal error", "request_id": <uuid4 hex>}`, logs the traceback
+  under that same id (this matters as much as the envelope: catching the
+  exception means uvicorn no longer logs it, so without an explicit record the
+  traceback P5-OBSERVE-002 made recoverable would stop reaching the file), and
+  puts nothing else in the body - a fault's message can quote the user data it
+  was holding, so only the id and a fixed message leave the process. 4xx and
+  404 are untouched: their own `detail`, no id. The client surfaces the id
+  (`error 3f239488` in the message a user reads) so it is quotable. 16 server
+  tests in the error-semantics suite (was 12) and 4 new web tests. Before it:
+  P5-OBSERVE-002, observability. The packaged core is a
   PyInstaller sidecar whose stderr nobody reads, so a 500's traceback used to
   vanish. The core now writes a rotating log (2MB x 3 backups, bounded at ~8MB)
   into the same data directory the shell already points the cases at, overridable
@@ -43,17 +56,17 @@ JSON package with import round trip (P2-CASE-012)**
 - **Known issues:** none. CI runs green on GitHub's own runners after five
   local-state bugs it exposed were fixed (see ai/HANDOFF.md, "What the first
   CI runs caught").
-- **Test status:** server 252 passed (211 + 12 error semantics + 2 validation
+- **Test status:** server 256 passed (211 + 16 error semantics + 2 validation
   determinism + 6 large-dataset + 21 observability); web 17 passed (CaseList 5, CaseCreation 3,
   CaseWorkspace 9);
   desktop shell 7 Rust tests (5 unit + 2 e2e, `cd desktop/src-tauri && cargo test [--features e2e]`);
   P2 and P3 gates PASS
-- **Next task:** the remaining P5 checklist, oldest-risk first - macOS
-  signing + notarization (formally deferred by DEC-004, blocked on a Developer
-  ID, so not agent work until the identity exists), the carried 500 JSON envelope
-  (small, self-contained, and now the natural follow-on: the log holds the
-  traceback but the client still sees Starlette's plain text), and release
-  automation on top of the packaging job.
+- **Next task:** the remaining P5 checklist - macOS signing + notarization
+  (formally deferred by DEC-004, blocked on a Developer ID, so not agent work
+  until the identity exists) and release automation on top of the packaging job.
+  Smaller follow-ups now visible: a "Reveal logs" menu item in the desktop shell
+  (the /logs endpoint is the contract; the menu is unverified UI work), and
+  showing the request id's full value somewhere copyable.
   Carried: a 500 still answers with Starlette's plain-text "Internal Server
   Error"; the client handles it, but a JSON envelope is the last rough edge of
   the error contract.
@@ -144,3 +157,4 @@ JSON package with import round trip (P2-CASE-012)**
 |------|--------|
 | P5-VERIFY-001 P4 gate | DONE |
 | P5-OBSERVE-002 Observability | DONE |
+| P5-RELIABILITY-003 500 envelope | DONE |

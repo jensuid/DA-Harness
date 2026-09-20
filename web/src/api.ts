@@ -125,13 +125,21 @@ export interface ConversationTurn {
 }
 
 // A failure from the core. The body is parsed as JSON only when the core sent
-// JSON: a 4xx carries {"detail": ...}, but a 500 answers plain text
-// (P4-RELIABILITY-002) and res.json() on it would throw a second, hiding
-// failure - so the raw text is the message there.
+// JSON, and it is now: a 4xx carries {"detail": ...} and a 500 carries
+// {"detail": "internal error", "request_id": ...} (P5-RELIABILITY-003). The id
+// is the key to that fault's traceback in the core's log, so it rides along for
+// the UI to quote - "this is error <id>" is actionable in a way "request failed"
+// is not.
+//
+// A 500 that is not JSON still works: the raw text becomes the message rather
+// than throwing a second error inside the handler. That path is kept because the
+// desktop shell's webview can meet a proxy, a timeout or an older core that
+// never sent an envelope.
 export class ApiError extends Error {
   constructor(
     public status: number,
     message: string,
+    public requestId?: string,
   ) {
     super(message)
     this.name = 'ApiError'
@@ -143,16 +151,18 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   if (!res.ok) {
     const text = await res.text()
     let message = text
+    let requestId: string | undefined
     const contentType = res.headers.get('content-type') ?? ''
     if (contentType.includes('application/json')) {
       try {
-        const body = JSON.parse(text) as { detail?: string }
+        const body = JSON.parse(text) as { detail?: string; request_id?: string }
         if (body.detail) message = body.detail
+        requestId = body.request_id
       } catch {
         // An unparseable JSON body keeps its raw text as the message.
       }
     }
-    throw new ApiError(res.status, message || `request failed: ${res.status}`)
+    throw new ApiError(res.status, message || `request failed: ${res.status}`, requestId)
   }
   return (await res.json()) as T
 }
