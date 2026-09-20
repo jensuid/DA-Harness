@@ -74,6 +74,9 @@ production-grade**.
   surfaces in the shell, validation determinism, large-dataset performance, and
   CI plus the signing decision.
 - **Known issues / blockers:** none.
+- **Supported platform:** macOS 13 (Ventura) or later - the oldest
+  version CI builds and tests against (macos-13, the last Intel image, which
+  matches the dev machine and the sidecar triple). See `README.md`.
 - **Repository:** private, `master` tracks `origin/master`.
 
 ## P3 V1 — entry checklist (COMPLETE)

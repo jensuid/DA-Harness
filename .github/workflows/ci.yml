@@ -1,4 +1,5 @@
-# CI for DAH (P4-CI-007).
+# CI for DAH (P4-CI-007; the runner floor and the packaged-log smoke are
+# P5-CI-004).
 #
 # Four jobs: the server suite plus its gates, the web suite plus a build, a
 # sidecar packaging build, and the desktop shell's Rust tests - including the
@@ -9,6 +10,12 @@
 # (P3-SEC-001), the packaged app is a macOS .app, and the sidecar is a macOS
 # PyInstaller build - running this elsewhere would test a platform DAH does
 # not target and would skip the sandbox paths that most need exercising.
+#
+# Every job runs on macos-13 (Ventura), the minimum supported version: the
+# floor is only real if something builds and tests against it. It is also the
+# last Intel runner, which matches the development machine and the
+# x86_64-apple-darwin sidecar triple, so a green run is the binary a local
+# build produces rather than an architecture nothing else ever exercises.
 #
 # Hermeticity: no LLM credentials are ever set. Every assistant engine reads
 # DAH_LLM_API_KEY at call time and degrades to its deterministic one, so the
@@ -31,11 +38,13 @@ env:
   # uv installs into a cache key shared across jobs; a stable python pin keeps
   # it reproducible.
   PYTHON_VERSION: "3.14"
+  # The macOS floor, stated once so every job shares it (see the header).
+  MACOS_RUNNER: "macos-13"
 
 jobs:
   server:
     name: Server suite + gates
-    runs-on: macos-latest
+    runs-on: ${{ env.MACOS_RUNNER }}
     defaults:
       run:
         working-directory: server
@@ -80,7 +89,7 @@ jobs:
 
   web:
     name: Web suite + build
-    runs-on: macos-latest
+    runs-on: ${{ env.MACOS_RUNNER }}
     defaults:
       run:
         working-directory: web
@@ -106,7 +115,7 @@ jobs:
 
   desktop:
     name: Desktop shell lifecycle
-    runs-on: macos-latest
+    runs-on: ${{ env.MACOS_RUNNER }}
     needs: packaging
     steps:
       - uses: actions/checkout@v4
@@ -173,7 +182,7 @@ jobs:
 
   packaging:
     name: Sidecar build
-    runs-on: macos-latest
+    runs-on: ${{ env.MACOS_RUNNER }}
     # The sidecar is a release artifact, not a test. Building it in CI proves
     # the packaging path still works on a clean machine - locally it is easy to
     # carry a stale build and never notice a regression in the spec.
@@ -214,7 +223,11 @@ jobs:
           retention-days: 1
 
       - name: Smoke the packaged core
-        # The binary must actually serve, not merely build.
+        # The binary must actually serve, not merely build - and its logs must
+        # land where a packaged app's logs belong. The packaged core's stderr is
+        # a pipe nothing reads, so the log file is the only place a fault leaves
+        # a trace (P5-OBSERVE-002); checking it here proves that in the real
+        # PyInstaller bundle rather than in a dev checkout.
         run: |
           BINARY="$(rustc -vV | awk '/^host:/ {print $2}')"
           # This step runs from server/, so the artifact is one level up.
@@ -229,6 +242,14 @@ jobs:
             sleep 0.5
           done
           curl -fsS http://127.0.0.1:8124/health
+          # File logging has to be on in the packaged core, and the log has to
+          # be under the data dir the shell sets - not next to the binary,
+          # which a user cannot read inside an .app bundle.
+          LOGS="$(curl -fsS http://127.0.0.1:8124/logs)"
+          echo "$LOGS" | grep -q '"enabled":true' || \
+            { echo "file logging is off in the packaged core"; echo "$LOGS"; exit 1; }
+          echo "$LOGS" | grep -qF "$DATA/logs/dah-core.log" || \
+            { echo "the packaged core is not logging into its data dir"; echo "$LOGS"; exit 1; }
           # Deliberately a plain kill, not the group signal the shell uses: a
           # non-interactive shell keeps background jobs in its own process
           # group, so a negative PID would take the runner's shell down with

@@ -30,6 +30,10 @@ a live core, and a sidecar packaging build.
 
 ## Installing the app
 
+DAH requires **macOS 13 (Ventura) or later** - that is the oldest version CI
+builds and tests against, on Intel hardware; newer versions and Apple Silicon
+are exercised the same way.
+
 The packaged app is **currently unsigned** (see `ai/DECISIONS.md`, DEC-004 —
 signing and notarization are P5). macOS Gatekeeper will therefore block the
 first launch. To open it:

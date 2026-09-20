@@ -1,7 +1,21 @@
 # DAH - Handoff
 
 ## What was completed
-- P5-RELIABILITY-003 PASSED: a 500 answers the same shape as every other error.
+- P5-CI-004 PASSED: CI targets a floor instead of "whatever GitHub newest is".
+  Every job now runs on macos-13 - Ventura, the minimum supported macOS, and
+  the last Intel image - from one `MACOS_RUNNER` env so a bump touches one line.
+  Two reasons it matters: the oldest macOS DAH might be asked to run on had
+  never been built against, and `macos-latest` is arm64 while the dev machine
+  and the sidecar triple are x86_64, so a green run used to be a binary nothing
+  else in the project ever produced.
+  The packaging job's smoke step gained two assertions: the packaged core's file
+  logging is on, and the log lands under the data dir it was given. That is the
+  only place the P5-OBSERVE-002 property is provable inside a real PyInstaller
+  bundle, whose stderr nobody reads. Verified locally in both directions - a
+  stale sidecar (built before /logs existed) 404s and fails the assertions, a
+  freshly built one passes. No code moved; no new tests.
+
+- P5-RELIABILITY-003 PASSED: a 500 answers the same shape as every other error.: a 500 answers the same shape as every other error.
   It was the last carried item from P4-RELIABILITY-002: a fault answered
   Starlette's plain-text "Internal Server Error" - the client tolerated it
   (api.ts parsed JSON only when the core sent it) but it was the one rough edge

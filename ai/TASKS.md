@@ -1433,6 +1433,7 @@ the gate comes first because a phase is done when a gate says so.
 | P5-VERIFY-001 | Verification (P4 gate) | M | DONE | P4 complete | One journey walks the edges: the error taxonomy, rerun determinism, the result cap, graceful degradation |
 | P5-OBSERVE-002 | Observability | M | DONE | P5-VERIFY-001 | The core writes a size-capped rotating log into the user's data dir, `GET /logs` tails it read-only, and nothing the analyst typed ever lands in it |
 | P5-RELIABILITY-003 | Error contract | M | DONE | P5-OBSERVE-002 | A 500 answers a JSON envelope with a request id that maps to the traceback in the log, and the id is surfaced to the user |
+| P5-CI-004 | CI floor | S | DONE | P5-RELIABILITY-003 | Every job runs on macos-13 (Ventura), the minimum supported macOS, and the packaged-core smoke now asserts file logging lands in the data dir |
 
 ### P5-OBSERVE-002 contract
 
@@ -1560,4 +1561,53 @@ VERIFICATION: `cd server && .venv/bin/python -m pytest -q` green (256 total);
               green.
 STATE UPDATE: mark P5-RELIABILITY-003 done on pass; the carried item from
               P4-RELIABILITY-002 is closed.
+```
+
+### P5-CI-004 contract
+
+```
+TASK ID: P5-CI-004
+MILESTONE: P5 Production Grade
+CAPABILITY: CI floor
+GOAL: Make the minimum supported macOS version a real, tested floor rather
+      than an assumption.
+GOAL NOTE: "just CI refine, target Mac minimal Ventura" - the user asked for
+      exactly this and nothing more.
+CONTEXT: every job ran on macos-latest, which is whatever GitHub newest is at
+         the moment - currently arm64, while the development machine and the
+         sidecar triple are x86_64. A green run was therefore a binary nothing
+         else in the project ever produced, and the oldest macOS DAH might be
+         asked to run on had never been built against at all.
+INPUTS: the runner image label.
+RELEVANT FILES: .github/workflows/ci.yml, README.md, ai/ROADMAP.md,
+                ai/CURRENT_STATE.md, ai/HANDOFF.md
+REQUIRED CHANGE:
+  - A single MACOS_RUNNER env (macos-13) drives all four jobs, so the floor is
+    stated once and a bump touches one line. macos-13 is Ventura and the last
+    Intel image, which matches the dev machine and the
+    x86_64-apple-darwin sidecar triple.
+  - The packaging job's smoke step now asserts the packaged core's file
+    logging is on and lands under the data dir it was given - a packaged
+    app's stderr is unreadable, so this is the one place the observability
+    work is provable in the real PyInstaller bundle rather than a dev
+    checkout.
+NON-GOALS: arm64 as a second CI lane (real, but a separate task that needs a
+           second runner and a second sidecar triple), signing (blocked on the
+           Developer ID, DEC-004), any change to the jobs themselves beyond
+           the runner and the smoke step, Windows or Linux.
+CONSTRAINTS: no job may gain a secret; nothing may stop running on the floor.
+ACCEPTANCE CRITERIA:
+- [x] all four jobs run on macos-13 and the runner is defined once
+- [x] the smoke step fails when the packaged core does not log into its data
+      dir (verified locally against a stale binary, which 404'd on /logs and
+      failed the new assertions)
+- [x] the smoke step passes against a sidecar built from current source
+- [x] README states the minimum supported version
+TESTS: none new - this task is CI configuration. Verified by running the
+       smoke block locally against both the stale sidecar (fails as designed)
+       and a freshly built one (passes), and by parsing the workflow YAML.
+VERIFICATION: workflow YAML valid; the four jobs' commands unchanged; server
+              256 / web 21 / desktop 7 still green locally (this commit moves
+              no code).
+STATE UPDATE: mark P5-CI-004 done on pass; record the floor in README.
 ```

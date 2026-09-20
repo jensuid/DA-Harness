@@ -12,7 +12,17 @@
 case management - rename, duplicate, delete (P2-CASE-010);
 AI planning with structured output (P2-AI-011); case export as a self-contained
 JSON package with import round trip (P2-CASE-012)**
-- **Active task:** P5-RELIABILITY-003 DONE - the carried 500 envelope. A fault
+- **Active task:** P5-CI-004 DONE - CI now targets a floor instead of
+  "whatever GitHub newest is". All four jobs run on macos-13 (Ventura) from one
+  MACOS_RUNNER env, which is also the last Intel image - so a green run is the
+  same x86_64 binary the dev machine and the sidecar triple produce rather than
+  an architecture nothing else exercises. The packaging smoke now asserts the
+  *packaged* core logs into the data dir it was given: a bundled app's stderr is
+  unreadable, so that is the only place the P5-OBSERVE-002 property is provable
+  in the real PyInstaller binary. Verified locally both ways - a stale sidecar
+  404s on /logs and fails the new assertions, a freshly built one passes. README
+  states the minimum supported version. Before it: P5-RELIABILITY-003, the 500
+  envelope. A fault
   used to answer Starlette's plain-text "Internal Server Error", which the
   client tolerated but which was the last rough edge of the error contract. Now
   a registered handler for `Exception` answers
@@ -158,3 +168,4 @@ JSON package with import round trip (P2-CASE-012)**
 | P5-VERIFY-001 P4 gate | DONE |
 | P5-OBSERVE-002 Observability | DONE |
 | P5-RELIABILITY-003 500 envelope | DONE |
+| P5-CI-004 CI floor (Ventura) | DONE |
