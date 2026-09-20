@@ -59,20 +59,12 @@ production-grade**.
   tests (5 unit + 2 e2e); P2, P3 **and P4** gates PASS. All of it runs in CI
   (`.github/workflows/ci.yml`) - before P4-CI-007, every test was green only
   because a developer happened to run it.
-- **Active task:** P5-RELIABILITY-003 DONE - the P4 gate exists, so P4 finally
-  has what every earlier phase has: one journey that walks its capabilities end
-  to end. Where P3's gate proved the loop is *useful*, this one proves it is
-  *safe to hand to someone else* by walking the edges instead of the happy
-  path: a 5000-row dataset, the result cap truncating a full scan while an
-  aggregate over the same data stays exact, bad SQL answering 400 with the
-  engine's own message and leaving nothing behind, a write and a sandbox escape
-  both refused, an injected harness fault answering 500 rather than blaming the
-  analyst, a deliberately broken LLM degrading to the deterministic engine, and
-  eight repeat validations of an unordered GROUP BY agreeing every time. 18
-  steps and 10 exit criteria, all PASS; CI runs it on every push.
-  Before it (P4, now closed): the P3 gate, error semantics, the assistant
-  surfaces in the shell, validation determinism, large-dataset performance, and
-  CI plus the signing decision.
+- **Active task:** P5-RELEASE-005 DONE - release automation. A `v<x.y.z>` tag
+  matching server/pyproject.toml now builds, smokes and publishes a versioned,
+  unsigned .app as a flagged pre-release, with its checksum and generated notes
+  that state how to open it past Gatekeeper and that the published build is
+  Intel. The version has one source of truth and a tag that disagrees with it
+  fails before any build starts.
 - **Known issues / blockers:** none.
 - **Supported platform:** macOS 13 (Ventura) or later - the oldest
   version CI builds and tests against (macos-13, the last Intel image, which
@@ -136,7 +128,7 @@ Ordered oldest-risk first.
   close, green state only, pushed to origin/master before work is called done
   (see the commit and push discipline section of AGENTS.md).
 
-## P5 Production Grade — entry checklist (3 of 5 done)
+## P5 Production Grade — entry checklist (4 of 5 done)
 
 Ordered oldest-risk first; a proposal for the user to reorder before work
 starts. P4 closed with the signing question decided rather than open
@@ -149,4 +141,4 @@ of a shrug.
 | 2 | The P4 gate — **DONE (P5-VERIFY-001)**: `verification/p4/verify_p4.py` walks the *edges* rather than the happy path - a 5000-row dataset, the result cap truncating a full scan while an aggregate stays exact, bad SQL answering 400 with the engine's message and persisting nothing, a sandbox escape refused, an injected harness fault answering 500, a deliberately broken LLM degrading to deterministic, and eight repeat validations of an unordered result agreeing. 18 steps, 10 exit criteria, all PASS; CI runs it on every push | P4 relied on the P3 gate plus CI, which never exercised the P4 capabilities against each other - the error taxonomy and rerun determinism are invisible on the happy path | P5 Verification |
 | 3 | Observability — **DONE (P5-OBSERVE-002)**: the core writes a size-capped rotating log (2MB x 3) into the user's data dir, `GET /logs?lines=N` tails it read-only, one line per request holds only method/path/status/duration, and nothing the analyst typed is ever logged | P4 made a 500 honest and logged with a traceback, but there was nowhere for that output to go in a packaged app a non-developer is running — now there is | P5 Observability |
 | 4 | Give the 500 a JSON envelope — **DONE (P5-RELIABILITY-003)**: a fault answers `{"detail": "internal error", "request_id": ...}`, the id finds the traceback in the log, the exception's own message stays in the log and never the body, and the 4xx contract is untouched | The client tolerated the plain text; now it gets the same shape as every other error, plus an id a user can quote | P5 Reliability |
-| 5 | Release automation: versioned, notarized artifacts published from CI rather than built by hand | The `packaging` job already builds and smokes the sidecar on a clean machine; publishing is the step after signing lands | P5 Distribution |
+| 5 | Release automation — **DONE (P5-RELEASE-005)**: a `v<x.y.z>` tag matching `server/pyproject.toml` builds, smokes and publishes an unsigned `.app` as a flagged pre-release with its checksum and generated notes; the version has one source of truth and a tag that disagrees with it fails before any build | The `packaging` job already built and smoked the sidecar on a clean machine, but its output went nowhere; now a user can download instead of build. Signing is the slot this job leaves open — it goes between the build and the upload | P5 Distribution |

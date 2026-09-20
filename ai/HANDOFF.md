@@ -1009,26 +1009,25 @@ reported as unsupported (clear 400) rather than faked; that gate is future work.
 
 ## Next action
 
-P5-RELIABILITY-003 is done: the error contract has one shape now, and a fault's
-traceback is a log search away from the id in the response. P5 is 3 of 5
-checklist items in. What remains:
+P5-RELEASE-005 is done: a tag now builds and publishes a versioned, unsigned
+macOS app, and the P5 checklist has one item left. What remains:
 
-- macOS code signing + notarization - formally deferred here by DEC-004 and
-  **blocked on an external dependency only you can provision**: a $99 Apple
-  Developer ID. The identity becomes a CI secret in the `packaging` job; the
-  unsigned build stays as a fallback target. Not agent work until the ID
-  exists.
-- release automation - versioned artifacts published from CI, on top of the
-  packaging job that already builds and smokes the sidecar.
-- smaller follow-ups, both deliberately left out: a "Reveal logs" menu item in
-  the desktop shell calling `GET /logs` (the endpoint is the contract; the menu
-  is UI work and no browser is registered with the computer-use surface here so
-  it could not have been verified), and showing the full request id somewhere
-  copyable - the UI shows the first 8 characters, which is enough to find the
-  log line but not to paste into a search verbatim.
+- macOS code signing + notarization - deferred by DEC-004 and **blocked on an
+  external dependency only you can provision**: a $99 Apple Developer ID. The
+  release job already has the slot - signing goes between the build and the
+  upload, and the `--prerelease` flag is the thing to revisit once a build is
+  notarized. Not agent work until the ID exists.
+- smaller unblocked items: an arm64 release lane (a second runner and sidecar
+  triple; this machine is x86_64 so CI is the only place it can be verified), a
+  "Reveal logs" menu item in the desktop shell calling `GET /logs` (the endpoint
+  is the contract; the menu is UI work no browser is registered to verify), and
+  showing the request id's full value somewhere copyable.
+
+Releasing: tag `v<x.y.z>` where x.y.z matches server/pyproject.toml. A
+mismatching tag fails before any build. The published artifact is Intel and
+unsigned, flagged as a pre-release with the Gatekeeper steps in its notes.
 
 Nothing is unblocked-but-undone.
-
 ## Important context
 
 - Server venv: server/.venv (Python 3.14). There is no `pip` module - install

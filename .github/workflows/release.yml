@@ -1,0 +1,204 @@
+# Release: publish a versioned, unsigned macOS build from a tag (P5-RELEASE-005).
+#
+# The packaging job in ci.yml already proves the sidecar builds and serves on a
+# clean machine; this is the step after that - turning that build into a
+# versioned artifact a user can download instead of having to build.
+#
+# Triggered by a tag, not by a push, on purpose: a release is a statement that
+# a particular commit is worth handing out, and only a tag makes that statement.
+# The tag must match the version in server/pyproject.toml, so a stale version
+# file can never publish a build whose label lies about it.
+#
+# UNSIGNED, by decision (DEC-004, and the user's call for now). The release is
+# flagged a pre-release and its body carries the Gatekeeper instructions and
+# the architecture, so nobody installs it by accident and nobody expects a
+# notarized binary before one exists. When the Developer ID lands, signing and
+# notarization slot into this job between the build and the upload, and the
+# --prerelease flag is the thing to revisit.
+
+name: Release
+
+"on":
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  # gh release create needs this and nothing else. The job never touches the
+  # repository's code, so no wider grant.
+  contents: write
+
+concurrency:
+  # Two pushes of the same tag would race on gh release create and leave a
+  # release half-uploaded. Serialize rather than cancel: cancelling a release
+  # job mid-upload leaves a worse mess than waiting for the first run to land.
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  PYTHON_VERSION: "3.14"
+  MACOS_RUNNER: "macos-13"
+
+jobs:
+  release:
+    name: Build and publish the macOS app
+    runs-on: ${{ env.MACOS_RUNNER }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read the version and refuse a tag that does not match it
+        id: version
+        # The pyproject is the source of truth; the tag is the label users see.
+        # A mismatch means the two drifted, and publishing would hand out a
+        # build whose name describes a different version than it contains.
+        run: |
+          VERSION="$(grep -m1 '^version' server/pyproject.toml | sed 's/.*"\(.*\)".*/\1/')"
+          TAG="${GITHUB_REF_NAME#v}"
+          if [ -z "$VERSION" ] || ! echo "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+'; then
+            echo "::error::could not read a version from server/pyproject.toml (got '$VERSION')"
+            exit 1
+          fi
+          if [ "$VERSION" != "$TAG" ]; then
+            echo "::error::tag '$TAG' does not match the version in server/pyproject.toml ('$VERSION') - bump the version, then re-tag"
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Create the virtualenv
+        working-directory: server
+        run: uv venv .venv --python ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        working-directory: server
+        run: uv pip install --python .venv/bin/python -e ".[dev,charts,packaging]"
+
+      - name: Run the server suite
+        # A release is a promise the build is good, so the suite runs before the
+        # ten-minute packaging work rather than trusting the commit it was cut
+        # from. The gates are ci.yml's job; this is the signal that the code
+        # under the tag is not broken.
+        working-directory: server
+        run: .venv/bin/python -m pytest -q
+
+      - name: Install Rust toolchain
+        # build_sidecar.sh derives the target triple from `rustc -vV`.
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build the sidecar
+        working-directory: server
+        run: ./build_sidecar.sh
+
+      - name: Smoke the packaged core
+        # The binary must serve, and its logs must land where a packaged app's
+        # logs belong - the bundle's stderr is the one thing a user cannot read.
+        working-directory: server
+        run: |
+          BINARY="$(rustc -vV | awk '/^host:/ {print $2}')"
+          ARTIFACT="../desktop/src-tauri/binaries/dah-core-${BINARY}"
+          test -x "$ARTIFACT" || { echo "missing $ARTIFACT"; exit 1; }
+          DATA="$(mktemp -d)"
+          DAH_DATA_DIR="$DATA" DAH_DB_PATH="$DATA/dah.db" \
+            "$ARTIFACT" --port 8125 &
+          CORE_PID=$!
+          for _ in $(seq 1 120); do
+            curl -fsS http://127.0.0.1:8125/health >/dev/null 2>&1 && break
+            sleep 0.5
+          done
+          curl -fsS http://127.0.0.1:8125/health
+          LOGS="$(curl -fsS http://127.0.0.1:8125/logs)"
+          echo "$LOGS" | grep -q '"enabled":true' || \
+            { echo "file logging is off in the packaged core"; echo "$LOGS"; exit 1; }
+          echo "$LOGS" | grep -qF "$DATA/logs/dah-core.log" || \
+            { echo "the packaged core is not logging into its data dir"; echo "$LOGS"; exit 1; }
+          kill "$CORE_PID"
+          wait "$CORE_PID" 2>/dev/null || true
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install web dependencies
+        # beforeBuildCommand runs npm --prefix ../web, so the install has to
+        # happen from desktop/ for the prefix to resolve.
+        working-directory: desktop
+        run: npm ci --no-audit --no-fund
+
+      - name: Build the app
+        # The version patch keeps the .app's CFBundleShortVersionString on the
+        # pyproject, so the label users see is the one the tag verified.
+        working-directory: desktop
+        run: npm run tauri -- build --config "{\"version\":\"${{ steps.version.outputs.version }}\"}"
+
+      - name: Package the app
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          ARCH="$(rustc -vV | awk '/^host:/ {print $2}')"
+          APP="$(find desktop/src-tauri/target/release/bundle/macos -name '*.app' | head -1)"
+          test -n "$APP" || { echo "no .app was built"; exit 1; }
+          echo "Built: $APP"
+          # Tauri copies an externalBin into Contents/MacOS, dropping the
+          # target-triple suffix, and the app cannot run without it - so the
+          # bundle is checked before it is zipped rather than trusting the
+          # build to have copied its own biggest dependency.
+          test -x "$APP/Contents/MacOS/dah-core" || \
+            { echo "the sidecar is missing from the bundle"; ls -la "$APP/Contents/MacOS"; exit 1; }
+          # ditto preserves resource forks and the bundle's structure, where a
+          # plain zip can mangle an .app into something Gatekeeper rejects for
+          # the wrong reason.
+          STAGE="$(mktemp -d)"
+          ditto -c -k --keepParent "$APP" "$STAGE/DAH_${VERSION}_macos_${ARCH}.zip"
+          shasum -a 256 "$STAGE/DAH_${VERSION}_macos_${ARCH}.zip" \
+            | sed "s| .*|  DAH_${VERSION}_macos_${ARCH}.zip|" > "$STAGE/DAH_${VERSION}_macos_${ARCH}.zip.sha256"
+          echo "STAGE=$STAGE" >> "$GITHUB_ENV"
+          echo "ARCH=$ARCH" >> "$GITHUB_ENV"
+          cat "$STAGE/DAH_${VERSION}_macos_${ARCH}.zip.sha256"
+
+      - name: Write the release notes
+        # The body is generated rather than freehand, so the unsigned warning
+        # and the architecture cannot be forgotten on a hurry-up release.
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          SHA="$(cut -d' ' -f1 "$STAGE/DAH_${VERSION}_macos_${ARCH}.zip.sha256")"
+          cat > "$STAGE/BODY.md" <<BODY
+          ## DAH ${VERSION}
+
+          Built from [\`${GITHUB_SHA:0:12}\`](https://github.com/${{ github.repository }}/commit/${{ github.sha }}).
+
+          **This build is unsigned and not notarized.** macOS Gatekeeper will
+          block the first launch. To open it, right-click (or Control-click) the
+          app, choose **Open**, then confirm with **Open anyway**. This is needed
+          once per machine and is a property of the pre-release build, not a
+          defect - see the README. Signing is deferred by DEC-004 until a
+          Developer ID is provisioned.
+
+          **This is an Intel (\`${ARCH}\`) build.** It runs on Apple Silicon
+          under Rosetta, which macOS offers to install on first launch; it is
+          slower to start there than a native build would be.
+
+          If something goes wrong, the core keeps a log next to your cases - see
+          \`docs/Observability.md\`. Quote the error id the app shows you; it finds
+          the traceback in that log.
+
+          \`\`\`
+          ${SHA}  DAH_${VERSION}_macos_${ARCH}.zip
+          \`\`\`
+          BODY
+
+      - name: Publish the release
+        # Pre-release, because an unsigned 0.x build is not the thing a casual
+        # "latest" pointer should land on. Revisit when signing lands.
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          gh release create "$GITHUB_REF_NAME" \
+            --title "DAH ${VERSION}" \
+            --notes-file "$STAGE/BODY.md" \
+            --prerelease \
+            "$STAGE/DAH_${VERSION}_macos_${ARCH}.zip" \
+            "$STAGE/DAH_${VERSION}_macos_${ARCH}.zip.sha256"

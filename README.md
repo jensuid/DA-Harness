@@ -63,6 +63,15 @@ the last lines (default 200, at most 1000). What it does **not** return is your
 data: request bodies, the SQL you wrote and the values in your datasets are
 never logged. See `docs/Observability.md` for the full boundary.
 
+## Getting a build
+
+Versioned builds are published from CI on a `v<x.y.z>` tag: look at the repo's
+**Releases** page. Each carries the `.app` and its SHA-256.
+
+These builds are **unsigned** (DEC-004) and currently **Intel** — they run on
+Apple Silicon under Rosetta. The release notes carry the Gatekeeper steps and
+the checksum; verify with `shasum -a 256` against the published `.sha256` file.
+
 ## Building the packaged app
 
 ```bash

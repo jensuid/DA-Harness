@@ -4,65 +4,31 @@
   P4-VERIFY-001, P4-RELIABILITY-002, P4-UX-003 + P4-UX-004, P4-VALID-005,
   P4-PERF-006, P4-CI-007). P3 V1 is COMPLETE: all 10 entry-checklist items,
   231 server tests, and a P3 gate of its own. P5 Production Grade is IN
-  PROGRESS (3 of 5 checklist items: the P4 gate, observability and the 500
-  envelope are done; signing and release automation remain).
+  PROGRESS (4 of 5 checklist items: the P4 gate, observability, the 500
+  envelope and release automation are done; only signing remains, and it is
+  blocked on the Apple Developer ID).
 - **Global roadmap status:** ai/ROADMAP.md (phase tracker - current stage, phase table, next-phase entry checklist)
 - **Milestone status:** P1 Vertical Slice PASSED (verification/p1/REPORT.md); P0 PASSED
 - **Completed capabilities:** FastAPI core; SQLite case persistence; DuckDB engine; Vite/React shell; P0 verification harness; CSV dataset attachment; deterministic dataset profiling; read-only SQL analysis runs with persisted results; findings with evidence chain; validation via rerun; parquet + xlsx ingest; deep profiling; **read-only Python execution with persisted results (P2-ANALYSIS-008); chart images rendered and persisted from run results (P2-ANALYSIS-009);
 case management - rename, duplicate, delete (P2-CASE-010);
 AI planning with structured output (P2-AI-011); case export as a self-contained
 JSON package with import round trip (P2-CASE-012)**
-- **Active task:** P5-CI-004 DONE - CI now targets a floor instead of
-  "whatever GitHub newest is". All four jobs run on macos-13 (Ventura) from one
-  MACOS_RUNNER env, which is also the last Intel image - so a green run is the
-  same x86_64 binary the dev machine and the sidecar triple produce rather than
-  an architecture nothing else exercises. The packaging smoke now asserts the
-  *packaged* core logs into the data dir it was given: a bundled app's stderr is
-  unreadable, so that is the only place the P5-OBSERVE-002 property is provable
-  in the real PyInstaller binary. Verified locally both ways - a stale sidecar
-  404s on /logs and fails the new assertions, a freshly built one passes. README
-  states the minimum supported version. Before it: P5-RELIABILITY-003, the 500
-  envelope. A fault
-  used to answer Starlette's plain-text "Internal Server Error", which the
-  client tolerated but which was the last rough edge of the error contract. Now
-  a registered handler for `Exception` answers
-  `{"detail": "internal error", "request_id": <uuid4 hex>}`, logs the traceback
-  under that same id (this matters as much as the envelope: catching the
-  exception means uvicorn no longer logs it, so without an explicit record the
-  traceback P5-OBSERVE-002 made recoverable would stop reaching the file), and
-  puts nothing else in the body - a fault's message can quote the user data it
-  was holding, so only the id and a fixed message leave the process. 4xx and
-  404 are untouched: their own `detail`, no id. The client surfaces the id
-  (`error 3f239488` in the message a user reads) so it is quotable. 16 server
-  tests in the error-semantics suite (was 12) and 4 new web tests. Before it:
-  P5-OBSERVE-002, observability. The packaged core is a
-  PyInstaller sidecar whose stderr nobody reads, so a 500's traceback used to
-  vanish. The core now writes a rotating log (2MB x 3 backups, bounded at ~8MB)
-  into the same data directory the shell already points the cases at, overridable
-  with DAH_LOG_DIR exactly as DAH_DB_PATH overrides the database. One line per
-  request holds only the method, path, status and duration - the body is never
-  logged, so an analyst's question, their SQL and every value in their data stay
-  out of the file (a live smoke test against uvicorn verified the request path is
-  logged and the question text is not). A real fault's traceback reaches the file
-  through uvicorn's own logger, and GET /logs?lines=N tails it read-only,
-  reporting `enabled: false` rather than erroring when file logging is off.
-  21 tests. Before it: P5-VERIFY-001, the P4 gate. P4 relied on the P3 gate
-  plus CI, which never exercised the P4 capabilities against each other, so it
-  got a gate of its own. Where the earlier gates walk the happy path, this one
-  walks the edges a controlled external user actually reaches: a 5000-row
-  dataset with analytically-known aggregates, the result cap truncating a full
-  scan while an aggregate over the same data stays exact, bad SQL answering 400
-  with the engine's own message and persisting nothing, a write and a sandbox
-  escape both refused, an injected harness fault answering 500 instead of
-  blaming the analyst, a deliberately broken LLM degrading to the deterministic
-  engine rather than blocking, the assistant drafting without writing, eight
-  repeat validations of an unordered GROUP BY agreeing, and an export/import
-  round trip. 18 steps and 10 exit criteria, all PASS; CI runs it on every
-  push. Hermetic - no credential is ever set, and the one step that sets a
-  dummy key breaks the LLM on purpose.
-  Before it: P4 in full (the P3 gate, error semantics, the assistant surfaces,
-  validation determinism, large-dataset performance, CI and the signing
-  decision).
+- **Active task:** P5-RELEASE-005 DONE - release automation. A `v<x.y.z>` tag
+  now builds and publishes a versioned macOS app from CI: the version is read
+  from server/pyproject.toml and a tag that disagrees with it fails before any
+  build (so a stale version file can never publish a build whose label lies
+  about what it contains); the server suite runs; the sidecar is built and
+  smoked (health plus the packaged-log assertions); the .app is built with the
+  version stamped from the pyproject via `tauri build --config` - one source of
+  truth, with tauri.conf.json patched at build time instead of four files kept in
+  sync by hand; ditto-zipped with its architecture in the name; checksummed; and
+  published as a flagged pre-release whose generated notes state it is unsigned,
+  how to open it past Gatekeeper, and that the published build is Intel.
+  UNSIGNED was the user's explicit call - the job needs no secret beyond the
+  default GITHUB_TOKEN with contents:write, and signing slots in between the
+  build and the upload when the Developer ID exists. Before it: P5-CI-004, the
+  CI floor; P5-RELIABILITY-003, the 500 envelope; P5-OBSERVE-002,
+  observability.
 - **Known issues:** none. CI runs green on GitHub's own runners after five
   local-state bugs it exposed were fixed (see ai/HANDOFF.md, "What the first
   CI runs caught").
@@ -71,12 +37,15 @@ JSON package with import round trip (P2-CASE-012)**
   CaseWorkspace 9);
   desktop shell 7 Rust tests (5 unit + 2 e2e, `cd desktop/src-tauri && cargo test [--features e2e]`);
   P2 and P3 gates PASS
-- **Next task:** the remaining P5 checklist - macOS signing + notarization
-  (formally deferred by DEC-004, blocked on a Developer ID, so not agent work
-  until the identity exists) and release automation on top of the packaging job.
-  Smaller follow-ups now visible: a "Reveal logs" menu item in the desktop shell
-  (the /logs endpoint is the contract; the menu is unverified UI work), and
-  showing the request id's full value somewhere copyable.
+- **Next task:** the last P5 checklist item is macOS signing + notarization,
+  formally deferred by DEC-004 and **blocked on an external dependency only you
+  can provision** - a $99 Apple Developer ID. The release job already has the
+  slot: signing goes between the build and the upload, and the `--prerelease`
+  flag is what to revisit once a build is notarized. Not agent work until the ID
+  exists. Everything else unblocked is smaller: an arm64 release lane (a second
+  runner and sidecar triple, unverifiable on this x86_64 machine except by CI
+  itself), a "Reveal logs" menu item in the desktop shell calling `GET /logs`,
+  and showing the request id's full value somewhere copyable.
   Carried: a 500 still answers with Starlette's plain-text "Internal Server
   Error"; the client handles it, but a JSON envelope is the last rough edge of
   the error contract.
@@ -169,3 +138,4 @@ JSON package with import round trip (P2-CASE-012)**
 | P5-OBSERVE-002 Observability | DONE |
 | P5-RELIABILITY-003 500 envelope | DONE |
 | P5-CI-004 CI floor (Ventura) | DONE |
+| P5-RELEASE-005 Release automation | DONE |

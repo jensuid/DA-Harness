@@ -1434,6 +1434,7 @@ the gate comes first because a phase is done when a gate says so.
 | P5-OBSERVE-002 | Observability | M | DONE | P5-VERIFY-001 | The core writes a size-capped rotating log into the user's data dir, `GET /logs` tails it read-only, and nothing the analyst typed ever lands in it |
 | P5-RELIABILITY-003 | Error contract | M | DONE | P5-OBSERVE-002 | A 500 answers a JSON envelope with a request id that maps to the traceback in the log, and the id is surfaced to the user |
 | P5-CI-004 | CI floor | S | DONE | P5-RELIABILITY-003 | Every job runs on macos-13 (Ventura), the minimum supported macOS, and the packaged-core smoke now asserts file logging lands in the data dir |
+| P5-RELEASE-005 | Release automation | M | DONE | P5-CI-004 | A tag matching server/pyproject.toml's version builds, smokes and publishes an unsigned .app as a flagged pre-release with its checksum |
 
 ### P5-OBSERVE-002 contract
 
@@ -1610,4 +1611,62 @@ VERIFICATION: workflow YAML valid; the four jobs' commands unchanged; server
               256 / web 21 / desktop 7 still green locally (this commit moves
               no code).
 STATE UPDATE: mark P5-CI-004 done on pass; record the floor in README.
+```
+
+### P5-RELEASE-005 contract
+
+```
+TASK ID: P5-RELEASE-005
+MILESTONE: P5 Production Grade
+CAPABILITY: Release automation
+GOAL: a versioned artifact a user can download instead of having to build.
+
+CONTEXT: the packaging job in ci.yml already proves the sidecar builds and
+         serves on a clean machine, but the output went nowhere - the artifact
+         was uploaded for one job and deleted a day later. Three files held
+         0.1.0 independently (server/pyproject.toml, web/package.json,
+         desktop/package.json, tauri.conf.json) and nothing kept them honest
+         with each other or with anything a user would see.
+INPUTS: a git tag `v<x.y.z>` whose x.y.z matches server/pyproject.toml.
+RELEVANT FILES: .github/workflows/release.yml (NEW), README.md, ai/ROADMAP.md,
+                ai/CURRENT_STATE.md, ai/HANDOFF.md
+REQUIRED CHANGE:
+  - .github/workflows/release.yml: on a `v*` tag, one job on the CI floor -
+    read the version from server/pyproject.toml and FAIL if the tag does not
+    match it (so a stale version file can never publish a build whose label
+    lies), run the server suite, build and smoke the sidecar (health plus the
+    packaged-log assertions from P5-CI-004), build the .app with the version
+    stamped from the pyproject, ditto-zip it with its architecture in the name,
+    shasum it, generate notes that state the unsigned status and the Gatekeeper
+    steps, and publish a flagged pre-release with the zip and its checksum.
+  - server/pyproject.toml is the single version source of truth; tauri.conf.json
+    is patched at build time by --config rather than kept in sync by hand.
+NON-GOALS: signing and notarization (DEC-004, blocked on the Developer ID -
+           this job has the slot they slot into, between build and upload),
+           arm64 or universal builds (a second lane, this machine is x86_64),
+           auto-changelog generation, publishing to a package registry,
+           releasing from anywhere but a tag.
+CONSTRAINTS: no secret is needed - the unsigned build uses only the default
+             GITHUB_TOKEN with contents:write; the release must never be
+             created from a version mismatch; nothing may publish on a branch
+             push.
+ACCEPTANCE CRITERIA:
+- [x] a tag that disagrees with the pyproject version fails before any build
+- [x] the server suite runs inside the release job
+- [x] the packaged core is smoked (health + log in the data dir) before packaging
+- [x] the .app's version is the pyproject's, not tauri.conf.json's
+- [x] the published asset is a zip plus a sha256, with the architecture named
+- [x] the release body states it is unsigned, how to open it, and that the
+      published build is Intel
+- [x] the release is flagged a pre-release
+TESTS: none new - this task is a workflow. Verified by running every step it
+       runs, locally: the tag-mismatch check (fails as designed), the sidecar
+       smoke, `npm run tauri -- build --config '{"version":...}'`, the ditto
+       zip, the shasum, and the generated notes. The only step not exercisable
+       locally is `gh release create` against GitHub.
+VERIFICATION: workflow YAML parses; every command in it was run by hand against
+              the current tree; the zip contains a .app whose
+              CFBundleShortVersionString is the pyproject version.
+STATE UPDATE: mark P5-RELEASE-005 done on pass; the P5 checklist's release item
+              is closed, leaving only signing (blocked) on it.
 ```
