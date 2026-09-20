@@ -2,12 +2,36 @@
 
 Before starting any work in this repo, read `ai/HANDOFF.md` (entry point: what is
 done, what is in flight, unresolved problems, next action) and `ai/TASKS.md`
-(per-task contracts with acceptance criteria). `ai/CURRENT_STATE.md` holds phase,
+(per-task contracts with acceptance criteria; it holds only the phase summary tables, the still-open carried follow-ups and the rolling window - the two most recent tasks - with everything older in `ai/TASKS-ARCHIVE.md`). `ai/CURRENT_STATE.md` holds phase,
 test counts, and blockers. This is how a fresh session resumes in-flight work
 without re-deriving it; if the user's request is clearly a continuation, do this
 read first, then ask questions only if the handoff leaves the intent ambiguous.
 After finishing a task, update these same files so the next session can resume
 from them.
+
+## task backlog hygiene
+
+`ai/TASKS.md` is the working surface a session actually reads, so it stays
+small. It holds, and only holds:
+
+- the title and the phase summary tables (the `## Pn` tables, one row per task
+  across every phase - those stay regardless of age, they are the index);
+- `### Carried follow-ups (still open)` and any block with unchecked
+  acceptance criteria;
+- the rolling window: the most recently completed task block and the one
+  immediately preceding it.
+
+Everything else - every older `### <TASK-ID> contract` block and its
+`TASK: ... STATUS: DONE` record - lives in `ai/TASKS-ARCHIVE.md`.
+
+**Archival happens in the same commit that completes a task.** When a task's
+acceptance criteria pass and its commit is being prepared, move the block that
+the *newly completed* task pushes out of the window into
+`ai/TASKS-ARCHIVE.md` as part of that same commit, so the push that lands the
+task also lands the trimmed backlog. A task block is moved verbatim, never
+edited or summarised - the archive is the record, and rewriting it on the way
+in is how a lesson gets lost. Never delete a task block; it is either in
+`TASKS.md` or in `TASKS-ARCHIVE.md`, always exactly one of the two.
 
 ## graphify
 
