@@ -1,0 +1,15 @@
+name: _runnerprobe
+
+"on":
+  push:
+    branches: [master]
+
+jobs:
+  probe-macos13:
+    runs-on: macos-13
+    steps:
+      - run: echo "macos-13 ok"; uname -m; sw_vers -productVersion
+  probe-macos-latest:
+    runs-on: macos-latest
+    steps:
+      - run: echo "macos-latest ok"; uname -m; sw_vers -productVersion
