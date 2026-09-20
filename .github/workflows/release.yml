@@ -37,12 +37,14 @@ concurrency:
 
 env:
   PYTHON_VERSION: "3.14"
-  MACOS_RUNNER: "macos-13"
+  # The runner floor is a literal in `runs-on` below, not an env reference:
+  # the `env` context is unavailable there, and indirection fails the workflow
+  # at parse time.
 
 jobs:
   release:
     name: Build and publish the macOS app
-    runs-on: ${{ env.MACOS_RUNNER }}
+    runs-on: macos-13
     steps:
       - uses: actions/checkout@v4
 

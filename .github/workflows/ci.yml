@@ -38,13 +38,15 @@ env:
   # uv installs into a cache key shared across jobs; a stable python pin keeps
   # it reproducible.
   PYTHON_VERSION: "3.14"
-  # The macOS floor, stated once so every job shares it (see the header).
-  MACOS_RUNNER: "macos-13"
+  # NOTE: the runner floor is written as a literal `runs-on: macos-13` in each
+  # job below rather than read from here. The `env` context is NOT available
+  # in `runs-on`, so an indirect reference silently fails the whole workflow
+  # at parse time - every job, zero seconds in, "workflow file issue".
 
 jobs:
   server:
     name: Server suite + gates
-    runs-on: ${{ env.MACOS_RUNNER }}
+    runs-on: macos-13
     defaults:
       run:
         working-directory: server
@@ -89,7 +91,7 @@ jobs:
 
   web:
     name: Web suite + build
-    runs-on: ${{ env.MACOS_RUNNER }}
+    runs-on: macos-13
     defaults:
       run:
         working-directory: web
@@ -115,7 +117,7 @@ jobs:
 
   desktop:
     name: Desktop shell lifecycle
-    runs-on: ${{ env.MACOS_RUNNER }}
+    runs-on: macos-13
     needs: packaging
     steps:
       - uses: actions/checkout@v4
@@ -182,7 +184,7 @@ jobs:
 
   packaging:
     name: Sidecar build
-    runs-on: ${{ env.MACOS_RUNNER }}
+    runs-on: macos-13
     # The sidecar is a release artifact, not a test. Building it in CI proves
     # the packaging path still works on a clean machine - locally it is easy to
     # carry a stale build and never notice a regression in the spec.
