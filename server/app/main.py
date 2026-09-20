@@ -57,6 +57,7 @@ from app.drafter import create_draft as create_draft_module
 from app.generator import create_code as create_code_module
 from app.assistant import create_answer as create_answer_module, summarize_case
 from app.exporter import export_case, import_package, PACKAGE_FORMAT, PACKAGE_VERSION
+from app import agent as agent_module
 import app.db as db_module
 from app.db import get_connection
 from app.models import (
@@ -101,6 +102,9 @@ from app.models import (
     GeneratedCode,
     ChatRequest,
     ConversationTurn,
+    AgentStep,
+    AgentState,
+    AgentApproval,
 )
 
 # Give the core's output somewhere to go. Under the desktop shell the core is a
@@ -540,6 +544,39 @@ async def duplicate_case(
             ),
         )
 
+    # The agent's audit trail travels with the case it belongs to (P6-AGENT-002):
+    # a duplicate whose findings were agent-proposed keeps the approvals that
+    # let those proposals run, so the copy is as inspectable as the original.
+    # Payload ids are remapped to the copy's own artifacts, exactly as above.
+    for step in db.execute(
+        "SELECT kind, payload_json, source, status, note, created_at, decided_at "
+        "FROM agent_steps WHERE case_id = ? ORDER BY created_at",
+        (case_id,),
+    ).fetchall():
+        remapped = json.loads(step["payload_json"])
+        for key, mapping in (
+            ("dataset_id", dataset_ids),
+            ("run_id", run_ids),
+        ):
+            if isinstance(remapped.get(key), str):
+                remapped[key] = mapping.get(remapped[key], remapped[key])
+        db.execute(
+            "INSERT INTO agent_steps (id, case_id, kind, payload_json, source, "
+            "status, note, created_at, decided_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (
+                str(uuid4()),
+                new_case_id,
+                step["kind"],
+                json.dumps(remapped),
+                step["source"],
+                step["status"],
+                step["note"] or "",
+                step["created_at"],
+                step["decided_at"],
+            ),
+        )
+
     return new_case
 
 
@@ -559,6 +596,7 @@ async def delete_case(case_id: str, db=Depends(get_db)) -> None:
     db.execute("DELETE FROM charts WHERE case_id = ?", (case_id,))
     db.execute("DELETE FROM interpretations WHERE case_id = ?", (case_id,))
     db.execute("DELETE FROM conversations WHERE case_id = ?", (case_id,))
+    db.execute("DELETE FROM agent_steps WHERE case_id = ?", (case_id,))
     db.execute("DELETE FROM findings WHERE case_id = ?", (case_id,))
     db.execute("DELETE FROM runs WHERE case_id = ?", (case_id,))
     db.execute(
@@ -1957,6 +1995,210 @@ async def chat_about_case(
         source=source,
         created_at=now,
     )
+
+
+def _agent_step_of(row) -> AgentStep:
+    return AgentStep(
+        id=row["id"],
+        case_id=row["case_id"],
+        kind=row["kind"],
+        payload=json.loads(row["payload_json"]),
+        source=row["source"],
+        status=row["status"],
+        note=row["note"] or "",
+        created_at=row["created_at"],
+        decided_at=row["decided_at"],
+    )
+
+
+def _agent_state(db, case_id: str) -> AgentState:
+    state = agent_module.state(db, case_id)
+    return AgentState(
+        case_id=case_id,
+        pending=_agent_step_of(state["pending"]) if state["pending"] else None,
+        history=[_agent_step_of(row) for row in state["history"]],
+    )
+
+
+@app.get(
+    "/cases/{case_id}/agent",
+    response_model=AgentState,
+)
+async def get_agent_state(case_id: str, db=Depends(get_db)) -> AgentState:
+    """Where the agent stands on a case: the pending proposal and the audit trail.
+
+    Read-only and idempotent. Nothing is proposed here - a GET that wrote would
+    mean a page refresh commits work - so this is the safe thing to poll while a
+    human is deciding.
+    """
+    _require_case(db, case_id)
+    return _agent_state(db, case_id)
+
+
+@app.post(
+    "/cases/{case_id}/agent",
+    response_model=AgentState,
+    status_code=200,
+    summary="Start or advance the case's agent",
+    description=(
+        "Derive and record the case's next step, if there is one. The step is "
+        "*proposed*, not taken: its payload is settled now so the human approves "
+        "something concrete, but the write waits for an approval. Idempotent - a "
+        "pending step is returned unchanged, so two calls never yield two writes. "
+        "A GET on the same path is the read-only state and never proposes."
+    ),
+)
+async def propose_agent_step(case_id: str, db=Depends(get_db)) -> AgentState:
+    """Start or advance the agent: derive and record the case's next step.
+
+    A POST that performed the write would be autonomous, so this proposes and
+    stops; the write happens on /approve. The payload is settled at proposal
+    time, so the human approves something concrete rather than a promise.
+    """
+    _require_case(db, case_id)
+    agent_module.propose(db, case_id)
+    return _agent_state(db, case_id)
+
+
+@app.post(
+    "/cases/{case_id}/agent/approve",
+    response_model=AgentState,
+)
+async def approve_agent_step(
+    case_id: str,
+    payload: AgentApproval,
+    db=Depends(get_db),
+) -> AgentState:
+    """The human's yes. The step's write runs, and the next step is proposed.
+
+    The approval must name the case's *current* pending step - an id from a
+    stale page is a 409, never a second write of an old proposal. Every write
+    goes through the endpoint that owns it, so the agent earns no privilege a
+    hand-written call lacks: the same read-only gate, the same row cap, the
+    same single path that creates a finding.
+    """
+    _require_case(db, case_id)
+    try:
+        step = agent_module.approve(db, case_id, payload.step_id)
+    except agent_module.PendingStepError as error:
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "detail": "the step id is not this case's pending step",
+                "expected": error.expected,
+                "given": error.given,
+            },
+        )
+    except ValueError as error:
+        raise HTTPException(status_code=409, detail=str(error))
+
+    note = await _apply_agent_step(db, case_id, step)
+    agent_module.settle(db, step["id"], note)
+    # The next proposal is part of the approval's answer, so a human approving
+    # their way down the loop needs no second call to see what comes next.
+    agent_module.propose(db, case_id)
+    return _agent_state(db, case_id)
+
+
+@app.post(
+    "/cases/{case_id}/agent/reject",
+    response_model=AgentState,
+)
+async def reject_agent_step(
+    case_id: str,
+    payload: AgentApproval,
+    db=Depends(get_db),
+) -> AgentState:
+    """The human's no, with their reason recorded on the step.
+
+    Rejection never writes case state: the proposal is marked rejected and the
+    next step is derived, so refusing a draft leaves no finding behind and
+    refusing a query leaves no run behind.
+    """
+    _require_case(db, case_id)
+    try:
+        agent_module.reject(db, case_id, payload.step_id, payload.reason or "")
+    except agent_module.PendingStepError as error:
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "detail": "the step id is not this case's pending step",
+                "expected": error.expected,
+                "given": error.given,
+            },
+        )
+    except ValueError as error:
+        raise HTTPException(status_code=409, detail=str(error))
+    agent_module.propose(db, case_id)
+    return _agent_state(db, case_id)
+
+
+async def _apply_agent_step(db, case_id: str, step: dict) -> str:
+    """Run one approved step through the endpoint that owns the write.
+
+    The agent has no write path of its own. Each kind awaits the same async
+    endpoint a manual request would, which is what keeps the read-only gate, the
+    row cap, the honesty budgets and the single-creation-path invariants in
+    force for an agent-run case exactly as they are for a hand-run one.
+    """
+    kind = step["kind"]
+    body = step["payload"]
+
+    if kind == "profile":
+        profile = await profile_dataset(case_id, body["dataset_id"], db)
+        return f"profiled {body['filename']}: {profile.rows} row(s)"
+
+    if kind == "plan":
+        plan = await create_plan(case_id, body["dataset_id"], db)
+        return f"planned from {plan.source}"
+
+    if kind == "analyze":
+        run = await create_run(
+            case_id, body["dataset_id"], RunCreate(sql=body["code"]), db
+        )
+        return (
+            f"ran {body['kind']} variant {body.get('variant', 0)}: "
+            f"{run.row_count} row(s)"
+        )
+
+    if kind == "interpret":
+        interpretation = await create_interpretation(
+            case_id, body["run_id"], db
+        )
+        return f"interpreted from {interpretation.source}"
+
+    if kind == "accept":
+        finding = await create_finding(
+            case_id,
+            FindingCreate(
+                run_id=body["run_id"],
+                statement=body["statement"],
+                interpretation=body.get("interpretation"),
+                caveat=body.get("caveat"),
+            ),
+            db,
+        )
+        return f"accepted the draft as finding {finding.id}"
+
+    if kind == "chart":
+        chart = await create_chart(
+            case_id,
+            body["run_id"],
+            ChartCreate(
+                kind=body["kind"],
+                x=body["x"],
+                y=body["y"],
+                title=body.get("title", ""),
+            ),
+            db,
+        )
+        return f"rendered {chart.kind} chart {chart.id}"
+
+    if kind == "validate":
+        result = await validate_finding(case_id, body["finding_id"], db)
+        return f"validated: {result.status}"
+
+    raise HTTPException(status_code=500, detail=f"unknown agent step kind {kind}")
 
 
 @app.get(

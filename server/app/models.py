@@ -443,6 +443,52 @@ class ConversationTurn(BaseModel):
     created_at: datetime
 
 
+class AgentStep(BaseModel):
+    """One step of an agent run (P6-AGENT-002).
+
+    The agent proposes; the human disposes. `payload` is exactly what the step
+    will write or compute, decided when the step was proposed so the human
+    approves something specific rather than a promise; `status` is pending until
+    the human answers. `source` is the engine that produced the proposal, so a
+    reviewer of an agent-run case can see which engine spoke at every step.
+    """
+
+    id: str
+    case_id: str
+    kind: str
+    payload: dict
+    source: str
+    status: str
+    note: str
+    created_at: datetime
+    decided_at: datetime | None
+
+
+class AgentState(BaseModel):
+    """Where the agent stands on a case: the live proposal and the audit trail.
+
+    `pending` is None when the loop has closed or the case has no further step
+    - both are stated in `history` rather than signalled by silence, so a caller
+    never has to guess whether the agent is idle or finished.
+    """
+
+    case_id: str
+    pending: AgentStep | None
+    history: list[AgentStep]
+
+
+class AgentApproval(BaseModel):
+    """The human's decision on a pending step.
+
+    `step_id` must be the case's current pending step, so an approval can never
+    apply to a proposal the case has since moved past. `reason` on a rejection
+    is recorded with the step - it is the analyst's note, not the agent's.
+    """
+
+    step_id: str
+    reason: str | None = None
+
+
 class LogView(BaseModel):
     """The tail of the core's own log (P5-OBSERVE-002).
 

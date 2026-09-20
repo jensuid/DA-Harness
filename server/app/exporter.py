@@ -21,6 +21,9 @@ Package layout (version 1):
     findings       - statement, interpretation, caveat, validation status
     charts         - rendering parameters plus the SVG itself
     plans          - the structured plan and which engine produced it
+    agent_steps    - the agent's audit trail: each proposal, its source,
+                     the human's decision, and what the write produced
+                     (P6-AGENT-002)
 
 Original IDs are carried through so relationships inside the package stay
 traceable (a finding points at its run, a chart at its run); import remaps
@@ -209,6 +212,24 @@ def export_case(db, case_id: str) -> dict | None:
         ).fetchall()
     ]
 
+    agent_steps = [
+        {
+            "id": row["id"],
+            "kind": row["kind"],
+            "payload": json.loads(row["payload_json"]),
+            "source": row["source"],
+            "status": row["status"],
+            "note": row["note"] or "",
+            "created_at": row["created_at"],
+            "decided_at": row["decided_at"],
+        }
+        for row in db.execute(
+            "SELECT id, kind, payload_json, source, status, note, created_at, "
+            "decided_at FROM agent_steps WHERE case_id = ? ORDER BY created_at",
+            (case_id,),
+        ).fetchall()
+    ]
+
     return {
         "format": PACKAGE_FORMAT,
         "version": PACKAGE_VERSION,
@@ -226,6 +247,7 @@ def export_case(db, case_id: str) -> dict | None:
         "findings": findings,
         "charts": charts,
         "plans": plans,
+        "agent_steps": agent_steps,
     }
 
 
@@ -243,6 +265,8 @@ def _require_keys(package: dict) -> None:
     for key in ("case", "datasets", "runs", "findings", "charts", "profiles", "plans"):
         if key not in package:
             raise PackageError(f"package is missing the '{key}' section")
+    # agent_steps is younger than the package format (P6-AGENT-002), so its
+    # absence means an older package, not a corrupt one.
 
 
 def import_package(db, package: dict, data_dir: Path) -> dict:
@@ -336,13 +360,16 @@ def import_package(db, package: dict, data_dir: Path) -> dict:
             ),
         )
 
+    finding_ids: dict[str, str] = {}
     for finding in package["findings"]:
+        new_finding_id = str(uuid4())
+        finding_ids[finding["id"]] = new_finding_id
         db.execute(
             "INSERT INTO findings (id, case_id, run_id, statement, interpretation, "
             "caveat, validation_status, created_at) "
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
             (
-                str(uuid4()),
+                new_finding_id,
                 new_case_id,
                 run_ids.get(finding.get("run_id")),
                 finding.get("statement") or "",
@@ -397,6 +424,37 @@ def import_package(db, package: dict, data_dir: Path) -> dict:
                 json.dumps(plan.get("plan") or {}),
                 plan.get("source") or "deterministic",
                 plan.get("created_at") or now.isoformat(),
+            ),
+        )
+
+    # The agent's audit trail. A step's payload names the artifacts it proposed
+    # to touch, so the ids are remapped exactly as the rows above are; a step
+    # that was never decided keeps its pending status, since importing is not a
+    # decision. Absent entirely from packages written before P6-AGENT-002.
+    for step in package.get("agent_steps") or []:
+        payload = step.get("payload") or {}
+        remapped = dict(payload)
+        for key, mapping in (
+            ("dataset_id", dataset_ids),
+            ("run_id", run_ids),
+            ("finding_id", finding_ids),
+        ):
+            if isinstance(remapped.get(key), str):
+                remapped[key] = mapping.get(remapped[key], remapped[key])
+        db.execute(
+            "INSERT INTO agent_steps (id, case_id, kind, payload_json, source, "
+            "status, note, created_at, decided_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (
+                str(uuid4()),
+                new_case_id,
+                step.get("kind") or "end",
+                json.dumps(remapped),
+                step.get("source") or "deterministic",
+                step.get("status") or "done",
+                step.get("note") or "",
+                step.get("created_at") or now.isoformat(),
+                step.get("decided_at"),
             ),
         )
 

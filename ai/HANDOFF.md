@@ -1,6 +1,15 @@
 # DAH - Handoff
 
 ## What was completed
+- P6-AGENT-002 PASSED: a plan that executes itself, one approved write at a time.
+  Every stage of the loop already had a validated endpoint; the agent is the
+  driver over them, and it holds no privilege a hand-written call lacks. Its SQL
+  passes the same read-only gate and row cap, its findings are created by the
+  same POST, and its drafts and proposals come from the same stateless modules
+  with the same validation. What it contributes is the sequence, the memory of
+  what it already tried, and an audit row for every step. Nothing is written
+  without an approval, and an approval id that is not the case's current pending
+  step is a 409 rather than a second write.
 - P5-UX-006 PASSED: a user can find the log without a terminal. The core answers
   `GET /logs` with a path, but a path in a JSON body is a terminal answer, and
   the shell exists precisely because this user does not have one open. New
@@ -640,8 +649,8 @@ reported as unsupported (clear 400) rather than faked; that gate is future work.
 
 ## Tests performed (current)
 
-- server pytest: 256 passed (231 + 21 observability + 4 error envelope; verified again on a clean venv built
-  from pyproject - the install path CI uses)
+- server pytest: 291 passed (267 + 24 agentic analysis; verified again on a clean
+  venv built from pyproject - the install path CI uses)
 - CI on GitHub's own runners: ALL FOUR JOBS GREEN
   (run 35490199963, the first green run since ae0ba33 - server suite + P2/P3/P4
   gates, web suite + build, sidecar packaging + the /health and packaged-log
@@ -662,6 +671,111 @@ reported as unsupported (clear 400) rather than faked; that gate is future work.
   23 journey steps and all 15 exit criteria (the last step re-runs the suite)
 - P2 gate: `server/.venv/bin/python verification/p2/verify_p2.py` PASS on all
   18 steps
+
+## Repository state
+
+- Every P3 task is one atomic commit, all pushed to `origin/master`
+  (github.com/jensuid/DA-Harness), plus the phase close; P4 opens with
+  P4-VERIFY-001, P4-RELIABILITY-002, P4-UX-003, P4-UX-004, P4-VALID-005,
+  P4-PERF-006 and P4-CI-007 as their own commits, then the P4 phase close.
+  `dfb115b` P3-SEC-001, `2c7b11f` P3-CHART-002, `f5df5d1` P3-DATA-003,
+  `967544b` P3-FLOW-004, `7b7e49f` P3-ANALYSIS-005, `ebaa30e` P3-EVIDENCE-006,
+  P3-CASE-007, P3-SHELL-008, P3-DATA-009, P3-VALID-010, P3-AI-011,
+  P3-AI-012, P3-AI-013, P3-AI-014, and the phase close
+  `bffc6ad docs: mark P3 V1 complete...`
+- `.gitignore` covers `web/dist-desktop/`, `server/build/` (the 98MB PyInstaller
+  tree) and `desktop/src-tauri/{target,gen,binaries}` - the 85MB sidecar is
+  never committed.
+- `.git` is writable under the current permission profile (this changed
+  mid-session; the earlier read-only restriction is gone).
+
+## Unresolved problems
+
+- A test-isolation hole is closed but worth remembering: `app.main` skips
+  loading `server/.env` under pytest, but that only stops the *file* load. If
+  `DAH_LLM_API_KEY` is already in the environment - as it was for the pytest
+  subprocess the P2 gate spawns, because the gate itself does load .env - the
+  planner silently switches to the LLM inside the suite. That made the gate
+  both slow (a live call per plan) and flaky (a fast LLM flipped an assertion
+  that expected `source=deterministic`; a slow one fell back and passed). Fixed
+  three ways: the P2 gate scrubs the LLM vars from its subprocess, the P3
+  gate scrubs them from its own process as well (its journey would otherwise
+  make a live call per assistant step), and `test_export.py` deletes them. Any
+  future runner that spawns the suite must do the same.
+
+## Next action
+
+P6-AGENT-002 is **DONE**: agentic analysis. Every stage of the loop already had
+a validated endpoint with an honesty budget behind it - generate-code, runs,
+interpret, draft-finding, findings, charts, validate. What did not exist was
+the *driver* over them: a human still walked the panels one click at a time
+even when the next click was never in doubt. The agent is that driver, and it
+is deliberately not an autonomous one.
+
+Four pieces:
+
+- **`server/app/agent.py` (new)** - a step machine, not a script. `next_step()`
+  derives the one thing to do next as a pure projection over the case's
+  artifacts, the same discipline as the workflow stage (P3-FLOW-004), so an
+  interrupted agent resumes exactly where it stopped and can never be ahead of
+  or behind the data. Loop order: profile -> plan -> analyze -> interpret ->
+  accept -> chart -> validate. `accept` carries the drafter's candidate finding
+  inside its payload (the draft is stateless by design), and `analyze` carries
+  its generate-code proposal the same way.
+- **`server/app/generator.py`** - `_pick_axes` and `generate_code` take a
+  `variant` that rotates the measure/dimension/period through the usable
+  columns, so a retry is a genuinely different query rather than a re-run of
+  the one that returned nothing. A family with a single usable column keeps
+  that column, which is how the caller detects a dead end instead of spending
+  its budget on a query it has already tried.
+- **`server/app/main.py`** - four endpoints over one path. `GET .../agent` is
+  strictly read-only (a refresh that proposed would commit work the human never
+  saw); `POST .../agent` derives and records the next pending step,
+  idempotently; `POST .../agent/approve` refuses any id that is not the case's
+  *current* pending step with a 409, so a stale page can never cause a second
+  write; `POST .../agent/reject` records the analyst's reason and writes
+  nothing. Every approved step awaits the async endpoint that owns the write -
+  that is what keeps the read-only gate, the row cap and the single
+  finding-creation path in force for an agent-run case.
+- **`server/app/exporter.py` + duplicate** - the audit trail travels with the
+  case. Export carries it, import remaps the ids a payload cites to the
+  restored case's own artifacts, a duplicated case keeps its approvals citing
+  its own rows, and delete removes it. A package written before this task has
+  no `agent_steps` section, so its absence is tolerated rather than treated as
+  corruption.
+
+An empty result is the agent's one real decision point: it rotates the variant,
+a proposal identical to one already tried is a dead end, and three empty
+attempts end the run at a stated reason. A dataset with no usable axis (one
+categorical column, no measure) ends the same way, immediately. Both are
+asserted, because "the agent terminates" is a property, not a hope.
+
+**Verified:** server suite 291 passed (was 267, +24 in
+`server/tests/test_agent.py`); web 21 passed; desktop 12 Rust tests; P2, P3
+and P4 gates all PASS. Everything green locally; CI will run it on push.
+
+Two lessons worth carrying. First, two of the 24 tests failed on the first run
+and both were the *tests'* fault: one asserted an import answers 200 when the
+endpoint answers 201, one ended with a leftover `del json` that crashed at
+assertion time. A test file is itself untested code until its own suite is
+green - verify the assertion against the real contract, not against the shape
+assumed while writing it. Second, the module shipped two unused constants
+(`STEP_KINDS`, `WRITE_KINDS`) whose comment blocks were doing real
+documentation work; the comments became prose and the constants went, because
+dead code with a good docstring is still dead code.
+
+**Next on the P6 checklist:** case templates from real history (item 3) - a
+finished investigation promoted into a reusable template carrying its plan and
+validation shape rather than just its question. The template machinery exists
+but copies the question alone, and repeat use is the one thing a single user
+actually does repeatedly. After that: a versioned migration path before memory
+or agents grow new tables (item 4), and a Tauri update flow now that releases
+publish per tag (item 5).
+
+Releasing: tag `v<x.y.z>` where x.y.z matches server/pyproject.toml. The
+published build is arm64 and unsigned, flagged pre-release (DEC-006).
+
+Nothing is unblocked-but-undone.
 
 ## Repository state
 

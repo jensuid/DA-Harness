@@ -4,6 +4,10 @@ A local-first analysis tool: attach data, profile it, run read-only SQL or
 Python against it, chart the result, and record a finding whose evidence chain
 is inspectable and reproducible.
 
+An agent can also drive that loop itself: it proposes each step, a human
+approves it, and the write runs through the endpoint that already owns it. It
+holds no privilege a hand-written call lacks.
+
 See `docs/` for the specification, the implementation roadmap, and the LLM
 configuration. Engineering state (phase, tasks, handoff) lives in `ai/`.
 

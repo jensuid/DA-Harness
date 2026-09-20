@@ -16,7 +16,7 @@ P4 Production Candidate DONE  ✓   (all 6 checklist items; CI runs every
                               layer)
 P5 Production Grade    DONE  ✓   (all deliverables; signing deferred
                               indefinitely by DEC-006 - DAH is single-user)
-P6 Evolution           IN PROGRESS  ← we are here
+P6 Evolution           IN PROGRESS (2 of 5)  ← we are here
 ```
 
 North-star progression: prove the loop → make it useful → make it repeatable
@@ -34,7 +34,7 @@ production-grade**.
 | P3 V1 | Repeated real-world use: multi-dataset, joins, richer EDA, contextual AI | DONE | P2 gate PASS (re-verified during close, 211 tests) | hard sandbox, raster charts, multi-dataset joins, workflow, EDA, evidence graph, case reuse, desktop shell and all four contextual AI slices DONE |
 | P4 Production Candidate | Serious software: reliability, security, performance, UX, observability | DONE | P3 gate PASS | `verification/p3/REPORT.md` (23 journey steps, 15 exit criteria, all PASS); CI runs every layer (P4-CI-007); signing deferred to P5 by DEC-004 |
 | P5 Production Grade | Maintainable, distributable, secure product | DONE | — | P4 gate, observability, the 500 envelope, release automation, the Reveal-logs menu and the CI repair (P5-CI-FIX-007) DONE; v0.1.0 published. Only signing remains, blocked on the Apple Developer ID (DEC-004). CI runs on macos-latest - macos-13 is retired (DEC-005) |
-| P6 Post-Launch Evolution | Scale and intelligence | IN PROGRESS | — | entry checklist proposed below; P6-MEMORY-001 is the first task |
+| P6 Post-Launch Evolution | Scale and intelligence | IN PROGRESS | — | 2 of 5 checklist items done: cross-case recall (P6-MEMORY-001) and agentic analysis (P6-AGENT-002) |
 
 ## Phase gate definitions (what "done" means)
 
@@ -146,7 +146,7 @@ of a shrug.
 | 4 | Give the 500 a JSON envelope — **DONE (P5-RELIABILITY-003)**: a fault answers `{"detail": "internal error", "request_id": ...}`, the id finds the traceback in the log, the exception's own message stays in the log and never the body, and the 4xx contract is untouched | The client tolerated the plain text; now it gets the same shape as every other error, plus an id a user can quote | P5 Reliability |
 | 5 | Release automation — **DONE (P5-RELEASE-005)**: a `v<x.y.z>` tag matching `server/pyproject.toml` builds, smokes and publishes an unsigned `.app` as a flagged pre-release with its checksum and generated notes; the version has one source of truth and a tag that disagrees with it fails before any build | The `packaging` job already built and smoked the sidecar on a clean machine, but its output went nowhere; now a user can download instead of build. Signing is the slot this job leaves open — it goes between the build and the upload | P5 Distribution |
 
-## P6 Post-Launch Evolution — entry checklist (1 of 5 done)
+## P6 Post-Launch Evolution — entry checklist (2 of 5 done)
 
 Ordered by what makes the product more useful to its one current user first,
 which is also the order the roadmap's own dependency chain dictates: memory
@@ -163,7 +163,7 @@ here is the half of "make it intelligent" that pays off for one person.
 | # | Capability | Why now | Roadmap section |
 |---|-----------|---------|-----------------|
 | 1 | **Analysis memory** — **DONE (P6-MEMORY-001)**: cross-case recall. A case can already cite its own artifacts; nothing lets it cite a *previous* case. The assistant answers from one case's rows today; with memory it answers from the pattern across all of them ("you found this same anomaly in the Q2 file, and it was a duplicate-row artifact then"). Implementation shape to decide: a case-indexed search over existing SQLite rows, or a separate memory store written on finding-accept | The master spec puts Analysis Memory at level 4 of its own evolution ladder (after the case builder, the workbench, and evidence + validation, which are all done) and before agentic analysis at level 5. Memory is the input an agent needs; building the agent first means building it amnesiac | P6 Analysis Memory |
-| 2 | **Agentic analysis** — a plan that executes itself: run the proposed code, read the result, decide the next step, iterate to a draft finding, with the human approving each write. Every piece exists as an endpoint; the loop does not | The loop is currently driven by a human clicking through panels. The deterministic planner, generator, interpreter and drafter are all already composable, so an agent is orchestration over existing validated primitives - the highest capability-per-risk item left, and it is only safe because P4 pinned the honesty budgets and P5 made faults observable | P6 Agentic Analysis |
+| 2 | **Agentic analysis** — **DONE (P6-AGENT-002)**: a plan that executes itself. `app/agent.py` derives the next step as a pure projection over the case's artifacts, a human approves that step by id, and the write runs through the endpoint that already owns it. An empty result rotates to a different query, three empty attempts end the run at a stated reason, and every step records which engine proposed it. Every piece existed as an endpoint; the loop did not | The loop is currently driven by a human clicking through panels. The deterministic planner, generator, interpreter and drafter are all already composable, so an agent is orchestration over existing validated primitives - the highest capability-per-risk item left, and it is only safe because P4 pinned the honesty budgets and P5 made faults observable | P6 Agentic Analysis |
 | 3 | **Case templates from real history** — promote a finished investigation into a reusable template *including its plan and validation shape, not just its question*. The template machinery exists but copies the question alone | Repeat use is the stated premise of P3/V1 and the one thing a single user actually does repeatedly; a template that carries the analytical shape is the difference between reuse and retyping | P6 Case reuse |
 | 4 | **Schema evolution / migration story** — the DB has grown by `_ensure_column` in-place additions across many tasks; a versioned migration path before more tables land | P6 adds memory, which means new tables. Doing it after the tables exist is how the in-place additions became untrackable in the first place | P6 Maintainability |
 | 5 | **Update flow for the packaged app** — Tauri's updater with a local release channel, so a new tag reaches an installed app without a manual download-and-replace | The release pipeline now publishes a build per tag, but the installed app has no way to know. Genuinely useful to one user across machines, and cheap now that releases exist | P6 Distribution |

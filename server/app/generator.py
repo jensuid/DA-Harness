@@ -176,29 +176,41 @@ def _is_identifier(profile: dict | None, name: str) -> bool:
     return False
 
 
-def _pick_axes(profile: dict | None) -> tuple[str | None, str | None, str | None]:
+def _pick_axes(
+    profile: dict | None, variant: int = 0
+) -> tuple[str | None, str | None, str | None]:
     """The profile's measure, categorical dimension and temporal column.
 
     Prefers columns that actually repeat, because a column unique in every row
     is an identifier: summing it means nothing and grouping by it answers
     nothing. Falls back to the first of each family when nothing repeats, so a
     proposal exists even for awkward data.
+
+    `variant` rotates the choice through the usable columns of each family, so
+    a retry (P6-AGENT-002) proposes a *different* query instead of re-running
+    the one that just returned nothing. A family with a single usable column
+    keeps that column, so a dataset with no alternative axis produces an
+    identical proposal - the caller detects that and states the dead end
+    rather than spending its budget on a query it has already tried.
     """
     numeric = _typed_columns(profile, "numeric")
     temporal = _typed_columns(profile, "temporal")
     other = _typed_columns(profile, "other")
-    repeating = [name for name in numeric if not _is_identifier(profile, name)]
+    measures = [name for name in numeric if not _is_identifier(profile, name)]
+    dimensions = [name for name in other if not _is_identifier(profile, name)]
+    periods = [name for name in temporal if not _is_identifier(profile, name)]
     # Every numeric column being an identifier means the data has no quantity
     # worth aggregating, so the proposal counts rows instead of summing a key.
-    measure = (repeating or [None])[0]
-    dimension = next(
-        (name for name in other if not _is_identifier(profile, name)),
-        other[0] if other else None,
-    )
-    period = next(
-        (name for name in temporal if not _is_identifier(profile, name)),
-        temporal[0] if temporal else None,
-    )
+    measure = (measures or [None])[0]
+    dimension = (dimensions or other or [None])[0]
+    period = (periods or temporal or [None])[0]
+    if variant:
+        if len(measures) > 1:
+            measure = measures[variant % len(measures)]
+        if len(dimensions) > 1:
+            dimension = dimensions[variant % len(dimensions)]
+        elif len(periods) > 1:
+            period = periods[variant % len(periods)]
     return measure, dimension, period
 
 
@@ -319,16 +331,17 @@ def _explain(question: str, kind: str, measure, dimension, period) -> str:
 
 
 def generate_code(
-    question: str, profile: dict | None, kind: str
+    question: str, profile: dict | None, kind: str, variant: int = 0
 ) -> dict:
     """Propose the read-only computation that would answer a question.
 
     Deterministic and always available. Every column the proposal names comes
     from the profile, so it cannot reference a column the dataset does not have.
+    `variant` rotates the chosen axes so a retry proposes a different query.
     """
     if kind not in KINDS:
         kind = "sql"
-    measure, dimension, period = _pick_axes(profile)
+    measure, dimension, period = _pick_axes(profile, variant)
     if kind == "python":
         code = _python_question(question, measure, dimension, period)
     else:
@@ -473,7 +486,7 @@ def _configured_llm() -> "LLMGenerator | None":
 
 
 def create_code(
-    question: str, profile: dict | None, kind: str
+    question: str, profile: dict | None, kind: str, variant: int = 0
 ) -> tuple[dict, str]:
     """Produce a validated proposal and the engine that made it.
 
@@ -484,13 +497,22 @@ def create_code(
     """
     if kind not in KINDS:
         kind = "sql"
-    deterministic = generate_code(question, profile, kind)
+    deterministic = generate_code(question, profile, kind, variant)
     llm = _configured_llm()
     if llm is None:
         return deterministic, SOURCE_DETERMINISTIC
 
+    # A retry tells the LLM what the last attempt returned nothing for, so its
+    # proposal differs from the one that struck out instead of paraphrasing it.
+    prompted = question
+    if variant:
+        prompted = (
+            f"{question or '(none given)'} "
+            f"(note: {variant} earlier attempt(s) at this returned no rows; "
+            f"propose a different approach and different columns)"
+        )
     try:
-        candidate = llm.generate(question, profile, kind)
+        candidate = llm.generate(prompted, profile, kind)
         problems = validate_code(candidate, profile, kind)
         if problems:
             raise ValueError(

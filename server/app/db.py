@@ -124,6 +124,19 @@ CREATE TABLE IF NOT EXISTS interpretations (
     FOREIGN KEY (run_id) REFERENCES runs(id)
 );
 
+CREATE TABLE IF NOT EXISTS agent_steps (
+    id TEXT PRIMARY KEY,
+    case_id TEXT NOT NULL,
+    kind TEXT NOT NULL,
+    payload_json TEXT NOT NULL,
+    source TEXT NOT NULL,
+    status TEXT NOT NULL,
+    note TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL,
+    decided_at TEXT,
+    FOREIGN KEY (case_id) REFERENCES cases(id)
+);
+
 CREATE TABLE IF NOT EXISTS conversations (
     id TEXT PRIMARY KEY,
     case_id TEXT NOT NULL,
