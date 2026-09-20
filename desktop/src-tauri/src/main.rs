@@ -8,18 +8,66 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod core_server;
+mod logs;
 
 use std::path::PathBuf;
 use std::sync::Mutex;
 
 use core_server::{health_url, resolve_server_command, wait_for_health, PORT, ServerChild};
+use logs::reveal_core_logs;
+use tauri::menu::{Menu, SubmenuBuilder};
 use tauri::{Manager, WindowEvent};
+
+/// The menu item's id; the event handler matches on this.
+const REVEAL_LOGS_ID: &str = "reveal_logs";
 
 fn main() {
     let app = tauri::Builder::default()
         // The running core lives as long as the app does.
         .manage(Mutex::new(None::<ServerChild>))
+        .on_menu_event(|app, event| {
+            // The one menu item DAH adds. Everything else in the bar is a
+            // standard macOS item the builder pulls in.
+            if event.id().as_ref() == REVEAL_LOGS_ID {
+                match reveal_core_logs(PORT) {
+                    logs::RevealOutcome::Revealed(path) => eprintln!(
+                        "DAH shell: revealed the core's log at {}",
+                        path.display()
+                    ),
+                    logs::RevealOutcome::Disabled => eprintln!(
+                        "DAH shell: the core reported file logging is off, so                          there is no log to reveal"
+                    ),
+                    logs::RevealOutcome::Unreachable => eprintln!(
+                        "DAH shell: could not reach the core to find its log;                          it may still be starting"
+                    ),
+                }
+                let _ = app;
+            }
+        })
         .setup(|app| {
+            // macOS gets a real menu bar. The app menu keeps About and Cmd+Q -
+            // without them, setting any custom menu takes the standard items
+            // away - and Edit keeps the text editing a data tool needs.
+            let app_menu = SubmenuBuilder::new(app, "DAH")
+                .about(None)
+                .separator()
+                .text(REVEAL_LOGS_ID, "Reveal DAH Logs")
+                .separator()
+                .quit()
+                .build()?;
+            let edit_menu = SubmenuBuilder::new(app, "Edit")
+                .undo()
+                .redo()
+                .separator()
+                .cut()
+                .copy()
+                .paste()
+                .select_all()
+                .build()?;
+            let menu = Menu::new(app)?;
+            menu.append_items(&[&app_menu, &edit_menu])?;
+            app.set_menu(menu)?;
+
             let data_dir = app.path().app_data_dir()?;
             std::fs::create_dir_all(&data_dir)?;
 

@@ -1,360 +1,42 @@
 # DAH - Handoff
 
 ## What was completed
-- P5-CI-004 PASSED: CI targets a floor instead of "whatever GitHub newest is".
-  Every job now runs on macos-13 - Ventura, the minimum supported macOS, and
-  the last Intel image - from one `MACOS_RUNNER` env so a bump touches one line.
-  Two reasons it matters: the oldest macOS DAH might be asked to run on had
-  never been built against, and `macos-latest` is arm64 while the dev machine
-  and the sidecar triple are x86_64, so a green run used to be a binary nothing
-  else in the project ever produced.
-  The packaging job's smoke step gained two assertions: the packaged core's file
-  logging is on, and the log lands under the data dir it was given. That is the
-  only place the P5-OBSERVE-002 property is provable inside a real PyInstaller
-  bundle, whose stderr nobody reads. Verified locally in both directions - a
-  stale sidecar (built before /logs existed) 404s and fails the assertions, a
-  freshly built one passes. No code moved; no new tests.
+- P5-UX-006 PASSED: a user can find the log without a terminal. The core answers
+  `GET /logs` with a path, but a path in a JSON body is a terminal answer, and
+  the shell exists precisely because this user does not have one open. New
+  `desktop/src-tauri/src/logs.rs` is the bridge - `log_location` asks the core,
+  `reveal_in_finder` hands the answer to Finder with `open -R` (macOS-native,
+  no new dependency), and `reveal_core_logs` is the menu item's whole job.
+  Everything degrades to a sentence rather than an error: a core still booting,
+  hung, or older than the endpoint is `Disabled`, and a body that is not the
+  expected shape is `Disabled` too, so a menu can never panic on a body it does
+  not recognise. main.rs gains a real macOS menu bar - the app menu keeps About
+  and Cmd+Q, which setting any custom menu otherwise takes away, Edit keeps the
+  text editing a data tool needs, and **DAH > Reveal DAH Logs** is the one item
+  DAH adds.
+  Verified by hand, not only by test: the built app's menu bar was introspected
+  with AppleScript (an earlier attempt ran a stale debug binary and showed a
+  menu without the item - `cargo test` does not refresh the runnable
+  `target/debug/dah-shell`, so an explicit `cargo build` is what makes a smoke
+  honest), the item was clicked through AppleScript, and the shell's own log
+  recorded `revealed the core's log at ~/Library/Application Support/
+  com.jensuid.dah/logs/dah-core.log`. 5 new Rust tests, 12 total (was 7),
+  including an e2e test that starts the real dev core and asserts the reported
+  log is under the data dir the shell pointed it at and is a file that exists.
 
-- P5-RELIABILITY-003 PASSED: a 500 answers the same shape as every other error.: a 500 answers the same shape as every other error.
-  It was the last carried item from P4-RELIABILITY-002: a fault answered
-  Starlette's plain-text "Internal Server Error" - the client tolerated it
-  (api.ts parsed JSON only when the core sent it) but it was the one rough edge
-  left in the error contract. A registered handler for `Exception` now answers
-  `{"detail": "internal error", "request_id": <uuid4 hex>}`. Two details are the
-  whole job:
-  - **The traceback had to be logged explicitly.** Catching the exception means
-    uvicorn never sees it, so the log P5-OBSERVE-002 promised would have stopped
-    carrying the traceback the moment the envelope arrived. The handler logs
-    `unhandled error request_id=...` with the traceback under the id the
-    response carries, so "I have error X" finds the failure in the file.
-  - **The body says less than the log on purpose.** A fault's message can quote
-    what it was holding - an unknown column, a filename, a value that failed to
-    parse - so only the id and a fixed message leave the process. Pinned by a
-    test: a fault whose message contains a marker answers the envelope, the
-    marker is in the log, and it is not in the body.
-  HTTPException has its own handler, so a 400/404 keep their own `detail` and
-  never gain a request id - also pinned. The client carries the id on ApiError
-  and `messageOf` shows it (`internal error (HTTP 500 error 3f239488)`), so a
-  user can quote something a support search resolves. 16 tests in the
-  error-semantics suite (was 12 - the parametrized 500 test now asserts the
-  envelope, plus the id-to-log round trip, the no-leak property, and both
-  unchanged 4xx paths) and 4 new web tests (21 total).
+- P5-RELEASE-005 PASSED: a tag now produces a downloadable app. The packaging
+  job in ci.yml proved the sidecar builds and serves on a clean machine, but
+  its artifact was uploaded for one job and deleted a day later. Now
+  `.github/workflows/release.yml` reads the version from server/pyproject.toml
+  and FAILS if the tag does not match it, runs the server suite, builds and
+  smokes the sidecar, builds the .app with the version stamped from the
+  pyproject through `tauri build --config`, ditto-zips it with its architecture
+  in the name, checksums it, generates notes stating the unsigned status and the
+  Gatekeeper steps, and publishes a flagged pre-release with the zip and its
+  sha256. UNSIGNED was the user's explicit call; signing slots in between the
+  build and the upload when the Developer ID exists.
 
-- P5-OBSERVE-002 PASSED: the packaged app's logs have somewhere to go.: the packaged app's logs have somewhere to go. The core
-  is a PyInstaller sidecar under the desktop shell, and its stderr goes nowhere
-  a user can read - so P4's honest 500 logged a traceback into a void and a
-  support question had nothing behind it. Now `configure_logging()` installs a
-  RotatingFileHandler (2MB x 3 backups, so the log is bounded at ~8MB and can
-  never eat the disk) into `<data dir>/logs/dah-core.log` - the same directory
-  the shell already points the cases at, overridable with `DAH_LOG_DIR` exactly
-  as `DAH_DB_PATH` overrides the database - plus a stderr handler, and it points
-  uvicorn's three own loggers at the same file, because they do not propagate by
-  default and a handler on the root alone would miss every request line. An
-  unwritable log dir degrades to stderr with a warning rather than stopping the
-  server. `GET /logs?lines=N` tails the file read-only (path, size, rotated
-  backup names, last N lines - default 200, clamped to 1000) and answers
-  `enabled: false` when file logging is off instead of erroring, so the shell
-  can say "logging is off" rather than guess why a log is missing.
-  The privacy boundary is the other half, and it is a property rather than a
-  promise: a request middleware logs method, path, status and duration and
-  nothing else, so an analyst's question, the SQL they wrote and every value in
-  their data never reach the file. Verified live against a real uvicorn server
-  with `DAH_DATA_DIR` set: the request path is in the log and the question text
-  is not, and a genuine fault (sqlite denied permission on the db) answered 500
-  with its traceback recoverable through `/logs`. The one exception is a fault's
-  traceback, which can quote what it was holding - that is the trade that makes
-  a 500 debuggable, and it stays local, written and never transmitted.
-  21 new tests. Two design points worth remembering: `configure_logging` skips
-  the file handler under pytest unless a test passes an explicit directory,
-  because the suite repoints `db.DATA_DIR` *after* import and an import-time
-  handler would write into the repository; and the subprocess test
-  (`PACKAGED_CORE`) is what actually proves the default-location behaviour,
-  because the pytest guard makes the in-process default untestable.
-
-- P5-VERIFY-001 PASSED: the P4 gate exists.: the P4 gate exists. P4 was the only phase without one
-  - it relied on the P3 gate plus the per-task suites, which never exercised
-  the P4 capabilities against each other. The two properties that make P4 *P4*
-  - the error taxonomy and rerun determinism - are invisible on the happy path,
-  so nothing was watching them. `verification/p4/verify_p4.py` walks the edges
-  instead: a 5000-row dataset, the result cap truncating a full scan while an
-  aggregate over the same data stays exact, bad SQL answering 400 with the
-  engine's own message and leaving nothing behind, a write and a sandbox escape
-  both refused, an injected harness fault answering 500 rather than blaming the
-  analyst, a deliberately broken LLM degrading to the deterministic engine, the
-  assistant drafting without writing, eight repeat validations of an unordered
-  GROUP BY agreeing, and an export/import round trip. 18 steps, 10 exit
-  criteria, all PASS; CI runs it on every push.
-
-- P4-CI-007 PASSED (and it closes P4): CI exists, runs green on GitHub's own
-  runners, and the app-signing question is answered in writing. There was no
-  `.github` directory at all - 231 server tests, 17 web tests and 7 Rust tests
-  were green only because a developer happened to run them. `.github/workflows/ci.yml` runs four macOS jobs: the
-  server suite plus the P2 and P3 gates (reports uploaded as an artifact), the
-  web suite plus a tsc-then-vite build, the desktop shell's two live-core
-  lifecycle tests (spawn uvicorn, wait on /health, assert the core stops and
-  frees port 8123), and a sidecar packaging build that smokes the built
-  binary's /health. macOS-only on purpose - the hard sandbox is seatbelt, the
-  sidecar and the .app are macOS builds - and no job needs a single secret: no
-  LLM key is ever set, so every assistant step is deterministic and no run
-  makes a network call. Validating the install path on a clean venv found two
-  reproducibility bugs local state had been masking, both fixed (below).
-  Signing is DECIDED rather than carried: DEC-004 defers it to P5, on the
-  reasoning that the cost is the pipeline (identity as a CI secret, rotation,
-  re-signing an in-flight bundle) rather than the fee, that P4 had no secret
-  store to put an identity into, and that Gatekeeper's prompt is a
-  once-per-machine cost that degrades gracefully.
-
-- P4-PERF-006 PASSED: large-dataset behaviour is now measured rather than
-  assumed, and the one real cost is fixed. A benchmark on a 200k-row / 13.4MB
-  CSV showed attach 0.2s, GROUP BY 0.8s, capped SELECT * 0.8s (row_count=1000,
-  truncated=true) and export 0.4s / 17.8MB - everything fine except profiling,
-  at ~6.0s. Instrumented internally, the cause was exact and embarrassing:
-  `profile_csv` ran `SELECT *` and then `fetchall()` on the entire dataset
-  purely to read the column description (2.7s materialising rows it then threw
-  away), followed by four separate full scans. The description - names *and*
-  the inferred logical types - is available from `LIMIT 0` with no rows fetched
-  (verified identical on a file with a date, a decimal, a boolean and a
-  leading-zero id). The row total is now a leading COUNT(*) in the one
-  aggregate pass, and `_duplicate_row_count` takes that total instead of
-  recounting. ~6.0s -> ~2.4s (the endpoint: ~6.0s -> ~1.6s), peak RSS
-  147MB -> 111MB, and the profile output is unchanged. Six new tests pin
-  profile correctness at scale, the wide-table width slicing (the shape most
-  likely to expose an off-by-one now that the total occupies slot 0), exact
-  duplicate counts, the result cap truncating a full-table scan, an
-  aggregation reading every row rather than the capped page, and an export
-  round trip.
-
-- P4-VALID-005 PASSED: validating the same finding twice now always gives the
-  same verdict. The live-LLM smoke of P4-UX-004 walked the whole loop
-  repeatedly and validation started flipping between `supported` and
-  `insufficient_evidence` on identical inputs - a real bug, not a test artifact.
-  DuckDB gives no row-order promise for a result that never asked for one, and a
-  GROUP BY returns its groups in either order across connections (verified: 2
-  distinct orders across 8 reruns of one query). `_reproduce_sql` compared rows
-  positionally, so an unordered query was a rerun mismatch roughly half the time.
-  It now compares `sorted(rerun) == sorted(stored)` - a multiset comparison,
-  which is what an SQL result set actually is (a bag of rows; only ORDER BY makes
-  it a sequence, and DuckDB honours that deterministically, so the sort is a
-  no-op there and a correction everywhere else). `_reproduce_python` is
-  deliberately left positional: the tabulator is deterministic and column order is
-  a shape signal there. Two regression tests, one of which was verified to FAIL
-  without the fix.
-
-- P4-UX-004 PASSED: the three remaining assistant slices are reachable from the
-  workspace - generate code from a question, read what a run shows, draft the
-  finding it would support - each proposing and none deciding. CaseWorkspace is
-  now the loop the core walks, one panel per step: attach + profile, generate
-  code (Run posts to the only endpoint that persists a run), runs with Interpret
-  and Draft-finding buttons, a draft that Accept posts to the only endpoint that
-  writes a finding, then Validate with its verdict and checks. Every assistant
-  panel names the engine that spoke. 9 new web tests (17 total, was 13). The
-  full loop was smoked against the live core with the LLM live, which is exactly
-  what exposed the DuckDB GROUP BY ordering flake fixed as P4-VALID-005.
-
-
-- P4-UX-003 PASSED: DAH can be used from the shell instead of curl. The React
-  bundle was still the P0/P1 surface - one case-creation form and no way to
-  open a case - so the assistant surfaces had nowhere to live. Now cases list
-  with a literal-substring search, creating one opens its workspace, and the
-  workspace shows the question, the *derived* stage and the single next action
-  (recomputed from the core on open, so the UI cannot show a stage the data
-  does not support), the attached datasets and the runs, and the chat panel.
-  Chat is the assistant slice that needs nothing but a case, and it is where
-  the honesty property becomes visible: each ground renders as a citation chip
-  and a badge says which engine spoke. Prior turns load oldest-first. api.ts is
-  a typed client whose request() parses a JSON detail only when the core sent
-  JSON - a 500 answers plain text, and res.json() on it would have thrown a
-  second, hiding the failure. 13 web tests (was 2: CaseList 5, CaseCreation 3, CaseWorkspace 5), and the API contract was
-  verified field-for-field against the live core rather than only against
-  mocks.
-
-- P4-RELIABILITY-002 PASSED: an input error now answers 400 with the engine's
-  own message, and a fault in the harness answers 500 - before this, five
-  engine endpoints ended in `except Exception as error: raise 400`, which did
-  two jobs at once and got them both subtly wrong. It was the *only* thing
-  keeping a user's SQL syntax error a 400 (DuckDB raises `duckdb.Error`, which
-  is not a `ValueError`, so the `except ValueError` above it never fired), and
-  it also flattened every real server fault - sqlite, an unreadable stored file,
-  a KeyError in our own code - into a 400 that blamed the analyst. `app/errors.py`
-  now owns the taxonomy once: `INPUT_ERROR_TYPES` is `(ValueError, duckdb.Error)`,
-  the families that mean the input cannot be honoured; each site catches only
-  those and anything else propagates to an honest 500 that uvicorn logs with a
-  traceback. The five LLM fallbacks were deliberately broad and stay broad -
-  degradation is the contract - but each now logs the reason at warning level,
-  so a fallback caused by our own bug surfaces instead of vanishing into
-  `source=deterministic`. 12 new tests pin both directions: bad SQL, an unknown
-  column and a sandbox rejection stay 400, while an injected fault in all five
-  engines answers 500.
-
-- P4-VERIFY-001 PASSED (first P4 task): P3 now has a gate of its own. `verification/p3/verify_p3.py`
-  walks one journey in-process - a question, a CSV and a Parquet attached to the
-  same case, both profiled, the assistant proposing the query and creating
-  nothing, a plan, one SQL run joining both files positionally, a hard-sandbox
-  escape attempt refused with a 400 that leaves no run behind, the assistant
-  reading the result and drafting the finding (still writing nothing), the human
-  accepting the draft through the only endpoint that writes, a raster chart,
-  validation closing the loop on the join finding, an evidence graph whose claim
-  trace reaches *both* datasets, the derived workflow reporting stage=validated
-  and loop_closed, chat with citations, EDA without a query, the case history,
-  search, a template that outlives its case, dataset deletion refused while
-  evidence stands on it, and an export/import round trip that reproduces the
-  join elsewhere - then re-runs the suite. 23 journey steps and 15 exit
-  criteria, all PASS (`verification/p3/REPORT.md`). The gate is hermetic: the
-  LLM credentials are scrubbed from its own process and from the pytest
-  subprocess, so every assistant step reports source=deterministic and the gate
-  makes no network call.
-
-- P3-AI-011 PASSED (contextual AI, slice 1 of 4): a persisted result can now be
-  *read*. `POST /cases/{id}/runs/{id}/interpret` returns a plain-language
-  summary, observations and caveats grounded in the result's own numbers, in
-  the language of the case's question. Two engines behind one interface, as the
-  planner does it: a deterministic reader that computes row counts, numeric
-  ranges and the most frequent value per column from the persisted rows, and an
-  LLM behind `DAH_LLM_API_KEY` that degrades to the deterministic read on any
-  failure. `source` records which one spoke. Three slices remain: finding
-  drafting, code generation, conversational memory.
-
-- P3-AI-014 PASSED (contextual AI, slice 4 of 4 - and the last P3 item): a
-  case can now be asked questions, and every answer cites its evidence. `POST
-  /cases/{id}/chat` with a message returns an answer plus `grounds` - citations
-  of the form `kind:name` naming the dataset, run, finding, plan, chart or
-  column behind each claim; `GET /cases/{id}/chat` replays the conversation
-  oldest-first, so a reopened case resumes mid-thought. `summarize_case` reads
-  the case's rows and builds the facts an answer may draw on - a pure
-  projection, like the evidence graph and the history timeline, so it cannot
-  drift from what is on disk. Two engines behind one interface, as in every
-  other slice: a deterministic assistant that answers count, column and dataset
-  questions and otherwise states the case's derived workflow stage and the one
-  action that advances it (reusing P3-FLOW-004, so it cannot claim a step the
-  data does not support), and an LLM behind `DAH_LLM_API_KEY` that receives the
-  recent turns as context - that is the memory. Honesty is enforced: every
-  citation must be an artifact the case actually has, and an answer about a case
-  with artifacts must cite at least one. An invented citation is a validation
-  failure and the answer falls back to the deterministic one. **This closes
-  roadmap item 7 and the whole P3 phase.**
-
-- P3-AI-013 PASSED (contextual AI, slice 3 of 4): a question in plain
-  language now yields the read-only computation that would answer it. `POST
-  /cases/{id}/datasets/{id}/generate-code` takes `{question, kind}` and returns
-  `{kind, code, explanation, columns_used, source}` - a proposal that creates
-  nothing; running it is a POST to the existing `/runs` or `/runs/python`
-  endpoint, the only paths that persist a run, so the human decides what
-  executes. Two engines behind one interface, as before: a deterministic
-  generator that reads the profile's own structure (its measure, its widest
-  categorical or temporal dimension, its nulls) and writes a GROUP BY
-  aggregation - counting by dimension when the data has no measure to sum, and
-  skipping identifier columns, which are keys rather than quantities - and an
-  LLM behind `DAH_LLM_API_KEY`. Honesty is enforced: every column the generated
-  code reads must be a column the dataset actually has (aliases, function calls
-  and qualified names are structure, not reads), and a generated SQL proposal
-  must be a single read-only statement, so nothing is handed to the analyst that
-  the runner would refuse. One slice remains: conversational memory.
-
-- P3-AI-012 PASSED (contextual AI, slice 2 of 4): a result can now propose
-  the finding it would support, and the proposal creates nothing. `POST
-  /cases/{id}/runs/{id}/draft-finding` returns a candidate - statement,
-  interpretation, caveat and grounds (the values the statement stands on) -
-  computed from the run's own rows. Two engines behind one interface, as the
-  planner and interpreter do it: a deterministic drafter that finds the result's
-  measure and dimension and states which category leads at what value, and an
-  LLM behind `DAH_LLM_API_KEY`. Honesty is enforced rather than hoped for: every
-  number in the statement or the grounds must be one the result actually contains
-  (a cell, a row count, or a repeat count), so an invented magnitude fails
-  validation and the draft falls back to the deterministic one. Accepting a draft
-  is a POST to the existing `/findings` endpoint - the only path that writes a
-  finding - which makes "the LLM proposes, the human disposes" structural instead
-  of a flag. The findings table is untouched by this task. Two slices remain:
-  code generation and conversational memory.
-
-- P3-AI-011 PASSED the trust loop has no gaps left. A finding built on a
-  Python run now validates the same way a SQL one does - the stored script is
-  re-executed through the hard sandbox against the stored dataset and its
-  tabulated columns AND rows are compared to what the run persists. A script
-  that no longer runs is a failed reproducibility check with the reason in its
-  detail, never a 500, exactly like a SQL query that no longer binds. This was
-  the last place the loop answered "not supported".
-
-- P3-DATA-009 PASSED: a dataset can now be removed from a case without throwing
-  the case away. `DELETE /cases/{id}/datasets/{id}` drops the row, its profile,
-  its plans and its on-disk file, and refuses with a 400 while any run still
-  binds it - because a run is the evidence a finding or a chart stands on (the
-  chain is finding -> run -> dataset), and deleting underneath it would leave a
-  dangling trace. The refusal names the blocker count, and the check reads both
-  runs.dataset_id and the multi-dataset JSON list. This is also the first thing
-  that makes the derived workflow stage observable moving *backwards*
-  (P3-FLOW-004).
-
-- P3-SHELL-008 PASSED: DAH is a double-clickable app. A Tauri 2 shell serves the
-  *same* React bundle (`web/`, built into `web/dist-desktop`) and that bundle
-  keeps talking to the *same* FastAPI core over HTTP - a host swap, not a
-  rewrite, exactly as DEC-001 planned. The shell spawns the core (the packaged
-  PyInstaller sidecar, or `server/.venv` uvicorn in a dev checkout), keeps the
-  window hidden until `/health` answers, and stops the core on close and on
-  exit. A parent-pid watchdog ends the core even when the shell is SIGKILLed,
-  which is the death that reaches no Tauri event and no destructor.
-
-- P3-CASE-007 PASSED: a finished investigation is now reusable. `GET /cases?q=`
-  finds a case by question or dataset label (case-insensitive, literal
-  substring); `GET /cases/{id}/history` replays everything that happened in a
-  case as a chronological timeline derived from each artifact's own timestamp;
-  templates (`POST /cases/{id}/template`, `GET /templates`,
-  `POST /cases/from-template`, `DELETE /templates/{id}`) capture a case's
-  skeleton so a new one can start shaped like a previous one. Templates are not
-  case children - they outlive the case they came from.
-
-- P3-EVIDENCE-006 PASSED: GET /cases/{id}/evidence-graph projects a case into
-  its evidence graph - every dataset, run, chart, plan and finding as a node,
-  each derivation as an edge, and a per-claim trace walking a finding out to
-  the data it stands on. Claims that reach no dataset are listed as orphans,
-  which is what makes it a review tool.
-
-- P3-ANALYSIS-005 PASSED: POST /cases/{id}/datasets/{id}/eda runs segmentation,
-  correlation, and distribution summaries. Each op compiles to read-only
-  DuckDB through the existing run_query, so the read-only gate and row cap
-  apply and output is the standard result shape.
-
-- P3-FLOW-004 PASSED: GET /cases/{id}/progress reports where a case stands in
-  the loop and the single action that advances it. The stage is *derived* from
-  the case's artifacts - no schema change - so it cannot claim a step the data
-  does not support.
-
-- P3-DATA-003 PASSED: one run can now join several attached datasets.
-  POST /cases/{id}/runs takes dataset_ids and binds the k-th placeholder in the
-  SQL to the k-th dataset, in order - any mix of csv/parquet/xlsx. Runs record
-  the full dataset list (dataset_ids_json) with the first kept as the primary,
-  and validation, duplicate, and export/import all carry it.
-
-- P3-CHART-002 PASSED: charts can now render as PNG behind the same interface.
-  charts.py is now a shared ChartModel plus SVG and PNG backends, so the two
-  cannot drift apart; the PNG path draws at 2x and downscales with LANCZOS.
-  The `format` field threads through the API (artifact extension, sniffed media
-  type) and the export package carries chart bytes as base64 with an explicit
-  format, keeping the legacy `svg` text field for older consumers.
-
-- P3-SEC-001 PASSED: Python analysis runs now execute in a separate process
-  under an OS-level sandbox (macOS sandbox-exec / seatbelt). Writes outside
-  the per-run scratch directory and all network access are denied by the
-  kernel; the child environment carries no API-process secrets; runaway loops
-  are killed at the process-group level and reported as a 400. The P2 soft
-  guards remain as defense in depth inside the child.
-
-- P2-ANALYSIS-008 PASSED: read-only Python execution against an attached dataset,
-  result persisted and retrievable like a SQL run
-- P2-ANALYSIS-009 PASSED: chart images rendered from a persisted run result and
-  stored with the case as evidence artifacts
-- P2-CASE-010 PASSED: rename, duplicate (deep copy, new IDs throughout), and
-  delete (rows + on-disk data) of Analysis Cases
-- P2-AI-011 PASSED: AI planning with structured output - objective, primary
-  question, sub-questions, hypotheses, data requirements, analysis steps
-- P2-CASE-012 PASSED: case export as a self-contained JSON package, with import
-  as the round-trip proof
-- **P2 MILESTONE COMPLETE**: verification/p2/verify_p2.py PASS on all 16 steps
-  and all 10 exit criteria
-- P2-DATA-007 PASSED: deep profile (types, null %, distinct counts, min/max/avg, duplicate rows)
-- P2-DATA-006 PASSED: parquet + xlsx attach, profile, and query alongside CSV
-- P0 PASSED: verification/p0/REPORT.md (re-run during this task: PASS)
-- P1 PASSED: verification/p1/REPORT.md - re-run during this task: PASS (43 tests)
-
+- P5-CI-004 PASSED:
 ## P1 vertical slice (verified)
 
 ```
@@ -969,7 +651,7 @@ reported as unsupported (clear 400) rather than faked; that gate is future work.
 - desktop shell: 7 Rust tests, now stable - five are #[serial] after CI caught
   two interference races (port 8123 and the DAH_DEV_CORE env var)
 - web: 17 passed (CaseList 5, CaseCreation 3, CaseWorkspace 9); `cd web && npm test`
-- desktop shell: 7 Rust tests - `cd desktop/src-tauri && cargo test` (5 unit)
+- desktop shell: 12 Rust tests - `cd desktop/src-tauri && cargo test` (7 unit)
   and `cargo test --features e2e` (+2 live-core tests)
 - P3 gate: `server/.venv/bin/python verification/p3/verify_p3.py` PASS on all
   23 journey steps and all 15 exit criteria (the last step re-runs the suite)
@@ -1009,8 +691,8 @@ reported as unsupported (clear 400) rather than faked; that gate is future work.
 
 ## Next action
 
-P5-RELEASE-005 is done: a tag now builds and publishes a versioned, unsigned
-macOS app, and the P5 checklist has one item left. What remains:
+P5-UX-006 is done: a user can find the log from the app's own menu bar. The P5
+checklist has one item left and it is the blocked one. What remains:
 
 - macOS code signing + notarization - deferred by DEC-004 and **blocked on an
   external dependency only you can provision**: a $99 Apple Developer ID. The
@@ -1018,10 +700,9 @@ macOS app, and the P5 checklist has one item left. What remains:
   upload, and the `--prerelease` flag is the thing to revisit once a build is
   notarized. Not agent work until the ID exists.
 - smaller unblocked items: an arm64 release lane (a second runner and sidecar
-  triple; this machine is x86_64 so CI is the only place it can be verified), a
-  "Reveal logs" menu item in the desktop shell calling `GET /logs` (the endpoint
-  is the contract; the menu is UI work no browser is registered to verify), and
-  showing the request id's full value somewhere copyable.
+  triple; this machine is x86_64 so CI is the only place it can be verified),
+  and showing the request id's full value somewhere copyable - the UI shows the
+  first 8 characters, which finds the log line but does not paste verbatim.
 
 Releasing: tag `v<x.y.z>` where x.y.z matches server/pyproject.toml. A
 mismatching tag fails before any build. The published artifact is Intel and

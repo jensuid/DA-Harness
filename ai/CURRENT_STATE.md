@@ -13,22 +13,20 @@
 case management - rename, duplicate, delete (P2-CASE-010);
 AI planning with structured output (P2-AI-011); case export as a self-contained
 JSON package with import round trip (P2-CASE-012)**
-- **Active task:** P5-RELEASE-005 DONE - release automation. A `v<x.y.z>` tag
-  now builds and publishes a versioned macOS app from CI: the version is read
-  from server/pyproject.toml and a tag that disagrees with it fails before any
-  build (so a stale version file can never publish a build whose label lies
-  about what it contains); the server suite runs; the sidecar is built and
-  smoked (health plus the packaged-log assertions); the .app is built with the
-  version stamped from the pyproject via `tauri build --config` - one source of
-  truth, with tauri.conf.json patched at build time instead of four files kept in
-  sync by hand; ditto-zipped with its architecture in the name; checksummed; and
-  published as a flagged pre-release whose generated notes state it is unsigned,
-  how to open it past Gatekeeper, and that the published build is Intel.
-  UNSIGNED was the user's explicit call - the job needs no secret beyond the
-  default GITHUB_TOKEN with contents:write, and signing slots in between the
-  build and the upload when the Developer ID exists. Before it: P5-CI-004, the
-  CI floor; P5-RELIABILITY-003, the 500 envelope; P5-OBSERVE-002,
-  observability.
+- **Active task:** P5-UX-006 DONE - a "Reveal DAH Logs" menu item. The core
+  answers `GET /logs` with a path, but a path in a JSON body is a terminal
+  answer, and the shell exists because this user does not have a terminal. New
+  `desktop/src-tauri/src/logs.rs` is the bridge: it asks the core, then hands
+  the answer to Finder with `open -R` (macOS-native, no new dependency -
+  serde_json is the only addition and it is already in the tree through tauri).
+  Everything degrades to a sentence: a core still booting, hung, or older than
+  the endpoint is "logging is off", and a body that is not the expected shape
+  cannot panic a menu. main.rs gets a real macOS menu bar - the app menu keeps
+  About and Cmd+Q, which setting any custom menu takes away, Edit keeps the
+  text editing a data tool needs, and DAH > Reveal DAH Logs is the one item DAH
+  adds. 5 new Rust tests (12 total, was 7), including an e2e test that starts
+  the real dev core and asserts the reported log is under the data dir the
+  shell pointed it at. Before it: P5-RELEASE-005, release automation.
 - **Known issues:** none. CI runs green on GitHub's own runners after five
   local-state bugs it exposed were fixed (see ai/HANDOFF.md, "What the first
   CI runs caught").
@@ -45,7 +43,8 @@ JSON package with import round trip (P2-CASE-012)**
   exists. Everything else unblocked is smaller: an arm64 release lane (a second
   runner and sidecar triple, unverifiable on this x86_64 machine except by CI
   itself), a "Reveal logs" menu item in the desktop shell calling `GET /logs`,
-  and showing the request id's full value somewhere copyable.
+  and showing the request id's full value somewhere copyable - the one item
+  still open from the follow-up list.
   Carried: a 500 still answers with Starlette's plain-text "Internal Server
   Error"; the client handles it, but a JSON envelope is the last rough edge of
   the error contract.
@@ -139,3 +138,4 @@ JSON package with import round trip (P2-CASE-012)**
 | P5-RELIABILITY-003 500 envelope | DONE |
 | P5-CI-004 CI floor (Ventura) | DONE |
 | P5-RELEASE-005 Release automation | DONE |
+| P5-UX-006 Reveal logs menu | DONE |

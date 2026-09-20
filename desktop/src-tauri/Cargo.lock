@@ -480,6 +480,7 @@ name = "dah-shell"
 version = "0.1.0"
 dependencies = [
  "nix",
+ "serde_json",
  "serial_test",
  "tauri",
  "tauri-build",

@@ -1435,6 +1435,7 @@ the gate comes first because a phase is done when a gate says so.
 | P5-RELIABILITY-003 | Error contract | M | DONE | P5-OBSERVE-002 | A 500 answers a JSON envelope with a request id that maps to the traceback in the log, and the id is surfaced to the user |
 | P5-CI-004 | CI floor | S | DONE | P5-RELIABILITY-003 | Every job runs on macos-13 (Ventura), the minimum supported macOS, and the packaged-core smoke now asserts file logging lands in the data dir |
 | P5-RELEASE-005 | Release automation | M | DONE | P5-CI-004 | A tag matching server/pyproject.toml's version builds, smokes and publishes an unsigned .app as a flagged pre-release with its checksum |
+| P5-UX-006 | Shell UX | S | DONE | P5-RELEASE-005 | A Reveal DAH Logs menu item asks the core where its log is and opens the folder in Finder with it selected |
 
 ### P5-OBSERVE-002 contract
 
@@ -1669,4 +1670,59 @@ VERIFICATION: workflow YAML parses; every command in it was run by hand against
               CFBundleShortVersionString is the pyproject version.
 STATE UPDATE: mark P5-RELEASE-005 done on pass; the P5 checklist's release item
               is closed, leaving only signing (blocked) on it.
+```
+
+### P5-UX-006 contract
+
+```
+TASK ID: P5-UX-006
+MILESTONE: P5 Production Grade
+CAPABILITY: Shell UX
+GOAL: A user hits a problem and finds the log without ever opening a terminal.
+
+CONTEXT: P5-OBSERVE-002 made the core write a log next to the user's cases and
+         answer GET /logs with its path - but a path inside a JSON body is
+         still a terminal answer, and the shell exists precisely because this
+         user does not have a terminal open.
+INPUTS: the running core on port 8123; GET /logs.
+RELEVANT FILES: desktop/src-tauri/src/logs.rs (NEW), desktop/src-tauri/src/main.rs
+                (the menu and its handler), desktop/src-tauri/Cargo.toml,
+                docs/Observability.md, ai/ROADMAP.md, ai/CURRENT_STATE.md,
+                ai/HANDOFF.md
+REQUIRED CHANGE:
+  - logs.rs owns the bridge: logs_url, LogLocation (File | Disabled),
+    parse_log_location, log_location (one GET through the ureq the shell
+    already depends on), reveal_in_finder (`open -R`, macOS-native, no new
+    dependency) and reveal_core_logs, which is the menu item's whole job.
+  - Everything degrades to a sentence rather than an error. A core still
+    booting, hung, or older than the endpoint is Disabled - a menu item that
+    says "logging is off" beats one that fails when it is needed most - and a
+    body that is not the expected shape is Disabled too, so a menu can never
+    panic on a body it does not recognise.
+  - main.rs: a real macOS menu bar. The app menu keeps About and Cmd+Q, which
+    setting any custom menu takes away, Edit keeps the text editing a data
+    tool needs, and DAH > Reveal DAH Logs is the one item DAH adds.
+NON-GOALS: browsing the log inside the app (the terminal and the file are both
+           already fine for that), a web UI button for the same command (the
+           browser host has no core-spawned log to reveal), serving the
+           rotated backups, anything but macOS (`open -R` is macOS-only, and
+           so is the app).
+CONSTRAINTS: no new runtime dependency beyond serde_json, which is already in
+             the tree through tauri; the existing 7 Rust tests must still pass;
+             the menu bar must not lose the standard macOS items.
+ACCEPTANCE CRITERIA:
+- [x] the menu item exists in the running app's menu bar
+- [x] clicking it opens Finder on the log the running core is actually writing
+- [x] a core with file logging off yields a stated reason, not a failure
+- [x] a malformed or unexpected /logs body cannot panic the menu
+- [x] the standard macOS app and Edit menus survive the custom menu
+TESTS: 4 unit (enabled/disabled/odd-shape/url) plus 1 e2e that starts the real
+       dev core and asserts the reported log is under the data dir the shell
+       pointed it at and is a file that exists - 12 Rust tests total, was 7.
+VERIFICATION: cargo test --features e2e green; the built app smoke-tested by
+              hand - the menu bar introspected with AppleScript, the item
+              clicked, and the handler's outcome in the shell log naming the
+              real path; the core stopped and the port freed afterwards.
+STATE UPDATE: mark P5-UX-006 done on pass; the "Reveal logs" follow-up is
+              closed.
 ```

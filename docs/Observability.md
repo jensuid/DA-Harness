@@ -55,8 +55,10 @@ log is its end. A negative or zero ask means "the last line". `enabled` is
 running under a test harness - which is a state to report rather than an error
 to raise.
 
-The endpoint is the shape a future "Reveal logs" menu item in the desktop shell
-will call; until then, the path above is where to look.
+The desktop shell has a **Reveal DAH Logs** item in its app menu. It asks the
+core for that path and opens the folder in Finder with the log selected - no
+terminal needed. If the core reports file logging is off, or cannot be reached,
+the shell says so in its own log rather than failing the click.
 
 ## What is in it
 
