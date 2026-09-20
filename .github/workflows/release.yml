@@ -37,14 +37,16 @@ concurrency:
 
 env:
   PYTHON_VERSION: "3.14"
-  # The runner floor is a literal in `runs-on` below, not an env reference:
-  # the `env` context is unavailable there, and indirection fails the workflow
-  # at parse time.
+  # The runner is a literal in `runs-on` below, never an env reference: the
+  # `env` context is unavailable there and indirection fails the workflow at
+  # parse time. macos-13 (Ventura / Intel) is retired from the hosted pool, so
+  # the build runs on macos-latest and the notes below describe whichever
+  # architecture that actually resolves to rather than asserting Intel.
 
 jobs:
   release:
     name: Build and publish the macOS app
-    runs-on: macos-13
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
 
@@ -166,6 +168,20 @@ jobs:
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           SHA="$(cut -d' ' -f1 "$STAGE/DAH_${VERSION}_macos_${ARCH}.zip.sha256")"
+          # The paragraph below depends on the runner's actual architecture -
+          # macos-latest resolves to Apple Silicon, and a self-hosted Intel
+          # lane would produce the opposite build. The text is chosen here
+          # rather than fixed in the body so it cannot describe the wrong one.
+          case "$ARCH" in
+            aarch64*|arm64*)
+              ARCH_NOTE="**This is an Apple Silicon (\`${ARCH}\`) build.** It is the
+          native architecture for modern Macs; it also runs on Intel Macs under
+          Rosetta, which macOS offers to install on first launch." ;;
+            *)
+              ARCH_NOTE="**This is an Intel (\`${ARCH}\`) build.** It runs on Apple
+          Silicon under Rosetta, which macOS offers to install on first launch;
+          it is slower to start there than a native build would be." ;;
+          esac
           cat > "$STAGE/BODY.md" <<BODY
           ## DAH ${VERSION}
 
@@ -178,9 +194,7 @@ jobs:
           defect - see the README. Signing is deferred by DEC-004 until a
           Developer ID is provisioned.
 
-          **This is an Intel (\`${ARCH}\`) build.** It runs on Apple Silicon
-          under Rosetta, which macOS offers to install on first launch; it is
-          slower to start there than a native build would be.
+          ${ARCH_NOTE}
 
           If something goes wrong, the core keeps a log next to your cases - see
           \`docs/Observability.md\`. Quote the error id the app shows you; it finds

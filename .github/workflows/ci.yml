@@ -11,11 +11,18 @@
 # PyInstaller build - running this elsewhere would test a platform DAH does
 # not target and would skip the sandbox paths that most need exercising.
 #
-# Every job runs on macos-13 (Ventura), the minimum supported version: the
-# floor is only real if something builds and tests against it. It is also the
-# last Intel runner, which matches the development machine and the
-# x86_64-apple-darwin sidecar triple, so a green run is the binary a local
-# build produces rather than an architecture nothing else ever exercises.
+# Every job runs on macos-latest. The P5-CI-004 intent was to pin macos-13
+# (Ventura) as the minimum supported version and to build on the last Intel
+# runner, matching the development machine's x86_64-apple-darwin sidecar
+# triple. That is not possible on hosted runners: GitHub retired the macos-13
+# Intel pool, so a `runs-on: macos-13` job queues forever and never picks up a
+# runner - verified empirically here, where a macos-latest probe job completed
+# in under a minute while an identical macos-13 job sat queued with zero steps
+# for 18 minutes. The Ventura floor remains the documented minimum supported
+# macOS; CI builds on whatever macos-latest resolves to (Apple Silicon today),
+# so a green run proves the code and the packaging path but NOT the exact
+# Intel triple a local build produces. Restoring the Intel lane needs a
+# self-hosted runner; see ai/DECISIONS.md.
 #
 # Hermeticity: no LLM credentials are ever set. Every assistant engine reads
 # DAH_LLM_API_KEY at call time and degrades to its deterministic one, so the
@@ -38,15 +45,16 @@ env:
   # uv installs into a cache key shared across jobs; a stable python pin keeps
   # it reproducible.
   PYTHON_VERSION: "3.14"
-  # NOTE: the runner floor is written as a literal `runs-on: macos-13` in each
-  # job below rather than read from here. The `env` context is NOT available
-  # in `runs-on`, so an indirect reference silently fails the whole workflow
-  # at parse time - every job, zero seconds in, "workflow file issue".
+  # NOTE: the runner is a literal `runs-on:` in each job below, never an env
+  # reference. The `env` context is NOT available in `runs-on`, so an indirect
+  # reference silently fails the whole workflow at parse time - every job,
+  # zero seconds in, reported only as a "workflow file issue". That bug hid
+  # for three commits; do not reintroduce the indirection.
 
 jobs:
   server:
     name: Server suite + gates
-    runs-on: macos-13
+    runs-on: macos-latest
     defaults:
       run:
         working-directory: server
@@ -91,7 +99,7 @@ jobs:
 
   web:
     name: Web suite + build
-    runs-on: macos-13
+    runs-on: macos-latest
     defaults:
       run:
         working-directory: web
@@ -117,7 +125,7 @@ jobs:
 
   desktop:
     name: Desktop shell lifecycle
-    runs-on: macos-13
+    runs-on: macos-latest
     needs: packaging
     steps:
       - uses: actions/checkout@v4
@@ -184,7 +192,7 @@ jobs:
 
   packaging:
     name: Sidecar build
-    runs-on: macos-13
+    runs-on: macos-latest
     # The sidecar is a release artifact, not a test. Building it in CI proves
     # the packaging path still works on a clean machine - locally it is easy to
     # carry a stale build and never notice a regression in the spec.
