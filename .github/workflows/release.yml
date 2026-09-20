@@ -127,8 +127,15 @@ jobs:
           cache-dependency-path: web/package-lock.json
 
       - name: Install web dependencies
-        # beforeBuildCommand runs npm --prefix ../web, so the install has to
-        # happen from desktop/ for the prefix to resolve.
+        # beforeBuildCommand runs `npm --prefix ../web run build:desktop`, and
+        # that script lives in web/package.json with its deps in web/node_modules
+        # (vite, tsc). desktop/ has only the Tauri CLI, so installing here alone
+        # leaves the prefix script with nothing to run - exit code 127. Both
+        # trees are installed, and web's lockfile is the one the cache keys on.
+        working-directory: web
+        run: npm ci --no-audit --no-fund
+      - name: Install the Tauri CLI
+        # `npm run tauri` below resolves the CLI from desktop/node_modules.
         working-directory: desktop
         run: npm ci --no-audit --no-fund
 
