@@ -41,6 +41,24 @@ first launch. To open it:
 This is needed **once per machine** and does not affect anything afterwards.
 It is a documented behaviour of the pre-release build, not a defect.
 
+## When something goes wrong
+
+The core keeps a log next to your cases, so a failure leaves something behind
+instead of vanishing. It is at `<data dir>/logs/dah-core.log` — on macOS,
+`~/Library/Application Support/DAH-Harness/logs/` — capped at 2 MB with three
+rotating backups.
+
+Read the last of it without leaving a terminal:
+
+```bash
+curl -s http://127.0.0.1:8123/logs | python3 -c "import json,sys; [print(l) for l in json.load(sys.stdin)['lines']]" | tail -40
+```
+
+`GET /logs` is read-only and returns the path, the size, the backup names and
+the last lines (default 200, at most 1000). What it does **not** return is your
+data: request bodies, the SQL you wrote and the values in your datasets are
+never logged. See `docs/Observability.md` for the full boundary.
+
 ## Building the packaged app
 
 ```bash

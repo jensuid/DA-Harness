@@ -1,7 +1,38 @@
 # DAH - Handoff
 
 ## What was completed
-- P5-VERIFY-001 PASSED: the P4 gate exists. P4 was the only phase without one
+- P5-OBSERVE-002 PASSED: the packaged app's logs have somewhere to go. The core
+  is a PyInstaller sidecar under the desktop shell, and its stderr goes nowhere
+  a user can read - so P4's honest 500 logged a traceback into a void and a
+  support question had nothing behind it. Now `configure_logging()` installs a
+  RotatingFileHandler (2MB x 3 backups, so the log is bounded at ~8MB and can
+  never eat the disk) into `<data dir>/logs/dah-core.log` - the same directory
+  the shell already points the cases at, overridable with `DAH_LOG_DIR` exactly
+  as `DAH_DB_PATH` overrides the database - plus a stderr handler, and it points
+  uvicorn's three own loggers at the same file, because they do not propagate by
+  default and a handler on the root alone would miss every request line. An
+  unwritable log dir degrades to stderr with a warning rather than stopping the
+  server. `GET /logs?lines=N` tails the file read-only (path, size, rotated
+  backup names, last N lines - default 200, clamped to 1000) and answers
+  `enabled: false` when file logging is off instead of erroring, so the shell
+  can say "logging is off" rather than guess why a log is missing.
+  The privacy boundary is the other half, and it is a property rather than a
+  promise: a request middleware logs method, path, status and duration and
+  nothing else, so an analyst's question, the SQL they wrote and every value in
+  their data never reach the file. Verified live against a real uvicorn server
+  with `DAH_DATA_DIR` set: the request path is in the log and the question text
+  is not, and a genuine fault (sqlite denied permission on the db) answered 500
+  with its traceback recoverable through `/logs`. The one exception is a fault's
+  traceback, which can quote what it was holding - that is the trade that makes
+  a 500 debuggable, and it stays local, written and never transmitted.
+  21 new tests. Two design points worth remembering: `configure_logging` skips
+  the file handler under pytest unless a test passes an explicit directory,
+  because the suite repoints `db.DATA_DIR` *after* import and an import-time
+  handler would write into the repository; and the subprocess test
+  (`PACKAGED_CORE`) is what actually proves the default-location behaviour,
+  because the pytest guard makes the in-process default untestable.
+
+- P5-VERIFY-001 PASSED: the P4 gate exists.: the P4 gate exists. P4 was the only phase without one
   - it relied on the P3 gate plus the per-task suites, which never exercised
   the P4 capabilities against each other. The two properties that make P4 *P4*
   - the error taxonomy and rerun determinism - are invisible on the happy path,
@@ -888,7 +919,7 @@ reported as unsupported (clear 400) rather than faked; that gate is future work.
 
 ## Tests performed (current)
 
-- server pytest: 231 passed (verified again on a clean venv built
+- server pytest: 252 passed (231 + 21 observability; verified again on a clean venv built
   from pyproject - the install path CI uses)
 - CI on GitHub's own runners: ALL FOUR JOBS GREEN
   (https://github.com/jensuid/DA-Harness/actions) - server suite + P2/P3/P4
@@ -939,24 +970,25 @@ reported as unsupported (clear 400) rather than faked; that gate is future work.
 
 ## Next action
 
-P4 is closed and it now has the gate it lacked. `verification/p4/verify_p4.py`
-walks the edges a controlled external user reaches and CI runs it on every
-push; 18 steps and 10 exit criteria, all PASS.
+P5-OBSERVE-002 is done: a packaged app's logs have somewhere to go and a
+read-only way to be read, without logging anything the analyst typed. P5 is
+2 of 5 checklist items in. What remains, oldest-risk first:
 
-P5 Production Grade is under way - 1 of 5 checklist items done. What remains,
-oldest-risk first:
-
-- macOS code signing + notarization - formally deferred here by DEC-004. This
-  one is blocked on an external dependency: a $99 Apple Developer ID, which
-  only you can provision. The identity becomes a CI secret in the `packaging`
-  job; the unsigned build stays as a fallback target.
-- observability: a 500 is honest and logged with a traceback, but in a packaged
-  app a non-developer has nowhere for that output to go.
-- carried: a 500 still answers with Starlette's plain-text "Internal Server
-  Error". The client handles it; a JSON envelope is the last rough edge of the
-  error contract, and it is small and self-contained.
-- release automation: versioned artifacts published from CI, on top of the
+- macOS code signing + notarization - formally deferred here by DEC-004 and
+  **blocked on an external dependency only you can provision**: a $99 Apple
+  Developer ID. The identity becomes a CI secret in the `packaging` job; the
+  unsigned build stays as a fallback target. Not agent work until the ID
+  exists.
+- the carried 500 JSON envelope - now the natural next pick, and small. The
+  log holds the traceback, but the client still receives Starlette's plain-text
+  "Internal Server Error"; `api.ts` already parses JSON only when the core sent
+  it, so a JSON envelope is the last rough edge of the error contract.
+- release automation - versioned artifacts published from CI, on top of the
   packaging job that already builds and smokes the sidecar.
+- a follow-up this task deliberately left out: a "Reveal logs" menu item in the
+  desktop shell calling `GET /logs`. The endpoint is the contract; the menu is
+  UI work, and no browser is registered with the computer-use surface here, so
+  it could not have been verified. Documented in `docs/Observability.md`.
 
 Nothing is unblocked-but-undone.
 

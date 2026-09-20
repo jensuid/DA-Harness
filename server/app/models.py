@@ -441,3 +441,21 @@ class ConversationTurn(BaseModel):
     grounds: list[str]
     source: str
     created_at: datetime
+
+
+class LogView(BaseModel):
+    """The tail of the core's own log (P5-OBSERVE-002).
+
+    Read-only: a support question is answered by the last thing that happened,
+    so this hands back the path, its size, the rotated backups' names and the
+    most recent lines. `enabled` is False when file logging is off (an
+    unwritable data dir, or a core running under pytest) - that is a state to
+    report, not an error to raise, so the shell can say "logging is off"
+    instead of guessing why a log is missing.
+    """
+
+    enabled: bool
+    path: str | None
+    size_bytes: int
+    rotated: list[str]
+    lines: list[str]

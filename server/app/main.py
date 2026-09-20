@@ -1,6 +1,8 @@
+import logging
 import os
 import shutil
 import sys
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterator
@@ -26,7 +28,7 @@ if "pytest" not in sys.modules:
     load_env_config(Path(__file__).resolve().parent.parent / ".env")
 
 
-from fastapi import Depends, FastAPI, HTTPException, UploadFile
+from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
@@ -37,6 +39,13 @@ from app.errors import INPUT_ERROR_TYPES
 from app.eda import EDA_OPS, run_eda
 from app.evidence import build_evidence_graph
 from app.history import build_case_history
+from app.logging_config import (
+    LOG_LINE_CEILING,
+    configure_logging,
+    current_log_file,
+    read_tail,
+    rotated_log_files,
+)
 from app.supervisor import start_parent_watchdog
 from app.python_exec import run_python
 from app.workflow import STAGES, case_progress
@@ -87,11 +96,19 @@ from app.models import (
     TemplateCreate,
     Interpretation,
     DraftFinding,
+    LogView,
     GenerateCodeRequest,
     GeneratedCode,
     ChatRequest,
     ConversationTurn,
 )
+
+# Give the core's output somewhere to go. Under the desktop shell the core is a
+# child process whose stderr nobody is reading, so a 500's traceback needs a
+# file. Writes under DAH_DATA_DIR/logs, nowhere else, and nothing under pytest
+# (see app/logging_config). Called before the watchdog so that a supervised
+# exit is the last line in the log rather than an unwritten one.
+configure_logging()
 
 # Under the desktop shell, end this process when the shell is gone (see
 # app.supervisor). No-op for a hand-started server and under pytest.
@@ -105,10 +122,62 @@ app = FastAPI(
 )
 
 
+@app.middleware("http")
+async def log_request(request: Request, call_next):
+    """One line per request, holding only the shape of the call.
+
+    Method, path, status and duration are what an operator needs to see a slow
+    or failing endpoint. The body is deliberately absent: an analyst's question,
+    the SQL they wrote and every value in their data never reach the log.
+    """
+    started = time.perf_counter()
+    status_code = 500
+    try:
+        response = await call_next(request)
+        status_code = response.status_code
+        return response
+    finally:
+        logging.getLogger("dah.request").info(
+            "%s %s -> %s in %.0fms",
+            request.method,
+            request.url.path,
+            status_code,
+            (time.perf_counter() - started) * 1000,
+        )
+
+
 @app.get("/health")
 async def health() -> dict[str, str]:
     """Liveness probe. Confirms the core process is up and answering."""
     return {"status": "ok"}
+
+
+@app.get("/logs", response_model=LogView)
+def recent_logs(lines: int = 200) -> LogView:
+    """The tail of what the core has been doing.
+
+    Read-only by construction - GET only, no body accepted, nothing the caller
+    supplies is written anywhere. `lines` defaults to 200 and is clamped to 1000,
+    because the interesting part of a log is its end and a megabyte of history
+    in a response serves nobody.
+    """
+    log_file = current_log_file()
+    if log_file is None:
+        return LogView(
+            enabled=False,
+            path=None,
+            size_bytes=0,
+            rotated=[],
+            lines=[],
+        )
+    tail = read_tail(log_file, min(max(lines, 1), LOG_LINE_CEILING))
+    return LogView(
+        enabled=True,
+        path=str(log_file),
+        size_bytes=log_file.stat().st_size if log_file.exists() else 0,
+        rotated=[path.name for path in rotated_log_files()],
+        lines=tail,
+    )
 
 
 def get_db() -> Iterator[object]:

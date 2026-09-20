@@ -55,11 +55,11 @@ production-grade**.
   case management (rename/duplicate/delete); structured AI planning
   (deterministic default, LLM behind `DAH_LLM_API_KEY`); case export/import
   round trip.
-- **Test status:** server 231 passed; web 17 passed; desktop shell 7 Rust
+- **Test status:** server 252 passed; web 17 passed; desktop shell 7 Rust
   tests (5 unit + 2 e2e); P2, P3 **and P4** gates PASS. All of it runs in CI
   (`.github/workflows/ci.yml`) - before P4-CI-007, every test was green only
   because a developer happened to run it.
-- **Active task:** P5-VERIFY-001 DONE - the P4 gate exists, so P4 finally
+- **Active task:** P5-OBSERVE-002 DONE - the P4 gate exists, so P4 finally
   has what every earlier phase has: one journey that walks its capabilities end
   to end. Where P3's gate proved the loop is *useful*, this one proves it is
   *safe to hand to someone else* by walking the edges instead of the happy
@@ -133,7 +133,7 @@ Ordered oldest-risk first.
   close, green state only, pushed to origin/master before work is called done
   (see the commit and push discipline section of AGENTS.md).
 
-## P5 Production Grade — entry checklist (1 of 5 done)
+## P5 Production Grade — entry checklist (2 of 5 done)
 
 Ordered oldest-risk first; a proposal for the user to reorder before work
 starts. P4 closed with the signing question decided rather than open
@@ -144,6 +144,6 @@ of a shrug.
 |---|-----------|---------|-----------------|
 | 1 | macOS code signing + notarization — **formally deferred here by DEC-004**: provision a Developer ID identity, store it as a CI secret in the `packaging` job, notarize the bundle, and keep the unsigned build as a fallback target | P4 shipped unsigned with a documented right-click > Open workaround; the pipeline cost (identity, rotation, re-signing an in-flight bundle) is the reason it waited, and P5 is where the bundle becomes final | P5 Distribution |
 | 2 | The P4 gate — **DONE (P5-VERIFY-001)**: `verification/p4/verify_p4.py` walks the *edges* rather than the happy path - a 5000-row dataset, the result cap truncating a full scan while an aggregate stays exact, bad SQL answering 400 with the engine's message and persisting nothing, a sandbox escape refused, an injected harness fault answering 500, a deliberately broken LLM degrading to deterministic, and eight repeat validations of an unordered result agreeing. 18 steps, 10 exit criteria, all PASS; CI runs it on every push | P4 relied on the P3 gate plus CI, which never exercised the P4 capabilities against each other - the error taxonomy and rerun determinism are invisible on the happy path | P5 Verification |
-| 3 | Observability: structured logs and a way to read them when a user hits a problem, beyond uvicorn's stderr | P4 made a 500 honest and logged with a traceback, but there is nowhere for that output to go in a packaged app a non-developer is running | P5 Observability |
+| 3 | Observability — **DONE (P5-OBSERVE-002)**: the core writes a size-capped rotating log (2MB x 3) into the user's data dir, `GET /logs?lines=N` tails it read-only, one line per request holds only method/path/status/duration, and nothing the analyst typed is ever logged | P4 made a 500 honest and logged with a traceback, but there was nowhere for that output to go in a packaged app a non-developer is running — now there is | P5 Observability |
 | 4 | Give the 500 a JSON envelope — **carried from P4-RELIABILITY-002**: the core still answers Starlette's plain-text "Internal Server Error", which the client already tolerates but which is the one remaining rough edge in the error contract | Small, self-contained, and it closes the last item the reliability task explicitly declined to expand into | P5 Reliability |
 | 5 | Release automation: versioned, notarized artifacts published from CI rather than built by hand | The `packaging` job already builds and smokes the sidecar on a clean machine; publishing is the step after signing lands | P5 Distribution |

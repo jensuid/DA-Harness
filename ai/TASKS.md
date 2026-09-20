@@ -1431,3 +1431,74 @@ the gate comes first because a phase is done when a gate says so.
 | Task ID | Capability | Priority | Status | Dependencies | Verification |
 |---------|-----------|----------|--------|--------------|--------------|
 | P5-VERIFY-001 | Verification (P4 gate) | M | DONE | P4 complete | One journey walks the edges: the error taxonomy, rerun determinism, the result cap, graceful degradation |
+| P5-OBSERVE-002 | Observability | M | DONE | P5-VERIFY-001 | The core writes a size-capped rotating log into the user's data dir, `GET /logs` tails it read-only, and nothing the analyst typed ever lands in it |
+
+### P5-OBSERVE-002 contract
+
+```
+TASK ID: P5-OBSERVE-002
+MILESTONE: P5 Production Grade
+CAPABILITY: Observability
+GOAL: When something goes wrong in a packaged app, there is a log to read.
+
+CONTEXT: P4 made a 500 honest - the exception propagates and uvicorn logs a
+         traceback. But in the packaged app the core is a PyInstaller sidecar
+         whose stderr goes nowhere a user can read, so that traceback lands in
+         a void and a support question has nothing behind it. uvicorn's stderr
+         is a developer surface; a packaged app needs a file.
+INPUTS: DAH_LOG_DIR (optional override), DAH_LOG_LEVEL (optional), the same
+        DAH_DATA_DIR the shell already sets.
+RELEVANT FILES: server/app/logging_config.py (NEW), server/app/main.py
+                (configure at startup, the request middleware, GET /logs),
+                server/tests/test_logging.py (NEW), docs/Observability.md (NEW),
+                ai/ROADMAP.md, ai/CURRENT_STATE.md, ai/HANDOFF.md
+REQUIRED CHANGE:
+  - app/logging_config.py owns one setup function, `configure_logging`, that
+    installs a size-capped RotatingFileHandler (2MB x 3 backups, so the log
+    can never eat the disk) plus a stderr handler, and points the uvicorn
+    loggers at the same file so request logs are not lost. Idempotent - a
+    second call replaces rather than stacks. The directory defaults to
+    DAH_DATA_DIR/logs and DAH_LOG_DIR overrides it, exactly as DAH_DB_PATH
+    overrides the default database location. An unwritable log dir degrades
+    to stderr-only with a warning instead of preventing the server from
+    starting - a log is not worth more than the app.
+  - The file handler is NOT installed under pytest (the suite overrides
+    DATA_DIR post-import, so an import-time handler would write into the
+    repo); tests configure it explicitly against a tmp dir.
+  - app/main.py: a request middleware logs method, path, status and duration
+    per request. Only those four - the body is never logged, so an analyst's
+    SQL, their question and their data stay out of the log.
+  - GET /logs?lines=N returns the path, the size, the rotated file names and
+    the last N lines (default 200, clamped to 1000) read-only, and reports
+    `enabled: false` when file logging is off rather than erroring.
+  - docs/Observability.md: where the log lives, how to read it, and the
+    explicit privacy boundary - what is logged and what is not.
+NON-GOALS: shipping logs anywhere off the machine, a UI for the log (the shell
+           can call /logs; wiring a menu is a follow-up), serving the rotated
+           backups' contents, structured JSON logs (a plain parseable line is
+           enough and stays greppable), authentication on /logs (the core binds
+           to 127.0.0.1 for a single local user, like every other endpoint).
+CONSTRAINTS: no behaviour change to any existing endpoint; the gates and the
+             test suite must be unaffected; nothing the analyst typed may
+             appear in the log.
+ACCEPTANCE CRITERIA:
+- [x] a packaged-style core (DAH_DATA_DIR set) writes dah-core.log under it
+      without any caller wiring
+- [x] the log rotates at the cap and the total stays bounded (no unbounded
+      growth, no rotation storm)
+- [x] a 500's traceback is in the file, recoverable through GET /logs
+- [x] each request logs method/path/status/duration and the *body* does not:
+      an analyst's question text is provably absent from the log
+- [x] an unwritable log dir does not stop the server
+- [x] GET /logs is read-only (a POST to it changes nothing) and clamps lines
+- [x] pytest never writes a log file into the repo
+TESTS: server/tests/test_logging.py - 12 tests: default location, env override,
+       rotation bound, idempotent reconfiguration, unwritable dir, tail reading,
+       the 500 traceback round-tripped through /logs, the request line, the
+       body-not-logged property, /logs when disabled, line clamping, and no
+       repo writes under pytest.
+VERIFICATION: `cd server && .venv/bin/python -m pytest -q` green (243 total);
+              the P2, P3 and P4 gates still PASS; CI green.
+STATE UPDATE: mark P5-OBSERVE-002 done on pass; the P5 checklist's
+              observability item is closed.
+```
