@@ -1,6 +1,6 @@
 # DAH - Current State
 
- - **Phase:** P5 Production Grade - COMPLETE (all deliverables; signing retired indefinitely by DEC-006 - DAH is single-user, not blocked). P6 Post-Launch Evolution is IN PROGRESS, with P6-MEMORY-001 (cross-case recall) and P6-AGENT-002 (agentic analysis) both DONE. P4 Production Candidate was COMPLETE (all 5 checklist items:
+ - **Phase:** P5 Production Grade - COMPLETE (all deliverables; signing retired indefinitely by DEC-006 - DAH is single-user, not blocked). P6 Post-Launch Evolution is IN PROGRESS, with P6-MEMORY-001 (cross-case recall), P6-AGENT-002 (agentic analysis) and P6-TEMPLATE-003 (templates that carry the analytical shape) all DONE. P4 Production Candidate was COMPLETE (all 5 checklist items:
   P4-VERIFY-001, P4-RELIABILITY-002, P4-UX-003 + P4-UX-004, P4-VALID-005,
   P4-PERF-006, P4-CI-007). P3 V1 is COMPLETE: all 10 entry-checklist items,
   231 server tests, and a P3 gate of its own. P5 Production Grade is IN
@@ -14,17 +14,25 @@ case management - rename, duplicate, delete (P2-CASE-010);
 AI planning with structured output (P2-AI-011); case export as a self-contained
 JSON package with import round trip (P2-CASE-012);
 **agentic analysis - the loop drives itself over those endpoints, one
-human-approved write at a time (P6-AGENT-002)**
-- **Active task:** P6-AGENT-002 DONE - agentic analysis, the second P6 task. The
-  loop drives itself: `app/agent.py` derives the next step as a pure projection
-  over the case's artifacts (profile -> plan -> analyze -> interpret -> accept
-  -> chart -> validate), a human approves that step by id, and the write runs
-  through the endpoint that already owns it - so the read-only gate, the row cap
-  and the single finding-creation path are all still in force for an agent-run
-  case. An empty result rotates the generator's variant so a retry is a
-  different query, three empty attempts end the run at a stated reason, and the
-  audit trail travels with the case through export, import and duplication.
-  Before it: P6-MEMORY-001 (cross-case recall) DONE, P5 CLOSED.
+human-approved write at a time (P6-AGENT-002);
+case templates that carry the analytical shape of a finished case - its plan,
+its proposals and how its findings validated - not just its question
+(P6-TEMPLATE-003)**
+- **Active task:** P6-TEMPLATE-003 DONE - templates that carry the analytical
+  shape of a finished case. A template promoted today copies the question and
+  the dataset label; now it also carries a pure projection over the case's
+  artifacts - its latest plan and the engine that produced it, the code
+  proposals its agent run made (falling back to its runs when a human drove
+  it), and its findings' statements with the verdicts validation already gave
+  them - in a nullable `templates.shape_json`. A case created from a template
+  records its lineage (`cases.template_id`), and two steps prefer that history
+  when they have nothing better: the plan step offers the template's plan
+  through the same `validate_plan`, and generate-code offers a template
+  proposal only when every column it reads exists in the profiled dataset.
+  Both record `source="template"`, and both fall back to the existing
+  deterministic derivation on any problem - a shapeless, malformed or deleted
+  template degrades rather than erroring. Before it: P6-AGENT-002 (agentic
+  analysis) DONE, P6-MEMORY-001 (cross-case recall) DONE, P5 CLOSED.
   answers `GET /logs` with a path, but a path in a JSON body is a terminal
   answer, and the shell exists because this user does not have a terminal. New
   `desktop/src-tauri/src/logs.rs` is the bridge: it asks the core, then hands
@@ -44,21 +52,24 @@ human-approved write at a time (P6-AGENT-002)**
   documented minimum but is no longer enforced by CI, and a green run no longer
   proves the exact Intel triple a local build produces. Restoring that needs a
   self-hosted Intel runner.
-- **Test status:** server 291 passed (267 + 24 agentic analysis); web 21 passed
+- **Test status:** server 302 passed (291 + 11 template shape); web 21 passed
   (CaseList 5, CaseCreation 3, CaseWorkspace 9); desktop shell 12 Rust tests
   (`cd desktop/src-tauri && cargo test [--features e2e]`, 9 unit + 3 e2e);
   P2, P3 and P4 gates PASS (P4: all 18 journey steps, all 10 exit criteria);
   first release v0.1.0 published from tag and checksum-verified.
-- **Next task:** case templates carrying the analytical shape rather than just
-  the question, a versioned migration path before memory grows new tables, and a
-  Tauri update flow now that releases publish per tag. P6-AGENT-002 (agentic
-  analysis) is DONE: the loop drives itself, one approved write at a time, over
-  the endpoints that already existed. Before it, P6-MEMORY-001 (cross-case
-  recall) was DONE. The last P5 item was macOS signing + notarization,
-  retired indefinitely by DEC-006 - DAH is single-user, so the right-click >
-  Open cost is paid once per machine by the one person who uses the app. The
-  release job keeps the slot between the build and the upload if that changes.
-  Not blocked, and not agent work.
+- **Next task:** a versioned migration path (ROADMAP item 4) - the DB has grown
+  by `_ensure_column` in-place additions across many tasks, including two this
+  task landed (`templates.shape_json`, `cases.template_id`), and the scheme is
+  untrackable by construction. P6's remaining items (memory tables, the Tauri
+  update flow) add tables and shipped state, so the migration story comes
+  before them rather than after. After that: the Tauri update flow now that
+  releases publish per tag. P6-TEMPLATE-003 (templates carrying the analytical
+  shape) is DONE. Before it, P6-AGENT-002 (agentic analysis) and P6-MEMORY-001
+  (cross-case recall) were DONE. The last P5 item was macOS signing +
+  notarization, retired indefinitely by DEC-006 - DAH is single-user, so the
+  right-click > Open cost is paid once per machine by the one person who uses
+  the app. The release job keeps the slot between the build and the upload if
+  that changes. Not blocked, and not agent work.
 - **Blockers:** none.
 
 ## P2 progress
@@ -126,6 +137,7 @@ human-approved write at a time (P6-AGENT-002)**
 |------|--------|
 | P6-MEMORY-001 cross-case recall | DONE |
 | P6-AGENT-002 agentic analysis | DONE |
+| P6-TEMPLATE-003 templates carry the analytical shape | DONE |
 
 ## P4 progress
 

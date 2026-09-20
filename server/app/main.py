@@ -57,6 +57,13 @@ from app.drafter import create_draft as create_draft_module
 from app.generator import create_code as create_code_module
 from app.assistant import create_answer as create_answer_module, summarize_case
 from app.exporter import export_case, import_package, PACKAGE_FORMAT, PACKAGE_VERSION
+from app.planner import validate_plan as validate_plan_module
+from app.generator import _columns_referenced as _columns_referenced_module
+
+# The source label for a plan or proposal that came from a template rather than
+# an engine. A reviewer of a templated case sees exactly where an answer
+# originated - history, not derivation (P6-TEMPLATE-003).
+SOURCE_TEMPLATE = "template"
 from app import agent as agent_module
 import app.db as db_module
 from app.db import get_connection
@@ -105,6 +112,9 @@ from app.models import (
     AgentStep,
     AgentState,
     AgentApproval,
+    TemplateShape,
+    TemplateProposal,
+    TemplateFindingSummary,
 )
 
 # Give the core's output somewhere to go. Under the desktop shell the core is a
@@ -258,18 +268,13 @@ async def create_case(payload: CaseCreate, db=Depends(get_db)) -> Case:
 async def get_case(case_id: str, db=Depends(get_db)) -> Case:
     """Reopen a persisted Analysis Case."""
     row = db.execute(
-        "SELECT id, question, dataset, created_at, updated_at FROM cases WHERE id = ?",
+        "SELECT id, question, dataset, template_id, created_at, updated_at "
+        "FROM cases WHERE id = ?",
         (case_id,),
     ).fetchone()
     if row is None:
         raise HTTPException(status_code=404, detail="case not found")
-    return Case(
-        id=row["id"],
-        question=row["question"],
-        dataset=row["dataset"],
-        created_at=row["created_at"],
-        updated_at=row["updated_at"],
-    )
+    return _case_of(row)
 
 
 @app.get(
@@ -313,6 +318,24 @@ def _like_pattern(term: str) -> str:
     return f"%{escaped}%"
 
 
+def _case_of(row) -> Case:
+    """A case row as the API answers it, lineage included when it is selected.
+
+    A SELECT that does not name `template_id` (a caller's own query, or an older
+    code path) still works: the key lookup is guarded, so absence reads as
+    "no lineage" rather than raising.
+    """
+    return Case(
+        id=row["id"],
+        question=row["question"],
+        dataset=row["dataset"],
+        template_id=row["template_id"] if "template_id" in row.keys() else None,
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+    )
+
+
+
 @app.get("/cases", response_model=list[Case])
 async def list_cases(q: str | None = None, db=Depends(get_db)) -> list[Case]:
     """List all persisted Analysis Cases.
@@ -323,27 +346,18 @@ async def list_cases(q: str | None = None, db=Depends(get_db)) -> list[Case]:
     if q and q.strip():
         pattern = _like_pattern(q.strip().lower())
         rows = db.execute(
-            "SELECT id, question, dataset, created_at, updated_at FROM cases "
-            "WHERE LOWER(question) LIKE ? ESCAPE '\\' "
+            "SELECT id, question, dataset, template_id, created_at, updated_at "
+            "FROM cases WHERE LOWER(question) LIKE ? ESCAPE '\\' "
             "OR LOWER(dataset) LIKE ? ESCAPE '\\' "
             "ORDER BY created_at DESC",
             (pattern, pattern),
         ).fetchall()
     else:
         rows = db.execute(
-            "SELECT id, question, dataset, created_at, updated_at FROM cases "
-            "ORDER BY created_at DESC"
+            "SELECT id, question, dataset, template_id, created_at, updated_at "
+            "FROM cases ORDER BY created_at DESC"
         ).fetchall()
-    return [
-        Case(
-            id=row["id"],
-            question=row["question"],
-            dataset=row["dataset"],
-            created_at=row["created_at"],
-            updated_at=row["updated_at"],
-        )
-        for row in rows
-    ]
+    return [_case_of(row) for row in rows]
 
 
 @app.patch("/cases/{case_id}", response_model=Case)
@@ -411,10 +425,14 @@ async def duplicate_case(
         created_at=now,
         updated_at=now,
     )
+    source_lineage = db.execute(
+        "SELECT template_id FROM cases WHERE id = ?", (case_id,)
+    ).fetchone()
+    new_case.template_id = source_lineage["template_id"] if source_lineage else None
     db.execute(
-        "INSERT INTO cases (id, question, dataset, created_at, updated_at) "
-        "VALUES (?, ?, ?, ?, ?)",
-        (new_case.id, new_case.question, new_case.dataset,
+        "INSERT INTO cases (id, question, dataset, template_id, created_at, "
+        "updated_at) VALUES (?, ?, ?, ?, ?, ?)",
+        (new_case.id, new_case.question, new_case.dataset, new_case.template_id,
          new_case.created_at.isoformat(), new_case.updated_at.isoformat()),
     )
 
@@ -1997,6 +2015,192 @@ async def chat_about_case(
     )
 
 
+def _profile_of(db, dataset_id: str) -> dict | None:
+    """A stored profile, or None when the dataset was never profiled."""
+    row = db.execute(
+        "SELECT rows, columns_json, stats_json, duplicate_rows FROM profiles "
+        "WHERE dataset_id = ?",
+        (dataset_id,),
+    ).fetchone()
+    if row is None:
+        return None
+    return {
+        "rows": row["rows"],
+        "columns": json.loads(row["columns_json"]),
+        "stats": json.loads(row["stats_json"]),
+        "duplicate_rows": row["duplicate_rows"],
+    }
+
+
+
+def _capture_shape(db, case_id: str) -> TemplateShape | None:
+    """The analytical shape of a case, as a projection over what it has.
+
+    Nothing is computed or guessed: the plan is the case's latest, the proposals
+    are the ones its agent run offered (falling back to its runs when a human
+    drove), and the findings are their statements with the verdicts validation
+    already gave them. Returns None when the case has none of these, so an empty
+    case promotes the question-only skeleton it always promoted.
+    """
+    plan_row = db.execute(
+        "SELECT plan_json, source FROM plans WHERE case_id = ? "
+        "ORDER BY created_at DESC LIMIT 1",
+        (case_id,),
+    ).fetchone()
+
+    proposals: list[TemplateProposal] = []
+    proposed_codes: set[str] = set()
+    for row in db.execute(
+        "SELECT payload_json FROM agent_steps WHERE case_id = ? AND kind = 'analyze' "
+        "ORDER BY created_at",
+        (case_id,),
+    ).fetchall():
+        payload = json.loads(row["payload_json"] or "{}")
+        code = payload.get("code")
+        if not isinstance(code, str) or not code.strip() or code in proposed_codes:
+            continue
+        proposed_codes.add(code)
+        proposals.append(
+            TemplateProposal(
+                kind=payload.get("kind") or "sql",
+                code=code,
+                explanation=payload.get("explanation") or "",
+                columns_used=list(payload.get("columns_used") or []),
+            )
+        )
+    if not proposals:
+        # A hand-run case: its runs are the proposals, one per distinct query.
+        # Their reach is computed from the profile the same way generate-code
+        # computes it, so a hand-run proposal carries the columns it reads and
+        # the safety check above can actually judge it.
+        for row in db.execute(
+            "SELECT kind, sql, code, dataset_id FROM runs "
+            "WHERE case_id = ? ORDER BY executed_at",
+            (case_id,),
+        ).fetchall():
+            code = row["sql"] if row["kind"] == "sql" else row["code"]
+            if not isinstance(code, str) or not code.strip() or code in proposed_codes:
+                continue
+            proposed_codes.add(code)
+            proposals.append(
+                TemplateProposal(
+                    kind=row["kind"] or "sql",
+                    code=code,
+                    explanation="",
+                    columns_used=_columns_referenced_module(
+                        code, row["kind"] or "sql", _profile_of(db, row["dataset_id"])
+                    ),
+                )
+            )
+
+    findings = [
+        TemplateFindingSummary(
+            statement=row["statement"],
+            validation_status=row["validation_status"],
+        )
+        for row in db.execute(
+            "SELECT statement, validation_status FROM findings WHERE case_id = ? "
+            "ORDER BY created_at",
+            (case_id,),
+        ).fetchall()
+    ]
+
+    if plan_row is None and not proposals and not findings:
+        return None
+    return TemplateShape(
+        plan=json.loads(plan_row["plan_json"]) if plan_row else None,
+        plan_source=plan_row["source"] if plan_row else None,
+        proposals=proposals,
+        findings=findings,
+    )
+
+
+def _template_of(db, case_id: str) -> dict | None:
+    """The template row a case was seeded from, or None.
+
+    None covers both 'no template' and 'template since deleted' - the second is
+    a normal state for something that outlives its source case, so it degrades
+    to the derivation rather than failing the request.
+    """
+    case = db.execute(
+        "SELECT template_id FROM cases WHERE id = ?", (case_id,)
+    ).fetchone()
+    if case is None or not case["template_id"]:
+        return None
+    return db.execute(
+        "SELECT shape_json FROM templates WHERE id = ?", (case["template_id"],)
+    ).fetchone()
+
+
+def _template_plan(db, case_id: str, dataset_id: str) -> tuple[dict, str] | None:
+    """The template's plan, offered when the case has no plan of its own yet.
+
+    A plan from another case is a starting point, not an authority: it is
+    validated exactly as an LLM's is, and any problem - a malformed shape, a
+    template that no longer exists - falls back to the normal derivation. The
+    `source` says `template` so a reviewer sees the plan came from history
+    rather than from this dataset.
+    """
+    if db.execute(
+        "SELECT 1 FROM plans WHERE case_id = ? AND dataset_id = ?",
+        (case_id, dataset_id),
+    ).fetchone():
+        return None
+    template = _template_of(db, case_id)
+    if template is None or not template["shape_json"]:
+        return None
+    try:
+        shape = json.loads(template["shape_json"])
+        plan = shape.get("plan")
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(plan, dict) or not plan:
+        return None
+    if validate_plan_module(plan):
+        return None
+    return plan, SOURCE_TEMPLATE
+
+
+def _template_proposal(db, case_id: str, kind: str, columns: list[str]) -> dict | None:
+    """A template proposal the profiled dataset can actually run.
+
+    The proposal is offered only when every column it reads exists in this
+    dataset - that check is what makes a query written against last month's file
+    safe to offer against this month's. Anything less would hand the analyst a
+    proposal the run endpoint would reject. A proposal whose reads are unknown
+    (an empty list) is refused rather than offered on trust, so the capture
+    below always records the columns a query reads.
+    """
+    template = _template_of(db, case_id)
+    if template is None or not template["shape_json"]:
+        return None
+    try:
+        shape = json.loads(template["shape_json"])
+    except json.JSONDecodeError:
+        return None
+    have = set(columns)
+    for proposal in shape.get("proposals") or []:
+        if not isinstance(proposal, dict):
+            continue
+        code = proposal.get("code")
+        used = proposal.get("columns_used") or []
+        if (
+            (proposal.get("kind") or "sql") == kind
+            and isinstance(code, str)
+            and code.strip()
+            and isinstance(used, list)
+            and all(isinstance(name, str) and name in have for name in used)
+        ):
+            return {
+                "kind": kind,
+                "code": code,
+                "explanation": proposal.get("explanation") or "",
+                "columns_used": list(used),
+            }
+    return None
+
+
+
 def _agent_step_of(row) -> AgentStep:
     return AgentStep(
         id=row["id"],
@@ -2272,9 +2476,13 @@ async def generate_code(
         "stats": json.loads(profile_row["stats_json"]),
     }
 
-    proposal, source = create_code_module(
-        question=payload.question, profile=profile, kind=payload.kind
-    )
+    templated = _template_proposal(db, case_id, payload.kind, profile["columns"])
+    if templated is not None:
+        proposal, source = templated, SOURCE_TEMPLATE
+    else:
+        proposal, source = create_code_module(
+            question=payload.question, profile=profile, kind=payload.kind
+        )
     return GeneratedCode(
         dataset_id=dataset_id,
         case_id=case_id,
@@ -2332,9 +2540,16 @@ async def create_plan(
         "duplicate_rows": profile_row["duplicate_rows"],
     }
 
-    plan_body, source = create_plan_module(case_row["question"], profile)
-    # An LLM plan is re-validated on the way in; schema violations never reach
-    # the database.
+    # A case seeded from a template is offered that template's plan first - it
+    # is the shape of an investigation that actually finished - and falls back
+    # to the derivation on any problem or when the case has planned already.
+    templated = _template_plan(db, case_id, dataset_id)
+    if templated is not None:
+        plan_body, source = templated
+    else:
+        plan_body, source = create_plan_module(case_row["question"], profile)
+    # A plan from anywhere outside the deterministic engine is re-validated on
+    # the way in; schema violations never reach the database.
     problems = validate_plan(plan_body)
     if problems:
         raise HTTPException(
@@ -2452,6 +2667,7 @@ async def import_case_package(payload: dict, db=Depends(get_db)) -> Case:
         id=case["id"],
         question=case["question"],
         dataset=case["dataset"],
+        template_id=case.get("template_id"),
         created_at=case["created_at"],
         updated_at=case["updated_at"],
     )
@@ -2486,12 +2702,17 @@ async def promote_template(
     payload: TemplateCreate,
     db=Depends(get_db),
 ) -> Template:
-    """Promote a case into a reusable template (P3-CASE-007).
+    """Promote a case into a reusable template (P3-CASE-007, P6-TEMPLATE-003).
 
     The template keeps the case's question and dataset label - the skeleton a
-    new case starts from - and nothing else: data, runs and findings stay with
-    the case. Templates are not case children, so outliving their source case
-    is the point.
+    new case starts from - plus the *shape* of the investigation that finished:
+    its plan and which engine produced it, the proposals it offered, and its
+    findings' statements with the verdicts validation gave them. The shape is a
+    projection over artifacts that already exist, so nothing is computed and a
+    case with nothing to carry promotes the question-only skeleton it always
+    did. Data, runs and findings stay with the case; a template offers, it does
+    not inherit. Templates are not case children, so outliving their source
+    case is the point.
     """
     case = db.execute(
         "SELECT id, question, dataset FROM cases WHERE id = ?", (case_id,)
@@ -2503,17 +2724,20 @@ async def promote_template(
     if not name:
         raise HTTPException(status_code=400, detail="name must not be empty")
 
+    shape = _capture_shape(db, case_id)
     template = Template(
         id=str(uuid4()),
         name=name,
         question=case["question"],
         dataset=case["dataset"],
+        shape=shape,
         created_at=datetime.now(timezone.utc),
     )
     db.execute(
-        "INSERT INTO templates (id, name, question, dataset, created_at) "
-        "VALUES (?, ?, ?, ?, ?)",
+        "INSERT INTO templates (id, name, question, dataset, shape_json, "
+        "created_at) VALUES (?, ?, ?, ?, ?, ?)",
         (template.id, template.name, template.question, template.dataset,
+         json.dumps(shape.model_dump()) if shape else None,
          template.created_at.isoformat()),
     )
     return template
@@ -2523,7 +2747,7 @@ async def promote_template(
 async def list_templates(db=Depends(get_db)) -> list[Template]:
     """List every saved template, newest first (P3-CASE-007)."""
     rows = db.execute(
-        "SELECT id, name, question, dataset, created_at FROM templates "
+        "SELECT id, name, question, dataset, shape_json, created_at FROM templates "
         "ORDER BY created_at DESC"
     ).fetchall()
     return [
@@ -2532,10 +2756,26 @@ async def list_templates(db=Depends(get_db)) -> list[Template]:
             name=row["name"],
             question=row["question"],
             dataset=row["dataset"],
+            shape=_shape_of(row["shape_json"]),
             created_at=row["created_at"],
         )
         for row in rows
     ]
+
+
+def _shape_of(stored: str | None) -> TemplateShape | None:
+    """Rebuild a stored shape, or None when the template carries none.
+
+    A corrupt shape does not propagate: the template degrades to the
+    question-only skeleton, so a listing can never fail on one bad row.
+    """
+    if not stored:
+        return None
+    try:
+        return TemplateShape(**json.loads(stored))
+    except (json.JSONDecodeError, ValueError, TypeError):
+        return None
+
 
 
 @app.post("/cases/from-template", status_code=201, response_model=Case)
@@ -2543,11 +2783,13 @@ async def create_case_from_template(
     payload: CaseFromTemplate,
     db=Depends(get_db),
 ) -> Case:
-    """Start a new case from a saved template (P3-CASE-007).
+    """Start a new case from a saved template (P3-CASE-007, P6-TEMPLATE-003).
 
     The template's question and dataset label seed the case; either may be
     overridden inline. Only the skeleton is copied - no data, runs or findings -
-    so every case from a template starts clean.
+    so every case from a template starts clean. The case records which template
+    seeded it, so its plan and code steps can offer that template's shape as
+    starting proposals rather than deriving from scratch.
     """
     template = db.execute(
         "SELECT id, name, question, dataset FROM templates WHERE id = ?",
@@ -2558,7 +2800,13 @@ async def create_case_from_template(
 
     question = payload.question if payload.question is not None else template["question"]
     dataset = payload.dataset if payload.dataset is not None else template["dataset"]
-    return _insert_case(db, question, dataset)
+    case = _insert_case(db, question, dataset)
+    db.execute(
+        "UPDATE cases SET template_id = ? WHERE id = ?",
+        (payload.template_id, case.id),
+    )
+    case.template_id = payload.template_id
+    return case
 
 
 @app.delete("/templates/{template_id}", status_code=204)

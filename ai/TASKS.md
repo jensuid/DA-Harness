@@ -2022,3 +2022,161 @@ LESSON: two of the first 24 tests failed on the first run and both were the
         assertion against the real contract, not against the shape you assumed
         while writing it.
 ```
+
+```
+TASK ID: P6-TEMPLATE-003
+MILESTONE: P6 Post-Launch Evolution
+CAPABILITY: Case reuse
+GOAL: Promote a finished investigation into a reusable template carrying its
+      analytical shape - its plan, its proposals and how its findings validated
+      - not just its question, and let a case started from it inherit that shape
+      as validated starting proposals.
+
+CONTEXT: P3-CASE-007 shipped templates that copy the question and the dataset
+         label alone. The template machinery exists; the investigation does not
+         travel with it, so "same analysis, new month's file" still means
+         re-deriving the plan and re-typing the query that worked last time.
+         The plan, the proposals and the finding outcomes are all already on
+         disk; nothing new needs to be computed to carry them.
+
+INPUTS: a case with a plan, runs and/or findings.
+RELEVANT FILES: server/app/main.py, server/app/models.py, server/app/db.py,
+                server/app/exporter.py, server/tests/test_case_templates.py
+REQUIRED CHANGE:
+  - promotion captures a shape: a pure projection over the case's artifacts -
+    its latest plan and which engine produced it, the code proposals its agent
+    run made (falling back to its runs when the case was hand-run), and its
+    findings' statements with their validation status. A case with nothing to
+    carry promotes a shapeless template and behaves exactly as before.
+  - the template row gains a nullable shape_json; the Template model exposes it.
+  - a case created from a template records its lineage (template_id), so the
+    case knows where it came from rather than the connection being implicit.
+  - the plan step prefers the template's plan when the case has one and has no
+    plan of its own yet, validated through the same validate_plan and falling
+    back to the normal derivation on any problem, with source recorded as
+    "template" so a reviewer sees the plan came from history, not this dataset.
+  - generate-code prefers a template proposal whose every column exists in the
+    profiled dataset - the profile check is what makes a historical proposal
+    safe to offer against different data - and falls back to the generator
+    otherwise, again recording source="template".
+  - export carries the lineage; import preserves it; duplicate keeps it.
+NON-GOALS: copying data, runs, findings or charts into the templated case (it
+           still starts clean; the shape is proposals a human accepts, not
+           artifacts it inherits), reusing a proposal that names a column the
+           new dataset lacks, autonomous application of a shape (every write
+           is still a POST the human makes), a template editor, sharing
+           templates between installs.
+CONSTRAINTS: the honesty budgets are untouched - a reused plan is still just a
+             plan, and a draft or interpretation still only quotes numbers the
+             actual run produced; a shapeless or missing template degrades to
+             the existing deterministic path with no error; nothing the
+             analyst typed is logged; no new runtime dependency; the existing
+             template tests must pass unmodified.
+ACCEPTANCE CRITERIA:
+- [x] promoting a case with a plan, runs and findings captures all three in the
+      shape
+- [x] promoting an empty case yields a shapeless template indistinguishable
+      from today's
+- [x] a templated case starts clean and records its template id
+- [x] the plan step offers the template's plan, validated, with source=template
+- [x] a malformed or missing template plan falls back to derivation
+- [x] generate-code offers a template proposal only when every column it reads
+      exists in the profiled dataset, with source=template
+- [x] a proposal naming a column the new dataset lacks is never offered; the
+      generator answers instead
+- [x] every shape-derived answer records source=template
+- [x] a shapeless older template still promotes, lists and instantiates
+- [x] deleting a template a case points at degrades to the normal path, not an
+      error
+- [x] export/import and duplicate carry the lineage
+- [x] the full server suite, the P2/P3/P4 gates and the web suite stay green
+TESTS: server/tests/test_case_templates.py - shape capture for a finished case,
+       a shapeless promotion, lineage recorded on instantiation, the plan step
+       preferring the template plan, the fallbacks, a proposal accepted and
+       refused by column existence, source propagation, a deleted template
+       degrading, the export/import and duplicate round trips, and the
+       unmodified existing behaviours.
+VERIFICATION: server suite + verification/p2/verify_p2.py +
+              verification/p3/verify_p3.py + verification/p4/verify_p4.py PASS.
+STATE UPDATE: mark P6-TEMPLATE-003 done on pass; ROADMAP item 3 flips to DONE.
+```
+```
+TASK: P6-TEMPLATE-003 - templates carry the analytical shape of a finished case
+ID: P6-TEMPLATE-003
+PRIORITY: high
+STATUS: DONE
+SUMMARY: P3-CASE-007 shipped templates that copied the question and the dataset
+         label alone, so "same analysis, new month's file" still meant
+         re-deriving the plan and re-typing the query that worked last time. A
+         template now carries the *shape* of a finished investigation too, and
+         a case started from it inherits that shape as validated starting
+         proposals - not as artifacts, and never applied without a human.
+
+Five pieces, all projections over what is already on disk:
+
+- **`_capture_shape` (main.py)** - a pure projection, nothing computed. The
+  case's latest plan and which engine produced it; the code proposals its
+  agent run made, falling back to its runs when a human drove the case; and
+  its findings' statements with the verdicts validation already gave them. A
+  case with none of these promotes the shapeless skeleton it always promoted
+  and behaves exactly as before.
+- **`templates.shape_json` + `cases.template_id` (db.py, models.py)** - the
+  shape has somewhere to live and a case knows where it came from. Both
+  nullable, both added to `_ensure_column`, so an older database migrates in
+  place.
+- **the plan step** prefers the template's plan when the case has none of its
+  own, validated through the same `validate_plan` and falling back to the
+  normal derivation on any problem, with `source="template"` so a reviewer
+  sees the plan came from history rather than this dataset.
+- **generate-code** prefers a template proposal only when every column it
+  reads exists in the profiled dataset - that profile check is what makes a
+  historical proposal safe to offer against different data - and falls back
+  to the generator otherwise, again recording `source="template"`.
+- **exporter.py** - the lineage travels with the package, import preserves it,
+  and a duplicated case keeps it.
+
+Two real bugs the tests found. `SOURCE_TEMPLATE` was referenced in two
+helpers but its definition silently never landed, so the first request to a
+templated case's plan step raised a `NameError` - a compile-time name in a
+module that imports cleanly is still a runtime error when the path is never
+exercised, and only a test that walked the path caught it. And hand-run
+cases' proposals captured `columns_used: []`, which made the column-existence
+safety check pass *vacuously* - a template query could be offered against a
+dataset lacking its columns, which is exactly the one thing the check existed
+to prevent. Proposals now compute their reach at capture time through
+`generator._columns_referenced`, so a hand-run proposal carries the same
+reach an agent's does. A guard that is never fed the data it guards is not a
+guard.
+
+NON-GOALS held: no data, runs, findings or charts are copied into a templated
+             case (it starts clean; the shape is proposals a human accepts),
+             no proposal naming a column the new dataset lacks is ever
+             offered, no shape is applied autonomously (every write is still a
+             POST the human makes), no template editor, no cross-install
+             sharing.
+CONSTRAINTS held: the honesty budgets are untouched (a reused plan is still
+             just a plan, and a draft or interpretation still only quotes
+             numbers the actual run produced); a shapeless, malformed or
+             deleted template degrades to the existing deterministic path with
+             no error; nothing the analyst typed is logged; no new runtime
+             dependency; the 10 existing template tests pass unmodified.
+ACCEPTANCE CRITERIA: all 12 - see the checked boxes above.
+TESTS: 11 appended to server/tests/test_case_templates.py (21 total, the first
+       10 unmodified) - shape capture for a finished case, a shapeless
+       promotion, lineage recorded on instantiation, the plan step preferring
+       the template plan, both fallbacks, a proposal accepted and refused by
+       column existence, source propagation, a deleted template degrading, and
+       the export/import and duplicate round trips.
+VERIFICATION: server suite 302 passed (was 291, +11); P2, P3 and P4 gates all
+              PASS (the P4 gate re-ran the suite at 302); web 21 passed;
+              desktop 12 Rust tests. All green locally; CI will run it on push.
+LESSON: a safety check whose input is collected at the wrong moment is a
+        safety check that does not run. `columns_used` was captured empty for
+        hand-run cases, so the column-existence gate passed vacuously and would
+        have offered a template's query against a dataset that lacked its
+        columns - the single failure the gate was written to prevent. The guard
+        was in the right place; the data never reached it. Any check over a
+        historical artifact must be verified against the path that created the
+        artifact, not only against the path that consumes it.
+
+```

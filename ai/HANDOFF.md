@@ -1,6 +1,25 @@
 # DAH - Handoff
 
 ## What was completed
+- P6-TEMPLATE-003 PASSED: a template carries the analytical shape of a finished
+  case, not just its question. The plan, the proposals and the finding outcomes
+  were all already on disk, so promotion is a pure projection over them
+  (`_capture_shape`), and a case started from the template inherits that shape
+  as *proposals a human accepts* - the plan step offers the template's plan
+  through the same `validate_plan`, and generate-code offers a template
+  proposal only when every column it reads exists in the profiled dataset. Both
+  record `source="template"` and both degrade to the deterministic path on any
+  problem, so a shapeless, malformed or deleted template is never an error -
+  it is the absence of a template, which the code already handled. No data,
+  runs, findings or charts are copied; every write is still a POST the human
+  makes, so the read-only gate, the row cap and the honesty budgets are all
+  still in force for a templated case.
+  Two bugs the new tests caught: `SOURCE_TEMPLATE` was referenced by two
+  helpers whose definition never landed (a `NameError` at request time on a
+  path no existing test walked), and hand-run cases' proposals carried
+  `columns_used: []`, which made the column-existence check pass vacuously -
+  the one failure it existed to prevent. A guard never fed the data it guards
+  is not a guard.
 - P6-AGENT-002 PASSED: a plan that executes itself, one approved write at a time.
   Every stage of the loop already had a validated endpoint; the agent is the
   driver over them, and it holds no privilege a hand-written call lacks. Its SQL
@@ -649,7 +668,7 @@ reported as unsupported (clear 400) rather than faked; that gate is future work.
 
 ## Tests performed (current)
 
-- server pytest: 291 passed (267 + 24 agentic analysis; verified again on a clean
+- server pytest: 302 passed (291 + 11 template shape; verified again on a clean
   venv built from pyproject - the install path CI uses)
 - CI on GitHub's own runners: ALL FOUR JOBS GREEN
   (run 35490199963, the first green run since ae0ba33 - server suite + P2/P3/P4
@@ -705,78 +724,73 @@ reported as unsupported (clear 400) rather than faked; that gate is future work.
 
 ## Next action
 
-P6-AGENT-002 is **DONE**: agentic analysis. Every stage of the loop already had
-a validated endpoint with an honesty budget behind it - generate-code, runs,
-interpret, draft-finding, findings, charts, validate. What did not exist was
-the *driver* over them: a human still walked the panels one click at a time
-even when the next click was never in doubt. The agent is that driver, and it
-is deliberately not an autonomous one.
+P6-TEMPLATE-003 is **DONE**: templates that carry the analytical shape of a
+finished case, not just its question. P3-CASE-007 shipped a template that
+copied the question and the dataset label, so "same analysis, new month's
+file" still meant re-deriving the plan and re-typing the query that worked
+last time. The plan, the proposals and the finding outcomes were all already
+on disk; nothing new needed computing to carry them.
 
 Four pieces:
 
-- **`server/app/agent.py` (new)** - a step machine, not a script. `next_step()`
-  derives the one thing to do next as a pure projection over the case's
-  artifacts, the same discipline as the workflow stage (P3-FLOW-004), so an
-  interrupted agent resumes exactly where it stopped and can never be ahead of
-  or behind the data. Loop order: profile -> plan -> analyze -> interpret ->
-  accept -> chart -> validate. `accept` carries the drafter's candidate finding
-  inside its payload (the draft is stateless by design), and `analyze` carries
-  its generate-code proposal the same way.
-- **`server/app/generator.py`** - `_pick_axes` and `generate_code` take a
-  `variant` that rotates the measure/dimension/period through the usable
-  columns, so a retry is a genuinely different query rather than a re-run of
-  the one that returned nothing. A family with a single usable column keeps
-  that column, which is how the caller detects a dead end instead of spending
-  its budget on a query it has already tried.
-- **`server/app/main.py`** - four endpoints over one path. `GET .../agent` is
-  strictly read-only (a refresh that proposed would commit work the human never
-  saw); `POST .../agent` derives and records the next pending step,
-  idempotently; `POST .../agent/approve` refuses any id that is not the case's
-  *current* pending step with a 409, so a stale page can never cause a second
-  write; `POST .../agent/reject` records the analyst's reason and writes
-  nothing. Every approved step awaits the async endpoint that owns the write -
-  that is what keeps the read-only gate, the row cap and the single
-  finding-creation path in force for an agent-run case.
-- **`server/app/exporter.py` + duplicate** - the audit trail travels with the
-  case. Export carries it, import remaps the ids a payload cites to the
-  restored case's own artifacts, a duplicated case keeps its approvals citing
-  its own rows, and delete removes it. A package written before this task has
-  no `agent_steps` section, so its absence is tolerated rather than treated as
-  corruption.
+- **`_capture_shape` (main.py)** - a pure projection, nothing computed or
+  guessed. The case's latest plan and which engine produced it; the code
+  proposals its agent run made, falling back to its runs when a human drove
+  it; and its findings' statements with the verdicts validation already gave
+  them. Returns None when the case has none of these, so an empty case
+  promotes the question-only skeleton it always promoted and behaves exactly
+  as before.
+- **`templates.shape_json` + `cases.template_id`** - the shape has somewhere to
+  live and a case knows where it came from. Both nullable, both added to
+  `_ensure_column`, so an older database migrates in place. `_template_of`
+  treats a deleted template as no template, so pointing at a gone row degrades
+  to the normal path instead of erroring.
+- **the plan step** offers the template's plan only when the case has none of
+  its own, validated through the same `validate_plan` the planner uses, and
+  falls back to derivation on any problem - with `source="template"` recorded,
+  so a reviewer sees the plan came from history rather than this dataset.
+- **generate-code** offers a template proposal only when every column it reads
+  exists in the profiled dataset - that profile check is what makes a
+  historical proposal safe against different data - and falls back to the
+  generator otherwise, again with `source="template"`.
 
-An empty result is the agent's one real decision point: it rotates the variant,
-a proposal identical to one already tried is a dead end, and three empty
-attempts end the run at a stated reason. A dataset with no usable axis (one
-categorical column, no measure) ends the same way, immediately. Both are
-asserted, because "the agent terminates" is a property, not a hope.
+The shape is proposals a human accepts, not artifacts a case inherits: no data,
+runs, findings or charts are copied into a templated case, and every write is
+still a POST the human makes. The honesty budgets are untouched - a reused
+plan is still just a plan, and a draft or interpretation still only quotes
+numbers the actual run produced.
 
-**Verified:** server suite 291 passed (was 267, +24 in
-`server/tests/test_agent.py`); web 21 passed; desktop 12 Rust tests; P2, P3
-and P4 gates all PASS. Everything green locally; CI will run it on push.
+Two real bugs the tests found, both worth carrying. `SOURCE_TEMPLATE` was
+referenced in two helpers but its definition silently never landed, so the
+first request to a templated case's plan step raised a `NameError` at request
+time - a module can import cleanly and still be broken on a path no test
+walked. And hand-run cases' proposals captured `columns_used: []`, which made
+the column-existence safety check pass **vacuously**: a template query could
+be offered against a dataset lacking its columns, which is the single failure
+the check existed to prevent. Proposals now compute their reach at capture
+time through `generator._columns_referenced`. A guard that is never fed the
+data it guards is not a guard.
 
-Two lessons worth carrying. First, two of the 24 tests failed on the first run
-and both were the *tests'* fault: one asserted an import answers 200 when the
-endpoint answers 201, one ended with a leftover `del json` that crashed at
-assertion time. A test file is itself untested code until its own suite is
-green - verify the assertion against the real contract, not against the shape
-assumed while writing it. Second, the module shipped two unused constants
-(`STEP_KINDS`, `WRITE_KINDS`) whose comment blocks were doing real
-documentation work; the comments became prose and the constants went, because
-dead code with a good docstring is still dead code.
+**Verified:** server suite 302 passed (was 291, +11 in
+`server/tests/test_case_templates.py`, the first 10 unmodified); web 21
+passed; desktop 12 Rust tests; P2, P3 and P4 gates all PASS - the P4 gate's
+own last step re-ran the suite at 302. Everything green locally; CI will run
+it on push.
 
-**Next on the P6 checklist:** case templates from real history (item 3) - a
-finished investigation promoted into a reusable template carrying its plan and
-validation shape rather than just its question. The template machinery exists
-but copies the question alone, and repeat use is the one thing a single user
-actually does repeatedly. After that: a versioned migration path before memory
-or agents grow new tables (item 4), and a Tauri update flow now that releases
-publish per tag (item 5).
+**Next on the P6 checklist: a versioned migration path** (item 4) - the DB has
+grown by `_ensure_column` in-place additions across many tasks, including two
+this task landed, and the scheme is untrackable by construction: there is no
+record of which database version a given install is on, so there is no way to
+know whether a given column exists except by trying it. P6's remaining items
+add tables and shipped state (memory's store; the update flow's release
+metadata), and doing the migration story *after* those tables exist is how
+the in-place additions became untrackable in the first place. After that:
+the Tauri update flow (item 5), now that releases publish per tag.
 
 Releasing: tag `v<x.y.z>` where x.y.z matches server/pyproject.toml. The
 published build is arm64 and unsigned, flagged pre-release (DEC-006).
 
 Nothing is unblocked-but-undone.
-
 ## Repository state
 
 - Every P3 task is one atomic commit, all pushed to `origin/master`

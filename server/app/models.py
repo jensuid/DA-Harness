@@ -44,6 +44,10 @@ class Case(BaseModel):
     id: str
     question: str
     dataset: str
+    # Which template seeded this case, if any. Advisory: a template outlives
+    # its source case and may be deleted before this one, so a missing template
+    # degrades to the normal derivation rather than an error.
+    template_id: str | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -299,6 +303,44 @@ class ValidationResult(BaseModel):
     validated_at: datetime
 
 
+class TemplateProposal(BaseModel):
+    """One code proposal captured from a finished case.
+
+    The columns the proposal reads are carried so a later case can refuse it
+    when *its* dataset does not have them - the proposal travels, the schema it
+    was written against does not.
+    """
+
+    kind: str
+    code: str
+    explanation: str
+    columns_used: list[str]
+
+
+class TemplateFindingSummary(BaseModel):
+    """What a finished case concluded, and whether it survived validation."""
+
+    statement: str
+    validation_status: str
+
+
+class TemplateShape(BaseModel):
+    """The analytical shape of a promoted case (P6-TEMPLATE-003).
+
+    A pure projection over artifacts that already exist: the case's latest plan
+    and which engine produced it, the proposals its agent run offered (or its
+    runs, when the case was driven by hand), and its findings' statements with
+    the verdicts validation gave them. Every field is optional or a list, so a
+    case with nothing to carry promotes a shapeless template that behaves
+    exactly as the question-only skeleton always did.
+    """
+
+    plan: dict | None = None
+    plan_source: str | None = None
+    proposals: list[TemplateProposal] = []
+    findings: list[TemplateFindingSummary] = []
+
+
 class TemplateCreate(BaseModel):
     """Promote a case into a reusable template (P3-CASE-007).
 
@@ -309,15 +351,19 @@ class TemplateCreate(BaseModel):
 
 
 class Template(BaseModel):
-    """A reusable case skeleton: the question and the dataset label.
+    """A reusable case skeleton plus the shape of the case it came from.
 
     A template outlives the case it came from - promoting a case and then
     deleting it keeps the template - because templates are not case children.
+    `shape` is nullable: a template promoted before P6-TEMPLATE-003, or one
+    promoted from a case with nothing to carry, has none and seeds only the
+    question and the label, exactly as it always did.
     """
     id: str
     name: str
     question: str
     dataset: str
+    shape: TemplateShape | None = None
     created_at: datetime
 
 

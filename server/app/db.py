@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS cases (
     id TEXT PRIMARY KEY,
     question TEXT NOT NULL,
     dataset TEXT NOT NULL,
+    template_id TEXT,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
 );
@@ -96,6 +97,7 @@ CREATE TABLE IF NOT EXISTS templates (
     name TEXT NOT NULL,
     question TEXT NOT NULL,
     dataset TEXT NOT NULL,
+    shape_json TEXT,
     created_at TEXT NOT NULL
 );
 
@@ -180,6 +182,12 @@ def get_connection(db_path: Path = DB_PATH) -> Iterator[sqlite3.Connection]:
         # Runs created before P3-DATA-003 touch a single dataset; the JSON list
         # is the full set, dataset_id kept as the primary for old code paths.
         _ensure_column(conn, "runs", "dataset_ids_json", "TEXT")
+        # Templates promoted before P6-TEMPLATE-003 carry a question alone; the
+        # shape is what a finished investigation leaves behind for the next one.
+        _ensure_column(conn, "templates", "shape_json", "TEXT")
+        # A case created from a template records which one, so its plan and
+        # code steps can offer its shape instead of deriving from scratch.
+        _ensure_column(conn, "cases", "template_id", "TEXT")
         yield conn
         conn.commit()
     finally:

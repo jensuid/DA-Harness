@@ -85,7 +85,8 @@ def _chart_format(path: Path) -> str:
 def export_case(db, case_id: str) -> dict | None:
     """Assemble a case into a self-contained package, or None if it is missing."""
     case_row = db.execute(
-        "SELECT id, question, dataset, created_at, updated_at FROM cases WHERE id = ?",
+        "SELECT id, question, dataset, template_id, created_at, updated_at "
+        "FROM cases WHERE id = ?",
         (case_id,),
     ).fetchone()
     if case_row is None:
@@ -238,6 +239,12 @@ def export_case(db, case_id: str) -> dict | None:
             "id": case_row["id"],
             "question": case_row["question"],
             "dataset": case_row["dataset"],
+            # Advisory: the template is a separate entity that may not exist in
+            # the store this package is restored into, so import treats a
+            # dangling reference as no lineage rather than an error.
+            "template_id": case_row["template_id"]
+            if "template_id" in case_row.keys()
+            else None,
             "created_at": case_row["created_at"],
             "updated_at": case_row["updated_at"],
         },
@@ -283,12 +290,13 @@ def import_package(db, package: dict, data_dir: Path) -> dict:
     new_case_id = str(uuid4())
     now = datetime.now(timezone.utc)
     db.execute(
-        "INSERT INTO cases (id, question, dataset, created_at, updated_at) "
-        "VALUES (?, ?, ?, ?, ?)",
+        "INSERT INTO cases (id, question, dataset, template_id, created_at, "
+        "updated_at) VALUES (?, ?, ?, ?, ?, ?)",
         (
             new_case_id,
             source_case["question"],
             source_case.get("dataset") or "",
+            source_case.get("template_id"),
             source_case.get("created_at") or now.isoformat(),
             now.isoformat(),
         ),
@@ -462,6 +470,9 @@ def import_package(db, package: dict, data_dir: Path) -> dict:
         "id": new_case_id,
         "question": source_case["question"],
         "dataset": source_case.get("dataset") or "",
+        # Advisory: the template may not exist in this store, so a case that
+        # keeps the reference still answers every question without it.
+        "template_id": source_case.get("template_id"),
         "created_at": source_case.get("created_at") or now.isoformat(),
         "updated_at": now.isoformat(),
     }
