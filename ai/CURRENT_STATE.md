@@ -1,6 +1,6 @@
 # DAH - Current State
 
- - **Phase:** P5 Production Grade - COMPLETE (all deliverables; signing retired indefinitely by DEC-006 - DAH is single-user, not blocked). P6 Post-Launch Evolution is COMPLETE: all 5 entry-checklist items - cross-case recall, agentic analysis, analytical-shape templates, the versioned migration path and the update check - all DONE. P4 Production Candidate was COMPLETE (all 5 checklist items:
+ - **Phase:** P5 Production Grade - COMPLETE. P6 Post-Launch Evolution - COMPLETE: all 5 entry-checklist items. P7 Product Modes is IN PROGRESS (0 of 4), opening with EVALUATE mode - the spec's third product mode, auditing existing analytical work against the nine axes the spec names. P4 Production Candidate was COMPLETE (all 5 checklist items: P4 Production Candidate was COMPLETE (all 5 checklist items:
   P4-VERIFY-001, P4-RELIABILITY-002, P4-UX-003 + P4-UX-004, P4-VALID-005,
   P4-PERF-006, P4-CI-007). P3 V1 is COMPLETE: all 10 entry-checklist items,
   231 server tests, and a P3 gate of its own. P5 Production Grade is IN
@@ -143,6 +143,12 @@ says honestly that it could not tell (P6-UPDATE-005)**
 - Chart from a run: `POST /cases/{id}/runs/{id}/charts` with `{"kind": "bar|line", "x": ..., "y": ..., "series": ...}`; image at `GET /cases/{id}/charts/{id}/image`
 - Rename: `PATCH /cases/{id}` with `{question?, dataset?}`; duplicate: `POST /cases/{id}/duplicate`;
   delete: `DELETE /cases/{id}` (removes the case row, all children, and its on-disk data)
+
+## P7 progress
+
+| Task | Status |
+|------|--------|
+| P7-EVAL-001 EVALUATE mode | PROPOSED |
 
 ## P6 progress
 

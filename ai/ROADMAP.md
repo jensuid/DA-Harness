@@ -4,7 +4,7 @@ Source of truth for **where we are** on the global roadmap
 (`docs/Implementation Roadmap.md`). Every phase completion must update this
 file together with `CURRENT_STATE.md` and `TASKS.md`.
 
-**Current stage: P6 Post-Launch Evolution — COMPLETE (all 5 checklist items; P0-P6 all delivered).**
+**Current stage: P7 Product Modes — IN PROGRESS (P6 closed; entry checklist proposed below).**
 
 ```
 P0 Foundation          DONE  ✓
@@ -17,6 +17,7 @@ P4 Production Candidate DONE  ✓   (all 6 checklist items; CI runs every
 P5 Production Grade    DONE  ✓   (all deliverables; signing deferred
                               indefinitely by DEC-006 - DAH is single-user)
 P6 Evolution           COMPLETE ✓  (all 5 checklist items)
+P7 Product Modes       IN PROGRESS (0 of 4)  ← we are here
 ```
 
 North-star progression: prove the loop → make it useful → make it repeatable
@@ -35,6 +36,7 @@ production-grade**.
 | P4 Production Candidate | Serious software: reliability, security, performance, UX, observability | DONE | P3 gate PASS | `verification/p3/REPORT.md` (23 journey steps, 15 exit criteria, all PASS); CI runs every layer (P4-CI-007); signing deferred to P5 by DEC-004 |
 | P5 Production Grade | Maintainable, distributable, secure product | DONE | — | P4 gate, observability, the 500 envelope, release automation, the Reveal-logs menu and the CI repair (P5-CI-FIX-007) DONE; v0.1.0 published. Only signing remains, blocked on the Apple Developer ID (DEC-004). CI runs on macos-latest - macos-13 is retired (DEC-005) |
 | P6 Post-Launch Evolution | Scale and intelligence | DONE | — | all 5 checklist items: cross-case recall (P6-MEMORY-001), agentic analysis (P6-AGENT-002), analytical-shape templates (P6-TEMPLATE-003), the versioned migration path (P6-MIGRATE-004) and the update check (P6-UPDATE-005) |
+| P7 Product Modes | The spec's LEARN and EVALUATE modes, and the UI surface for the P6 capabilities | IN PROGRESS | — | 0 of 4 checklist items: EVALUATE (audit existing work), the web-shell gap, LEARN, then multi-agent workflows |
 
 ## Phase gate definitions (what "done" means)
 
@@ -174,3 +176,20 @@ Each is listed in the roadmap as a P6 capability; none pays for itself at a
 user count of one, and the architecture is deliberately not shaped around
 them - the spec's own instruction is that they "should be allowed without
 making them MVP dependencies."
+
+
+## P7 Product Modes — entry checklist (0 of 4 done)
+
+P6 closed the roadmap's own ladder: P0 through P6 are all delivered, and the
+scale half of the roadmap's P6 list (cloud, collaboration, warehouse
+connectors, governance) stays deferred at a user count of one. What is left is
+not more infrastructure - it is product. The master specification defines three
+modes; ANALYZE is the one that exists and the other two are the checklist,
+ordered by what the one user gains first.
+
+| # | Capability | Why now | Roadmap section |
+|---|-----------|---------|-----------------|
+| 1 | **EVALUATE mode** — import existing analytical work (SQL, Python, a notebook, a dashboard export, a spreadsheet, an AI-generated analysis) as the *thing under inspection* and audit it against the spec's nine axes: question, data, quality, method, calculation, evidence, claim, visualization, limitations | The one capability DAH uniquely owns and the one no notebook provides. Most of the machinery already exists - read-only execution, deep profiling, rerun validation, the evidence graph and the honesty budgets - so the work is a new *frame* over validated primitives, and it is the frame that separates DAH from a notebook. It also gives the P6 agent's own output something to be audited against, which is why it precedes multi-agent work | Product mode: EVALUATE |
+| 2 | **Close the web-shell gap** — the core has seven endpoints with no UI at all: the agent (`/agent`), templates (`/templates`, `/from-template`), cross-case memory, EDA (`/eda`), the evidence graph (`/evidence-graph`), case history, rename/duplicate/delete, plus the new `/schema-version` and `/updates/latest` | The core can already do all of it and a user can reach none of it. This is the distance between "works" and "usable", and it is the cheapest large win left - no new endpoints, no new contracts, only surfaces over the ones that exist | P7 UX |
+| 3 | **LEARN mode** — a guided Why -> What -> How -> Validate walk over a dataset, using the workflow stages that already exist as the curriculum | A sequencing and presentation layer over P3-FLOW-004 rather than new machinery, which is why it is third rather than first | Product mode: LEARN |
+| 4 | **Multi-agent workflows** — the spec's ladder above the single driver that exists | Only after EVALUATE, which is the audit layer an agent's own output has to survive. Without it, more agents means more unexamined output | P6 Agentic Analysis (continued) |
