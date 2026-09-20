@@ -1,6 +1,6 @@
 # DAH - Current State
 
- - **Phase:** P4 Production Candidate - COMPLETE (all 5 checklist items:
+ - **Phase:** P5 Production Grade - COMPLETE (all deliverables; signing retired indefinitely by DEC-006 - DAH is single-user, not blocked). P6 Post-Launch Evolution is IN PROGRESS, entry checklist proposed, P6-MEMORY-001 (cross-case recall) the first task. P4 Production Candidate was COMPLETE (all 5 checklist items:
   P4-VERIFY-001, P4-RELIABILITY-002, P4-UX-003 + P4-UX-004, P4-VALID-005,
   P4-PERF-006, P4-CI-007). P3 V1 is COMPLETE: all 10 entry-checklist items,
   231 server tests, and a P3 gate of its own. P5 Production Grade is IN
@@ -38,7 +38,7 @@ JSON package with import round trip (P2-CASE-012)**
   CaseWorkspace 9);
   desktop shell 7 Rust tests (5 unit + 2 e2e, `cd desktop/src-tauri && cargo test [--features e2e]`);
   P2 and P3 gates PASS; first release v0.1.0 published from tag and checksum-verified
-- **Next task:** P5-CI-FIX-007 is done (CI green for the first time since ae0ba33, and v0.1.0 published). The last P5 checklist item remains macOS signing + notarization,
+- **Next task:** P6-MEMORY-001 - cross-case recall, letting an answer cite a previous case's finding. Proposed, not started: **say the word and I begin.** Signing is retired by DEC-006 (single-user), so nothing in P6 is blocked. The last P5 item was macOS signing + notarization,
   formally deferred by DEC-004 and **blocked on an external dependency only you
   can provision** - a $99 Apple Developer ID. The release job already has the
   slot: signing goes between the build and the upload, and the `--prerelease`
@@ -51,7 +51,7 @@ JSON package with import round trip (P2-CASE-012)**
   Carried: a 500 still answers with Starlette's plain-text "Internal Server
   Error"; the client handles it, but a JSON envelope is the last rough edge of
   the error contract.
-- **Blockers:** none
+- **Blockers:** none. Signing is deferred indefinitely by DEC-006 (DAH is single-user) - a decision, not a blocker.
 
 ## P2 progress
 

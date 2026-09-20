@@ -175,3 +175,59 @@ on `macos-latest`, as a literal `runs-on:` - never an env reference.
 - **A self-hosted Intel runner now.** Correct in principle, and the only way to
   restore the Intel-in-CI property, but it is hardware provisioning - the same
   class of external dependency as the Apple Developer ID. Deferred.
+
+---
+
+## DEC-006: signing deferred indefinitely; DAH is single-user for now
+
+**Date:** 2026-09-20 · **Status:** ACCEPTED · **Supersedes:** the "P5 required"
+framing of DEC-004
+
+### Context
+
+DEC-004 deferred macOS code signing to P5 and listed it as a required P5
+checklist item, blocked on a $99 Apple Developer ID. P5 has now delivered
+everything else - the P4 gate, observability, the 500 envelope, release
+automation, the Reveal-logs menu and the CI repair - and v0.1.0 is published
+and checksum-verified. Signing is the sole remaining item, and the user has
+decided **DAH is for their own use for the foreseeable future**, not for
+distribution to others.
+
+That decision dissolves the blocker rather than leaving it open. A
+single-user, single-machine tool does not need a notarized identity: the
+right-click > *Open* workaround is once per machine, the user is the only
+person who pays it, and nobody is installing an unverified developer's build.
+
+### Decision
+
+Signing and notarization move from "P5 required, blocked" to **indefinitely
+deferred, by intent**. P5 closes without them. The unsigned build is not a
+defect or an oversight - it is the correct posture for a personal tool, and
+the README plus the generated release notes still state the first-launch
+workaround for the day someone else does want a copy.
+
+### Consequences
+
+- **P5 is COMPLETE.** The one open checklist item is retired by this decision,
+  not by work. The phase closes on the evidence that exists: green CI, a
+  published and checksum-verified v0.1.0, and three verification gates.
+- **The pipeline slot stays.** `release.yml` keeps its gap between the build
+  and the upload. If the user ever provisions a Developer ID, signing lands
+  there in one place and `--prerelease` is the flag to revisit - unchanged
+  from DEC-004's plan.
+- **No P5 gate script.** Unlike P2/P3/P4, P5's content is distribution and
+  observability rather than an in-process journey, so its evidence is the
+  release run and the CI run, not a `verification/p5/verify_p5.py`. Recorded
+  here so the absence is a decision and not a gap.
+- **The unsigned first launch stays documented** in `README.md` and in the
+  generated release notes.
+
+### Alternatives considered
+
+- **Keep P5 nominally open** until an ID appears. Leaves a phase that is
+  finished in everything but name, and blocks the roadmap's stage marker on a
+  purchase nobody needs to make. A blocked phase that will never unblock on
+  its own is a bookkeeping lie.
+- **Buy the ID anyway.** Real money and real pipeline work (identity, secret
+  rotation, notarization stapling) for a user base of one. The ROI is negative
+  until distribution is real.

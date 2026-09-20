@@ -168,21 +168,21 @@
     "semantic_hash": ""
   },
   "ai/CURRENT_STATE.md": {
-    "mtime": 1789881432.8700511,
-    "seen": 1789881502.478925,
-    "ast_hash": "7d21ce24674aec0784ac6bd20aae36da",
+    "mtime": 1789882573.3542335,
+    "seen": 1789882664.15412,
+    "ast_hash": "9783b31217a3fa36fe764f3e6acff1e6",
     "semantic_hash": ""
   },
   "ai/DECISIONS.md": {
-    "mtime": 1789881356.986933,
-    "seen": 1789881502.47893,
-    "ast_hash": "2b167c4dbf8746c05b9080927f720015",
+    "mtime": 1789882501.2002113,
+    "seen": 1789882664.1541278,
+    "ast_hash": "0535af2d78b8c8dcc67884b5f60e0fbc",
     "semantic_hash": ""
   },
   "ai/HANDOFF.md": {
-    "mtime": 1789881465.4758058,
-    "seen": 1789881502.478936,
-    "ast_hash": "d4b733941e167c0ff0f6387c0b80d93e",
+    "mtime": 1789882614.7082505,
+    "seen": 1789882664.154133,
+    "ast_hash": "a8569173b7b02e3c67abb7e98073180e",
     "semantic_hash": ""
   },
   "ai/TASKS.md": {
@@ -324,9 +324,9 @@
     "semantic_hash": ""
   },
   "ai/ROADMAP.md": {
-    "mtime": 1789881475.3453994,
-    "seen": 1789881502.478941,
-    "ast_hash": "a0492bb6a329ca4fa1d8c564ba8190f2",
+    "mtime": 1789882641.480801,
+    "seen": 1789882664.154138,
+    "ast_hash": "685f91d79b6ccca6ed8a0cf0836f8305",
     "semantic_hash": ""
   },
   "server/tests/test_charts_raster.py": {

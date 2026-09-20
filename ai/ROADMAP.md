@@ -4,7 +4,7 @@ Source of truth for **where we are** on the global roadmap
 (`docs/Implementation Roadmap.md`). Every phase completion must update this
 file together with `CURRENT_STATE.md` and `TASKS.md`.
 
-**Current stage: P4 Production Candidate — IN PROGRESS (P3 gate complete).**
+**Current stage: P6 Post-Launch Evolution — IN PROGRESS (P5 closed; checklist proposed below).**
 
 ```
 P0 Foundation          DONE  ✓
@@ -13,10 +13,10 @@ P2 MVP                 DONE  ✓   (all gates green)
 P3 V1                  DONE  ✓   (all 10 entry-checklist items, 211 tests;
                               verification/p3/REPORT.md PASS)
 P4 Production Candidate DONE  ✓   (all 6 checklist items; CI runs every
-                              layer, signing formally deferred to P5 by
-                              DEC-004)
-P5 Production Grade    IN PROGRESS  ← we are here (only signing remains, blocked on the Developer ID)
-P6 Evolution           NOT STARTED
+                              layer)
+P5 Production Grade    DONE  ✓   (all deliverables; signing deferred
+                              indefinitely by DEC-006 - DAH is single-user)
+P6 Evolution           IN PROGRESS  ← we are here
 ```
 
 North-star progression: prove the loop → make it useful → make it repeatable
@@ -33,8 +33,8 @@ production-grade**.
 | P2 MVP | Usable analytical application; inspectable, reproducible case | DONE | PASS | `verification/p2/REPORT.md` (16 steps, 10 exit criteria) |
 | P3 V1 | Repeated real-world use: multi-dataset, joins, richer EDA, contextual AI | DONE | P2 gate PASS (re-verified during close, 211 tests) | hard sandbox, raster charts, multi-dataset joins, workflow, EDA, evidence graph, case reuse, desktop shell and all four contextual AI slices DONE |
 | P4 Production Candidate | Serious software: reliability, security, performance, UX, observability | DONE | P3 gate PASS | `verification/p3/REPORT.md` (23 journey steps, 15 exit criteria, all PASS); CI runs every layer (P4-CI-007); signing deferred to P5 by DEC-004 |
-| P5 Production Grade | Maintainable, distributable, secure product | IN PROGRESS | — | P4 gate, observability, the 500 envelope, release automation, the Reveal-logs menu and the CI repair (P5-CI-FIX-007) DONE; v0.1.0 published. Only signing remains, blocked on the Apple Developer ID (DEC-004). CI runs on macos-latest - macos-13 is retired (DEC-005) |
-| P6 Post-Launch Evolution | Scale and intelligence | NOT STARTED | — | — |
+| P5 Production Grade | Maintainable, distributable, secure product | DONE | — | P4 gate, observability, the 500 envelope, release automation, the Reveal-logs menu and the CI repair (P5-CI-FIX-007) DONE; v0.1.0 published. Only signing remains, blocked on the Apple Developer ID (DEC-004). CI runs on macos-latest - macos-13 is retired (DEC-005) |
+| P6 Post-Launch Evolution | Scale and intelligence | IN PROGRESS | — | entry checklist proposed below; P6-MEMORY-001 is the first task |
 
 ## Phase gate definitions (what "done" means)
 
@@ -58,16 +58,18 @@ production-grade**.
   tests (5 unit + 2 e2e); P2, P3 **and P4** gates PASS. All of it runs in CI
   (`.github/workflows/ci.yml`) - before P4-CI-007, every test was green only
   because a developer happened to run it.
-- **Active task:** P5-RELEASE-005 DONE - release automation. A `v<x.y.z>` tag
+- **Active task:** P5 is CLOSED. v0.1.0 published and checksum-verified; signing deferred indefinitely by DEC-006. P6 opens with analysis memory (P6-MEMORY-001) as the proposed first task. A `v<x.y.z>` tag
   matching server/pyproject.toml now builds, smokes and publishes a versioned,
   unsigned .app as a flagged pre-release, with its checksum and generated notes
   that state how to open it past Gatekeeper and that the published build is
   Intel. The version has one source of truth and a tag that disagrees with it
   fails before any build starts.
-- **Known issues / blockers:** none.
-- **Supported platform:** macOS 13 (Ventura) or later - the oldest
-  version CI builds and tests against (macos-13, the last Intel image, which
-  matches the dev machine and the sidecar triple). See `README.md`.
+- **Known issues / blockers:** none. Signing is deferred indefinitely by
+  DEC-006 (DAH is single-user), not blocked.
+- **Supported platform:** macOS. The documented floor is Ventura; CI builds on
+  macos-latest because GitHub retired the macos-13 pool (DEC-005), so CI proves
+  the packaging path but not the Intel triple a local build produces. See
+  `README.md`.
 - **Desktop shell:** **DAH > Reveal DAH Logs** asks the core where its log is
   and opens the folder in Finder with the file selected (P5-UX-006).
 - **Repository:** private, `master` tracks `origin/master`.
@@ -129,7 +131,7 @@ Ordered oldest-risk first.
   close, green state only, pushed to origin/master before work is called done
   (see the commit and push discipline section of AGENTS.md).
 
-## P5 Production Grade — entry checklist (4 of 5 done)
+## P5 Production Grade — entry checklist (COMPLETE; signing retired by DEC-006)
 
 Ordered oldest-risk first; a proposal for the user to reorder before work
 starts. P4 closed with the signing question decided rather than open
@@ -138,8 +140,37 @@ of a shrug.
 
 | # | Capability | Why now | Roadmap section |
 |---|-----------|---------|-----------------|
-| 1 | macOS code signing + notarization — **formally deferred here by DEC-004**: provision a Developer ID identity, store it as a CI secret in the `packaging` job, notarize the bundle, and keep the unsigned build as a fallback target | P4 shipped unsigned with a documented right-click > Open workaround; the pipeline cost (identity, rotation, re-signing an in-flight bundle) is the reason it waited, and P5 is where the bundle becomes final | P5 Distribution |
+| 1 | macOS code signing + notarization — **retired by DEC-006**: DAH is single-user for the foreseeable future, so the notarized identity is not needed and the once-per-machine right-click > Open cost is paid by the one person who uses it. The slot stays in `release.yml` between build and upload if that ever changes | P4 shipped unsigned with a documented right-click > Open workaround; DEC-004 deferred the pipeline cost (identity, rotation, re-signing an in-flight bundle) to P5; DEC-006 retires it as an unblocked-but-unwanted item rather than leaving P5 blocked on a purchase nobody needs | P5 Distribution |
 | 2 | The P4 gate — **DONE (P5-VERIFY-001)**: `verification/p4/verify_p4.py` walks the *edges* rather than the happy path - a 5000-row dataset, the result cap truncating a full scan while an aggregate stays exact, bad SQL answering 400 with the engine's message and persisting nothing, a sandbox escape refused, an injected harness fault answering 500, a deliberately broken LLM degrading to deterministic, and eight repeat validations of an unordered result agreeing. 18 steps, 10 exit criteria, all PASS; CI runs it on every push | P4 relied on the P3 gate plus CI, which never exercised the P4 capabilities against each other - the error taxonomy and rerun determinism are invisible on the happy path | P5 Verification |
 | 3 | Observability — **DONE (P5-OBSERVE-002)**: the core writes a size-capped rotating log (2MB x 3) into the user's data dir, `GET /logs?lines=N` tails it read-only, one line per request holds only method/path/status/duration, and nothing the analyst typed is ever logged | P4 made a 500 honest and logged with a traceback, but there was nowhere for that output to go in a packaged app a non-developer is running — now there is | P5 Observability |
 | 4 | Give the 500 a JSON envelope — **DONE (P5-RELIABILITY-003)**: a fault answers `{"detail": "internal error", "request_id": ...}`, the id finds the traceback in the log, the exception's own message stays in the log and never the body, and the 4xx contract is untouched | The client tolerated the plain text; now it gets the same shape as every other error, plus an id a user can quote | P5 Reliability |
 | 5 | Release automation — **DONE (P5-RELEASE-005)**: a `v<x.y.z>` tag matching `server/pyproject.toml` builds, smokes and publishes an unsigned `.app` as a flagged pre-release with its checksum and generated notes; the version has one source of truth and a tag that disagrees with it fails before any build | The `packaging` job already built and smoked the sidecar on a clean machine, but its output went nowhere; now a user can download instead of build. Signing is the slot this job leaves open — it goes between the build and the upload | P5 Distribution |
+
+## P6 Post-Launch Evolution — entry checklist (proposed; 0 done)
+
+Ordered by what makes the product more useful to its one current user first,
+which is also the order the roadmap's own dependency chain dictates: memory
+before agents, because an agent with nothing to remember repeats the same
+investigation from scratch every time. A proposal for the user to reorder
+before work starts.
+
+The roadmap frames P6 as "scale and intelligence." For a single-user tool,
+**intelligence is the whole value** and the scale items (cloud sync, team
+collaboration, warehouse connectors, enterprise governance) are not - they are
+listed as deferred rather than dropped, but none is on this checklist. What is
+here is the half of "make it intelligent" that pays off for one person.
+
+| # | Capability | Why now | Roadmap section |
+|---|-----------|---------|-----------------|
+| 1 | **Analysis memory** — cross-case recall. A case can already cite its own artifacts; nothing lets it cite a *previous* case. The assistant answers from one case's rows today; with memory it answers from the pattern across all of them ("you found this same anomaly in the Q2 file, and it was a duplicate-row artifact then"). Implementation shape to decide: a case-indexed search over existing SQLite rows, or a separate memory store written on finding-accept | The master spec puts Analysis Memory at level 4 of its own evolution ladder (after the case builder, the workbench, and evidence + validation, which are all done) and before agentic analysis at level 5. Memory is the input an agent needs; building the agent first means building it amnesiac | P6 Analysis Memory |
+| 2 | **Agentic analysis** — a plan that executes itself: run the proposed code, read the result, decide the next step, iterate to a draft finding, with the human approving each write. Every piece exists as an endpoint; the loop does not | The loop is currently driven by a human clicking through panels. The deterministic planner, generator, interpreter and drafter are all already composable, so an agent is orchestration over existing validated primitives - the highest capability-per-risk item left, and it is only safe because P4 pinned the honesty budgets and P5 made faults observable | P6 Agentic Analysis |
+| 3 | **Case templates from real history** — promote a finished investigation into a reusable template *including its plan and validation shape, not just its question*. The template machinery exists but copies the question alone | Repeat use is the stated premise of P3/V1 and the one thing a single user actually does repeatedly; a template that carries the analytical shape is the difference between reuse and retyping | P6 Case reuse |
+| 4 | **Schema evolution / migration story** — the DB has grown by `_ensure_column` in-place additions across many tasks; a versioned migration path before more tables land | P6 adds memory, which means new tables. Doing it after the tables exist is how the in-place additions became untrackable in the first place | P6 Maintainability |
+| 5 | **Update flow for the packaged app** — Tauri's updater with a local release channel, so a new tag reaches an installed app without a manual download-and-replace | The release pipeline now publishes a build per tag, but the installed app has no way to know. Genuinely useful to one user across machines, and cheap now that releases exist | P6 Distribution |
+
+Deferred (not dropped): cloud storage and sync, team collaboration, warehouse
+connectors (Postgres/Snowflake/BigQuery/Databricks), enterprise governance.
+Each is listed in the roadmap as a P6 capability; none pays for itself at a
+user count of one, and the architecture is deliberately not shaped around
+them - the spec's own instruction is that they "should be allowed without
+making them MVP dependencies."

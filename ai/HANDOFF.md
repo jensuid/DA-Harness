@@ -696,51 +696,49 @@ reported as unsupported (clear 400) rather than faked; that gate is future work.
 
 ## Next action
 
-P5-CI-FIX-007 is done. CI had been **silently dead for three commits** - every
-push since `5e68fbb` failed at parse time, 0s, no job started, both workflows,
-reported only as "a workflow file issue". Two bugs, one hiding the other:
+P5 is **CLOSED**. The user decided DAH is for their own use for the foreseeable
+future, which dissolved the last open item rather than leaving it blocked:
+signing and notarization move from "P5 required, blocked on a Developer ID" to
+**indefinitely deferred by intent** (DEC-006). The right-click > Open cost is
+paid once per machine by the one person who uses the app; the release pipeline
+keeps the slot between build and upload if that ever changes, and the README
+and generated notes still document the workaround.
 
-1. **`env` in `runs-on`.** P5-CI-004 wrote `runs-on: ${{ env.MACOS_RUNNER }}`.
-   GitHub does not expand the `env` context there. Inlined the literal; both
-   headers now record why `runs-on` is never an env reference, because a
-   parse-time failure blocks every job and reports nothing - it hid itself for
-   three commits, and CI visibility had been blocked all session.
-2. **The label it resolved to no longer exists.** Fixing (1) unblocked the jobs
-   straight into a queue they never left: **GitHub retired the macos-13 hosted
-   pool.** Proved with a throwaway two-job workflow - `macos-latest` finished in
-   under a minute while `macos-13` sat queued with zero steps for 18 minutes.
-   All jobs now run on `macos-latest` (DEC-005). The Ventura floor remains the
-   documented minimum supported macOS, but CI no longer enforces it, and a
-   green run no longer proves the Intel triple a local build produces -
-   restoring that needs a self-hosted Intel runner.
-3. **The release job could not build.** Its web install ran `npm ci` in
-   `desktop/` only, but Tauri's beforeBuildCommand is
-   `npm --prefix ../web run build:desktop`, a script whose deps live in
-   `web/node_modules`. Exit 127. Both trees are now installed.
+So P6 Post-Launch Evolution is open, and its entry checklist is written
+(`ai/ROADMAP.md`). It is deliberately not the roadmap's full P6 list: the scale
+half (cloud, team collaboration, warehouse connectors, enterprise governance)
+is deferred, not dropped - none of it pays for itself at a user count of one.
+What is on the checklist is the intelligence half, ordered by what the one
+user gains first.
 
-Verified: run 35490199963 is four-for-four green (server + P2/P3/P4 gates, web
-+ build, sidecar smoke, desktop lifecycle with both e2e tests) - the first
-green CI since `ae0ba33`. Then `v0.1.0` exercised release.yml end to end for
-the first time (run 35490519483): the tag/version check, server suite, sidecar,
-packaged-core log assertions, Tauri build and published pre-release all passed.
-The 79MB zip's sha256 matches its checksum asset, `Info.plist` reads 0.1.0, and
-`Contents/MacOS/` carries both `dah-shell` (15MB) and `dah-core` (78MB).
+**The proposed first task is P6-MEMORY-001: cross-case recall.**
 
-What remains:
+The premise: a case already cites its own artifacts through the grounds budget
+in `assistant.py`, but `summarize_case` reads exactly one case's rows, so the
+assistant answers from that case alone. Every investigation starts from
+scratch even when the same anomaly was found and explained last month. The
+master spec's own ladder puts Analysis Memory at level 4 - after the case
+builder, the workbench and evidence + validation, all of which are done - and
+before agentic analysis at level 5. Building the agent first means building it
+amnesiac.
 
-- macOS code signing + notarization - the last P5 checklist item, deferred by
-  DEC-004 and **blocked on an external dependency only you can provision**: a
-  $99 Apple Developer ID. Signing slots into release.yml between the build and
-  the upload; `--prerelease` is the flag to revisit once a build is notarized.
-  Not agent work until the ID exists.
-- an Intel/self-hosted CI lane, if the exact-triple guarantee matters again
-  (DEC-005). Hardware provisioning, same class as the Developer ID.
-- low-value follow-up, recommended skipped: making the request id fully
-  copyable - the 8-char prefix already finds the log line.
+The contract is in `ai/TASKS.md`. The constraints that matter: the honesty
+budgets from P3-AI-011..014 must survive (a cross-case ground resolves to a
+real finding in a real other case or is rejected, exactly as an invented column
+is), the deterministic path stays available with no LLM key, nothing may log
+what the analyst typed, and no new runtime dependency - SQLite already holds
+everything.
 
-Releasing: tag `v<x.y.z>` where x.y.z matches server/pyproject.toml. A
-mismatching tag fails before any build. The published build is arm64
-(`aarch64-apple-darwin`) and unsigned, flagged pre-release with the Gatekeeper
-steps and the real architecture in its notes.
+**P6-MEMORY-001 is proposed, not started. Say the word and I begin.**
+
+The rest of the P6 checklist, in order: agentic analysis (a plan that executes
+itself over the existing endpoints - the highest capability-per-risk item, and
+only safe because P4 pinned the honesty budgets and P5 made faults observable),
+case templates that carry the analytical shape not just the question, a
+versioned migration path before memory adds tables, and a Tauri update flow
+now that releases publish per tag.
+
+Releasing: tag `v<x.y.z>` where x.y.z matches server/pyproject.toml. The
+published build is arm64 and unsigned, flagged pre-release.
 
 Nothing is unblocked-but-undone.
