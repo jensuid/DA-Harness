@@ -3440,3 +3440,153 @@ LESSON: two of the four tests failed on the first run for the same reason -
         The workspace is the thing under test, and it has its own life in the
         fixture's mocks.
 ```
+
+---
+
+### P7-SHELL-007 contract
+
+```
+TASK ID: P7-SHELL-007
+MILESTONE: P7 Product Modes
+CAPABILITY: UX (the web-shell gap)
+GOAL: The "what should I look at first" steps are reachable. Segment a measure
+      by a category, correlate two columns, or read a column's spread - each
+      one click from the profile - instead of a hand-written query the analyst
+      only wrote because there was no button.
+
+CONTEXT: P3-ANALYSIS-005 shipped `POST /cases/{id}/datasets/{id}/eda` with
+         three ops (segment, correlate, distribution), each compiling to
+         read-only SQL under the same gate and row cap as a hand-written query,
+         and each deliberately *not persisted* - EDA is exploration, and a
+         finding must anchor on a query the analyst wrote. Nothing in the shell
+         reaches it, so the profile that names every column is shown one screen
+         away from the question those columns pose.
+
+INPUTS: a profiled dataset's columns and per-column types; the op and its
+        column choices.
+RELEVANT FILES: web/src/api.ts, web/src/CaseWorkspace.tsx, web/src/index.css,
+                web/src/CaseWorkspace.test.tsx
+REQUIRED CHANGE:
+  - web/src/api.ts: `EdaOp`, an `EdaRequest` for the three ops' inputs, an
+    `EdaResult` matching the core's, and `runEda(caseId, datasetId, request)`.
+  - web/src/CaseWorkspace.tsx: an **EDA panel** between the data and runs
+    panels - exploration sits between profiling and a hand-written query, which
+    is where the core's own module puts it. It needs a profile (the columns are
+    the inputs and the types decide which summary a distribution yields), and
+    it says so rather than offering a submission that cannot succeed, the way
+    the EVALUATE panel does. Where several datasets are profiled there is a
+    chooser, because the ops are per-dataset.
+    The op is a chooser and each op renders only its own column pickers:
+    segment asks *by* and *measure*, correlate asks *x* and *y*, distribution
+    asks one *column*. The profile's per-column type steers the defaults - a
+    measure or a correlation axis defaults to a numeric column - but every
+    column stays selectable, because the core's 400 is the honest answer to a
+    wrong choice and the sentence is what teaches it.
+    The result is a table of the columns the core returned, with the row count
+    and a truncated marker. Nothing is kept: the panel says plainly that an EDA
+    result is not a finding, and making it one is a query the analyst writes -
+    the same discipline the runs and findings panels keep.
+  - Every write is the one POST to the eda endpoint; a failure degrades to the
+    core's own sentence and the panel stays usable for a corrected attempt.
+NON-GOALS: persisting an EDA result (the core's contract is that exploration
+           is not evidence; persistence would make a snapshot look like a
+           finding), charts from EDA results (the chart endpoint belongs to a
+           persisted run), generating the "equivalent query" from an op (the
+           core does not return one, and inventing SQL the analyst did not
+           write is exactly what EDA is not), new ops (their own task in the
+           core), the evidence graph and case history (their own tasks).
+CONSTRAINTS: the panel calls only the eda endpoint and reads only the profile;
+             `tsc -b` passes; no new dependency; the existing workspace tests
+             stay green; the desktop bundle builds from the same source.
+ACCEPTANCE CRITERIA:
+- [x] a profiled dataset offers the three ops with column pickers
+- [x] each op shows only the inputs it takes
+- [x] a segment returns a table grouped by the chosen category
+- [x] a correlation returns the coefficient and the paired row count
+- [x] a distribution adapts to a numeric or a categorical column
+- [x] an unprofiled dataset explains itself rather than offering a run
+- [x] a 400 shows the core's sentence and leaves the panel usable
+- [x] the panel states that an EDA result is not a finding
+- [x] `tsc -b` and the web suite stay green
+TESTS: web/src/CaseWorkspace.test.tsx - the three ops' round trips, the op
+       chooser swapping pickers, the unprofiled message, and a refusal as a
+       sentence.
+VERIFICATION: cd web && npm test PASS; cd web && npm run build PASS; cd web &&
+              npm run build:desktop PASS. The server suite and the three gates
+              are untouched by this change and stay green.
+STATE UPDATE: mark P7-SHELL-007 done on pass; ROADMAP item 2 records EDA as
+              delivered.
+```
+
+
+```
+TASK: P7-SHELL-007 - EDA in the web shell
+ID: P7-SHELL-007
+PRIORITY: medium
+STATUS: DONE
+SUMMARY: The "what should I look at first" steps were reachable only by
+         writing a query. P3-ANALYSIS-005 shipped three ops - segment a measure
+         by a category, correlate two columns, describe a column's distribution
+         - each compiling to read-only SQL under the same gate and row cap as a
+         hand-written query, and nothing in the shell could ask for one. The
+         profile that names every column was shown one panel away from the
+         question those columns pose.
+
+A new **EDA panel** sits between the data and runs panels, which is where the
+core's own module puts exploration: between profiling and a hand-written query.
+The op is a chooser, and each op renders only its own pickers - segment asks
+*by* and *measure*, correlate asks *x* and *y*, distribution asks one *column* -
+so a question is asked with the shape of its answer, not a free-form form.
+
+Four behaviours that had to be right rather than present:
+
+- **The profile steers, but does not forbid.** A measure or a correlation axis
+  defaults to a numeric column, read off the profile's per-column type family;
+  every column stays selectable, because the core's 400 is the honest answer to
+  a wrong choice and its sentence is what teaches the correction. A dataset with
+  no numeric columns offers all of them and lets the core say why not.
+- **A stale pick can never be submitted.** The pickers hold advisory state; the
+  request is built from values resolved against the *current* dataset's columns,
+  so a choice left over from another dataset or another op is replaced rather
+  than sent.
+- **The table is what the core returned.** A numeric distribution has seven
+  columns and a categorical one has two, and the panel assumes neither - it
+  renders the columns the answer carries. Numbers are rounded to four decimals
+  for reading; the stored value is untouched.
+- **Nothing is kept.** The panel says plainly that an EDA result is exploration,
+  not evidence, and that making a finding of it is a query the analyst writes -
+  the discipline the runs and findings panels keep. Switching ops drops an
+  earlier result, because a distribution's answer is not an answer to a
+  correlation's question.
+
+NON-GOALS held: no persistence of an EDA result (the core's contract is that
+             exploration is not evidence; persistence would make a snapshot
+             look like a finding), no charts from EDA results (the chart
+             endpoint belongs to a persisted run), no generated "equivalent
+             query" (the core does not return one, and inventing SQL the analyst
+             did not write is exactly what EDA is not), no new ops.
+CONSTRAINTS held: the panel calls only the eda endpoint and reads only the
+             profile; no new endpoint and no new dependency; `tsc -b` passes;
+             the desktop bundle builds from the same source.
+ACCEPTANCE CRITERIA: all 9 - see the checked boxes above.
+TESTS: 6 added to web/src/CaseWorkspace.test.tsx (web suite 54 -> 60) - the
+       three ops' round trips, the op chooser swapping pickers, an earlier
+       result dropping on an op change, the unprofiled message, and a 400 as a
+       sentence with the op still runnable.
+VERIFICATION: cd web && npm test - 60 passed; cd web && npm run build PASS
+              (tsc -b + vite build); cd web && npm run build:desktop PASS. The
+              server suite and the three gates are untouched by this change
+              and stay green.
+LESSON: four of the ten new and existing tests failed on the first run, and all
+        four were the same failure - the workspace is one page, and a sentence
+        or a button name that was unique when its panel was alone is not unique
+        beside another panel. "Run this" matched "Run this op"; "Attach and
+        profile a dataset first" matched the EVALUATE panel's version; a cell
+        value of 100 appeared twice in one table. Each is fixed by saying
+        exactly which thing the test means, and each fix is also the accessible
+        thing - a button that two panels answer to is a button a screen reader
+        cannot aim. The one type error the suite could not see was the same
+        lesson at the compiler's level: `runEda`'s parameter was named
+        `request`, shadowing the module's own request helper, and the tests
+        never ran that code because the module was mocked.
+```

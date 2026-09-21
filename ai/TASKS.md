@@ -117,9 +117,149 @@ the gate comes first because a phase is done when a gate says so.
 | P7-SHELL-006 | UX (cross-case memory actionable in the shell) | DONE | +4 tests; web build PASS |
 | P7-SHELL-007 | UX (EDA in the web shell) | DONE | +6 tests; web build PASS |
 | P7-SHELL-008 | UX (the evidence graph in the web shell) | DONE | +4 tests; web build PASS |
+| P7-SHELL-009 | UX (case history in the web shell) | DONE | +3 tests; web build PASS |
+
 
 Contracts for the rolling window (the two most recent). Older blocks are in
 `ai/TASKS-ARCHIVE.md`.
+### P7-SHELL-009 contract
+
+```
+TASK ID: P7-SHELL-009
+MILESTONE: P7 Product Modes
+CAPABILITY: UX (the web-shell gap)
+GOAL: A reviewer reopening a case can ask "what did I do here, and when?" and
+      read the answer. The timeline exists in the core as a projection over the
+      persisted rows; nothing in the shell shows it, so the shape of a case -
+      how it grew, and in what order - is only reconstructable by opening every
+      panel and comparing timestamps yourself.
+
+CONTEXT: P3-CASE-007 ships `GET /cases/{id}/history` -> `CaseHistory`: one event
+         per artifact (case created, dataset attached and profiled, plan
+         created, run executed, chart rendered, finding recorded), each carrying
+         the artifact's own timestamp, a label and a detail; plus counts. It is
+         a read-side projection like the evidence graph, so it cannot drift from
+         the rows. A just-created case answers one event, not an error. The only
+         failure is 404 for an unknown case - and the workspace loads its own
+         case on mount, so that answer means the workspace is already on its
+         error screen.
+
+INPUTS: the case's persisted artifacts, read read-only.
+RELEVANT FILES: web/src/api.ts, web/src/CaseWorkspace.tsx,
+                web/src/CaseWorkspace.test.tsx
+REQUIRED CHANGE:
+  - web/src/api.ts: `HistoryEvent` and `CaseHistory` matching the core's models,
+    and `getCaseHistory(caseId)` for the GET.
+  - web/src/CaseWorkspace.tsx: a **History panel** at the end of the workspace,
+    after the evidence panel, because it is the other read-only review surface -
+    where the evidence graph says what backs each claim, this says what
+    happened in the case at all. It loads with the workspace, read-only. Each
+    event is one line in chronological order: the timestamp, the kind as a
+    phrase a reader does not have to decode ("dataset attached", not
+    "dataset_attached"), the artifact's own label, and its detail - the same
+    fields the core returns, shown rather than transformed. The counts are one
+    summary sentence so a reader can see the case's shape at a glance.
+  - A 404 degrades to muted guidance, not an alert: the workspace loads its own
+    case on mount, so a 404 here means the case is already unreachable and the
+    header already says so - a second alert would report the same failure twice.
+    Any other failure is the sentence in an alert, the way every other panel
+    reports one.
+NON-GOALS: filtering or collapsing events (a case has as many events as it has
+           artifacts, and the whole timeline is the point), editing history (it
+           is a projection; the only way to change it is to change the case
+           through the endpoints that own it), per-artifact timestamps of their
+           own for validation (the finding keeps its status, not when it was
+           set, so the status rides along as the event's detail - the core's
+           decision, kept rather than re-derived).
+CONSTRAINTS: the panel calls only the read-only GET and writes nothing; `tsc -b`
+             passes; no new dependency; the existing workspace tests stay
+             green; the desktop bundle builds from the same source.
+ACCEPTANCE CRITERIA:
+- [x] a case with artifacts shows every event in chronological order
+- [x] each event's kind is readable, and its label and detail are shown
+- [x] a young case's single event is shown, not reported as emptiness
+- [x] the counts appear as one summary sentence
+- [x] an unknown case degrades to guidance rather than a duplicate alert
+- [x] the panel writes nothing and reloads with the workspace
+- [x] `tsc -b` and the web suite stay green
+TESTS: web/src/CaseWorkspace.test.tsx - the events of a worked case in order
+       with their kinds, labels and details; the single event of a just-created
+       case; the counts summary; and the 404 rendered as guidance.
+VERIFICATION: cd web && npm test PASS; cd web && npm run build PASS; cd web &&
+              npm run build:desktop PASS. The server suite and the three gates
+              are untouched by this change and stay green.
+STATE UPDATE: mark P7-SHELL-009 done on pass; ROADMAP item 2 records the
+              web-shell gap as closed.
+
+```
+
+TASK: P7-SHELL-009 - case history, as a review surface
+ID: P7-SHELL-009
+PRIORITY: medium
+STATUS: DONE
+SUMMARY: P3-CASE-007 shipped `GET /cases/{id}/history` - one event per
+         artifact, chronological, each carrying its own timestamp, a label and
+         a detail - and nothing in the shell showed it, so the shape of a case,
+         how it grew and in what order, was reconstructible only by opening
+         every panel and comparing timestamps yourself.
+
+A **Case history panel** now sits at the end of the workspace, after the
+evidence panel, because the two are the read-only review surfaces: the graph
+says what backs each claim, the timeline says what happened in the case at all.
+It loads with the workspace and writes nothing. Each event is one line in the
+order the core sends them: the timestamp, the kind as a phrase a reader does
+not have to decode ("dataset attached", not "dataset_attached"), the artifact's
+own label, and its detail beneath - the same fields the core returns, shown
+rather than transformed. The counts are one summary sentence naming only the
+kinds the case actually has, so a young case is not described by a row of
+zeroes it would have to explain away.
+
+Two behaviours that had to be right rather than present:
+
+- **A 404 is guidance, not a second alert.** The only failure the endpoint
+  answers is an unknown case, and the workspace loads its own case on mount, so
+  that answer already reaches the user at the top of the page. The panel says
+  the sentence once, muted, rather than raising an alert for a failure the
+  header already reported. Every other failure is the sentence in an alert, the
+  way every other panel reports one.
+- **A young case is its beginning, not an empty list.** A just-created case
+  answers one event, and the panel renders it - the timeline of a case that has
+  only started is the start of a story, not a placeholder.
+
+NON-GOALS held: no filtering or collapsing (a case has as many events as it has
+             artifacts, and the whole timeline is the point), no editing (it is
+             a projection; the only way to change it is to change the case
+             through the endpoints that own the artifacts), no invented
+             per-artifact timestamps for validation (the finding keeps its
+             status, not when it was set, so the status rides along as the
+             event's detail - the core's decision, kept).
+CONSTRAINTS held: the panel calls only the read-only GET and writes nothing; no
+             new endpoint and no new dependency; `tsc -b` passes; the desktop
+             bundle builds from the same source.
+ACCEPTANCE CRITERIA: all 7 - see the checked boxes above.
+TESTS: 3 added to web/src/CaseWorkspace.test.tsx (web suite 64 -> 67) - a
+       worked case's events in order with their kinds, labels, details and the
+       counts summary, a young case's single event shown rather than reported
+       as emptiness, and a 404 rendered as guidance with no alert.
+VERIFICATION: cd web && npm test - 67 passed; cd web && npm run build PASS
+              (tsc -b + vite build); cd web && npm run build:desktop PASS. The
+              server suite and the three gates are untouched by this change
+              and stay green.
+LESSON: the timeline's first event is the case's creation, whose label is the
+        case's own question - so the question now appears twice on the page,
+        once as its title and once as the timeline's first line, and five
+        existing assertions that meant the title broke on the duplication. Each
+        now asks for the heading by role, which is the accessible thing anyway:
+        an assertion that says which of two identical texts it means is the
+        same judgement a screen reader user needs. The second collision was
+        subtler and cost more guessing than it should have: a label inside a
+        <strong> is invisible to getByText, because the matcher reads an
+        element's own text nodes, not its descendants' - so a line whose label
+        is emphasised cannot be matched by the phrase it renders. The event
+        line is plain text now, and the lesson is to keep a line's asserted
+        content in its own text nodes.
+
+
 ### P7-SHELL-008 contract
 
 ```
@@ -262,152 +402,3 @@ LESSON: the patch script failed three times before a line of it landed, and the
         ("already applied") is what made the retry safe. The same discipline
         that keeps a task atomic applies to the tool that edits it.
 ```
-
-### P7-SHELL-007 contract
-
-```
-TASK ID: P7-SHELL-007
-MILESTONE: P7 Product Modes
-CAPABILITY: UX (the web-shell gap)
-GOAL: The "what should I look at first" steps are reachable. Segment a measure
-      by a category, correlate two columns, or read a column's spread - each
-      one click from the profile - instead of a hand-written query the analyst
-      only wrote because there was no button.
-
-CONTEXT: P3-ANALYSIS-005 shipped `POST /cases/{id}/datasets/{id}/eda` with
-         three ops (segment, correlate, distribution), each compiling to
-         read-only SQL under the same gate and row cap as a hand-written query,
-         and each deliberately *not persisted* - EDA is exploration, and a
-         finding must anchor on a query the analyst wrote. Nothing in the shell
-         reaches it, so the profile that names every column is shown one screen
-         away from the question those columns pose.
-
-INPUTS: a profiled dataset's columns and per-column types; the op and its
-        column choices.
-RELEVANT FILES: web/src/api.ts, web/src/CaseWorkspace.tsx, web/src/index.css,
-                web/src/CaseWorkspace.test.tsx
-REQUIRED CHANGE:
-  - web/src/api.ts: `EdaOp`, an `EdaRequest` for the three ops' inputs, an
-    `EdaResult` matching the core's, and `runEda(caseId, datasetId, request)`.
-  - web/src/CaseWorkspace.tsx: an **EDA panel** between the data and runs
-    panels - exploration sits between profiling and a hand-written query, which
-    is where the core's own module puts it. It needs a profile (the columns are
-    the inputs and the types decide which summary a distribution yields), and
-    it says so rather than offering a submission that cannot succeed, the way
-    the EVALUATE panel does. Where several datasets are profiled there is a
-    chooser, because the ops are per-dataset.
-    The op is a chooser and each op renders only its own column pickers:
-    segment asks *by* and *measure*, correlate asks *x* and *y*, distribution
-    asks one *column*. The profile's per-column type steers the defaults - a
-    measure or a correlation axis defaults to a numeric column - but every
-    column stays selectable, because the core's 400 is the honest answer to a
-    wrong choice and the sentence is what teaches it.
-    The result is a table of the columns the core returned, with the row count
-    and a truncated marker. Nothing is kept: the panel says plainly that an EDA
-    result is not a finding, and making it one is a query the analyst writes -
-    the same discipline the runs and findings panels keep.
-  - Every write is the one POST to the eda endpoint; a failure degrades to the
-    core's own sentence and the panel stays usable for a corrected attempt.
-NON-GOALS: persisting an EDA result (the core's contract is that exploration
-           is not evidence; persistence would make a snapshot look like a
-           finding), charts from EDA results (the chart endpoint belongs to a
-           persisted run), generating the "equivalent query" from an op (the
-           core does not return one, and inventing SQL the analyst did not
-           write is exactly what EDA is not), new ops (their own task in the
-           core), the evidence graph and case history (their own tasks).
-CONSTRAINTS: the panel calls only the eda endpoint and reads only the profile;
-             `tsc -b` passes; no new dependency; the existing workspace tests
-             stay green; the desktop bundle builds from the same source.
-ACCEPTANCE CRITERIA:
-- [x] a profiled dataset offers the three ops with column pickers
-- [x] each op shows only the inputs it takes
-- [x] a segment returns a table grouped by the chosen category
-- [x] a correlation returns the coefficient and the paired row count
-- [x] a distribution adapts to a numeric or a categorical column
-- [x] an unprofiled dataset explains itself rather than offering a run
-- [x] a 400 shows the core's sentence and leaves the panel usable
-- [x] the panel states that an EDA result is not a finding
-- [x] `tsc -b` and the web suite stay green
-TESTS: web/src/CaseWorkspace.test.tsx - the three ops' round trips, the op
-       chooser swapping pickers, the unprofiled message, and a refusal as a
-       sentence.
-VERIFICATION: cd web && npm test PASS; cd web && npm run build PASS; cd web &&
-              npm run build:desktop PASS. The server suite and the three gates
-              are untouched by this change and stay green.
-STATE UPDATE: mark P7-SHELL-007 done on pass; ROADMAP item 2 records EDA as
-              delivered.
-```
-
-
-```
-TASK: P7-SHELL-007 - EDA in the web shell
-ID: P7-SHELL-007
-PRIORITY: medium
-STATUS: DONE
-SUMMARY: The "what should I look at first" steps were reachable only by
-         writing a query. P3-ANALYSIS-005 shipped three ops - segment a measure
-         by a category, correlate two columns, describe a column's distribution
-         - each compiling to read-only SQL under the same gate and row cap as a
-         hand-written query, and nothing in the shell could ask for one. The
-         profile that names every column was shown one panel away from the
-         question those columns pose.
-
-A new **EDA panel** sits between the data and runs panels, which is where the
-core's own module puts exploration: between profiling and a hand-written query.
-The op is a chooser, and each op renders only its own pickers - segment asks
-*by* and *measure*, correlate asks *x* and *y*, distribution asks one *column* -
-so a question is asked with the shape of its answer, not a free-form form.
-
-Four behaviours that had to be right rather than present:
-
-- **The profile steers, but does not forbid.** A measure or a correlation axis
-  defaults to a numeric column, read off the profile's per-column type family;
-  every column stays selectable, because the core's 400 is the honest answer to
-  a wrong choice and its sentence is what teaches the correction. A dataset with
-  no numeric columns offers all of them and lets the core say why not.
-- **A stale pick can never be submitted.** The pickers hold advisory state; the
-  request is built from values resolved against the *current* dataset's columns,
-  so a choice left over from another dataset or another op is replaced rather
-  than sent.
-- **The table is what the core returned.** A numeric distribution has seven
-  columns and a categorical one has two, and the panel assumes neither - it
-  renders the columns the answer carries. Numbers are rounded to four decimals
-  for reading; the stored value is untouched.
-- **Nothing is kept.** The panel says plainly that an EDA result is exploration,
-  not evidence, and that making a finding of it is a query the analyst writes -
-  the discipline the runs and findings panels keep. Switching ops drops an
-  earlier result, because a distribution's answer is not an answer to a
-  correlation's question.
-
-NON-GOALS held: no persistence of an EDA result (the core's contract is that
-             exploration is not evidence; persistence would make a snapshot
-             look like a finding), no charts from EDA results (the chart
-             endpoint belongs to a persisted run), no generated "equivalent
-             query" (the core does not return one, and inventing SQL the analyst
-             did not write is exactly what EDA is not), no new ops.
-CONSTRAINTS held: the panel calls only the eda endpoint and reads only the
-             profile; no new endpoint and no new dependency; `tsc -b` passes;
-             the desktop bundle builds from the same source.
-ACCEPTANCE CRITERIA: all 9 - see the checked boxes above.
-TESTS: 6 added to web/src/CaseWorkspace.test.tsx (web suite 54 -> 60) - the
-       three ops' round trips, the op chooser swapping pickers, an earlier
-       result dropping on an op change, the unprofiled message, and a 400 as a
-       sentence with the op still runnable.
-VERIFICATION: cd web && npm test - 60 passed; cd web && npm run build PASS
-              (tsc -b + vite build); cd web && npm run build:desktop PASS. The
-              server suite and the three gates are untouched by this change
-              and stay green.
-LESSON: four of the ten new and existing tests failed on the first run, and all
-        four were the same failure - the workspace is one page, and a sentence
-        or a button name that was unique when its panel was alone is not unique
-        beside another panel. "Run this" matched "Run this op"; "Attach and
-        profile a dataset first" matched the EVALUATE panel's version; a cell
-        value of 100 appeared twice in one table. Each is fixed by saying
-        exactly which thing the test means, and each fix is also the accessible
-        thing - a button that two panels answer to is a button a screen reader
-        cannot aim. The one type error the suite could not see was the same
-        lesson at the compiler's level: `runEda`'s parameter was named
-        `request`, shadowing the module's own request helper, and the tests
-        never ran that code because the module was mocked.
-```
-

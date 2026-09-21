@@ -597,6 +597,34 @@ export function getEvidenceGraph(caseId: string): Promise<EvidenceGraph> {
   return request<EvidenceGraph>(`/cases/${caseId}/evidence-graph`)
 }
 
+// --- case history: what happened in this case, and when (P3-CASE-007 / P7-SHELL-009)
+
+// The timeline is projected from each artifact's own timestamp, never stored,
+// so it cannot drift from the persisted rows. One event per artifact, in the
+// order the loop usually produces them; a finding's validation status rides
+// along as its event's detail, because validation keeps no timestamp of its own.
+export interface HistoryEvent {
+  timestamp: string
+  kind: string
+  artifact_id: string | null
+  label: string
+  detail: string | null
+}
+
+export interface CaseHistory {
+  case_id: string
+  question: string
+  events: HistoryEvent[]
+  counts: Record<string, number>
+}
+
+// Read-only: the timeline answers what happened, and nothing a reviewer does
+// here changes the case. A 404 means the case is unknown - the workspace loads
+// its own case on mount, so that answer is already reported at the top.
+export function getCaseHistory(caseId: string): Promise<CaseHistory> {
+  return request<CaseHistory>(`/cases/${caseId}/history`)
+}
+
 // --- the agent: the loop's driver -----------------------------------------
 
 // The GET is read-only and never proposes, so a page refresh commits nothing.

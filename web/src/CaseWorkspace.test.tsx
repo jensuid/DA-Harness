@@ -26,6 +26,7 @@ vi.mock('./api', async (importOriginal) => {
     evaluateDataset: vi.fn(),
     runEda: vi.fn(),
     getEvidenceGraph: vi.fn(),
+    getCaseHistory: vi.fn(),
     listEvaluations: vi.fn(),
     getAgentState: vi.fn(),
     proposeAgentStep: vi.fn(),
@@ -101,6 +102,48 @@ const evidenceGraph = {
   counts: { datasets: 1, runs: 1, charts: 1, plans: 1, findings: 1, edges: 3 },
 }
 
+// The timeline the workspace loads by default (P7-SHELL-009). Its finding is
+// neither the findings fixture's nor the evidence trace's, so the three never
+// answer the same text matcher; its timestamps order the events so a test can
+// assert the panel shows them in the order the core sent them.
+const caseHistory = {
+  case_id: 'c1',
+  question: 'Why did revenue decline?',
+  events: [
+    {
+      timestamp: '2026-09-21T09:00:00+00:00',
+      kind: 'case_created',
+      artifact_id: 'c1',
+      label: 'Why did revenue decline?',
+      detail: 'dataset: sales.csv',
+    },
+    {
+      timestamp: '2026-09-21T09:01:00+00:00',
+      kind: 'dataset_attached',
+      artifact_id: 'd1',
+      label: 'sales.csv',
+      detail: 'format: csv',
+    },
+    {
+      timestamp: '2026-09-21T09:02:00+00:00',
+      kind: 'run_executed',
+      artifact_id: 'r1',
+      label: 'SELECT region, SUM(revenue) FROM sales GROUP BY region',
+      detail: 'sql, 3 row(s) returned',
+    },
+    {
+      timestamp: '2026-09-21T09:03:00+00:00',
+      kind: 'finding_recorded',
+      artifact_id: 'f1',
+      label: 'North leads revenue in every quarter of the period.',
+      detail: 'validation: validated',
+    },
+  ],
+  counts: {
+    datasets: 1, profiles: 0, plans: 0, runs: 1, charts: 0, findings: 1,
+  },
+}
+
 function runFixture(): api.RunSummary {
   return {
     id: 'r1', case_id: 'c1', dataset_id: 'd1', kind: 'sql', sql: 'q', code: null,
@@ -122,6 +165,7 @@ function mockEmptyCase() {
   vi.mocked(api.listEvaluations).mockResolvedValue([])
   vi.mocked(api.getAgentState).mockResolvedValue(agentIdle())
   vi.mocked(api.getEvidenceGraph).mockResolvedValue(evidenceGraph)
+  vi.mocked(api.getCaseHistory).mockResolvedValue(caseHistory)
 }
 
 function agentStep(overrides: object = {}): api.AgentStep {
@@ -200,11 +244,12 @@ describe('CaseWorkspace', () => {
     mockEmptyCase()
     render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
     await waitFor(() =>
-      expect(screen.getByText('Why did revenue decline?')).toBeInTheDocument(),
+      expect(screen.getByRole('heading', { name: 'Why did revenue decline?' })).toBeInTheDocument(),
     )
     expect(screen.getByText(/stage: analyze/i)).toBeInTheDocument()
     expect(screen.getByText('Run an analysis')).toBeInTheDocument()
-    expect(screen.getByText('sales.csv')).toBeInTheDocument()
+    const dataPanel = screen.getByRole('heading', { name: 'Data' }).parentElement!
+    expect(within(dataPanel).getByText('sales.csv')).toBeInTheDocument()
     expect(screen.getByText(/no analysis has run yet/i)).toBeInTheDocument()
   })
 
@@ -212,7 +257,7 @@ describe('CaseWorkspace', () => {
     mockEmptyCase()
     render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
     await waitFor(() =>
-      expect(screen.getByText('Why did revenue decline?')).toBeInTheDocument(),
+      expect(screen.getByRole('heading', { name: 'Why did revenue decline?' })).toBeInTheDocument(),
     )
     expect(screen.getByLabelText('stage question: complete')).toBeInTheDocument()
     expect(screen.getByLabelText('stage analyze: pending')).toBeInTheDocument()
@@ -373,7 +418,7 @@ describe('CaseWorkspace', () => {
     vi.mocked(api.postChat).mockRejectedValue(new api.ApiError(500, 'Internal Server Error'))
     const user = userEvent.setup()
     render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
-    await screen.findByText('Why did revenue decline?')
+    await screen.findByRole('heading', { name: 'Why did revenue decline?' })
 
     await user.type(screen.getByLabelText(/ask a question/i), 'anything')
     await user.click(screen.getByRole('button', { name: 'Ask' }))
@@ -773,7 +818,7 @@ describe('CaseWorkspace', () => {
   it('shows each claim and the path it rests on', async () => {
     mockEmptyCase()
     render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
-    await screen.findByText('Why did revenue decline?')
+    await screen.findByRole('heading', { name: 'Why did revenue decline?' })
 
     // The trace is the review question: the claim, its verdict, and the chain
     // back to the data - as chips, the same shape a citation uses.
@@ -781,7 +826,10 @@ describe('CaseWorkspace', () => {
     expect(screen.getByText('status: validated')).toBeInTheDocument()
     expect(screen.getByText('finding: The west region is the outlier.')).toBeInTheDocument()
     expect(screen.getByText('run: sql run')).toBeInTheDocument()
-    expect(screen.getByText('dataset: sales.csv')).toBeInTheDocument()
+    const graphPanel = screen
+      .getByRole('heading', { name: 'Evidence graph' })
+      .parentElement!
+    expect(within(graphPanel).getByText('dataset: sales.csv')).toBeInTheDocument()
   })
 
   it('flags a claim that reaches no source', async () => {
@@ -842,6 +890,74 @@ describe('CaseWorkspace', () => {
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   })
 
+  it('shows every event of a worked case in the order it happened', async () => {
+    mockEmptyCase()
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+
+    const panel = await screen.findByRole('heading', { name: 'Case history' })
+    const timeline = within(panel.parentElement!)
+    // The counts are one sentence, so the case's shape is visible before any
+    // event is read.
+    expect(
+      timeline.getByText(/4 events in this case, 1 dataset attached, 1 run/i),
+    ).toBeInTheDocument()
+
+    // Kinds are phrases a reader does not have to decode, and each event's own
+    // label and detail are shown rather than transformed.
+expect(timeline.getByText(/case created/)).toBeInTheDocument()
+expect(timeline.getByText(/dataset attached: sales\.csv/)).toBeInTheDocument()
+    expect(timeline.getByText('format: csv')).toBeInTheDocument()
+expect(timeline.getByText(/run executed: SELECT/)).toBeInTheDocument()
+expect(timeline.getByText(/finding recorded: North leads/)).toBeInTheDocument()
+    expect(
+      timeline.getByText(/North leads revenue in every quarter of the period\./),
+    ).toBeInTheDocument()
+    expect(timeline.getByText('validation: validated')).toBeInTheDocument()
+
+    // The events are in the order the core sent them, oldest first: each
+    // timestamp appears once, and the case's start precedes its finding.
+    const times = timeline.getAllByText(/2026-09-21T09:/)
+    expect(times).toHaveLength(4)
+    expect(times[0]).toHaveTextContent('09:00:00')
+    expect(times[3]).toHaveTextContent('09:03:00')
+  })
+
+  it('shows a young case as its one event rather than as emptiness', async () => {
+    // A just-created case answers one event, not an error - the timeline of a
+    // case that has only begun is the beginning of a story, not an empty list.
+    mockEmptyCase()
+    vi.mocked(api.getCaseHistory).mockResolvedValue({
+      ...caseHistory,
+      events: [caseHistory.events[0]],
+      counts: {
+        datasets: 0, profiles: 0, plans: 0, runs: 0, charts: 0, findings: 0,
+      },
+    })
+
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+    const panel = await screen.findByRole('heading', { name: 'Case history' })
+    const timeline = within(panel.parentElement!)
+    expect(timeline.getByText(/1 event in this case/)).toBeInTheDocument()
+expect(timeline.getByText(/case created/)).toBeInTheDocument()
+    expect(timeline.queryByText(/Nothing has happened/)).not.toBeInTheDocument()
+  })
+
+  it('degrades to guidance when the case cannot be read', async () => {
+    // A 404 means the case is unknown, and the workspace's own load reports
+    // that at the top - so this panel says it once, as guidance, and does not
+    // raise a second alert for one failure.
+    mockEmptyCase()
+    vi.mocked(api.getCaseHistory).mockRejectedValue(
+      new api.ApiError(404, 'case not found'),
+    )
+
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+    expect(
+      await screen.findByText(/The timeline could not be read: case not found/i),
+    ).toBeInTheDocument()
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
   it('runs a distribution over a profiled column and shows its spread', async () => {
     mockEmptyCase()
     vi.mocked(api.runEda).mockResolvedValue({
@@ -854,7 +970,7 @@ describe('CaseWorkspace', () => {
 
     const user = userEvent.setup()
     render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
-    await screen.findByText('Why did revenue decline?')
+    await screen.findByRole('heading', { name: 'Why did revenue decline?' })
 
     await user.selectOptions(screen.getByLabelText(/column to describe/i), 'revenue')
     await user.click(screen.getByRole('button', { name: /run the op/i }))
@@ -885,7 +1001,7 @@ describe('CaseWorkspace', () => {
 
     const user = userEvent.setup()
     render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
-    await screen.findByText('Why did revenue decline?')
+    await screen.findByRole('heading', { name: 'Why did revenue decline?' })
 
     // The op chooser swaps the pickers: segment asks for a category and a
     // measure, and nothing else.
@@ -930,7 +1046,7 @@ describe('CaseWorkspace', () => {
 
     const user = userEvent.setup()
     render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
-    await screen.findByText('Why did revenue decline?')
+    await screen.findByRole('heading', { name: 'Why did revenue decline?' })
 
     await user.selectOptions(screen.getByLabelText(/exploratory operation/i), 'correlate')
     await user.selectOptions(screen.getByLabelText(/x column/i), 'revenue')
@@ -960,7 +1076,7 @@ describe('CaseWorkspace', () => {
 
     const user = userEvent.setup()
     render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
-    await screen.findByText('Why did revenue decline?')
+    await screen.findByRole('heading', { name: 'Why did revenue decline?' })
     await user.click(screen.getByRole('button', { name: /run the op/i }))
     expect(await screen.findByTestId('eda-result')).toBeInTheDocument()
 
@@ -990,7 +1106,7 @@ describe('CaseWorkspace', () => {
 
     const user = userEvent.setup()
     render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
-    await screen.findByText('Why did revenue decline?')
+    await screen.findByRole('heading', { name: 'Why did revenue decline?' })
     await user.click(screen.getByRole('button', { name: /run the op/i }))
 
     const alert = await screen.findByRole('alert')
@@ -1012,7 +1128,7 @@ describe('CaseWorkspace', () => {
     const user = userEvent.setup()
     render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
     await waitFor(() =>
-      expect(screen.getByText('Why did revenue decline?')).toBeInTheDocument(),
+      expect(screen.getByRole('heading', { name: 'Why did revenue decline?' })).toBeInTheDocument(),
     )
 
     // No name typed: the core defaults it to the case's question.
@@ -1039,7 +1155,7 @@ describe('CaseWorkspace', () => {
     const user = userEvent.setup()
     render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
     await waitFor(() =>
-      expect(screen.getByText('Why did revenue decline?')).toBeInTheDocument(),
+      expect(screen.getByRole('heading', { name: 'Why did revenue decline?' })).toBeInTheDocument(),
     )
 
     await user.type(screen.getByLabelText(/template name/i), 'Revenue decline playbook')
@@ -1063,7 +1179,7 @@ describe('CaseWorkspace', () => {
     const user = userEvent.setup()
     render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
     await waitFor(() =>
-      expect(screen.getByText('Why did revenue decline?')).toBeInTheDocument(),
+      expect(screen.getByRole('heading', { name: 'Why did revenue decline?' })).toBeInTheDocument(),
     )
 
     await user.click(screen.getByRole('button', { name: /save as a template/i }))

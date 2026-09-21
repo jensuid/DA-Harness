@@ -14,6 +14,7 @@ import {
   type Evaluation,
   type EvidenceGraph,
   type EvidenceNode,
+  type CaseHistory,
   type Finding,
   type GeneratedCode,
   type Interpretation,
@@ -26,6 +27,7 @@ import {
   approveAgentStep,
   evaluateDataset,
   getEvidenceGraph,
+  getCaseHistory,
   runEda,
   generateCode,
   getAgentState,
@@ -76,6 +78,9 @@ export function CaseWorkspace({
   const [evidence, setEvidence] = useState<EvidenceGraph | null>(null)
   const [evidenceError, setEvidenceError] = useState<string | null>(null)
   const [evidenceEmpty, setEvidenceEmpty] = useState(false)
+  const [history, setHistory] = useState<CaseHistory | null>(null)
+  const [historyError, setHistoryError] = useState<string | null>(null)
+  const [historyMissing, setHistoryMissing] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   async function load() {
@@ -117,6 +122,18 @@ export function CaseWorkspace({
         setEvidence(null)
         setEvidenceEmpty(err instanceof ApiError && err.status === 400)
         setEvidenceError(messageOf(err))
+      }
+      // The timeline is a read-only projection; a 404 means the case is unknown,
+      // and the workspace's own load reports that at the top - so this panel
+      // says it once, as guidance rather than as a second alert.
+      try {
+        setHistory(await getCaseHistory(caseId))
+        setHistoryError(null)
+        setHistoryMissing(false)
+      } catch (err) {
+        setHistory(null)
+        setHistoryMissing(err instanceof ApiError && err.status === 404)
+        setHistoryError(messageOf(err))
       }
       // The agent's state is read-only here: a GET never proposes, so loading a
       // page commits nothing.
@@ -191,6 +208,11 @@ export function CaseWorkspace({
         evidence={evidence}
         error={evidenceError}
         empty={evidenceEmpty}
+      />
+      <HistoryPanel
+        history={history}
+        error={historyError}
+        missing={historyMissing}
       />
       <EvaluatePanel
         caseId={caseId}
@@ -1499,6 +1521,107 @@ const RELATIONS: Record<string, string> = {
   queries: 'queries',
   rendered_from: 'rendered from',
   planned_from: 'planned from',
+}
+
+// Case history, as a review surface (P7-SHELL-009). The evidence graph answers
+// what backs each claim; this answers the simpler question an analyst asks on
+// reopening a case: what did I do here, and when? One line per artifact, in the
+// order it happened - the case's own shape, visible without opening every
+// panel and comparing timestamps.
+//
+// Like the graph, it is a read-only projection over persisted rows: nothing
+// here writes, and the only way to change the timeline is to change the case
+// through the endpoints that own the artifacts.
+function HistoryPanel({
+  history,
+  error,
+  missing,
+}: {
+  history: CaseHistory | null
+  error: string | null
+  missing: boolean
+}) {
+  return (
+    <div className="panel">
+      <h2>Case history</h2>
+      {missing ? (
+        // A 404 means the case is unknown. The workspace loads its own case on
+        // mount, so the header already reports it - this panel says so once, as
+        // guidance, rather than reporting the same failure twice.
+        <p className="muted">The timeline could not be read: {error}</p>
+      ) : !history ? (
+        <p className="muted">Loading the timeline…</p>
+      ) : (
+        <HistoryBody history={history} />
+      )}
+      {!missing && error && (
+        <p role="alert">The timeline could not be read: {error}</p>
+      )}
+    </div>
+  )
+}
+
+function HistoryBody({ history }: { history: CaseHistory }) {
+  // Only the kinds the case actually has are named, so a young case is not
+  // described by a row of zeroes it would have to explain away.
+  const parts: string[] = []
+  for (const [key, [noun, verb]] of Object.entries(COUNT_KINDS)) {
+    const n = history.counts[key] ?? 0
+    if (n > 0) parts.push(`${n} ${noun}${n === 1 ? '' : 's'} ${verb}`)
+  }
+  return (
+    <>
+      <p className="muted">
+        {history.events.length} event{history.events.length === 1 ? '' : 's'} in
+        this case{parts.length > 0 ? `, ${parts.join(', ')}` : ''} - oldest first
+      </p>
+      {history.events.length === 0 ? (
+        // The core answers one event for a just-created case, so this is
+        // defensive - but a projection that answered nothing would be a bug
+        // worth seeing rather than an empty list worth hiding.
+        <p className="muted">Nothing has happened in this case yet.</p>
+      ) : (
+        <ul className="items">
+          {history.events.map((event, i) => (
+            <li key={`${event.artifact_id ?? event.kind}-${i}`}>
+              <p>
+                <time className="muted" dateTime={event.timestamp}>
+                  {event.timestamp}
+                </time>{' '}
+                — {EVENT_KINDS[event.kind] ?? event.kind}: {event.label}
+              </p>
+              {event.detail && <p className="muted">{event.detail}</p>}
+            </li>
+          ))}
+        </ul>
+      )}
+    </>
+  )
+}
+
+// Which count key names which event kind, as a noun and a verb, so the summary
+// sentence pluralises the noun where English does and still speaks the same
+// phrases the timeline below does.
+const COUNT_KINDS: Record<string, [string, string]> = {
+  datasets: ['dataset', 'attached'],
+  profiles: ['dataset', 'profiled'],
+  plans: ['plan', 'created'],
+  runs: ['run', 'executed'],
+  charts: ['chart', 'rendered'],
+  findings: ['finding', 'recorded'],
+}
+
+// The core's kind constants, as a reader would say them. An unknown kind is
+// shown verbatim rather than dropped, so a newer core never makes the timeline
+// quieter than it should be.
+const EVENT_KINDS: Record<string, string> = {
+  case_created: 'case created',
+  dataset_attached: 'dataset attached',
+  dataset_profiled: 'dataset profiled',
+  plan_created: 'plan created',
+  run_executed: 'run executed',
+  chart_rendered: 'chart rendered',
+  finding_recorded: 'finding recorded',
 }
 
 // The agent: the loop's driver, as a surface (P7-SHELL-003). Every other panel

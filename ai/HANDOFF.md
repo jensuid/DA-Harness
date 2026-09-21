@@ -2,6 +2,38 @@
 
 ## Next action
 
+**P7-SHELL-009 is DONE**, and with it the web-shell gap is closed: every
+capability that has an endpoint now has a surface. The web suite is 67 tests
+(was 64: +3 in `CaseWorkspace.test.tsx`), `npm run build` passes - `tsc -b`
+runs first - and the desktop bundle builds from the same source. The server
+side is untouched and stays at 358.
+
+### What is unbuilt, in priority order
+
+- **LEARN mode** - P7 item 3, and the next thing on the P7 checklist. A guided
+  Why -> What -> How -> Validate walk over a dataset. Mostly a sequencing and
+  presentation layer over the workflow stages that already exist (P3-FLOW-004),
+  which is why it was behind the shell gap.
+- **Multi-agent workflows** - the spec's ladder above the single driver that
+  exists (P6-AGENT-002). Only after EVALUATE, which is the audit layer an
+  agent's own output has to survive.
+- **The two endpoint-only surfaces, by design.** `/updates/latest` already has
+  the **DAH > Check for Updates...** menu item; `/schema-version` answers
+  "is my data safe with this build", a question a support conversation asks
+  rather than a step in an analysis. Neither is a missing panel.
+- **Deferred, not dropped:** signing (DEC-006, the slot is in `release.yml`),
+  cloud sync, team collaboration, warehouse connectors, enterprise governance.
+
+### If the next step is a release
+
+Tag `v<x.y.z>` where x.y.z matches server/pyproject.toml. The published build is
+arm64 and unsigned, flagged pre-release (DEC-006). Thirteen tasks have landed
+since v0.1.0, so `0.2.0` is the honest next label when a release is wanted.
+
+Nothing is unblocked-but-undone.
+
+---
+
 **P7-SHELL-008 is DONE**: a case's evidence graph is a review surface. The web
 suite is 64 tests (was 60: +4 in `CaseWorkspace.test.tsx`), `npm run build`
 passes and the desktop bundle builds from the same source. The server side is
@@ -127,6 +159,30 @@ Nothing is unblocked-but-undone.
 ---
 
 ## What was completed
+- P7-SHELL-009 PASSED: case history, as a review surface. P3-CASE-007 shipped
+  `GET /cases/{id}/history` - one event per artifact, chronological, each
+  carrying its own timestamp, a label and a detail, plus counts - and nothing in
+  the shell showed it, so the shape of a case was reconstructible only by
+  opening every panel and comparing timestamps yourself. A **Case history
+  panel** now sits at the end of the workspace, after the evidence panel: the
+  graph says what backs each claim, the timeline says what happened in the case
+  at all. Each event is one line in the order the core sends them, with the kind
+  as a phrase a reader does not have to decode ("dataset attached", not
+  "dataset_attached"), the artifact's own label, and its detail beneath - the
+  same fields the core returns, shown rather than transformed. The counts are
+  one summary sentence naming only the kinds the case actually has, so a young
+  case is not described by a row of zeroes.
+  Two things that had to be right rather than present: a **404 is guidance, not
+  a second alert** - the only failure the endpoint answers is an unknown case,
+  and the workspace loads its own case on mount, so that failure already reaches
+  the user at the top of the page and the panel does not raise it twice; and a
+  **young case is its beginning, not an empty list** - one event renders as one
+  event.
+  The task's own lesson is in its record: the timeline's first event is the
+  case's creation, whose label is the case's own question, so the question now
+  appears twice on the page and five existing assertions that meant the title
+  broke. They now ask for the heading by role - which is the accessible thing
+  anyway.
 - P7-SHELL-008 PASSED: the evidence graph, as a review surface. P3-EVIDENCE-006
   could answer "what backs each claim in this case, and does every one of them
   reach the data?" - and nothing in the shell showed it, so a case's own

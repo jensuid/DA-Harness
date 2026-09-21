@@ -1,6 +1,6 @@
 # DAH - Current State
 
- - **Phase:** P5 Production Grade - COMPLETE. P6 Post-Launch Evolution - COMPLETE: all 5 entry-checklist items. P7 Product Modes is IN PROGRESS (1 of 4, with seven web surfaces delivered): EVALUATE mode is DONE in the core and in the shell, the agent has a surface, a case can be renamed, duplicated and deleted from the list, templates are reachable from the shell, a cited previous case is something the analyst can follow, the "what should I look at first" steps are one panel away, and a case's evidence graph is a review surface. The web-shell gap is item 2 and is nearly closed; only case history still has an endpoint and no UI. P4 Production Candidate was COMPLETE (all 5 checklist items: P4 Production Candidate was COMPLETE (all 5 checklist items:
+ - **Phase:** P5 Production Grade - COMPLETE. P6 Post-Launch Evolution - COMPLETE: all 5 entry-checklist items. P7 Product Modes is IN PROGRESS (1 of 4, with eight web surfaces delivered): EVALUATE mode is DONE in the core and in the shell, the agent has a surface, a case can be renamed, duplicated and deleted from the list, templates are reachable from the shell, a cited previous case is something the analyst can follow, the "what should I look at first" steps are one panel away, a case's evidence graph is a review surface, and its history is one too. The web-shell gap - item 2 - is CLOSED: every capability with an endpoint has a surface. P4 Production Candidate was COMPLETE (all 5 checklist items: P4 Production Candidate was COMPLETE (all 5 checklist items:
   P4-VERIFY-001, P4-RELIABILITY-002, P4-UX-003 + P4-UX-004, P4-VALID-005,
   P4-PERF-006, P4-CI-007). P3 V1 is COMPLETE: all 10 entry-checklist items,
   231 server tests, and a P3 gate of its own. P5 Production Grade is IN
@@ -22,8 +22,24 @@ a versioned, forward-only migration path for the store, so a database from
 any past release opens, upgrades and keeps its rows (P6-MIGRATE-004);
 and an update check that tells an installed app a newer build exists - or
 says honestly that it could not tell (P6-UPDATE-005)**
-- **Active task:** P7-SHELL-008 DONE - the evidence graph, as a review
-  surface. P3-EVIDENCE-006 could answer "what backs each claim, and does every
+- **Active task:** P7-SHELL-009 DONE - case history, as a review surface.
+  P3-CASE-007 could answer "what did I do here, and when?" and nothing in the
+  shell showed it, so the shape of a case - how it grew, and in what order -
+  was reconstructible only by opening every panel and comparing timestamps.
+  A **Case history panel** now sits at the end of the workspace, after the
+  evidence panel, because the two are the read-only review surfaces: the graph
+  says what backs each claim, the timeline says what happened in the case at
+  all. It loads with the workspace and writes nothing; each event is one line
+  in the order the core sends them, with the kind as a phrase ("dataset
+  attached", not "dataset_attached"), the artifact's own label and its detail,
+  and the counts as one summary sentence naming only the kinds the case has.
+  A 404 is guidance rather than a second alert - the workspace loads its own
+  case on mount, so an unknown case is already reported at the top of the page
+  - and a young case renders its single event rather than an empty list.
+  Before it: P7-SHELL-008 (the evidence graph), P7-SHELL-007 (EDA),
+  P7-SHELL-006 (cross-case memory), P7-SHELL-005 (templates),
+  P7-SHELL-004 (case management), P7-SHELL-003 (the agent surface),
+  P7-SHELL-002 (EVALUATE's surface), P7-EVAL-001 (EVALUATE's core), P6 CLOSED. P3-EVIDENCE-006 could answer "what backs each claim, and does every
   one of them reach the data?" and nothing in the shell showed it, so a case's
   evidence was inspectable only one finding at a time and a claim with no
   source was invisible. An **Evidence panel** now sits after the findings panel
@@ -90,22 +106,23 @@ says honestly that it could not tell (P6-UPDATE-005)**
   documented minimum but is no longer enforced by CI, and a green run no longer
   proves the exact Intel triple a local build produces. Restoring that needs a
   self-hosted Intel runner.
-- **Test status:** server 358 passed (336 + 22 evaluate); web 64 passed
-  (CaseList 10, CaseCreation 3, CaseWorkspace 38, Templates 8, api 6 - the
-  workspace gained the evidence panel, on top of EDA, the cited-case buttons,
-  the promote panel, the templates section and the empty-204 fix); desktop shell 22 Rust tests
+- **Test status:** server 358 passed (336 + 22 evaluate); web 67 passed
+  (CaseList 10, CaseCreation 3, CaseWorkspace 41, Templates 8, api 6 - the
+  workspace gained the history panel, on top of the evidence graph, EDA, the
+  cited-case buttons, the promote panel, the templates section and the
+  empty-204 fix); desktop shell 22 Rust tests
   (`cd desktop/src-tauri && cargo test [--features e2e]`, 19 unit + 3 e2e);
   P2, P3 and P4 gates PASS (P4: all 18 journey steps, all 10 exit criteria);
   first release v0.1.0 published from tag and checksum-verified.
-- **Next task:** the last of the web-shell gap (P7 item 2). EVALUATE, the
-  agent, case management, templates, cross-case memory, EDA and the evidence
-  graph have surfaces; only this still does not: case history
-  (`/cases/{id}/history`), the read-only timeline of everything that happened in
-  a case. Each
-  is a panel over an existing contract - no new endpoints. After item 2:
-  **LEARN** mode, a guided Why -> What -> How -> Validate walk (mostly
-  sequencing over P3-FLOW-004), then multi-agent workflows, which only make
-  sense after EVALUATE - that is how an agent's own output gets audited.
+- **Next task:** the web-shell gap is closed (P7 item 2): EVALUATE, the agent,
+  case management, templates, cross-case memory, EDA, the evidence graph and
+  case history each have a surface, and no capability with an endpoint is
+  unreachable from the shell. Next: **LEARN** mode (P7 item 3), a guided Why ->
+  What -> How -> Validate walk - mostly a sequencing layer over the workflow
+  stages P3-FLOW-004 already ships - then multi-agent workflows, which only
+  make sense after EVALUATE - that is how an agent's own output gets audited.
+  Deferred, not dropped: signing (DEC-006, the slot is in `release.yml`), cloud
+  sync, team collaboration, warehouse connectors, enterprise governance.
   Deferred, not dropped: signing (DEC-006, the slot is in `release.yml`), cloud
   sync, team collaboration, warehouse connectors, enterprise governance. None
   pays for itself at a user count of one.
@@ -199,6 +216,7 @@ says honestly that it could not tell (P6-UPDATE-005)**
 | P7-SHELL-006 cross-case memory, actionable | DONE |
 | P7-SHELL-007 EDA in the web shell | DONE |
 | P7-SHELL-008 the evidence graph in the shell | DONE |
+| P7-SHELL-009 case history in the shell | DONE |
 
 ## P6 progress
 
