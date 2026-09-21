@@ -1,5 +1,5 @@
-import { beforeEach, describe, it, expect, vi } from 'vitest'
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest'
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { CaseWorkspace } from './CaseWorkspace'
 import * as api from './api'
@@ -9,6 +9,8 @@ vi.mock('./api', async (importOriginal) => {
   return {
     ...actual,
     getCase: vi.fn(),
+    getContext: vi.fn(),
+    putContext: vi.fn(),
     getProgress: vi.fn(),
     listDatasets: vi.fn(),
     listRuns: vi.fn(),
@@ -251,6 +253,7 @@ function mockEmptyCase() {
     id: 'c1', question: 'Why did revenue decline?', dataset: 'sales.csv',
     created_at: '', updated_at: '',
   })
+  vi.mocked(api.getContext).mockResolvedValue(emptyContext())
   vi.mocked(api.getProgress).mockResolvedValue(progress)
   vi.mocked(api.listDatasets).mockResolvedValue([dataset])
   vi.mocked(api.listRuns).mockResolvedValue([])
@@ -263,6 +266,17 @@ function mockEmptyCase() {
   vi.mocked(api.getEvidenceGraph).mockResolvedValue(evidenceGraph)
   vi.mocked(api.getCaseHistory).mockResolvedValue(caseHistory)
   vi.mocked(api.getLearnWalk).mockResolvedValue(learnWalk)
+}
+
+function emptyContext(): api.CaseContext {
+  return {
+    case_id: 'c1',
+    purpose: '',
+    sub_questions: [],
+    hypotheses: [],
+    constraints: [],
+    updated_at: null,
+  }
 }
 
 function agentStep(overrides: object = {}): api.AgentStep {
@@ -1679,3 +1693,105 @@ expect(timeline.getByText(/case created/)).toBeInTheDocument()
     ).toBeInTheDocument()
   })
 })
+
+  describe('the context panel', () => {
+    // Without this, a component a previous test left mounted keeps running its
+    // async saves into the next one, and the shared screen queries then match
+    // inputs from two cases at once.
+    afterEach(() => {
+      cleanup()
+    })
+    it('renders the stored intent', async () => {
+      mockEmptyCase()
+      vi.mocked(api.getContext).mockResolvedValue({
+        case_id: 'c1',
+        purpose: 'Understand the Q3 revenue dip',
+        sub_questions: ['Is it west?', 'Is it Q3 only?'],
+        hypotheses: ['West drove the decline'],
+        constraints: ['No customer-level data'],
+        updated_at: '2026-09-22T00:00:00Z',
+      })
+      render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+
+      expect(await screen.findByLabelText('Purpose')).toHaveValue('Understand the Q3 revenue dip')
+      expect(screen.getByLabelText('sub-question 1')).toHaveValue('Is it west?')
+      expect(screen.getByLabelText('sub-question 2')).toHaveValue('Is it Q3 only?')
+      expect(screen.getByLabelText('hypothesis 1')).toHaveValue('West drove the decline')
+      expect(screen.getByLabelText('constraint 1')).toHaveValue('No customer-level data')
+    })
+
+    it('saves the edited purpose and the added sub-question', async () => {
+      mockEmptyCase()
+      const stored = emptyContext()
+      vi.mocked(api.getContext).mockResolvedValue(stored)
+      vi.mocked(api.putContext).mockImplementation(async (_id, sent) => ({
+        ...stored,
+        ...sent,
+        updated_at: '2026-09-22T00:00:00Z',
+      }))
+
+      const user = userEvent.setup()
+      render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+      const purpose = await screen.findByLabelText('Purpose')
+
+      // Save is disabled until something actually changed.
+      expect(screen.getByRole('button', { name: /save context/i })).toBeDisabled()
+      await user.type(purpose, 'Understand the Q3 dip')
+      expect(screen.getByRole('button', { name: /save context/i })).toBeEnabled()
+
+      await user.click(screen.getByRole('button', { name: /add sub-question/i }))
+      const entry = screen.getByLabelText('sub-question 1')
+      await user.type(entry, 'Is it concentrated in one region?')
+
+      await user.click(screen.getByRole('button', { name: /save context/i }))
+
+      await waitFor(() => expect(api.putContext).toHaveBeenCalledWith('c1', {
+        purpose: 'Understand the Q3 dip',
+        sub_questions: ['Is it concentrated in one region?'],
+        hypotheses: [],
+        constraints: [],
+      }))
+      expect(screen.getByText('saved')).toBeInTheDocument()
+    })
+
+    it('removes an entry without saving until the analyst chooses', async () => {
+      mockEmptyCase()
+      vi.mocked(api.getContext).mockResolvedValue({
+        case_id: 'c1',
+        purpose: '',
+        sub_questions: ['one', 'two'],
+        hypotheses: [],
+        constraints: [],
+        updated_at: '2026-09-22T00:00:00Z',
+      })
+
+      const user = userEvent.setup()
+      render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+      expect(await screen.findByLabelText('sub-question 1')).toHaveValue('one')
+      // A previous test's in-flight save can settle after its own assertions
+      // passed; this test is about the removal, not that timing.
+      vi.mocked(api.putContext).mockClear()
+
+      await user.click(screen.getByRole('button', { name: /remove sub-question 1/i }))
+      expect(screen.queryByLabelText('sub-question 2')).not.toBeInTheDocument()
+      expect(screen.getByLabelText('sub-question 1')).toHaveValue('two')
+      // An edit is pending; nothing has been written.
+      expect(api.putContext).not.toHaveBeenCalled()
+      expect(screen.getByText(/unsaved edits/i)).toBeInTheDocument()
+    })
+
+    it('reports a failed save without losing the edit', async () => {
+      mockEmptyCase()
+      vi.mocked(api.getContext).mockResolvedValue(emptyContext())
+      vi.mocked(api.putContext).mockRejectedValue(new api.ApiError(400, 'too long'))
+
+      const user = userEvent.setup()
+      render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+      await user.type(await screen.findByLabelText('Purpose'), 'a stated purpose')
+      await user.click(screen.getByRole('button', { name: /save context/i }))
+
+      expect(await screen.findByText(/could not save the context/i)).toBeInTheDocument()
+      // The text the analyst typed is still there, so the retry costs nothing.
+      expect(screen.getByLabelText('Purpose')).toHaveValue('a stated purpose')
+    })
+  })

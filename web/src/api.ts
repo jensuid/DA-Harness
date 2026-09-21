@@ -257,6 +257,38 @@ export function getCase(id: string): Promise<Case> {
   return request<Case>(`/cases/${id}`)
 }
 
+// --- the case's stated intent (P8-CONTEXT-001) -----------------------------
+
+// The primary question stays on the case row; this is what a question alone
+// cannot carry. Lists, because the analyst adds and removes entries as the
+// investigation moves, and the whole object is replaced on save so a retry
+// after a failure cannot merge two drafts.
+export interface CaseContext {
+  case_id: string
+  purpose: string
+  sub_questions: string[]
+  hypotheses: string[]
+  constraints: string[]
+  updated_at: string | null
+}
+
+export function getContext(caseId: string): Promise<CaseContext> {
+  return request<CaseContext>(`/cases/${caseId}/context`)
+}
+
+// Whole-object replace: the stored context is identical to what the form held,
+// never a merge of the form and what was on the server a moment ago.
+export function putContext(
+  caseId: string,
+  context: { purpose: string; sub_questions: string[]; hypotheses: string[]; constraints: string[] },
+): Promise<CaseContext> {
+  return request<CaseContext>(`/cases/${caseId}/context`, {
+    method: 'PUT',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(context),
+  })
+}
+
 // --- case management (P2-CASE-010 / P7-SHELL-004) --------------------------
 
 // Omitted fields are left as they are, and updated_at moves so a rename shows

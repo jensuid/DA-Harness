@@ -1,4 +1,5 @@
 from app.analysis import profile_csv
+from app.planner import plan_analysis
 
 
 def test_profile_csv(tmp_path) -> None:
@@ -90,3 +91,59 @@ def test_profile_csv_stray_trailing_comma(tmp_path) -> None:
     assert result["columns"] == ["order_id", "quarter", "region", "revenue"]
     assert result["stats"]["revenue"]["null_count"] == 1
     assert result["stats"]["region"]["distinct_count"] == 2
+
+
+# --- P8-CONTEXT-001: intent outranks inference in the plan -------------------
+
+PROFILE = {
+    "rows": 3,
+    "columns": ["score", "region"],
+    "stats": {
+        "score": {"type": "numeric", "min": 1, "max": 3, "avg": 2.0, "null_count": 0},
+        "region": {"type": "other", "distinct_count": 2, "null_count": 0},
+    },
+    "duplicate_rows": 0,
+}
+
+
+def test_plan_without_context_records_no_basis() -> None:
+    plan = plan_analysis("Why did revenue dip?", PROFILE)
+    assert plan["context_basis"] == []
+
+
+def test_plan_records_which_context_fields_it_read() -> None:
+    plan = plan_analysis(
+        "Why did revenue dip?",
+        PROFILE,
+        {
+            "purpose": "Understand the Q3 dip",
+            "sub_questions": ["Is it west?", "Is it Q3?"],
+            "hypotheses": ["West drove it"],
+        },
+    )
+    assert plan["context_basis"] == ["purpose", "sub_questions:2", "hypotheses:1"]
+
+
+def test_the_analysts_sub_questions_outrank_the_derived_ones() -> None:
+    plan = plan_analysis(
+        "Why did revenue dip?",
+        PROFILE,
+        {"purpose": "", "sub_questions": ["Is it concentrated in one region?"],
+         "hypotheses": ["A single region drove it"]},
+    )
+    assert plan["sub_questions"][0] == "Is it concentrated in one region?"
+    # The derived questions still appear, after the analyst's own.
+    assert len(plan["sub_questions"]) > 1
+    assert any(h["statement"] == "A single region drove it" for h in plan["hypotheses"])
+
+
+def test_a_stated_purpose_stands_in_for_a_thin_question() -> None:
+    plan = plan_analysis("", PROFILE, {"purpose": "Understand the dip",
+                                       "sub_questions": [], "hypotheses": []})
+    assert plan["objective"] == "Understand the dip"
+
+
+def test_an_empty_context_behaves_like_none_at_all() -> None:
+    # A case that saved an empty form is planned from the profile alone.
+    assert plan_analysis("q", PROFILE, {"purpose": "", "sub_questions": [],
+                                        "hypotheses": []})["context_basis"] == []

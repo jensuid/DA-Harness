@@ -87,6 +87,8 @@ from app.models import (
     LearnWalk,
     CaseProgress,
     CaseUpdate,
+    CaseContext,
+    ContextUpdate,
     EdaCreate,
     EdaResult,
     EvidenceGraph,
@@ -166,6 +168,13 @@ app = FastAPI(
     description="Deterministic core of the Data Analysis Harness.",
     version="0.1.0",
 )
+
+# A context entry is a sentence or two, not a document; the caps keep a form
+# the shell renders legible and a package that stays cheap to round-trip.
+_CONTEXT_TEXT_MAX = 2_000
+_MAX_SUB_QUESTIONS = 12
+_MAX_HYPOTHESES = 12
+_MAX_CONSTRAINTS = 12
 
 ALLOWED_ORIGINS = frozenset(
     {
@@ -521,6 +530,123 @@ async def update_case(
     )
 
 
+def _context_of(db, case_id: str) -> CaseContext:
+    """The case's context, or an empty one - never a 404.
+
+    A case without a context row is a case whose context is unset, and the
+    shell's form has to render something either way; the empty default is the
+    honest statement of that rather than an error the analyst did not cause.
+    """
+    row = db.execute(
+        "SELECT case_id, purpose, sub_questions_json, hypotheses_json, "
+        "constraints_json, updated_at FROM contexts WHERE case_id = ?",
+        (case_id,),
+    ).fetchone()
+    if row is None:
+        return CaseContext(case_id=case_id)
+    return CaseContext(
+        case_id=row["case_id"],
+        purpose=row["purpose"] or "",
+        sub_questions=json.loads(row["sub_questions_json"] or "[]"),
+        hypotheses=json.loads(row["hypotheses_json"] or "[]"),
+        constraints=json.loads(row["constraints_json"] or "[]"),
+        updated_at=row["updated_at"],
+    )
+
+
+@app.get("/cases/{case_id}/context", response_model=CaseContext)
+async def get_context(case_id: str, db=Depends(get_db)) -> CaseContext:
+    """The case's stated intent: purpose, sub-questions, hypotheses, constraints.
+
+    Read-only, like every other GET in the workspace: opening a case commits
+    nothing, and the form's own save is the only path that writes.
+    """
+    _require_case(db, case_id)
+    return _context_of(db, case_id)
+
+
+@app.put("/cases/{case_id}/context", response_model=CaseContext)
+async def put_context(
+    case_id: str,
+    payload: ContextUpdate,
+    db=Depends(get_db),
+) -> CaseContext:
+    """Replace the case's context wholesale.
+
+    Whole-object rather than partial, so a retry after a failed save leaves the
+    stored context identical to what the form held rather than merging the two.
+    The primary question is deliberately not here: it already lives on the case
+    row and is editable through PATCH /cases/{id}.
+    """
+    _require_case(db, case_id)
+
+    purpose = (payload.purpose or "").strip()
+    if len(purpose) > _CONTEXT_TEXT_MAX:
+        raise HTTPException(
+            status_code=400,
+            detail=f"purpose is longer than {_CONTEXT_TEXT_MAX} characters",
+        )
+
+    cleaned = {}
+    for field, limit in (
+        ("sub_questions", _MAX_SUB_QUESTIONS),
+        ("hypotheses", _MAX_HYPOTHESES),
+        ("constraints", _MAX_CONSTRAINTS),
+    ):
+        items = getattr(payload, field)
+        if not isinstance(items, list):
+            raise HTTPException(status_code=400, detail=f"'{field}' must be a list")
+        if len(items) > limit:
+            raise HTTPException(
+                status_code=400,
+                detail=f"'{field}' holds {len(items)} entr{'y' if len(items) == 1 else 'ies'}, "
+                f"at most {limit} are kept",
+            )
+        texts = []
+        for item in items:
+            if not isinstance(item, str) or not item.strip():
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"every entry in '{field}' must be a non-empty string",
+                )
+            if len(item) > _CONTEXT_TEXT_MAX:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"an entry in '{field}' is longer than "
+                    f"{_CONTEXT_TEXT_MAX} characters",
+                )
+            texts.append(item.strip())
+        cleaned[field] = texts
+
+    now = datetime.now(timezone.utc).isoformat()
+    db.execute(
+        "INSERT INTO contexts (case_id, purpose, sub_questions_json, "
+        "hypotheses_json, constraints_json, updated_at) "
+        "VALUES (?, ?, ?, ?, ?, ?) "
+        "ON CONFLICT(case_id) DO UPDATE SET purpose = excluded.purpose, "
+        "sub_questions_json = excluded.sub_questions_json, "
+        "hypotheses_json = excluded.hypotheses_json, "
+        "constraints_json = excluded.constraints_json, "
+        "updated_at = excluded.updated_at",
+        (
+            case_id,
+            purpose,
+            json.dumps(cleaned["sub_questions"]),
+            json.dumps(cleaned["hypotheses"]),
+            json.dumps(cleaned["constraints"]),
+            now,
+        ),
+    )
+    return CaseContext(
+        case_id=case_id,
+        purpose=purpose,
+        sub_questions=cleaned["sub_questions"],
+        hypotheses=cleaned["hypotheses"],
+        constraints=cleaned["constraints"],
+        updated_at=now,
+    )
+
+
 @app.post(
     "/cases/{case_id}/duplicate",
     status_code=201,
@@ -723,6 +849,29 @@ async def duplicate_case(
             ),
         )
 
+    # The analyst's stated intent travels with the copy (P8-CONTEXT-001): a
+    # duplicate is a case in its own right, and an investigation restarted from
+    # one should not have to restate what it is for.
+    source_context = db.execute(
+        "SELECT purpose, sub_questions_json, hypotheses_json, constraints_json "
+        "FROM contexts WHERE case_id = ?",
+        (case_id,),
+    ).fetchone()
+    if source_context is not None:
+        db.execute(
+            "INSERT INTO contexts (case_id, purpose, sub_questions_json, "
+            "hypotheses_json, constraints_json, updated_at) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            (
+                new_case_id,
+                source_context["purpose"],
+                source_context["sub_questions_json"],
+                source_context["hypotheses_json"],
+                source_context["constraints_json"],
+                now.isoformat(),
+            ),
+        )
+
     return new_case
 
 
@@ -751,6 +900,7 @@ async def delete_case(case_id: str, db=Depends(get_db)) -> None:
         (case_id,),
     )
     db.execute("DELETE FROM plans WHERE case_id = ?", (case_id,))
+    db.execute("DELETE FROM contexts WHERE case_id = ?", (case_id,))
     db.execute("DELETE FROM datasets WHERE case_id = ?", (case_id,))
     db.execute("DELETE FROM cases WHERE id = ?", (case_id,))
 
@@ -3081,6 +3231,21 @@ async def create_plan(
         "duplicate_rows": profile_row["duplicate_rows"],
     }
 
+    # The case's stated intent is what the plan is built from when it exists:
+    # purpose, sub-questions and hypotheses the analyst recorded outrank the
+    # profile's own suggestions (P8-CONTEXT-001). An unset context is None here
+    # rather than an empty dict, so the basis records nothing it did not read.
+    context = _context_of(db, case_id)
+    context_body = (
+        {
+            "purpose": context.purpose,
+            "sub_questions": context.sub_questions,
+            "hypotheses": context.hypotheses,
+        }
+        if (context.purpose or context.sub_questions or context.hypotheses)
+        else None
+    )
+
     # A case seeded from a template is offered that template's plan first - it
     # is the shape of an investigation that actually finished - and falls back
     # to the derivation on any problem or when the case has planned already.
@@ -3088,7 +3253,9 @@ async def create_plan(
     if templated is not None:
         plan_body, source = templated
     else:
-        plan_body, source = create_plan_module(case_row["question"], profile)
+        plan_body, source = create_plan_module(
+            case_row["question"], profile, context_body
+        )
     # A plan from anywhere outside the deterministic engine is re-validated on
     # the way in; schema violations never reach the database.
     problems = validate_plan(plan_body)

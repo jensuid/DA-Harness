@@ -1,6 +1,79 @@
 # DAH - Handoff
 
 ## Next action
+**P8-CONTEXT-001 is DONE**, and with it the first of the PRD's Level 1 gaps
+closes: a case carries the analyst's stated intent, not just a question string.
+AT-03 requires purpose, sub-questions and hypotheses to be captured, edited and
+reopened; a case was `question + dataset` before this.
+
+A new `contexts` table (schema **v10**) holds a purpose and three lists -
+sub-questions, hypotheses, known constraints. The primary question stays on the
+case row, where it was already editable, rather than being duplicated. `GET
+/cases/{id}/context` answers an empty default instead of a 404, so the shell's
+form always has something to render; `PUT` replaces the whole object so a retry
+after a failed save leaves the store identical to the form rather than merging
+two drafts. Malformed input answers 400 and changes nothing.
+
+Three readers now consume the intent:
+
+- **The planner.** The analyst's sub-questions and hypotheses are prepended to
+  the ones the profile suggests - intent outranks inference - and a stated
+  purpose stands in for a thin objective. The plan records a `context_basis`
+  naming the fields it actually read, on *both* engines: `_basis_for` describes
+  the intent the caller supplied, not which engine spoke, so the basis and
+  `source` answer two different questions.
+- **The assistant.** "What is this case trying to establish?" is answered from
+  the stated purpose and hypotheses, citing `context:purpose` and
+  `context:hypotheses`. The branch sits *ahead* of the column branch on
+  purpose: that question names no column, and without it the assistant fell
+  through to whichever statistic it could find.
+- **Export, duplicate and delete.** The context travels with an exported
+  package and is restored on import; a duplicate carries it; a delete removes
+  it. An older package without the section degrades to an empty context rather
+  than erroring.
+
+One thing worth carrying: the LLM path initially recorded no basis at all. The
+plan came back `source=llm` with no `context_basis`, which read as though the
+intent had been ignored when it had in fact been in the prompt. A basis
+describes what was *asked*, so it is recorded on whichever engine answers - an
+engine that ignored the intent still records that it was supplied.
+
+**409 server tests** (21 new), **82 web tests** (4 new), the build green, and
+all 25 real-server e2e steps passing. The schema is at v10 and a v9 store opens,
+upgrades and keeps every row.
+
+### What is next, in priority order
+
+- **P8-QUALITY-002** - quality detection beyond missingness. The profile finds
+  missing values and duplicate rows; the PRD wants seven defect classes
+  (AT-08), each with an *impact* sentence (AT-09) shown at the Data stage,
+  *before* analysis, rather than only at validation.
+- **P8-VALID-003** - validation from 3 checks to the PRD's 9 dimensions
+  (AT-17). The largest single trust gap. The EVALUATE engine already computes a
+  nine-axis audit; it is pointed at imported work, never at the case's own
+  findings.
+- **P8-CAUSAL-004** - the causal-language guard (AT-18), sitting on the verdict
+  vocabulary P8-VALID-003 formalises.
+- **P8-GOLDEN-005** - the analytical golden suite with reference values (AT-40)
+  and the workflow-completion rate (AT-01). This is what turns the above into
+  measured numbers.
+- **P8-SHELL-006** - the orientation spine: the persistent workflow rail with
+  per-stage status, the three-zone adaptive workspace, the case overview, and
+  rendering the three numbers the walkthrough found unrendered. Deliberately
+  after 001-005: the panels place objects that already exist, so the objects
+  should exist first.
+- The release (v0.2.0) remains independent and unblocked - tag it any time.
+
+### The packaged app is behind this change
+
+The shipped sidecar was rebuilt for P7-CSV-002 and is current to that commit,
+not this one. Rebuild before the next release:
+
+    cd server && ./build_sidecar.sh && cd ../desktop && npm run tauri -- build
+
+---
+
+## Next action
 **P7-CSV-002 is DONE**: an analyst's CSV is accepted as it arrives. The first
 three worked cases were being seeded into the shipped app when one fixture -
 `106,2024q3,west,,` - made the profiler answer `columns:

@@ -1,28 +1,31 @@
-# DAH - Current State
+**Phase:** P8 Analytical Contract - IN PROGRESS (1 of 10 delivered: the case's
+context object, P8-CONTEXT-001). P7 Product Modes is COMPLETE - every checklist
+item that builds something shipped, including the manual walkthrough and the
+CORS fix, and the store's schema is at v10. P6, P5, P4, P3, P2, P1 and P0 are
+all COMPLETE (see the phase table below). P8 closes the PRD's Level 1 breadth
+gaps and makes "done" measurable: quality detection beyond missingness (2 of 7
+defect classes today), validation from 3 checks to the PRD's 9 dimensions, the
+causal-language guard, the analytical golden suite, the orientation spine,
+question refinement, the decision view, and the measurement layer. The full gap
+analysis is `docs/PRD & UX Conformance Evaluation.md`.
 
- - **Phase:** P5 Production Grade - COMPLETE. P6 Post-Launch Evolution - COMPLETE: all 5 entry-checklist items. P7 Product Modes is IN PROGRESS (1 of 4, with eight web surfaces delivered): EVALUATE mode is DONE in the core and in the shell, the agent has a surface, a case can be renamed, duplicated and deleted from the list, templates are reachable from the shell, a cited previous case is something the analyst can follow, the "what should I look at first" steps are one panel away, a case's evidence graph is a review surface, and its history is one too. The web-shell gap - item 2 - is CLOSED: every capability with an endpoint has a surface. LEARN mode - item 3 - is DONE in the core (P7-LEARN-001) and in the shell (P7-SHELL-010): the guided Why -> What -> How -> Validate walk is a read-side projection over the workflow stages, and a Learn this case panel walks it beside the workflow it explains. The P7 checklist has EVALUATE, LEARN and multi-agent workflows delivered - the last as a core (P7-AGENT-001): a case carries agents in two roles, analyst and reviewer, each with its own pending step and audit trail behind the one approval gate both share. The reviewer's shell surface is built too (P7-SHELL-011), so every P7 checklist item that builds something is delivered; the release is what remains. P4 Production Candidate was COMPLETE (all 5 checklist items: P4 Production Candidate was COMPLETE (all 5 checklist items:
-  P4-VERIFY-001, P4-RELIABILITY-002, P4-UX-003 + P4-UX-004, P4-VALID-005,
-  P4-PERF-006, P4-CI-007). P3 V1 is COMPLETE: all 10 entry-checklist items,
-  231 server tests, and a P3 gate of its own. P5 Production Grade is IN
-  PROGRESS (4 of 5 checklist items: the P4 gate, observability, the 500
-  envelope and release automation are done; only signing remains, and it is
-  blocked on the Apple Developer ID).
-- **Global roadmap status:** ai/ROADMAP.md (phase tracker - current stage, phase table, next-phase entry checklist)
-- **Milestone status:** P1 Vertical Slice PASSED (verification/p1/REPORT.md); P0 PASSED
-- **Completed capabilities:** FastAPI core; SQLite case persistence; DuckDB engine; Vite/React shell; P0 verification harness; CSV dataset attachment; deterministic dataset profiling; read-only SQL analysis runs with persisted results; findings with evidence chain; validation via rerun; parquet + xlsx ingest; deep profiling; **read-only Python execution with persisted results (P2-ANALYSIS-008); chart images rendered and persisted from run results (P2-ANALYSIS-009);
-case management - rename, duplicate, delete (P2-CASE-010);
-AI planning with structured output (P2-AI-011); case export as a self-contained
-JSON package with import round trip (P2-CASE-012);
-**agentic analysis - the loop drives itself over those endpoints, one
-human-approved write at a time (P6-AGENT-002);
-case templates that carry the analytical shape of a finished case - its plan,
-its proposals and how its findings validated - not just its question
-(P6-TEMPLATE-003);
-a versioned, forward-only migration path for the store, so a database from
-any past release opens, upgrades and keeps its rows (P6-MIGRATE-004);
-and an update check that tells an installed app a newer build exists - or
-says honestly that it could not tell (P6-UPDATE-005)**
-- **Active task:** P7-CSV-002 DONE - a CSV with a row wider than its header
+- **Active task:** P8-CONTEXT-001 DONE - a case carries the analyst's stated
+  intent, not just a question string. The PRD's AT-03 requires purpose,
+  sub-questions and hypotheses to be captured, edited and reopened, and the UX
+  architecture (section 13) treats context as a first-class object the AI
+  reasons over; a case was `question + dataset` before it. A new `contexts`
+  table (schema v10, migration guarded and resumable like every other) holds a
+  purpose and three lists; GET answers an empty default rather than a 404 so the
+  shell's form always renders, and PUT replaces the whole object so a retry
+  after a failed save cannot merge two drafts. The planner reads it - the
+  analyst's sub-questions and hypotheses outrank the ones the profile suggests,
+  a stated purpose stands in for a thin objective - and the plan records a
+  `context_basis` naming the fields it actually read, on both the deterministic
+  and the LLM path. The assistant cites `context:purpose` and
+  `context:hypotheses` when asked what the case is for. Export carries it in
+  both directions, duplicate carries it, delete removes it.
+  Before it: P7-CSV-002 (a stray trailing comma no longer collapses a file),
+  P7-CORS-001 (the packaged app's webview could not reach its own core). The
   (a stray trailing comma, as a spreadsheet export or a hand-edit produces)
   no longer reads as one column of raw lines. read_csv_auto's delimiter guess
   dies on that row, so the profile answered
@@ -91,11 +94,16 @@ says honestly that it could not tell (P6-UPDATE-005)**
   documented minimum but is no longer enforced by CI, and a green run no longer
   proves the exact Intel triple a local build produces. Restoring that needs a
   self-hosted Intel runner.
-- **Test status:** server 388 passed (4 for the shell's CORS; 4 for the
+- **Test status:** server 409 passed (21 for the context object: persistence
+  and reopen, the edit and the malformed-input 400s, the v9->v10 migration, the
+  export round trip, the planner's basis recording and precedence, and three
+  chat tests for the new citation kind) (4 for the shell's CORS; 4 for the
   stray-trailing-comma recovery - a CSV with a row wider than its header no
   longer collapses to one column, in the profile *and* in the SQL written
-  from it; all 4 fail on the pre-fix code) (336 + 22 evaluate + 9 learn + 13
-  multi-agent + 4 cors + 4 csv); web 78 passed
+  from it; all 4 fail on the pre-fix code) (336 + 22 evaluate + 9 learn
+  + 13 multi-agent + 4 cors + 4 csv + 21 context); web 82 passed (4 for the
+  Context panel: render, save with precedence, remove without saving, a failed
+  save that keeps the edit)
   (CaseList 10, CaseCreation 3, CaseWorkspace 52, Templates 8, api 6 - the
   workspace gained the reviewer panel, on top of the LEARN panel, the evidence
   graph, EDA, the cited-case buttons, the promote panel, the templates section

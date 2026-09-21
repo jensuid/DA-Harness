@@ -132,17 +132,17 @@ def test_list_plans_newest_first(tmp_path, monkeypatch) -> None:
 
 
 class _FailingLLM:
-    def plan(self, question, profile):
+    def plan(self, question, profile, context=None):
         raise RuntimeError("LLM unavailable")
 
 
 class _MalformedLLM:
-    def plan(self, question, profile):
+    def plan(self, question, profile, context=None):
         return {"objective": "", "sub_questions": "not a list"}
 
 
 class _GoodLLM:
-    def plan(self, question, profile):
+    def plan(self, question, profile, context=None):
         return {
             "objective": question,
             "primary_question": question,
@@ -237,3 +237,18 @@ def test_plan_survives_case_duplicate_and_delete(tmp_path, monkeypatch) -> None:
     with TestClient(app) as client:
         client.delete(f"/cases/{case_id}")
         assert client.get(f"/cases/{case_id}/datasets/{dataset_id}/plan").status_code == 404
+
+
+def test_plan_carries_a_context_basis_the_validator_accepts(tmp_path) -> None:
+    """The basis is part of the plan contract, so a malformed one is a problem
+    rather than something to silently persist."""
+    from app.planner import validate_plan
+
+    assert validate_plan({"objective": "o", "primary_question": "q",
+                          "sub_questions": [], "hypotheses": [],
+                          "data_requirements": [], "analysis_steps": [],
+                          "context_basis": ["purpose"]}) == []
+    assert validate_plan({"objective": "o", "primary_question": "q",
+                          "sub_questions": [], "hypotheses": [],
+                          "data_requirements": [], "analysis_steps": [],
+                          "context_basis": "purpose"}) == ["'context_basis' must be a list"]

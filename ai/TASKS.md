@@ -128,6 +128,127 @@ the gate comes first because a phase is done when a gate says so.
 | P7-CSV-002 | Data Layer (a stray trailing comma) | DONE | 4 tests, +4 (388), e2e green |
 
 
+## P8 Analytical Contract
+
+Goal: close the PRD's Level 1 breadth gaps and make "done" measurable. DAH
+implements its trust model narrowly (validation 3 of 9 dimensions, quality
+detection 2 of 7 defect classes, question capture one text field) and measures
+nothing; this phase widens the trust machinery first - the PRD's own rule is
+that convenience is sacrificed before analytical trust - and then measures it.
+See `docs/PRD & UX Conformance Evaluation.md` for the gap analysis this phase
+answers.
+
+| Task ID | Capability | Status | Verification |
+|---------|-----------|--------|--------------|
+| P8-CONTEXT-001 | Data Layer (the case's context object) | DONE | 21 tests added (409 server, 82 web); schema v10; e2e green |
+| P8-QUALITY-002 | Data Layer (quality beyond missingness) | OPEN | AT-08/AT-09 |
+| P8-VALID-003 | Validation (3 checks to 9 dimensions) | OPEN | AT-17 |
+| P8-CAUSAL-004 | Validation (the causal-language guard) | OPEN | AT-18 |
+| P8-GOLDEN-005 | Verification (the analytical golden suite) | OPEN | AT-40/AT-01 |
+| P8-SHELL-006 | UX (the orientation spine) | OPEN | AT-33/34/35 |
+| P8-REFINE-007 | AI (question refinement) | OPEN | AT-04 |
+| P8-DECISION-008 | UX (the decision view) | OPEN | UX 46 |
+| P8-MEASURE-009 | Verification (coverage, perf, a11y, deps) | OPEN | AT-27..30/32/37/38/45/46 |
+| P8-TRACE-010 | Verification (the traceability matrix) | OPEN | AT-48 |
+
+### P8-CONTEXT-001 contract
+
+```
+TASK ID: P8-CONTEXT-001
+MILESTONE: P8 Analytical Contract
+CAPABILITY: Data Layer (the case's context object)
+GOAL: a case carries the analyst's intent, not just a question string. Today a
+      case is `question + dataset`; the PRD (AT-03) requires purpose, primary
+      question, sub-questions and hypotheses to be captured, edited and
+      restored, and the UX architecture (section 13) treats context as a
+      first-class analytical object - business objective, time period,
+      relevant changes, known constraints - that the planner and the assistant
+      reason over. The generated plan already carries sub-questions and
+      hypotheses, but they are the engine's, not the analyst's, they are not
+      editable, and P7-WALK-001 recorded that they are persisted and never
+      rendered. This task is the dependency for P8-REFINE-007 (refinement edits
+      this object), P8-DECISION-008 (the decision view closes over it) and the
+      case overview in P8-SHELL-006.
+CONTEXT: AT-03's threshold is persistence across edit and reopen; AT-10 wants
+         the plan to hold an objective, sub-questions, hypotheses and methods;
+         UX 13 wants context available to the AI. Nothing in the loop currently
+         reads intent - the planner takes `(question, profile)` and the
+         assistant's facts carry no context - so this adds the object and wires
+         the two readers that already exist.
+INPUTS: a case's context: a free-text purpose, a list of sub-questions, a list
+        of hypotheses to test, and a list of known constraints. The primary
+        question stays on the case row (it is already editable and persisted)
+        rather than being duplicated.
+RELEVANT FILES: server/app/db.py (migration 10, the contexts table),
+                server/app/models.py (CaseContext, ContextUpdate),
+                server/app/main.py (GET/PUT /cases/{id}/context, plan wiring),
+                server/app/planner.py (reads context, records a context_basis),
+                server/app/assistant.py (context in facts, one citation kind),
+                server/app/exporter.py (the context section, both directions),
+                web/src/ContextPanel.tsx, web/src/CaseWorkspace.tsx,
+                web/src/api.ts, web/src/CaseWorkspace.test.tsx,
+                server/tests/test_context.py, ai/HANDOFF.md, ai/TASKS.md,
+                ai/CURRENT_STATE.md
+REQUIRED CHANGE:
+  - A `contexts` table, one row per case (case_id PRIMARY KEY), holding purpose
+    and three JSON lists: sub_questions, hypotheses, constraints. Migration 10,
+    guarded so it is a no-op on a store that already has it and resumable after
+    a crashed upgrade - the standard every other migration is held to.
+  - `GET /cases/{case_id}/context` answers the context, defaulting to an empty
+    one for a case that never set it, so the shell's form always has something
+    to render; `PUT /cases/{case_id}/context` replaces it wholesale (idempotent
+    form semantics). A 404 for an unknown case; a 400 for a malformed list -
+    never a silent drop, the discipline AT-20 applies to our own inputs.
+  - The planner accepts an optional context and lets the analyst's intent
+    outrank the derivation: their sub-questions and hypotheses come first, the
+    purpose stands in for a thin objective. The plan records a `context_basis`
+    list naming the fields it actually read, so a reader can tell a plan built
+    from stated intent from one built from a profile alone.
+  - The assistant's facts carry the context, and one deterministic branch
+    answers a question about the case's purpose or its hypotheses citing a
+    `context:` ground - the same shape as the column and dataset branches.
+  - Export carries the context section and import restores it; an older package
+    without one degrades to an empty context rather than erroring.
+NON-GOALS: AI question refinement (P8-REFINE-007 - this object is what that
+           task edits); rendering the plan's own contents (P8-SHELL-006, which
+           is the panel for everything the core computes and the shell does not
+           show); quality detection (P8-QUALITY-002).
+CONSTRAINTS: green only - nothing committed while red, and the schema version
+             climbs to 10 with the migration recorded in the audit trail.
+ACCEPTANCE CRITERIA:
+- [x] entered purpose, sub-questions, hypotheses and constraints persist across
+      a save, close and reopen
+- [x] edited text persists and reopening restores the latest version
+- [x] a plan generated for a case with context records which fields it read in
+      `context_basis`, and the analyst's sub-questions outrank the derived ones
+- [x] 3 sub-questions and 2 hypotheses survive an export -> import round trip
+- [x] a malformed context (non-list, empty item, overlong text) answers 400 and
+      changes nothing
+- [x] a store from v9 opens, upgrades to v10 and keeps every row it had
+TESTS: test_context.py - persistence and reopen, edit, the 400 paths, the
+       migration from v9, the round trip; planner tests for context precedence
+       and basis recording; assistant tests for the new citation kind; web
+       tests for the panel's edit and remove paths.
+VERIFICATION: `cd server && DAH_LLM_API_KEY= DAH_LLM_BASE_URL= DAH_LLM_MODEL=
+              .venv/bin/python -m pytest -q` green;
+              `server/.venv/bin/python verification/e2e/verify_e2e.py` green;
+              `cd web && npm test && npm run build` green.
+STATE UPDATE: TASKS/CURRENT_STATE gain the task and the raised schema version;
+              the store is at v10.
+```
+
+TASK: P8-CONTEXT-001 - the case's context object
+ID: P8-CONTEXT-001
+PRIORITY: high
+STATUS: DONE
+SUMMARY: a case gains structured, editable intent - purpose, sub-questions,
+         hypotheses, known constraints - persisted in a new table (migration
+         10), edited through a GET/PUT pair, read by the planner so a plan is
+         built from stated intent rather than a question string plus a
+         profile, read by the assistant so a question about purpose cites it,
+         and carried by export in both directions. The primary question stays
+         on the case row where it already lives.
+
 Contracts for the rolling window (the two most recent). Older blocks are in
 `ai/TASKS-ARCHIVE.md`.
 

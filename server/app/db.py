@@ -158,6 +158,16 @@ CREATE TABLE IF NOT EXISTS conversations (
     FOREIGN KEY (case_id) REFERENCES cases(id)
 );
 
+CREATE TABLE IF NOT EXISTS contexts (
+    case_id TEXT PRIMARY KEY,
+    purpose TEXT NOT NULL DEFAULT '',
+    sub_questions_json TEXT NOT NULL DEFAULT '[]',
+    hypotheses_json TEXT NOT NULL DEFAULT '[]',
+    constraints_json TEXT NOT NULL DEFAULT '[]',
+    updated_at TEXT NOT NULL,
+    FOREIGN KEY (case_id) REFERENCES cases(id)
+);
+
 CREATE TABLE IF NOT EXISTS schema_migrations (
     version INTEGER PRIMARY KEY,
     name TEXT NOT NULL,
@@ -201,7 +211,7 @@ def _ensure_column(conn, table: str, column: str, definition: str) -> None:
 # opening one above it is refused (see _check_version) rather than silently
 # treated as current, because a downgrade against an unknown schema is how a
 # store is corrupted quietly.
-LATEST_SCHEMA_VERSION = 9
+LATEST_SCHEMA_VERSION = 10
 
 
 class Migration:
@@ -271,6 +281,23 @@ def _m_evaluations_table(conn: sqlite3.Connection) -> None:
 
 
 
+def _m_contexts_table(conn: sqlite3.Connection) -> None:
+    # A case carries the analyst's intent, not just a question string
+    # (P8-CONTEXT-001): purpose, sub-questions, hypotheses, known constraints.
+    # One row per case, so the primary key is the case rather than a surrogate -
+    # a context without a case is meaningless, and a second write is an edit.
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS contexts ("
+        "case_id TEXT PRIMARY KEY, "
+        "purpose TEXT NOT NULL DEFAULT '', "
+        "sub_questions_json TEXT NOT NULL DEFAULT '[]', "
+        "hypotheses_json TEXT NOT NULL DEFAULT '[]', "
+        "constraints_json TEXT NOT NULL DEFAULT '[]', "
+        "updated_at TEXT NOT NULL, "
+        "FOREIGN KEY (case_id) REFERENCES cases(id))"
+    )
+
+
 def _m_agent_steps_role(conn: sqlite3.Connection) -> None:
     # Multi-agent workflows: a step belongs to a role (P7-AGENT-001). Every
     # step recorded before the column existed is the analyst role - the one
@@ -292,6 +319,7 @@ MIGRATIONS: tuple[Migration, ...] = (
     Migration(7, "cases gain the template they came from", _m_cases_template_id),
     Migration(8, "evaluations: EVALUATE mode stores its audits", _m_evaluations_table),
     Migration(9, "agent_steps gain the role they belong to", _m_agent_steps_role),
+    Migration(10, "contexts: a case carries purpose, sub-questions, hypotheses", _m_contexts_table),
 )
 
 

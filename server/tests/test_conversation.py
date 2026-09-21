@@ -277,3 +277,60 @@ def test_404_for_an_unknown_case(tmp_path, monkeypatch) -> None:
         assert client.get("/cases/no-such-case/chat").status_code == 404
         # A real case's conversation is reachable.
         assert client.get(f"/cases/{case_id}/chat").status_code == 200
+
+
+# --- P8-CONTEXT-001: a question about intent cites the stated intent --------
+
+
+def test_a_question_about_purpose_cites_the_stated_intent(tmp_path, monkeypatch) -> None:
+    _temp_env(tmp_path, monkeypatch)
+
+    with TestClient(app) as client:
+        case_id, _ = _case_with_data(client)
+        client.put(
+            f"/cases/{case_id}/context",
+            json={
+                "purpose": "Understand the Q3 revenue dip",
+                "sub_questions": [],
+                "hypotheses": ["A single region drove it"],
+                "constraints": [],
+            },
+        )
+        answer = _ask(client, case_id, "What is this case trying to establish?")
+
+    # The answer quotes the stated purpose and cites it, rather than falling
+    # through to a column statistic.
+    assert "Understand the Q3 revenue dip" in answer["answer"]
+    assert "context:purpose" in answer["grounds"]
+
+
+def test_a_question_about_hypotheses_cites_them(tmp_path, monkeypatch) -> None:
+    _temp_env(tmp_path, monkeypatch)
+
+    with TestClient(app) as client:
+        case_id, _ = _case_with_data(client)
+        client.put(
+            f"/cases/{case_id}/context",
+            json={
+                "purpose": "",
+                "sub_questions": [],
+                "hypotheses": ["West drove the decline", "A price change explains it"],
+                "constraints": [],
+            },
+        )
+        answer = _ask(client, case_id, "Which hypothesis are we testing?")
+
+    assert "West drove the decline" in answer["answer"]
+    assert "context:hypotheses" in answer["grounds"]
+
+
+def test_intent_is_not_invented_when_unset(tmp_path, monkeypatch) -> None:
+    _temp_env(tmp_path, monkeypatch)
+
+    with TestClient(app) as client:
+        case_id, _ = _case_with_data(client)
+        answer = _ask(client, case_id, "What is this case trying to establish?")
+
+    # No stated purpose, so nothing is quoted - and no context citation is
+    # offered as though it existed.
+    assert "context:purpose" not in answer["grounds"]

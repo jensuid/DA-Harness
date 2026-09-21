@@ -49,8 +49,9 @@ KIND_PLAN = "plan"
 KIND_CHART = "chart"
 KIND_COLUMN = "column"
 KIND_CASE = "case"  # a previous case, added by P6-MEMORY-001
+KIND_CONTEXT = "context"  # the case's own stated intent, P8-CONTEXT-001
 
-_GROUND_RE = re.compile(r"^(dataset|run|finding|plan|chart|column|case):(.+)$")
+_GROUND_RE = re.compile(r"^(dataset|run|finding|plan|chart|column|case|context):(.+)$")
 _WORD_RE = re.compile(r"[A-Za-z0-9_]+")
 
 
@@ -146,6 +147,25 @@ def summarize_case(db, case_id: str, message: str = "") -> dict:
             (case_id,),
         ).fetchall()
     ]
+    # The analyst's stated intent (P8-CONTEXT-001): what the case is for, what
+    # it would test. A question about purpose answers from here rather than from
+    # the columns, which is what the UX architecture's Context section asks for.
+    context_row = db.execute(
+        "SELECT purpose, sub_questions_json, hypotheses_json, constraints_json "
+        "FROM contexts WHERE case_id = ?",
+        (case_id,),
+    ).fetchone()
+    facts["context"] = (
+        {
+            "purpose": context_row["purpose"] or "",
+            "sub_questions": json.loads(context_row["sub_questions_json"] or "[]"),
+            "hypotheses": json.loads(context_row["hypotheses_json"] or "[]"),
+            "constraints": json.loads(context_row["constraints_json"] or "[]"),
+        }
+        if context_row is not None
+        else {"purpose": "", "sub_questions": [], "hypotheses": [], "constraints": []}
+    )
+
     facts["progress"] = case_progress(db, case_id)
 
     # P6-MEMORY-001: what previous cases found. Derived per question, not
@@ -301,6 +321,30 @@ def answer_question(message: str, history: list[dict], facts: dict) -> dict:
                       f"It shares {', '.join(first.get('shared') or [])} with your question.",
             "grounds": grounds,
         }
+
+    # The case's own stated purpose and hypotheses (P8-CONTEXT-001). This sits
+    # ahead of the column branch on purpose: "what is this case trying to do?"
+    # names no column, and without it the assistant would fall past intent to
+    # whichever statistic it could find.
+    context = facts.get("context") or {}
+    purpose = (context.get("purpose") or "").strip()
+    hypotheses = [h for h in (context.get("hypotheses") or []) if str(h).strip()]
+    if purpose or hypotheses:
+        if re.search(r"\bpurpose|objective|goal|trying|hypothes|test|aim\b", lowered):
+            parts = []
+            grounds = []
+            if purpose:
+                parts.append(f"The case's stated purpose: {purpose}")
+                grounds.append(f"{KIND_CONTEXT}:purpose")
+            if hypotheses:
+                parts.append(
+                    f"Its stated hypotheses: {'; '.join(str(h) for h in hypotheses[:3])}"
+                )
+                grounds.append(f"{KIND_CONTEXT}:hypotheses")
+            return {
+                "answer": " ".join(parts) + ".",
+                "grounds": grounds,
+            }
 
     match = _first_matching_column(message, facts)
     if match is not None:

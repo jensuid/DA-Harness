@@ -1,3 +1,6 @@
+_CONTEXT_TEXT_MAX = 2_000
+_CONTEXT_LIST_MAX = 12
+
 """Self-contained Analysis Case packages (P2-CASE-012).
 
 Export assembles everything that makes a case meaningful - metadata, datasets
@@ -197,6 +200,25 @@ def export_case(db, case_id: str) -> dict | None:
         ).fetchall()
     ]
 
+    # The analyst's stated intent (P8-CONTEXT-001). A restored case without it
+    # keeps every finding and loses what the analyst was trying to establish,
+    # so it travels with the package rather than being re-derived.
+    context_row = db.execute(
+        "SELECT purpose, sub_questions_json, hypotheses_json, constraints_json "
+        "FROM contexts WHERE case_id = ?",
+        (case_id,),
+    ).fetchone()
+    context = (
+        {
+            "purpose": context_row["purpose"] or "",
+            "sub_questions": json.loads(context_row["sub_questions_json"] or "[]"),
+            "hypotheses": json.loads(context_row["hypotheses_json"] or "[]"),
+            "constraints": json.loads(context_row["constraints_json"] or "[]"),
+        }
+        if context_row is not None
+        else {"purpose": "", "sub_questions": [], "hypotheses": [], "constraints": []}
+    )
+
     plans = [
         {
             "id": row["id"],
@@ -256,6 +278,7 @@ def export_case(db, case_id: str) -> dict | None:
         "findings": findings,
         "charts": charts,
         "plans": plans,
+        "context": context,
         "agent_steps": agent_steps,
     }
 
@@ -303,6 +326,35 @@ def import_package(db, package: dict, data_dir: Path) -> dict:
             now.isoformat(),
         ),
     )
+
+    # The stated intent, if the package carries one (P8-CONTEXT-001). A package
+    # exported before the context object existed has no section, which is an
+    # empty context rather than an error - the round trip degrades, it does not
+    # fail.
+    context_payload = package.get("context") or {}
+    purpose = str(context_payload.get("purpose") or "").strip()[:_CONTEXT_TEXT_MAX]
+    context_lists = {}
+    for field in ("sub_questions", "hypotheses", "constraints"):
+        items = [
+            str(item).strip()[:_CONTEXT_TEXT_MAX]
+            for item in (context_payload.get(field) or [])
+            if isinstance(item, (str, int, float)) and str(item).strip()
+        ][:_CONTEXT_LIST_MAX]
+        context_lists[field] = items
+    if purpose or any(context_lists.values()):
+        db.execute(
+            "INSERT INTO contexts (case_id, purpose, sub_questions_json, "
+            "hypotheses_json, constraints_json, updated_at) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            (
+                new_case_id,
+                purpose,
+                json.dumps(context_lists["sub_questions"]),
+                json.dumps(context_lists["hypotheses"]),
+                json.dumps(context_lists["constraints"]),
+                now.isoformat(),
+            ),
+        )
 
     case_dir = data_dir / new_case_id
     case_dir.mkdir(parents=True, exist_ok=True)

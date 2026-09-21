@@ -55,6 +55,7 @@ import {
 } from './api'
 import { ApiError } from './api'
 import { messageOf } from './CaseList'
+import { ContextPanel } from './ContextPanel'
 import { PromoteTemplate } from './Templates'
 
 // One case as the loop the core walks: attach and profile data, propose the
@@ -207,6 +208,7 @@ export function CaseWorkspace({
       {error && <p role="alert">Something went wrong: {error}</p>}
 
       <Workflow progress={progress} />
+      <ContextPanel caseId={caseId} onChanged={() => void load()} />
       <LearnPanel walk={walk} error={walkError} missing={walkMissing} />
       <AgentPanel
         caseId={caseId}

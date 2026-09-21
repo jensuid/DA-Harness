@@ -71,14 +71,36 @@ def _null_columns(profile: dict) -> list[tuple[str, float]]:
     )
 
 
-def plan_analysis(question: str, profile: dict) -> dict:
+# The analyst's stated intent outranks the derivation when both are available:
+# their sub-questions and hypotheses are prepended to the ones the profile
+# suggests, and their purpose stands in for a thin objective. `context_basis`
+# is recorded so a reader can tell a plan built from intent from one built from
+# a profile alone (P8-CONTEXT-001).
+_CONTEXT_SUB_QUESTIONS = 3
+_CONTEXT_HYPOTHESES = 2
+
+
+def plan_analysis(question: str, profile: dict, context: dict | None = None) -> dict:
     """Derive a structured plan from a question and a dataset profile.
 
     Deterministic and dependency-free: the same inputs always yield the same
     plan. Every item references real columns from the profile, so the plan is
     immediately actionable rather than generic advice.
+
+    `context` is the case's stated intent - purpose, sub-questions, hypotheses -
+    and is optional: a case without it is planned from the profile alone, which
+    is every plan that existed before the context object did.
     """
     question = (question or "").strip()
+    basis: list[str] = []
+    context = context or {}
+    purpose = (context.get("purpose") or "").strip()
+    context_subs = [
+        item.strip() for item in (context.get("sub_questions") or []) if isinstance(item, str) and item.strip()
+    ]
+    context_hyps = [
+        item.strip() for item in (context.get("hypotheses") or []) if isinstance(item, str) and item.strip()
+    ]
     stats = _stats(profile)
     numeric = _numeric_columns(profile)
     temporal = _temporal_columns(profile)
@@ -191,13 +213,38 @@ def plan_analysis(question: str, profile: dict) -> dict:
             {"requirement": "completeness", "detail": f"{column}: {percentage}% null"}
         )
 
+    objective = question or "Analyse the attached dataset"
+    primary_question = question or "What does this dataset say?"
+    if not question and purpose:
+        # A case whose question is thin but whose purpose is stated is planned
+        # for what the analyst said they were after.
+        objective = purpose
+        basis.append("purpose")
+    elif purpose:
+        basis.append("purpose")
+
+    # The analyst's own sub-questions and hypotheses come first, ahead of the
+    # ones the profile suggests - intent outranks inference.
+    if context_subs:
+        basis.append(f"sub_questions:{len(context_subs)}")
+    if context_hyps:
+        basis.append(f"hypotheses:{len(context_hyps)}")
+
     return {
-        "objective": question or "Analyse the attached dataset",
-        "primary_question": question or "What does this dataset say?",
-        "sub_questions": sub_questions
-        or ["What does the profiled data contain, and what is its overall shape?"],
-        "hypotheses": hypotheses
-        or [
+        "objective": objective,
+        "primary_question": primary_question,
+        "sub_questions": (
+            context_subs[:_CONTEXT_SUB_QUESTIONS]
+            + [item for item in sub_questions if item not in context_subs[:_CONTEXT_SUB_QUESTIONS]]
+        ) or ["What does the profiled data contain, and what is its overall shape?"],
+        "hypotheses": (
+            [
+                {"statement": text, "rationale": "the analyst's own hypothesis",
+                 "check": "Test it directly against the profiled data"}
+                for text in context_hyps[:_CONTEXT_HYPOTHESES]
+            ]
+            + hypotheses
+        ) or [
             {
                 "statement": "The answer is concentrated in a small subset of the data",
                 "rationale": "No specific structure surfaced in the profile to anchor a "
@@ -208,6 +255,7 @@ def plan_analysis(question: str, profile: dict) -> dict:
         ],
         "data_requirements": data_requirements,
         "analysis_steps": steps,
+        "context_basis": basis,
     }
 
 
@@ -252,6 +300,18 @@ def validate_plan(plan: Any) -> list[str]:
                 if not isinstance(step.get(field), str) or not step[field].strip():
                     problems.append(f"every analysis step must have a non-empty '{field}'")
 
+    # The record of which context fields the plan was built from (P8-CONTEXT-001).
+    # Optional - a plan made before the context object existed has none - but a
+    # malformed one is a problem rather than something to silently drop.
+    basis = plan.get("context_basis")
+    if basis is not None:
+        if not isinstance(basis, list):
+            problems.append("'context_basis' must be a list")
+        else:
+            for item in basis:
+                if not isinstance(item, str) or not item.strip():
+                    problems.append("every entry in 'context_basis' must be a non-empty string")
+
     return problems
 
 
@@ -268,7 +328,7 @@ class LLMPlanner:
         self._base_url = base_url.rstrip("/")
         self._model = model
 
-    def plan(self, question: str, profile: dict) -> dict:
+    def plan(self, question: str, profile: dict, context: dict | None = None) -> dict:
         import httpx
 
         prompt = (
@@ -286,6 +346,7 @@ class LLMPlanner:
             "commentary.\n\n"
             f"Question: {question}\n\n"
             f"Profile (truncated): {json.dumps(profile)[:_MAX_LLM_CHARS]}\n"
+            + (f"Stated intent: {json.dumps(context)}\n" if context else "")
         )
         response = httpx.post(
             f"{self._base_url}/chat/completions",
@@ -321,20 +382,50 @@ def _configured_llm() -> LLMPlanner | None:
     )
 
 
-def create_plan(question: str, profile: dict) -> tuple[dict, str]:
+def _basis_for(context: dict | None) -> list[str]:
+    """Which fields of stated intent a plan was built from.
+
+    Named the same way the deterministic planner names them, so a reader cannot
+    tell from the field which engine spoke - only from `source`.
+    """
+    context = context or {}
+    basis: list[str] = []
+    if (context.get("purpose") or "").strip():
+        basis.append("purpose")
+    subs = [s for s in (context.get("sub_questions") or []) if isinstance(s, str) and s.strip()]
+    if subs:
+        basis.append(f"sub_questions:{len(subs)}")
+    hyps = [h for h in (context.get("hypotheses") or []) if isinstance(h, str) and h.strip()]
+    if hyps:
+        basis.append(f"hypotheses:{len(hyps)}")
+    return basis
+
+
+def create_plan(question: str, profile: dict, context: dict | None = None) -> tuple[dict, str]:
     """Produce a validated plan and the engine that made it.
 
     Prefers the LLM when configured; falls back to the deterministic planner on
     any failure, so a plan is always returned. The source is reported alongside
-    so callers and reviewers know how much trust the plan earns.
+    so callers and reviewers know how much trust the plan earns. `context` is
+    the case's stated intent, passed to the deterministic planner; the LLM
+    prompt carries it too so an engine that can use intent is not asked to
+    guess at it. Whichever engine answers, the basis records what intent the
+    caller supplied - it describes the question asked, not the engine asked.
     """
-    deterministic = plan_analysis(question, profile)
+    deterministic = plan_analysis(question, profile, context)
     llm = _configured_llm()
     if llm is None:
         return deterministic, SOURCE_DETERMINISTIC
 
     try:
-        candidate = llm.plan(question, profile)
+        candidate = llm.plan(question, profile, context)
+        # An engine that used the intent should say so on the same field the
+        # deterministic one uses; one that ignored it records nothing, which is
+        # also true.
+        if isinstance(candidate, dict):
+            supplied = _basis_for(context)
+            if supplied and not candidate.get("context_basis"):
+                candidate["context_basis"] = supplied
         problems = validate_plan(candidate)
         if problems:
             raise ValueError(f"LLM plan failed validation: {'; '.join(problems[:3])}")

@@ -34,6 +34,35 @@ class CaseProgress(BaseModel):
     counts: dict[str, int]
 
 
+class CaseContext(BaseModel):
+    """The analyst's intent for a case (P8-CONTEXT-001).
+
+    The primary question stays on the case row - it is already editable and
+    persisted - so this is what a question alone cannot carry: why the analysis
+    matters, what it would answer in pieces, what it would test, and what it is
+    assuming. Read by the planner and the assistant; written only by the analyst.
+    """
+    case_id: str
+    purpose: str = ""
+    sub_questions: list[str] = []
+    hypotheses: list[str] = []
+    constraints: list[str] = []
+    updated_at: datetime | None = None
+
+
+class ContextUpdate(BaseModel):
+    """A whole-context replacement.
+
+    Lists, not single strings, because the analyst adds and removes entries as
+    the investigation moves; PUT semantics keep the stored object identical to
+    what the form held, so a retry after a failed save cannot merge duplicates.
+    """
+    purpose: str = ""
+    sub_questions: list[str] = []
+    hypotheses: list[str] = []
+    constraints: list[str] = []
+
+
 class CaseUpdate(BaseModel):
     """Rename a case; either field may be omitted to leave it unchanged."""
     question: str | None = None
