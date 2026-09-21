@@ -25,12 +25,28 @@ Verification gates (each walks one journey end to end and re-runs the suite):
 server/.venv/bin/python verification/p1/verify_p1.py   # in-process
 server/.venv/bin/python verification/p2/verify_p2.py   # in-process
 server/.venv/bin/python verification/p3/verify_p3.py   # in-process
+server/.venv/bin/python verification/p4/verify_p4.py   # in-process
 python3 verification/p0/verify_p0.py                   # binds a port
 ```
 
-CI (`.github/workflows/ci.yml`) runs the server suite plus both in-process
-gates, the web suite plus a build, the desktop shell's lifecycle tests against
-a live core, and a sidecar packaging build.
+The gates drive the app in-process, which is fast but never binds a port or
+runs uvicorn itself. The end-to-end run is the complement - a real server:
+
+```bash
+server/.venv/bin/python verification/e2e/verify_e2e.py # a real server, ~3s
+```
+
+It starts uvicorn on a free port with an isolated data dir, builds one case by
+hand (upload, profile, plan, generated SQL, a refused write, interpretation, a
+finding accepted, validation, EVALUATE on nine axes), lets the reviewer agent
+audit that finding through the shared approval gate, drives a second case
+entirely with the analyst agent, and round-trips through export/import. The LLM
+variables are emptied for the server, so the deterministic engines answer and
+the run needs no network.
+
+CI (`.github/workflows/ci.yml`) runs the server suite, the in-process gates and
+the real-server end-to-end run, the web suite plus a build, the desktop shell's
+lifecycle tests against a live core, and a sidecar packaging build.
 
 ## Installing the app
 

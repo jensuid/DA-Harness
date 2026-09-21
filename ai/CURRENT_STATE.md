@@ -22,23 +22,27 @@ a versioned, forward-only migration path for the store, so a database from
 any past release opens, upgrades and keeps its rows (P6-MIGRATE-004);
 and an update check that tells an installed app a newer build exists - or
 says honestly that it could not tell (P6-UPDATE-005)**
-- **Active task:** P7-SHELL-011 DONE - the reviewer in the web shell.
-  P7-AGENT-001 gave a case two roles behind one approval gate, and nothing in the
-  shell reached the role family, so a second agent's audits were observable only
-  through the API - where the single driver stood before P7-SHELL-003. The
-  reviewer is now a second agent panel beside the analyst's: both load read-only
-  with the workspace, both propose only when the analyst asks, and every write
-  still runs through the endpoint that owns it. `web/src/api.ts` gained the
-  typed client for `/cases/{id}/agents/{role}`; `AgentPanel` is one component
-  with two sets of wording, so the two panels on one page are never ambiguous;
-  the reviewer sits after the findings panel because findings are its input, and
-  `stepSentence` names the finding's own claim for an `evaluate` step.
-  Before it: P7-AGENT-001 (multi-agent core), P7-SHELL-010 (LEARN's surface),
-  P7-LEARN-001 (LEARN's core), P7-SHELL-009 (case history), P7-SHELL-008 (the
-  evidence graph), P7-SHELL-007 (EDA), P7-SHELL-006 (cross-case memory),
-  P7-SHELL-005 (templates), P7-SHELL-004 (case management), P7-SHELL-003 (the
-  agent surface), P7-SHELL-002 (EVALUATE's surface), P7-EVAL-001 (EVALUATE's
-  core), P6 CLOSED.
+- **Active task:** P7-E2E-001 DONE - the whole app against a real server.
+  Every verification artifact in the repo drives the app in-process through
+  Starlette's TestClient, which is fast and is what caught every regression
+  fixed here - but it never binds a port, never parses a real multipart upload
+  and never runs uvicorn's lifecycle. `verification/e2e/verify_e2e.py` is the
+  complement: a fresh uvicorn server on a free port with an isolated data dir,
+  driven over real HTTP. One case is built by hand end to end and audited by
+  the reviewer agent; a second case is driven entirely by the analyst agent,
+  one approved write at a time, to a closed loop; then the export round trip.
+  The LLM env vars are *emptied* for the subprocess rather than unset, because
+  `app.main` loads `server/.env` itself on a plain uvicorn start and
+  `load_dotenv` never overrides a variable already set - so the run is
+  deterministic and needs no network. 25 steps, three consecutive green runs,
+  CI runs it after the gates.
+  Before it: P7-SHELL-011 (the reviewer's surface), P7-AGENT-001
+  (multi-agent core), P7-SHELL-010 (LEARN's surface), P7-LEARN-001 (LEARN's
+  core), P7-SHELL-009 (case history), P7-SHELL-008 (the evidence graph),
+  P7-SHELL-007 (EDA), P7-SHELL-006 (cross-case memory), P7-SHELL-005
+  (templates), P7-SHELL-004 (case management), P7-SHELL-003 (the agent
+  surface), P7-SHELL-002 (EVALUATE's surface), P7-EVAL-001 (EVALUATE's core),
+  P6 CLOSED.
 
 - **Known issues:** CI's runner is `macos-latest`, not the Ventura/Intel pin
   P5-CI-004 intended - GitHub retired the macos-13 pool, so the label hangs
@@ -55,11 +59,12 @@ says honestly that it could not tell (P6-UPDATE-005)**
   P2, P3 and P4 gates PASS (P4: all 18 journey steps, all 10 exit criteria);
   first release v0.1.0 published from tag and checksum-verified.
 - **Next task:** the release. Every P7 checklist item that builds something is
-  delivered - EVALUATE, the web-shell gap, LEARN and multi-agent workflows, the
-  last in core (P7-AGENT-001) and in the shell (P7-SHELL-011). Fifteen tasks have
+  delivered and now verified against a real server as well as in-process -
+  EVALUATE, the web-shell gap, LEARN and multi-agent workflows, the last in
+  core (P7-AGENT-001) and in the shell (P7-SHELL-011). Sixteen tasks have
   landed since v0.1.0, so `0.2.0` is the honest next label: tag `v0.2.0`, which
-  must match server/pyproject.toml, and the pipeline builds, smokes and publishes
-  an unsigned .app as a flagged pre-release with its checksum.
+  must match server/pyproject.toml, and the pipeline builds, smokes and
+  publishes an unsigned .app as a flagged pre-release with its checksum.
   Deferred, not dropped: signing (DEC-006, the slot is in `release.yml`), cloud
   sync, team collaboration, warehouse connectors, enterprise governance.
 
@@ -171,6 +176,7 @@ says honestly that it could not tell (P6-UPDATE-005)**
 | P7-SHELL-010 LEARN mode in the web shell | DONE |
 | P7-AGENT-001 multi-agent workflows (roles, core) | DONE |
 | P7-SHELL-011 the multi-agent surface (the reviewer) | DONE |
+| P7-E2E-001 the whole app against a real server | DONE |
 
 ## P6 progress
 
@@ -198,6 +204,11 @@ says honestly that it could not tell (P6-UPDATE-005)**
 
 - P3 verification: `server/.venv/bin/python verification/p3/verify_p3.py`
   (in-process, ~3-4 min; the last step re-runs the suite)
+- End-to-end against a REAL server: `server/.venv/bin/python
+  verification/e2e/verify_e2e.py` (starts uvicorn on a free port with an
+  isolated data dir, drives the whole journey over HTTP - the case built
+  by hand, the reviewer's audit, an agent-driven second case, the export
+  round trip; ~3s, deterministic and offline, 25 asserted steps)
 
 ## How to run (web)
 

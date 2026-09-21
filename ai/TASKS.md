@@ -122,338 +122,153 @@ the gate comes first because a phase is done when a gate says so.
 | P7-SHELL-010 | UX (LEARN mode in the web shell) | DONE | +6 tests; web build PASS |
 | P7-AGENT-001 | Multi-agent workflows (roles, core) | DONE | +13 tests; P2/P3/P4 gates PASS |
 | P7-SHELL-011 | UX (the multi-agent surface) | DONE | +5 web tests; web build PASS |
+| P7-E2E-001 | Verification (real-server e2e) | DONE | 25 steps over real HTTP; 3 runs green |
 
 
 Contracts for the rolling window (the two most recent). Older blocks are in
 `ai/TASKS-ARCHIVE.md`.
-### P7-AGENT-001 contract
+
+### P7-E2E-001 contract
 
 ```
-TASK ID: P7-AGENT-001
+TASK ID: P7-E2E-001
 MILESTONE: P7 Product Modes
-CAPABILITY: P6 Agentic Analysis (continued) - multi-agent workflows
-GOAL: A case can be worked by more than one agent, each with a role of its own,
-      and the roles disagree in the case's own audit trail rather than in
-      private. The single driver (P6-AGENT-002) proposes the analysis loop one
-      human-approved step at a time; nothing examines what it produced. This
-      task adds a second role whose entire method is EVALUATE (P7-EVAL-001) -
-      the reason the roadmap gated multi-agent work behind it - so an
-      agent-proposed finding is audited by a different agent with a different
-      objective, and a verdict that fails the analyst's own finding is recorded
-      where a reviewer can read it.
-
-CONTEXT: the spec names "autonomous multi-agent system" as an explicit
-         non-goal and "Human control" in its Never-lose list, while "Agent
-         orchestration" sits on the LEVEL 5 -> 6 ladder. So this is
-         orchestration, not autonomy: every role shares the one approval gate
-         the existing driver already uses, every write still runs through the
-         endpoint that owns it, and a page refresh commits nothing. What is new
-         is specialisation and a second point of view, not self-direction.
-
-INPUTS: the case's artifacts - for the analyst, exactly what it reads today;
-        for the reviewer, the findings and the runs that back them, plus the
-        evaluations already recorded (an audit matching a finding's run and its
-        statement means that finding has been examined).
-RELEVANT FILES: server/app/agent.py, server/app/db.py, server/app/main.py,
-                server/app/models.py, server/tests/test_multi_agent.py (new),
-                server/tests/test_migrations.py (a case for the new migration)
+CAPABILITY: Verification (the whole app over real HTTP)
+GOAL: The P2/P3/P4 gates drive the app in-process through Starlette's
+      TestClient. That is fast and is what caught every regression this repo
+      has fixed, but it never binds a port, never parses a real multipart
+      upload and never runs uvicorn's startup or shutdown. This task adds the
+      complement: a fresh uvicorn server on a free port, an isolated data dir,
+      and the whole product driven over real HTTP - the case built by hand, the
+      reviewer agent auditing it, a second case driven entirely by the analyst
+      agent, and the export round trip.
+CONTEXT: every verification artifact so far is in-process. A release is the
+         next step on the roadmap, and a release ships a packaged server a
+         user runs for real; something should have started the actual server
+         and talked to it before that.
+INPUTS: none from the caller. A free port is chosen by binding a socket, the
+        data dir and the database are temp directories, and the LLM env vars
+        are emptied for the server's subprocess so the deterministic engines
+        answer and the run needs no network.
+RELEVANT FILES: verification/e2e/verify_e2e.py (new),
+                verification/e2e/REPORT.md (written by the run),
+                .github/workflows/ci.yml (the server job runs it after the
+                gates and uploads its report)
 REQUIRED CHANGE:
-  - server/app/db.py: migration 9 - `agent_steps` gains a `role` column
-    defaulting to `analyst`, so every step recorded before this task reads as
-    the analyst role and the legacy paths keep their meaning. LATEST_SCHEMA_VERSION
-    becomes 9.
-  - server/app/agent.py: the driver becomes role-aware - the pending step, the
-    history, the proposals and the settle/decide path all take a role. The
-    `analyst` role is today's decision procedure, unchanged. The `reviewer`
-    role is new and small: derive the case's first finding whose (run, claim)
-    has no evaluation, and propose an `evaluate` step carrying the run's own
-    code and the finding's statement. Every finding audited means no step, and
-    an end row names what the reviewer is waiting for rather than falling
-    silent.
-  - server/app/main.py: `/cases/{case_id}/agents/{role}` with the same four
-    verbs the single driver answers (GET state, POST propose, approve, reject),
-    and the `evaluate` step kind applied through the existing evaluate
-    endpoint - the reviewer has no write path of its own, exactly as the
-    analyst has none. The existing `/cases/{case_id}/agent` family stays, as
-    the analyst role, so the shell's agent panel and every existing test keep
-    working. An unknown role is a 400 naming the roles that exist.
-  - server/app/models.py: `AgentState` carries the role; `AgentStep` already
-    exists.
-  - The case export and the duplicate path carry the role with the steps they
-    copy, so an agent-run case round-trips with its roles intact.
-NON-GOALS: autonomy (the spec's own non-goal - a role never writes without an
-           approval, and a GET never proposes), inter-agent messages or
-           negotiation (two agents do not talk to each other; each addresses
-           the case, and the case's rows are the shared state), resolving a
-           disagreement (a reviewer's failing verdict is recorded beside the
-           analyst's finding, not folded into the finding's own validation
-           status - rerun support and an audit are two honest notions, and
-           conflating them would make both say less), new analysis capability
-           (the reviewer audits; it does not discover), the shell surface (its
-           own task, P7-SHELL-011).
-CONSTRAINTS: no new dependency; at most one pending step per role, and an
-             approval that is not that role's live step is a 409; the
-             reviewer's audits land in the evaluations table through the same
-             endpoint a human audit uses; the existing agent tests stay green
-             unchanged.
+  - verification/e2e/verify_e2e.py starts uvicorn as a subprocess, waits for
+    its listening line and then /health, drives the journey, and terminates the
+    server in a finally. A failure in any step still writes the report and
+    exits 1.
+  - The journey asserts the real contracts, not approximations of them: the
+    profile counts the null and the duplicate in the fixture, a write attempt
+    is a 400 from the read-only gate, validation's verdict is accepted as
+    honest when the data has a null (partially_supported, with the
+    reproducibility check passed), EVALUATE answers all nine axes, the
+    reviewer's GET proposes nothing, the reviewer's proposal carries the
+    finding's own statement, a cross-role approval is a 409 in either of its
+    two real shapes, an unknown role is a 400 naming the roles, and the
+    analyst agent terminates with every step's source recorded.
+  - No new dependency: urllib from the stdlib, not requests.
+NON-GOALS: replacing the in-process gates (they stay; this is the complement
+           and is slower), testing the web shell (the web suite does), testing
+           the desktop lifecycle (the Rust e2e does), anything that needs an
+           LLM key or a network.
+CONSTRAINTS: deterministic and offline - the run repeats green; no new
+             dependency; exits 1 on any failure; leaves no server process
+             behind.
 ACCEPTANCE CRITERIA:
-- [x] a case carries agents in two roles, each with its own pending step and
-      audit trail
-- [x] the analyst role behaves exactly as P6-AGENT-002's driver did
-- [x] the reviewer proposes an evaluate step over an unaudited finding, and
-      approving it records an evaluation whose claim is the finding's
-      statement and whose code is the run's
-- [x] a finding that has been audited is not re-proposed
-- [x] an approval for one role is not the other's; a mismatch answers 409 with
-      that role's own pending step
-- [x] an unknown role answers 400 naming the roles that exist
-- [x] a reviewer's failing verdict does not touch the finding's
-      validation_status
-- [x] the legacy /agent paths are the analyst role and keep working
-- [x] a store from before this task upgrades and its existing steps read as
-      analyst
-- [x] the export round trip carries the role
-- [x] the endpoint family writes only through approvals; the server suite and
-      the three gates stay green
-TESTS: server/tests/test_multi_agent.py - the two roles side by side, the
-       reviewer's audit and its idempotence, the 409 naming the right role's
-       step, the unknown-role 400, the failing verdict leaving the finding's
-       own status alone, the legacy paths as the analyst role, and the export
-       round trip carrying the role; test_migrations.py gains a case for
-       migration 9.
-VERIFICATION: cd server && .venv/bin/python -m pytest PASS (367 + N); the P2,
-              P3 and P4 gates PASS. The web suite is untouched by this change
-              and stays at 73.
-STATE UPDATE: mark P7-AGENT-001 done on pass; ROADMAP item 4 records the core
-              of multi-agent workflows as delivered, with the surface still to
-              build.
-
+- [x] a real uvicorn server starts on a free port and answers /health before
+      any step runs
+- [x] one case is built by hand end to end: upload, profile, plan, generated
+      SQL, a refused write, interpretation, a drafted finding accepted,
+      validation, EVALUATE on nine axes
+- [x] the reviewer agent audits the finding through the shared approval gate,
+      and the audit is recorded with its verdict
+- [x] a cross-role approval is refused with a 409, and an unknown role is a
+      400 naming the roles
+- [x] a second case is driven entirely by the analyst agent to a stated stop,
+      with every step's source recorded and the loop closed
+- [x] the read-side surfaces answer: the evidence graph, the case history, the
+      LEARN walk's four phases, a cited chat answer
+- [x] the case round-trips through export/import
+- [x] three consecutive runs exit 0, and the server leaves no process behind
+- [x] CI runs it after the gates and uploads its report
+TESTS: the script IS the test - 25 steps, each asserted, exit code 1 on any
+       failure. No pytest file: a journey against a live server is not a unit.
+VERIFICATION: three consecutive `server/.venv/bin/python
+              verification/e2e/verify_e2e.py` runs, all exit 0, all 25 steps
+              PASS, 3.1s each. CI runs it in the server job.
+STATE UPDATE: mark P7-E2E-001 done; CURRENT_STATE and ROADMAP name the real-
+              server e2e beside the in-process gates.
 ```
 
-TASK: P7-AGENT-001 - multi-agent workflows, roles over one case (core)
-ID: P7-AGENT-001
+TASK: P7-E2E-001 - the whole app against a real server
+ID: P7-E2E-001
 PRIORITY: medium
 STATUS: DONE
-SUMMARY: A case can be worked by more than one agent, each with a role of its
-         own - and the roles disagree in the case's own audit trail rather than
-         in private. The single driver (P6-AGENT-002) proposes the analysis
-         loop one human-approved step at a time; nothing examined what it
-         produced. This task adds a second role whose entire method is
-         EVALUATE, so an agent-proposed finding is audited by a different agent
-         with a different objective, and a verdict that fails the analyst's own
-         finding is recorded where a reviewer can read it.
+SUMMARY: Every verification artifact in this repo drives the app in-process
+         through Starlette's TestClient, which is fast and is what caught every
+         regression fixed here - but it never binds a port, never parses a real
+         multipart upload, and never runs uvicorn's lifecycle. This task adds
+         the complement: a fresh uvicorn server on a free port with an isolated
+         data dir, and the whole product driven over real HTTP.
 
-The design turns on a distinction the spec itself draws: an *autonomous*
-multi-agent system is an explicit non-goal, and "Human control" is in the
-Never-lose list, while "Agent orchestration" is on the LEVEL 5 -> 6 ladder. So
-this is orchestration, not autonomy. Every role shares the one approval gate
-the existing driver already uses, every write still runs through the endpoint
-that owns it, and a GET never proposes - a page refresh commits nothing no
-matter how many roles are open.
+`verification/e2e/verify_e2e.py` starts uvicorn as a subprocess, reads its
+listening line for the port, waits on /health, drives the journey, and
+terminates the server in a finally so a failure still writes the report and
+exits 1. The LLM env vars are emptied for the subprocess rather than merely
+unset, because `app.main` loads `server/.env` on a plain uvicorn start and
+`load_dotenv` never overrides a variable that is already set - an empty value
+wins over the file, and the engines treat an empty key as absent. The first
+draft scrubbed the parent environment instead, and the live key from .env made
+the plan answer `source=llm` mid-journey.
 
-Two roles, one case:
+The journey asserts the real contracts rather than approximations of them, and
+four of them were wrong on the first run for assuming instead of reading:
 
-- **analyst** - the existing decision procedure, unchanged: profile, plan,
-  analyze, interpret, accept, chart, validate.
-- **reviewer** - deliberately small, and deliberately not the analyst's. It
-  derives the case's first finding whose (code, claim) has no evaluation and
-  proposes the EVALUATE audit of the run that backs it: the claim is the
-  finding's own statement, the code is the run's own query. The reviewer
-  invents neither, discovers nothing, and writes nothing of its own - the audit
-  goes through the same evaluate endpoint a human audit uses, and the verdict
-  lands in the evaluations table beside every other audit.
+- `SchemaVersion` is `version`/`target`, not `recorded`; `Profile.columns` is a
+  list of names with the per-column detail in `stats`; validation answers
+  `status`, not `validation_status`; the history counts are keyed by kind with
+  no `total`; the LEARN walk's phases are `steps`.
+- Validation's verdict on this fixture is `partially_supported`, not
+  `supported`: the null revenue trips the missing-data check. That is the
+  honesty budget working, so the assertion now accepts the honest verdict and
+  checks that reproducibility itself passed and that the null was flagged -
+  which is a stronger statement than the one it replaced.
+- The cross-role 409 has two shapes, both of which refuse: a dict naming the
+  role's own live step when one is pending, and a plain sentence when none is.
+  The check handles both and, in the dict case, asserts the `expected` id is
+  the analyst's actual pending step, so it cannot pass vacuously.
+- The `run_query` read-only gate answers the attempted write with the engine's
+  own sentence, quoted in the report rather than summarised.
 
-Three things that had to be right rather than present:
+The agent half drives a second case with no human choice in it: the loop
+proposes, each write is approved by id, and it terminates at a stated reason
+(profile -> plan -> analyze -> interpret -> accept -> chart -> validate, then
+no further step) with the loop closed and every step's `source` recorded as
+deterministic.
 
-- **Idempotence keyed on code and claim, not run.** EVALUATE stores the
-  artifact as a run of its own, so an evaluation's run_id is the audit's
-  artifact, not the finding's - joining on it would never match, and the
-  reviewer would re-audit forever. The (code, claim) pair is exactly what the
-  reviewer proposed, so matching it is a projection: an audit cannot be
-  repeated without an evaluation existing, and a finding cannot be skipped by
-  forgetting.
-- **Two honest notions stay distinct.** A failing audit is recorded beside the
-  finding; it does not touch the finding's own validation_status, which is
-  about rerun support. Folding them together would make both say less.
-- **One role's approval never authorises another role's write.** A mismatch is
-  a 409 naming that role's own pending step, so two open panels cannot collide
-  into a double write.
-
-NON-GOALS held: autonomy (a role never writes without an approval), inter-agent
-             messages or negotiation (the roles do not talk to each other; each
-             addresses the case, and the case's rows are the shared state),
-             resolving disagreement (a failing verdict is recorded, not folded
-             in), new analysis capability (the reviewer audits; it does not
-             discover), the shell surface (its own task, P7-SHELL-011).
-CONSTRAINTS held: no new dependency; at most one pending step per role; the
-             reviewer's audits land through the evaluate endpoint; the existing
-             agent tests stayed green unchanged.
-ACCEPTANCE CRITERIA: all 11 - see the checked boxes above.
-TESTS: 12 in server/tests/test_multi_agent.py (server suite 367 -> 380, with one
-       migration case) - the two roles side by side, the audit's claim and code
-       being the finding's own, the recorded evaluation, idempotence, the
-       no-findings reason, the cross-role 409, the unknown-role 400, the
-       failing verdict leaving the finding's status alone, rejection writing
-       nothing, the export round trip carrying the role, and the GET that never
-       proposes. Plus test_migrations.py: a pre-roles store whose steps read as
-       analyst.
-VERIFICATION: cd server && .venv/bin/python -m pytest - 380 passed; the P2, P3
-              and P4 gates each PASS (each re-ran the suite at 380). The web
-              suite is untouched and stays at 73.
-LESSON: most of the failures on the way to green were the migration's own
-        bookkeeping - a changed INSERT column list here, a values tuple that
-        kept its old length there, a SELECT that gained a WHERE column without
-        gaining the SELECT column - each surfacing as "incorrect number of
-        bindings" or a KeyError far from the site of the edit. The discipline
-        that caught them was running the existing agent and export suites
-        first, before writing a new test, because those suites already encode
-        every write path and said exactly which statement was wrong. A schema
-        change is not one edit; it is one edit per writer, and the writers are
-        found by the tests, not by grep.
-
-### P7-SHELL-011 contract
-
-```
-TASK ID: P7-SHELL-011
-MILESTONE: P7 Product Modes
-CAPABILITY: UX (the multi-agent surface - the reviewer in the web shell)
-GOAL: `/cases/{id}/agents/{role}` has the same four verbs the single driver
-      has, and nothing in the shell reaches it, so a second agent's audits are
-      observable today only through the API - exactly where the single driver
-      was before P7-SHELL-003. The reviewer becomes a second agent panel beside
-      the analyst's: each loads read-only with the workspace, each proposes
-      only when the analyst asks, and each write still runs through the
-      endpoint that owns it.
-CONTEXT: P7-AGENT-001 delivered the roles in the core. The workspace is one
-         page (P4-UX-003), so two panels that share wording would be
-         ambiguous - getByText matches an element's own text nodes, and a
-         phrase spanning a <strong> cannot be matched at all.
-INPUTS: `GET /cases/{id}/agents/{role}` for each role - the pending step and
-        the audit trail, read-only.
-RELEVANT FILES: web/src/api.ts (the typed client for the role family),
-                web/src/CaseWorkspace.tsx (a panel per role),
-                web/src/CaseWorkspace.test.tsx (the reviewer as a surface)
-REQUIRED CHANGE:
-  - api.ts: `AgentRole = 'analyst' | 'reviewer'`; `getRoleAgentState`,
-    `proposeRoleAgentStep`, `approveRoleAgentStep`, `rejectRoleAgentStep`
-    against `/cases/{id}/agents/{role}` and its approve/reject children.
-    `AgentState` and `AgentStep` carry the `role` the core now returns. The
-    legacy analyst functions stay, and the analyst panel keeps calling them,
-    so no existing test changes.
-  - CaseWorkspace.tsx: the reviewer's state loads read-only on mount beside
-    the analyst's. `AgentPanel` becomes role-aware - one component, two sets
-    of wording, chosen by role, so the two panels never share a phrase a
-    matcher or a reader could confuse. The analyst's strings are unchanged.
-    `stepSentence` learns the `evaluate` kind (audit the finding's own claim).
-    The reviewer panel sits after the findings panel, because findings are its
-    input; the analyst panel stays where it is, because it drives the loop.
-  - A cross-role 409 (an approval for a step the other role holds) surfaces as
-    that role's own sentence, exactly as the stale-approval case already does.
-NON-GOALS: autonomy (a GET never proposes; a write never happens without the
-           button), inter-agent messages or negotiation (the panels do not
-           talk to each other; each addresses the case), resolving a
-           disagreement (a failing verdict is shown beside the finding, and
-           the finding's own validation status is untouched by it), new
-           endpoints, new dependencies.
-CONSTRAINTS: no new dependency; `tsc -b` passes; the desktop bundle builds
-             from the same source; the existing agent tests stay green
-             unchanged.
-ACCEPTANCE CRITERIA:
-- [x] the workspace carries an agent panel per role, each with its own state,
-      and both load read-only on mount
-- [x] the reviewer proposes an audit of the first unaudited finding, and the
-      sentence names the finding's own claim
-- [x] approving the audit runs it and the evaluation appears in the EVALUATE
-      panel (the workspace reloads, as the analyst's approvals do)
-- [x] rejecting records the reason and writes nothing
-- [x] a cross-role 409 is shown as a sentence naming the other role's pending
-      step, never as "[object Object]"
-- [x] the analyst panel's wording and behaviour are unchanged
-- [x] an unknown role is never sent from the shell; the two panels name the
-      roles they use
-TESTS: web/src/CaseWorkspace.test.tsx - the reviewer's state and its proposal,
-       the approved audit reaching the evaluate endpoint's surface, rejection
-       writing nothing, the cross-role 409 as a sentence, and both panels
-       distinguishable on one page.
-VERIFICATION: cd web && npm test PASS (73 + N); cd web && npm run build PASS
-              (tsc -b + vite); cd web && npm run build:desktop PASS. The
-              server suite and the three gates are untouched by this change
-              and stay green.
-STATE UPDATE: mark P7-SHELL-011 done on pass; ROADMAP item 4 records the
-              multi-agent surface as delivered, closing the P7 checklist's
-              last build item.
-
-```
-
-TASK: P7-SHELL-011 - the reviewer in the web shell
-ID: P7-SHELL-011
-PRIORITY: medium
-STATUS: DONE
-SUMMARY: P7-AGENT-001 gave a case two roles behind one approval gate, and
-         nothing in the shell reached the role family, so a second agent's
-         audits were observable only through the API - exactly where the
-         single driver stood before P7-SHELL-003. The reviewer is now a second
-         agent panel beside the analyst's. Both load read-only with the
-         workspace, both propose only when the analyst asks, and every write
-         still runs through the endpoint that owns it.
-
-`web/src/api.ts` gains the typed client for the role family -
-`getRoleAgentState`, `proposeRoleAgentStep`, `approveRoleAgentStep`,
-`rejectRoleAgentStep` against `/cases/{id}/agents/{role}` - and the `role`
-field the core now returns on a state and a step. The legacy analyst functions
-stay, and the analyst panel keeps calling them, so its behaviour is untouched.
-
-`web/src/CaseWorkspace.tsx` makes `AgentPanel` one component with two sets of
-wording chosen by role, so the two panels on one page are never ambiguous - a
-reader and a matcher can tell the analysis loop from the audit loop at a
-glance. The reviewer sits after the findings panel, because findings are its
-input; the analyst stays where it is, because it drives the loop. `stepSentence`
-learns the `evaluate` kind, so the human approves an audit of a concrete claim
-rather than a step named for its machinery.
-
-Three things that had to be right rather than present:
-
-- **The idle paragraph was the last hardcoded string.** The panel's every other
-  phrase had been parameterised; the idle one had not, and it was invisible to
-  the eye because the analyst's wording is correct for the analyst's panel. The
-  reviewer told the analyst's lie - "nothing is pending, propose a step" - on a
-  case with no findings, which is the reviewer's honest finished state and not
-  a thing it could act on. The failure was found by the test, not by reading.
-- **A recorded audit's summary shares its paragraph with the artifact kind.**
-  `sql — every axis passed` is one element's text, so an exact-string match
-  cannot reach the phrase; a regex can. The same trap the evidence panel hit,
-  and the same fix.
-- **A step's kind is not its status.** A rejected step renders its kind as the
-  label, so a rejected audit that forgot `kind: 'evaluate'` rendered as a
-  rejected `analyze` and the assertion read the reviewer's own history as the
-  analyst's. The fixture, not the component, was wrong.
-
-NON-GOALS held: autonomy (a GET never proposes; a write never happens without
-             the button), inter-agent messages (the panels do not talk to each
-             other), resolving disagreement (a failing verdict is shown beside
-             the finding and the finding's own validation status is untouched),
-             new endpoints, new dependencies.
-CONSTRAINTS held: no new dependency; `tsc -b` passes; the desktop bundle builds
-             from the same source; the existing agent tests stayed green
-             unchanged.
-ACCEPTANCE CRITERIA: all 7 - see the checked boxes above.
-TESTS: 5 added to web/src/CaseWorkspace.test.tsx (web suite 73 -> 78) - the two
-       panels distinguishable on one page, the reviewer's proposal and its
-       idempotence, the approved audit reaching the evaluate endpoint's own
-       surface, rejection writing nothing, and the cross-role 409 as a
-       sentence naming the reviewer, never as an object.
-VERIFICATION: cd web && npm test - 78 passed; cd web && npm run build PASS
-              (tsc -b + vite build); cd web && npm run build:desktop PASS. The
-              server suite and the three gates are untouched by this change
-              and stay green.
-LESSON: three of the five tests failed on the first run for the fixture's
-        sake, not the component's - a missing step kind, an exact-string match
-        against a phrase that shares its element, and a button name expected
-        for the idle state on a panel that had a pending step. Each was the
-        test asserting a premise the component's own states do not hold at the
-        same time. The component was right in all three; the discipline that
-        found them was asserting one state per wait and reading the rendered
-        panel's own text when a match failed, rather than reasoning about what
-        the panel must show.
-
+NON-GOALS held: the in-process gates are unchanged and still the primary
+             suite; the web shell and the desktop lifecycle are untouched; no
+             step needs a network.
+CONSTRAINTS held: no new dependency (urllib, not requests); deterministic
+             offline - three consecutive runs green; exit 1 on any failure; no
+             server process left behind.
+ACCEPTANCE CRITERIA: all 9 - see the checked boxes above.
+TESTS: the script is the test - 25 asserted steps over real HTTP.
+VERIFICATION: three consecutive runs, all exit 0, all 25 steps PASS, ~3.1s
+              each; CI runs it in the server job after the gates and uploads
+              its report.
+LESSON: four endpoint-shape assumptions were wrong on the first run, and every
+        one of them came from reading the contract's prose instead of the
+        response model - `version` for `recorded`, `stats` for per-column
+        detail, `status` for `validation_status`, `steps` for `phases`. The
+        response models in `app/models.py` are the contract and they are one
+        grep away; the prose paraphrases them, and a paraphrase is where a
+        false assumption enters. The fifth failure was the interesting one:
+        the journey went to the live LLM because `.env` is loaded by the server
+        itself, so scrubbing the parent environment was not enough. An empty
+        value beats the file, and the empty is what the engines treat as
+        absent - two behaviours that only compose into "deterministic" if both
+        are known.
 

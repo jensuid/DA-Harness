@@ -1,6 +1,52 @@
 # DAH - Handoff
 
 ## Next action
+**P7-E2E-001 is DONE**: the whole app, against a real server. Every other
+verification artifact in this repo drives the app in-process through
+Starlette's TestClient - fast, and what caught every regression fixed here -
+but it never binds a port, never parses a real multipart upload and never runs
+uvicorn's lifecycle. This one starts a fresh uvicorn server on a free port with
+an isolated data dir and drives the product over real HTTP.
+
+`verification/e2e/verify_e2e.py`: one case built by hand (upload, profile, plan,
+generated SQL, a refused write, interpretation, a drafted finding accepted,
+validation, EVALUATE on nine axes), then the reviewer agent auditing that
+finding through the shared approval gate, then a second case driven entirely by
+the analyst agent to a closed loop, then the export round trip. 25 asserted
+steps; three consecutive green runs at ~3s each; CI runs it in the server job
+after the gates and uploads its report.
+
+The run is deterministic and offline, and the way that is achieved is the one
+detail worth remembering: the LLM env vars are **emptied** for the server's
+subprocess, not unset. `app.main` loads `server/.env` on a plain uvicorn start,
+and `load_dotenv` never overrides a variable that is already set - so an empty
+value beats the file, and the engines treat an empty key as absent. The first
+draft scrubbed only the parent environment, and the live key from `.env` made
+the plan answer `source=llm` mid-journey.
+
+### What is unbuilt, in priority order
+
+- **A release.** Every P7 checklist item that builds something is delivered,
+  and now verified against a real server as well as in-process. Seventeen tasks
+  have landed since v0.1.0; `0.2.0` is the honest next label. The pipeline
+  publishes per tag, and the update check is already behind the **Check for
+  Updates...** menu item.
+- **The two endpoint-only surfaces, by design.** `/schema-version` answers "is
+  my data safe with this build", a question a support conversation asks rather
+  than a step in an analysis.
+- **Deferred, not dropped:** signing (DEC-006, the slot is in `release.yml`),
+  cloud sync, team collaboration, warehouse connectors, enterprise governance.
+
+### If the next step is a release
+
+Tag `v<x.y.z>` where x.y.z matches server/pyproject.toml. The published build is
+arm64 and unsigned, flagged pre-release (DEC-006). Seventeen tasks have landed
+since v0.1.0, so `0.2.0` is the honest next label when a release is wanted.
+
+Nothing is unblocked-but-undone.
+
+---
+
 **P7-SHELL-011 is DONE**: the reviewer is a second agent panel beside the
 analyst's. P7-AGENT-001 gave a case two roles behind one approval gate, and
 nothing in the shell reached the role family, so a second agent's audits were
@@ -257,6 +303,32 @@ Nothing is unblocked-but-undone.
 ---
 
 ## What was completed
+- P7-E2E-001 PASSED: the whole app against a real server. The P2/P3/P4 gates
+  drive the app in-process, which is what every regression this repo has fixed
+  was caught by - but a release ships a packaged server a user runs for real,
+  and nothing had ever started the actual server and talked to it.
+  `verification/e2e/verify_e2e.py` starts uvicorn on a free port (the port is
+  read from uvicorn's own listening line), waits on /health, drives the journey
+  and terminates the server in a finally so a failure still writes the report
+  and exits 1.
+  LESSON: five things were wrong on the first run, and four of them were
+  endpoint shapes assumed from the contract's prose rather than read from the
+  response models - `version` not `recorded`, per-column detail in `stats` not
+  in `columns`, `status` not `validation_status` on a validation result, `steps`
+  not `phases` on the LEARN walk. `app/models.py` is the contract and is one
+  grep away; the prose paraphrases it, and a paraphrase is where a false
+  assumption enters. The fifth was the interesting one: the journey went to the
+  live LLM because `app.main` loads `server/.env` itself, so scrubbing the
+  parent environment was not enough - an empty value beats the file, and the
+  empty is what the engines treat as absent. Two behaviours that only compose
+  into "deterministic" if both are known.
+  Also worth carrying: validation's verdict on a dataset with a null revenue is
+  `partially_supported`, not `supported`. The first assertion demanded the
+  flattering verdict; the honest one is the missing-data check doing its job, so
+  the assertion now accepts either and checks that reproducibility itself
+  passed and the null was flagged - a stronger statement than the one it
+  replaced.
+
 - P7-SHELL-011 PASSED: the reviewer in the web shell. P7-AGENT-001's role family
   answered only through the API, so a second agent's audits - the whole point of
   the role - were as unreadable as the single driver's loop was before

@@ -87,6 +87,14 @@ jobs:
         # harness fault, a broken LLM, rerun determinism, the result cap.
         run: .venv/bin/python ../verification/p4/verify_p4.py
 
+      - name: End-to-end against a real server
+        # The gates drive the app in-process; this one starts a real uvicorn
+        # server on a free port and drives the whole journey over HTTP, so the
+        # port binding, the multipart upload and the server lifecycle are
+        # exercised too. Deterministic: the LLM env vars are emptied for the
+        # server's subprocess, so no network call is made.
+        run: .venv/bin/python ../verification/e2e/verify_e2e.py
+
       - name: Upload gate reports
         if: always()
         uses: actions/upload-artifact@v4
@@ -96,6 +104,7 @@ jobs:
             verification/p2/REPORT.md
             verification/p3/REPORT.md
             verification/p4/REPORT.md
+            verification/e2e/REPORT.md
 
   web:
     name: Web suite + build
