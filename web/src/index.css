@@ -370,3 +370,43 @@ button.danger:hover {
   clip: rect(0 0 0 0);
   white-space: nowrap;
 }
+
+/* Data quality at the Data stage (P8-QUALITY-002, AT-08/AT-09): the observed
+   fact and its analytical impact, before the analyst spends a question. */
+.quality-issues {
+  list-style: none;
+  padding: 0;
+  margin: 0.35rem 0 0;
+}
+
+.quality-issue {
+  border-left: 3px solid #d9a800;
+  background: #fdf6e3;
+  padding: 0.4rem 0.6rem;
+  margin-top: 0.4rem;
+  font-size: 0.9rem;
+}
+
+.quality-issue.severity-high {
+  border-left-color: #b3261e;
+  background: #fdecea;
+}
+
+.quality-issue.severity-low {
+  border-left-color: #9aa0a6;
+  background: #f1f3f4;
+}
+
+.quality-observed {
+  color: #202124;
+}
+
+.quality-impact {
+  display: block;
+  color: #5f6368;
+  margin-top: 0.15rem;
+}
+
+.quality-clean {
+  margin: 0.35rem 0 0;
+}

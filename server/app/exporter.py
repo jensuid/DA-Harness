@@ -117,11 +117,12 @@ def export_case(db, case_id: str) -> dict | None:
             "columns": json.loads(row["columns_json"]),
             "stats": json.loads(row["stats_json"]),
             "duplicate_rows": row["duplicate_rows"],
+            "quality": json.loads(row["quality_json"] or "[]"),
             "profiled_at": row["profiled_at"],
         }
         for row in db.execute(
             "SELECT dataset_id, rows, columns_json, stats_json, duplicate_rows, "
-            "profiled_at FROM profiles WHERE dataset_id IN "
+            "quality_json, profiled_at FROM profiles WHERE dataset_id IN "
             "(SELECT id FROM datasets WHERE case_id = ?)",
             (case_id,),
         ).fetchall()
@@ -386,13 +387,17 @@ def import_package(db, package: dict, data_dir: Path) -> dict:
     for profile in package["profiles"]:
         db.execute(
             "INSERT OR REPLACE INTO profiles (dataset_id, rows, columns_json, stats_json, "
-            "duplicate_rows, profiled_at) VALUES (?, ?, ?, ?, ?, ?)",
+            "duplicate_rows, quality_json, profiled_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
             (
                 dataset_ids.get(profile.get("dataset_id")),
                 profile.get("rows") or 0,
                 json.dumps(profile.get("columns") or []),
                 json.dumps(profile.get("stats") or {}),
                 profile.get("duplicate_rows") or 0,
+                # A package from before quality detection has no list; an empty
+                # one is the honest read of "nothing was recorded", and a
+                # reprofile repopulates it.
+                json.dumps(profile.get("quality") or []),
                 profile.get("profiled_at") or now.isoformat(),
             ),
         )

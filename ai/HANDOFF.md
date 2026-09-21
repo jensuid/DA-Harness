@@ -1,4 +1,69 @@
 ## Next action
+**P8-QUALITY-002 is DONE**: a profile states what the data *cannot* support,
+before the analyst spends a question on it. AT-08 names seven defect classes
+and AT-09 requires each to carry an analytical impact; before this, two
+classes existed as bare counts - "1 null value(s)" - and they surfaced only at
+validation, after a finding existed. The UX document (section 15) wants quality
+visible at the Data stage, before analysis. That is where it now is.
+
+The two pre-existing classes (missing values, duplicate rows) gained impact
+sentences. Five are new, each raising only on evidence the profile itself
+measured - never on a heuristic that could fire on clean data, which is what
+holds AT-08's <= 5% false-positive budget before the golden suite that will
+measure it exists:
+
+- **invalid_types** - a column typed `other` that is mostly numeric or temporal
+  but not entirely. This is the defect that breaks a calculation *silently*:
+  DuckDB types the column VARCHAR, the SQL still runs, and a SUM yields NULL or
+  a comparison drops the row instead of erroring.
+- **inconsistent_categories** - case/whitespace variants ("north" vs "North")
+  that split a GROUP BY without any error.
+- **date_gaps** - a hole in an otherwise regular series, so a
+  period-over-period comparison treats non-adjacent windows as consecutive.
+- **extreme_values** - a value dwarfing its neighbour. Measured against the
+  *next* value, not a mean, because an outlier inflates the very statistics a
+  z-score would measure it with.
+- **insufficient_coverage** - too few rows for a comparison to mean anything,
+  or a category so dominant a group-by is really about that one group.
+
+One design decision worth carrying: the extreme-value detector compares the
+largest value against the next-distinct value rather than using a z-score. The
+obvious implementation - mean and standard deviation - is the one the defect
+defeats, because the outlier moves the mean and inflates the deviation it is
+measured against. Comparing against a neighbour is robust to exactly the case
+the detector exists for, and a run of ties at the top is correctly read as a
+repeated value rather than an extreme.
+
+The list is computed inside the profiler's own pass with bounded queries (top-k
+for extremes, distinct lists for temporal, one scan for the type casts), so a
+profile costs what it cost plus targeted lookups rather than a scan per
+detector. It persists as schema v11 (a v10 store opens, upgrades and keeps
+every row), travels with an exported case and survives a duplicate. The
+validation endpoint's missing-data check now reads the same impact sentence the
+Data stage shows, so the audit and the panel cannot drift apart on the same
+null.
+
+**435 server tests** (26 new in test_quality.py: one raising test per class,
+false-positive guards for each, persistence across reopen, the export round
+trip and the v10->v11 migration), **84 web tests** (2 new for the Data-stage
+panel), the build green and all 25 real-server e2e steps passing. The schema
+is at v11.
+
+The v0.2.0 release this landed after is published; CI's billing is still
+suspended (see below), so nothing pushed since c73118c has run in CI.
+
+### What is next, in priority order
+
+- **P8-VALID-003** - validation from 3 checks to the PRD's 9 dimensions
+  (AT-17). The largest single trust gap, and the natural consumer of this
+  task's work: the EVALUATE engine already computes a nine-axis audit, but it
+  is pointed at imported work rather than at the case's own findings.
+- **P8-CAUSAL-004** - the causal-language guard (AT-18).
+- **P8-GOLDEN-005** - the analytical golden suite with reference values (AT-40)
+  and the workflow-completion rate (AT-01). This is what *measures* the
+  95%/5% thresholds the detectors above were built to hold.
+
+## Next action
 **The v0.2.0 release is DONE, and it is published.** Tag `v0.2.0` sits on
 `ec819fc` (the bump commit), matching `server/pyproject.toml` as `release.yml`
 demands. 409 server tests pass on the tag, run by hand. The sidecar, `.app`

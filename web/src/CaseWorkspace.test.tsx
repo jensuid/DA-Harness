@@ -71,6 +71,7 @@ const profile = {
     region: { type: 'other' },
   },
   duplicate_rows: 0,
+  quality: [],
   profiled_at: '',
 }
 
@@ -379,6 +380,39 @@ describe('CaseWorkspace', () => {
     mockEmptyCase()
     render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
     expect(await screen.findByText(/3 rows, 3 columns, 0 duplicate/i)).toBeInTheDocument()
+  })
+
+  it('renders a quality issue with its impact at the Data stage', async () => {
+    // AT-09: the consequence, not just the count, visible before analysis.
+    mockEmptyCase()
+    // After mockEmptyCase, so its own profileDataset mock does not win.
+    vi.mocked(api.profileDataset).mockResolvedValue({
+      ...profile,
+      quality: [
+        {
+          kind: 'missing_values',
+          column: 'revenue',
+          severity: 'high',
+          observed: '1 of 3 values are missing.',
+          impact: 'revenue contains 33.3% missing values; totals may be understated.',
+        },
+      ],
+    })
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+    expect(await screen.findByText('1 of 3 values are missing.')).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        /Potential impact: revenue contains 33\.3% missing values/i,
+      ),
+    ).toBeInTheDocument()
+  })
+
+  it('states plainly when a dataset has no quality issues', async () => {
+    mockEmptyCase()
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+    expect(
+      await screen.findByText(/No data-quality issues detected/i),
+    ).toBeInTheDocument()
   })
 
   it('attaches a file and profiles it', async () => {

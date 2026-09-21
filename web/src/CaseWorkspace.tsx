@@ -21,6 +21,7 @@ import {
   type GeneratedCode,
   type Interpretation,
   type Profile,
+  type QualityIssue,
   type RunSummary,
   type ValidationResult,
   acceptFinding,
@@ -404,6 +405,28 @@ function Workflow({ progress }: { progress: CaseProgress | null }) {
   )
 }
 
+// What the data cannot support, before the analyst spends a question on it
+// (AT-08/AT-09, UX 15). Each issue states what was measured and what it costs,
+// at the Data stage rather than only after a finding exists; a dataset with no
+// issues says so plainly, because "nothing rendered" is not the same signal as
+// "this data is clean".
+function QualityList({ quality }: { quality: QualityIssue[] }) {
+  if (!quality || quality.length === 0) {
+    return <p className="muted quality-clean">No data-quality issues detected.</p>
+  }
+  return (
+    <ul className="quality-issues">
+      {quality.map((issue, index) => (
+        <li key={index} className={`quality-issue severity-${issue.severity}`}>
+          <span className="quality-observed">{issue.observed}</span>
+          {' '}
+          <span className="quality-impact">Potential impact: {issue.impact}</span>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
 function DataPanel({
   caseId,
   datasets,
@@ -468,6 +491,7 @@ function DataPanel({
                 ) : (
                   <span className="muted"> — profiling…</span>
                 )}
+                {profile && <QualityList quality={profile.quality} />}
               </li>
             )
           })}

@@ -1,7 +1,7 @@
-**Phase:** P8 Analytical Contract - IN PROGRESS (1 of 10 delivered: the case's
+**Phase:** P8 Analytical Contract - IN PROGRESS (2 of 10 delivered: the case's
 context object, P8-CONTEXT-001). P7 Product Modes is COMPLETE - every checklist
 item that builds something shipped, including the manual walkthrough and the
-CORS fix, and the store's schema is at v10. P6, P5, P4, P3, P2, P1 and P0 are
+CORS fix, and the store's schema is at v11. P6, P5, P4, P3, P2, P1 and P0 are
 all COMPLETE (see the phase table below). P8 closes the PRD's Level 1 breadth
 gaps and makes "done" measurable: quality detection beyond missingness (2 of 7
 defect classes today), validation from 3 checks to the PRD's 9 dimensions, the
@@ -9,84 +9,34 @@ causal-language guard, the analytical golden suite, the orientation spine,
 question refinement, the decision view, and the measurement layer. The full gap
 analysis is `docs/PRD & UX Conformance Evaluation.md`.
 
-- **Active task:** P8-CONTEXT-001 DONE - a case carries the analyst's stated
-  intent, not just a question string. The PRD's AT-03 requires purpose,
-  sub-questions and hypotheses to be captured, edited and reopened, and the UX
-  architecture (section 13) treats context as a first-class object the AI
-  reasons over; a case was `question + dataset` before it. A new `contexts`
-  table (schema v10, migration guarded and resumable like every other) holds a
-  purpose and three lists; GET answers an empty default rather than a 404 so the
-  shell's form always renders, and PUT replaces the whole object so a retry
-  after a failed save cannot merge two drafts. The planner reads it - the
-  analyst's sub-questions and hypotheses outrank the ones the profile suggests,
-  a stated purpose stands in for a thin objective - and the plan records a
-  `context_basis` naming the fields it actually read, on both the deterministic
-  and the LLM path. The assistant cites `context:purpose` and
-  `context:hypotheses` when asked what the case is for. Export carries it in
-  both directions, duplicate carries it, delete removes it.
-  Before it: P7-CSV-002 (a stray trailing comma no longer collapses a file),
-  P7-CORS-001 (the packaged app's webview could not reach its own core). The
-  (a stray trailing comma, as a spreadsheet export or a hand-edit produces)
-  no longer reads as one column of raw lines. read_csv_auto's delimiter guess
-  dies on that row, so the profile answered
-  `columns: ['order_id,quarter,region,revenue']` and described nothing, and
-  the SQL an analyst wrote from those columns then failed on the same file.
-  `_sniffed_reader_for` compares the sniffed width against the header's own
-  comma count and re-sniffs with `ignore_errors=true` when sniffing collapsed
-  - keeping every row and dropping only the stray field to a null, rather
-  than null_padding's synthetic extra column. Both profiling and the run path
-  go through it, so a file reads the same way everywhere, and the retry is
-  earned by a collapse: a clean file keeps the strict reader, so a genuine
-  conversion error is still an error and never a silent null.
-  Before it: P7-CORS-001 (the packaged app's webview could not reach its own
-  core), P7-WALK-001 (the shipped shell, used by hand). The
-  automated artifacts drive contracts: the core through TestClient, the shell
-  through jsdom. Neither renders, so a walkthrough is the only check that a
-  panel shows the analyst the number behind it. This one drove the real shell
-  one keyboard action at a time - case created, file attached, the agent's
-  plan approved, its SQL run, interpreted, the draft accepted, validated, the
-  reviewer's audit approved, the chart rendered, the case asked a question, a
-  template promoted and a case started from it - reading the rendered DOM at
-  every step.
-  The loop closes honestly: validation answers `partially_supported` (the null
-  revenue trips the missing-data check while reproducibility passes) and the
-  LEARN panel says the trust loop ran, not that the answer is right.
-  One bug fixed: the reviewer's settled-step summary summed over a SET of
-  verdict strings, so a nine-axis audit reported at most one pass and one
-  concern ("9 axes, 1 pass, 1 concern, 0 fail" for 7 pass / 2 concern). Every
-  audit the shell has ever shown understated its own pass count. Counted per
-  axis now; the two audit tests derive their tallies from the recorded
-  evaluation.
-  Five findings are recorded, not fixed: evaluations do not travel with an
-  exported case (exporter.py never reads them); a stale agent step can be
-  approved after its write happened out of band, producing a duplicate
-  finding; the plan's contents, a run's result rows and the profile's
-  per-column null count are all persisted and none rendered; a draft's
-  grounds run together with its count ("2..32 row(s)"); and the chat and
-  generate-code inputs are adjacent near-identical single-line boxes.
-  Before it: P7-E2E-001 (real-server e2e), P7-SHELL-011 (the reviewer's
-  surface), P7-AGENT-001 (multi-agent core), P7-SHELL-010 (LEARN's surface),
-  P7-LEARN-001 (LEARN's core), P7-SHELL-009..002, P7-EVAL-001, P6 CLOSED.
-  Every verification artifact in the repo drives the app in-process through
-  Starlette's TestClient, which is fast and is what caught every regression
-  fixed here - but it never binds a port, never parses a real multipart upload
-  and never runs uvicorn's lifecycle. `verification/e2e/verify_e2e.py` is the
-  complement: a fresh uvicorn server on a free port with an isolated data dir,
-  driven over real HTTP. One case is built by hand end to end and audited by
-  the reviewer agent; a second case is driven entirely by the analyst agent,
-  one approved write at a time, to a closed loop; then the export round trip.
-  The LLM env vars are *emptied* for the subprocess rather than unset, because
-  `app.main` loads `server/.env` itself on a plain uvicorn start and
-  `load_dotenv` never overrides a variable already set - so the run is
-  deterministic and needs no network. 25 steps, three consecutive green runs,
-  CI runs it after the gates.
-  Before it: P7-SHELL-011 (the reviewer's surface), P7-AGENT-001
-  (multi-agent core), P7-SHELL-010 (LEARN's surface), P7-LEARN-001 (LEARN's
-  core), P7-SHELL-009 (case history), P7-SHELL-008 (the evidence graph),
-  P7-SHELL-007 (EDA), P7-SHELL-006 (cross-case memory), P7-SHELL-005
-  (templates), P7-SHELL-004 (case management), P7-SHELL-003 (the agent
-  surface), P7-SHELL-002 (EVALUATE's surface), P7-EVAL-001 (EVALUATE's core),
-  P6 CLOSED.
+- **Active task:** P8-QUALITY-002 DONE - quality detection beyond
+  missingness. A profile stated shape, types and nulls; it now also states what
+  the data *cannot* support. The PRD's AT-08 names seven defect classes and
+  AT-09 requires each to carry an analytical impact; before this, two classes
+  existed as bare counts ("1 null value(s)") and surfaced only at validation,
+  after a finding existed - the UX document (section 15) wants them at the Data
+  stage, before analysis. The two pre-existing classes gained impact sentences;
+  five are new: invalid_types (a column typed `other` that is mostly numeric or
+  temporal but not entirely - the defect that breaks a calculation *silently*,
+  because the SQL still runs and the SUM just yields NULL), inconsistent
+  categories (case/whitespace variants splitting a GROUP BY), date gaps (a hole
+  in an otherwise regular series, so a period-over-period comparison compares
+  non-adjacent windows), extreme_values (a value dwarfing its neighbour -
+  measured against the next value, not a mean, because an outlier inflates the
+  very statistics a z-score would use) and insufficient_coverage (too few rows,
+  or a category so dominant a group-by is about one group). Every detector
+  raises only on measured evidence, never on a heuristic that could fire on
+  clean data, which is how the <= 5% false-positive budget is held; the golden
+  suite that *measures* the 95%/5% thresholds is P8-GOLDEN-005 and is the next
+  thing that turns these into numbers. The list is computed inside the
+  profiler's own pass via bounded queries (top-k for extremes, distinct lists
+  for temporal, one scan for type casts), persisted as schema v11, carried by
+  export and duplicate, and rendered at the Data stage with each issue's
+  observed fact and impact sentence; the validation endpoint's missing-data
+  check now reads that same impact sentence, so the audit and the Data stage
+  cannot say two different things about the same null.
+  Before it: P8-CONTEXT-001 (a case carries purpose, sub-questions, hypotheses),
+  the v0.2.0 release, P7-CSV-002, P7-CORS-001.
 
 - **Known issues:** CI's billing is suspended: every workflow (Release, and both CI suites) is
   rejected at start with "recent account payments have failed or your spending
@@ -100,14 +50,17 @@ analysis is `docs/PRD & UX Conformance Evaluation.md`.
   documented minimum but is no longer enforced by CI, and a green run no longer
   proves the exact Intel triple a local build produces. Restoring that needs a
   self-hosted Intel runner.
-- **Test status:** server 409 passed (21 for the context object: persistence
+- **Test status:** server 435 passed (21 for the context object: persistence
   and reopen, the edit and the malformed-input 400s, the v9->v10 migration, the
   export round trip, the planner's basis recording and precedence, and three
   chat tests for the new citation kind) (4 for the shell's CORS; 4 for the
   stray-trailing-comma recovery - a CSV with a row wider than its header no
   longer collapses to one column, in the profile *and* in the SQL written
   from it; all 4 fail on the pre-fix code) (336 + 22 evaluate + 9 learn
-  + 13 multi-agent + 4 cors + 4 csv + 21 context); web 82 passed (4 for the
+  + 13 multi-agent + 4 cors + 4 csv + 21 context + 26 quality); web 84 passed
+  (2 for the Data-stage quality panel: an issue rendered with its impact, and a
+  clean dataset stating plainly that nothing was detected)
+  (4 for the
   Context panel: render, save with precedence, remove without saving, a failed
   save that keeps the edit)
   (CaseList 10, CaseCreation 3, CaseWorkspace 52, Templates 8, api 6 - the

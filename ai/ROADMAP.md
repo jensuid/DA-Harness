@@ -21,8 +21,9 @@ P7 Product Modes       COMPLETE ✓  (all 4 checklist items built; the web-shell
                               gap closed; EVALUATE, LEARN and multi-agent
                               workflows in core and shell; v0.1.0 and v0.2.0
                               published)
-P8 Analytical Contract IN PROGRESS (1 of 10: the case's context object; the
-                              v0.2.0 release shipped between 001 and 002)
+P8 Analytical Contract IN PROGRESS (2 of 10: the case's context object, then
+                              quality detection beyond missingness; the v0.2.0
+                              release shipped between 001 and 002)
                               ← we are here
 ```
 

@@ -58,12 +58,25 @@ export interface CaseProgress {
   counts: Record<string, number>
 }
 
+export interface QualityIssue {
+  /** One of the PRD's seven defect classes (AT-08). */
+  kind: string
+  /** The column, or null when the issue is dataset-wide (coverage). */
+  column: string | null
+  severity: 'high' | 'medium' | 'low'
+  /** The measured fact. */
+  observed: string
+  /** What the issue does to an analysis built on this data (AT-09). */
+  impact: string
+}
+
 export interface Profile {
   dataset_id: string
   rows: number
   columns: string[]
   stats: Record<string, unknown>
   duplicate_rows: number
+  quality: QualityIssue[]
   profiled_at: string
 }
 

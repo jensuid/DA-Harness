@@ -48,6 +48,7 @@ CREATE TABLE IF NOT EXISTS profiles (
     columns_json TEXT NOT NULL,
     stats_json TEXT NOT NULL,
     duplicate_rows INTEGER NOT NULL DEFAULT 0,
+    quality_json TEXT NOT NULL DEFAULT '[]',
     profiled_at TEXT NOT NULL,
     FOREIGN KEY (dataset_id) REFERENCES datasets(id)
 );
@@ -211,7 +212,7 @@ def _ensure_column(conn, table: str, column: str, definition: str) -> None:
 # opening one above it is refused (see _check_version) rather than silently
 # treated as current, because a downgrade against an unknown schema is how a
 # store is corrupted quietly.
-LATEST_SCHEMA_VERSION = 10
+LATEST_SCHEMA_VERSION = 11
 
 
 class Migration:
@@ -281,6 +282,16 @@ def _m_evaluations_table(conn: sqlite3.Connection) -> None:
 
 
 
+def _m_profiles_quality_json(conn: sqlite3.Connection) -> None:
+    # A profile states what the data cannot support (P8-QUALITY-002): the
+    # seven defect classes, each with an impact sentence. JSON in one column,
+    # like every other list the store holds, because the issues are read whole
+    # and never queried individually.
+    _ensure_column(
+        conn, "profiles", "quality_json", "TEXT NOT NULL DEFAULT '[]'"
+    )
+
+
 def _m_contexts_table(conn: sqlite3.Connection) -> None:
     # A case carries the analyst's intent, not just a question string
     # (P8-CONTEXT-001): purpose, sub-questions, hypotheses, known constraints.
@@ -320,6 +331,7 @@ MIGRATIONS: tuple[Migration, ...] = (
     Migration(8, "evaluations: EVALUATE mode stores its audits", _m_evaluations_table),
     Migration(9, "agent_steps gain the role they belong to", _m_agent_steps_role),
     Migration(10, "contexts: a case carries purpose, sub-questions, hypotheses", _m_contexts_table),
+    Migration(11, "profiles gain the quality issues they detected", _m_profiles_quality_json),
 )
 
 

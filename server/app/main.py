@@ -714,16 +714,18 @@ async def duplicate_case(
         )
 
     for profile in db.execute(
-        "SELECT dataset_id, rows, columns_json, stats_json, duplicate_rows, profiled_at "
+        "SELECT dataset_id, rows, columns_json, stats_json, duplicate_rows, "
+        "quality_json, profiled_at "
         "FROM profiles WHERE dataset_id IN (SELECT id FROM datasets WHERE case_id = ?)",
         (case_id,),
     ).fetchall():
         db.execute(
             "INSERT OR REPLACE INTO profiles (dataset_id, rows, columns_json, stats_json, "
-            "duplicate_rows, profiled_at) VALUES (?, ?, ?, ?, ?, ?)",
+            "duplicate_rows, quality_json, profiled_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
             (dataset_ids.get(profile["dataset_id"]), profile["rows"],
              profile["columns_json"], profile["stats_json"],
-             profile["duplicate_rows"], profile["profiled_at"]),
+             profile["duplicate_rows"], profile["quality_json"],
+             profile["profiled_at"]),
         )
 
     # Runs: remap dataset; keep an old->new id map for findings and charts.
@@ -1207,18 +1209,21 @@ async def profile_dataset(
         columns=raw["columns"],
         stats=raw["stats"],
         duplicate_rows=raw["duplicate_rows"],
+        quality=raw.get("quality") or [],
         profiled_at=datetime.now(timezone.utc),
     )
     db.execute(
         "INSERT OR REPLACE INTO profiles "
-        "(dataset_id, rows, columns_json, stats_json, duplicate_rows, profiled_at) "
-        "VALUES (?, ?, ?, ?, ?, ?)",
+        "(dataset_id, rows, columns_json, stats_json, duplicate_rows, "
+        "quality_json, profiled_at) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?)",
         (
             profile.dataset_id,
             profile.rows,
             json.dumps(profile.columns),
             json.dumps(profile.stats),
             profile.duplicate_rows,
+            json.dumps([issue.model_dump() for issue in profile.quality]),
             profile.profiled_at.isoformat(),
         ),
     )
@@ -1237,7 +1242,8 @@ async def get_profile(
     """Retrieve the stored profile for an attached dataset."""
     _require_dataset(db, case_id, dataset_id)
     row = db.execute(
-        "SELECT dataset_id, rows, columns_json, stats_json, duplicate_rows, profiled_at "
+        "SELECT dataset_id, rows, columns_json, stats_json, duplicate_rows, "
+        "quality_json, profiled_at "
         "FROM profiles WHERE dataset_id = ?",
         (dataset_id,),
     ).fetchone()
@@ -1249,6 +1255,7 @@ async def get_profile(
         columns=json.loads(row["columns_json"]),
         stats=json.loads(row["stats_json"]),
         duplicate_rows=row["duplicate_rows"],
+        quality=json.loads(row["quality_json"] or "[]"),
         profiled_at=row["profiled_at"],
     )
 
@@ -2068,7 +2075,7 @@ async def validate_finding(
 
     # 2. Denominator: a null-free basis for any aggregate claim.
     profile_row = db.execute(
-        "SELECT stats_json FROM profiles WHERE dataset_id = ?",
+        "SELECT stats_json, quality_json FROM profiles WHERE dataset_id = ?",
         (dataset_row["id"],),
     ).fetchone()
     if profile_row is None:
@@ -2083,11 +2090,21 @@ async def validate_finding(
         stats = json.loads(profile_row["stats_json"])
         null_total = sum(c.get("null_count", 0) for c in stats.values())
         null_free = null_total == 0
+        # AT-09: the detail is the impact sentence, not the bare count - the
+        # profile already derived what the nulls do to this finding, and the
+        # audit and the Data stage should not say two different things about
+        # the same column.
+        detail = f"{null_total} null value(s) across profiled columns"
+        if not null_free:
+            for issue in json.loads(profile_row["quality_json"] or "[]"):
+                if issue.get("kind") == "missing_values":
+                    detail = issue.get("impact") or detail
+                    break
         checks.append(
             ValidationCheck(
                 name="missing_data",
                 passed=null_free,
-                detail=f"{null_total} null value(s) across profiled columns",
+                detail=detail,
             )
         )
 

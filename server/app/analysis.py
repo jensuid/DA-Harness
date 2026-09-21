@@ -8,6 +8,8 @@ import re
 
 import duckdb
 
+from app.quality import CATEGORY_MAX_DISTINCT, assess_quality
+
 _XLSX_CACHE: dict[str, str] = {}
 
 # Only these statements may run. Anything else (INSERT/UPDATE/DELETE, COPY,
@@ -217,6 +219,15 @@ def profile_csv(path: str) -> dict:
                 )
                 offset += width
             duplicate_rows = _duplicate_row_count(connection, path, total_rows)
+
+            # The quality detectors read the same connection while it is still
+            # open: their evidence queries are bounded, but they still need a
+            # live connection, so they run inside the try rather than after the
+            # close in the finally.
+            samples = _quality_samples(
+                connection, reader_call, bind_path, columns, families, stats
+            )
+            quality = assess_quality(stats, total_rows, duplicate_rows, samples)
     finally:
         connection.close()
 
@@ -225,6 +236,7 @@ def profile_csv(path: str) -> dict:
         "columns": columns,
         "stats": stats,
         "duplicate_rows": duplicate_rows,
+        "quality": quality,
     }
 
 
@@ -369,3 +381,165 @@ def run_query_multi(paths: list[str], sql: str, limit: int = 1000) -> dict:
         raise ValueError("only single read-only SELECT queries are supported")
     bound_sql, params = _bind_datasets(sql, paths)
     return _execute_read_only(bound_sql, params, limit)
+
+
+# --- quality sampling (P8-QUALITY-002) ---------------------------------------
+# The five new defect classes need more than the aggregate pass computes, and
+# each needs it only for the columns that could possibly raise the issue: type
+# casts for `other` columns, distinct values for temporal ones, the few
+# largest and smallest values for numeric ones. Every query below is bounded -
+# a LIMIT, or a distinct list that cannot exceed the column's own cardinality -
+# so a profile's cost stays a handful of targeted lookups, not a scan per
+# detector. Nothing is fetched for a column that cannot raise the class.
+
+# How many of each end of a numeric column to read for the extreme check. Five
+# is enough to see past a run of ties without pulling a column's tail.
+_EXTREME_SAMPLE = 5
+
+
+def _quality_samples(
+    connection,
+    reader_call: str,
+    bind_path: str,
+    columns: list[str],
+    families: dict[str, str],
+    stats: dict[str, dict],
+) -> dict:
+    """Collect the bounded evidence the quality detectors read.
+
+    Four shapes, each fetched only where a detector could fire:
+      castability     per `other` column, how many values read as a number or
+                      a date - the mixed-type detector's only input
+      value_counts    per low-cardinality `other` column, its distinct values
+                      and their counts - serves inconsistency and dominance
+      distinct_values per temporal column, the sorted distinct points a gap is
+                      found in
+      extremes        per numeric column, its few largest and smallest values
+    """
+    other_columns = [c for c in columns if families.get(c) == "other"]
+    temporal_columns = [c for c in columns if families.get(c) == "temporal"]
+    numeric_columns = [c for c in columns if families.get(c) == "numeric"]
+
+    return {
+        "castability": _castability_samples(
+            connection, reader_call, bind_path, other_columns
+        ),
+        "value_counts": _value_count_samples(
+            connection, reader_call, bind_path, other_columns, stats
+        ),
+        "distinct_values": _distinct_value_samples(
+            connection, reader_call, bind_path, temporal_columns
+        ),
+        "extremes": _extreme_samples(
+            connection, reader_call, bind_path, numeric_columns
+        ),
+    }
+
+
+def _quoted(name: str) -> str:
+    """Quote a column identifier defensively, doubling any embedded quote."""
+    return '"' + name.replace('"', '""') + '"'
+
+
+def _castability_samples(connection, reader_call, bind_path, columns) -> dict:
+    """Per column: (non_null, numeric, datetime) counts from one scan.
+
+    A VARCHAR column that is mostly numbers or dates but not wholly so is the
+    mixed-type defect, and this is the only evidence that sees it - DuckDB
+    typed the column from a sample, so the type alone cannot report the values
+    that disagree. `try_cast` yields NULL for a value that does not parse, so
+    COUNT of the cast counts the values that do.
+    """
+    if not columns:
+        return {}
+    exprs = []
+    for name in columns:
+        quoted = _quoted(name)
+        exprs.append(
+            f"COUNT({quoted}) AS _n, "
+            f"COUNT(try_cast({quoted} AS DOUBLE)) AS _num, "
+            f"COUNT(try_cast({quoted} AS TIMESTAMP)) AS _ts"
+        )
+    # One row holding every column's three counts, so this is one scan for the
+    # whole table rather than one per column.
+    row = connection.execute(
+        f"SELECT {', '.join(exprs)} FROM {reader_call}", [bind_path]
+    ).fetchone()
+    if row is None:
+        return {}
+    samples = {}
+    index = 0
+    for name in columns:
+        samples[name] = (int(row[index]), int(row[index + 1]), int(row[index + 2]))
+        index += 3
+    return samples
+
+
+def _value_count_samples(connection, reader_call, bind_path, columns, stats) -> dict:
+    """Per low-cardinality column: {value: count}.
+
+    Serves two detectors that both need the distribution rather than the
+    aggregates: inconsistent spelling and a dominant category. Only columns
+    whose distinct count is small are fetched, so a free-text field - which has
+    no consistency to check - is never read.
+    """
+    samples = {}
+    for name in columns:
+        distinct = int(stats.get(name, {}).get("distinct_count", 0) or 0)
+        if distinct < 2 or distinct > CATEGORY_MAX_DISTINCT:
+            continue
+        rows = connection.execute(
+            f"SELECT {_quoted(name)}, COUNT(*) FROM {reader_call} "
+            f"GROUP BY {_quoted(name)}",
+            [bind_path],
+        ).fetchall()
+        counts: dict[str, int] = {}
+        for value, count in rows:
+            if value is None:
+                continue
+            counts[str(value)] = counts.get(str(value), 0) + int(count)
+        samples[name] = counts
+    return samples
+
+
+def _distinct_value_samples(connection, reader_call, bind_path, columns) -> dict:
+    """Per temporal column: its distinct values, for gap detection.
+
+    The distinct list is bounded by the column's own cardinality, so a
+    date column over a year is a few hundred values, not a row per record.
+    """
+    samples = {}
+    for name in columns:
+        rows = connection.execute(
+            f"SELECT DISTINCT {_quoted(name)} FROM {reader_call} "
+            f"WHERE {_quoted(name)} IS NOT NULL",
+            [bind_path],
+        ).fetchall()
+        samples[name] = [row[0] for row in rows if row[0] is not None]
+    return samples
+
+
+def _extreme_samples(connection, reader_call, bind_path, columns) -> dict:
+    """Per numeric column: its few largest and smallest values.
+
+    Ordered and limited, so DuckDB resolves this without sorting the column -
+    the cost is bounded by the sample size, not the row count.
+    """
+    samples = {}
+    for name in columns:
+        quoted = _quoted(name)
+        top = connection.execute(
+            f"SELECT {quoted} FROM {reader_call} WHERE {quoted} IS NOT NULL "
+            f"ORDER BY {quoted} DESC LIMIT ?",
+            [bind_path, _EXTREME_SAMPLE],
+        ).fetchall()
+        bottom = connection.execute(
+            f"SELECT {quoted} FROM {reader_call} WHERE {quoted} IS NOT NULL "
+            f"ORDER BY {quoted} ASC LIMIT ?",
+            [bind_path, _EXTREME_SAMPLE],
+        ).fetchall()
+        samples[name] = {
+            "top": [float(row[0]) for row in top if row[0] is not None],
+            "bottom": [float(row[0]) for row in bottom if row[0] is not None],
+        }
+    return samples

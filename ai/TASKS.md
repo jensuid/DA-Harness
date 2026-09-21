@@ -142,7 +142,7 @@ answers.
 |---------|-----------|--------|--------------|
 | P8-RELEASE | Distribution (the v0.2.0 release) | DONE | tag v0.2.0; 409 server tests green; artifacts built locally and published as pre-release |
 | P8-CONTEXT-001 | Data Layer (the case's context object) | DONE | 21 tests added (409 server, 82 web); schema v10; e2e green |
-| P8-QUALITY-002 | Data Layer (quality beyond missingness) | OPEN | AT-08/AT-09 |
+| P8-QUALITY-002 | Data Layer (quality beyond missingness) | DONE | 26 tests added (435 server, 84 web); schema v11; e2e green |
 | P8-VALID-003 | Validation (3 checks to 9 dimensions) | OPEN | AT-17 |
 | P8-CAUSAL-004 | Validation (the causal-language guard) | OPEN | AT-18 |
 | P8-GOLDEN-005 | Verification (the analytical golden suite) | OPEN | AT-40/AT-01 |
@@ -250,202 +250,142 @@ SUMMARY: a case gains structured, editable intent - purpose, sub-questions,
          and carried by export in both directions. The primary question stays
          on the case row where it already lives.
 
-Contracts for the rolling window (the two most recent). Older blocks are in
-`ai/TASKS-ARCHIVE.md`.
-
-### P7-CSV-002 contract
+### P8-QUALITY-002 contract
 
 ```
-TASK: P7-CSV-002 - a CSV with a stray trailing comma no longer collapses to one column
-ID: P7-CSV-002
-MILESTONE: P7 Product Modes
-CAPABILITY: Data Layer (reliability)
-GOAL: an analyst's CSV is accepted as it arrives. A row carrying more fields
-      than the header - a stray trailing comma, as a spreadsheet export or a
-      hand-edit produces - derails read_csv_auto's delimiter guess, and the
-      whole file then reads as one column holding each raw line. The profile
-      answers `columns: ['order_id,quarter,region,revenue']` and describes
-      nothing, and the SQL the analyst then writes from those columns fails on
-      the same file it was derived from. The file is not corrupt; one cell is.
-CONTEXT: found while seeding the shipped app with worked cases - the first
-         draft of a fixture carried `106,2024q3,west,,` and the profile
-         collapsed to a single column. Bisected exactly: a trailing empty that
-         matches the header's width (`106,2024q3,west,`) is a honest null and
-         always worked; the collapse needs a row *wider* than the header, and
-         only when more rows follow it. Neither the profiler nor the run path
-         was at fault alone: both build the same reader, so a profile that
-         recovered while its runs collapsed would describe columns the SQL
-         cannot see.
-INPUTS: a CSV whose header claims four fields and whose third row carries five
-        (the last two empty), followed by further rows; read_csv_auto alone
-        answers one column for it, `ignore_errors=true` answers four with
-        every row present and the stray field gone, and `null_padding=true`
-        answers five - a synthetic column invented for the stray field.
-RELEVANT FILES: server/app/analysis.py (the recovery, and its four call sites),
-                server/tests/test_analysis.py (+3), server/tests/test_profiles.py
-                (+1), ai/HANDOFF.md, ai/TASKS.md, ai/CURRENT_STATE.md
+TASK ID: P8-QUALITY-002
+MILESTONE: P8 Analytical Contract
+CAPABILITY: Data Layer (quality beyond missingness)
+GOAL: a profile states what the data *cannot* support, before the analyst
+      spends a question on it. The profiler finds missing values and duplicate
+      rows today (2 of the PRD's 7 defect classes, AT-08); it does not detect
+      invalid types, inconsistent categories, date gaps, extreme values or
+      insufficient coverage - and these are the defects that make a *correct*
+      calculation answer the *wrong* question. Each detected issue must carry
+      an impact sentence (AT-09): not "1 null value(s)" but "Revenue contains
+      4.8% missing values; revenue comparisons may be understated." Per the UX
+      architecture (section 15) this belongs at the Data stage, *before*
+      analysis - today it surfaces only at validation, after a finding exists.
+CONTEXT: the profile is deterministic (DEC-001) and is already the object the
+         planner and the generator read, so quality detection belongs in the
+         same pass rather than a second scan. AT-08's thresholds are a >= 95%
+         detection rate and <= 5% false positives on the golden suite, which
+         does not exist yet (P8-GOLDEN-005) - so this task ships the detectors
+         and the tests that pin each one, and the *measurement* against a
+         golden corpus is the later task. The context object (P8-CONTEXT-001)
+         is already in place; an impact phrased against a stated purpose is
+         better than a generic one, but deriving impact from purpose is
+         P8-DECISION-008's territory, so impacts are per-defect-class and
+         column-specific here, not case-specific.
+INPUTS: a profiled dataset's per-column stats (type, null count, distinct
+        count, min/max/avg), its row count and its duplicate count - all
+        already computed by profile_csv. The detectors add no new scan of the
+        file for the classes the existing aggregates already prove; the classes
+        that need more (type violations, category inconsistency, date gaps,
+        extremes) compute from the same stats plus one targeted query each,
+        kept cheap because a profile already costs one scan.
+RELEVANT FILES: server/app/analysis.py (the detectors and the quality list),
+                server/app/db.py (migration 11, the profile's quality column),
+                server/app/models.py (QualityIssue, Profile carries the list),
+                server/app/main.py (persist and return the list; the validate
+                endpoint's missing-data check reads the derived impact),
+                web/src/api.ts, web/src/CaseWorkspace.tsx (the Data-stage
+                panel renders the list with its impact sentences),
+                web/src/CaseWorkspace.test.tsx,
+                server/tests/test_quality.py, ai/HANDOFF.md, ai/TASKS.md,
+                ai/CURRENT_STATE.md
 REQUIRED CHANGE:
-  - `_sniffed_reader_for` chooses the reader for a file: the format's own
-    reader, unless the header's comma count claims more columns than sniffing
-    found, in which case it re-sniffs with `ignore_errors=true` and takes that
-    when it widens the description. Both the profile and the run path go
-    through it - `_bind_dataset`, `_bind_datasets`, `profile_csv` and
-    `_duplicate_row_count` - so a file reads the same way everywhere.
-  - The retry is conditional on purpose. `ignore_errors` on a well-formed file
-    would turn a genuine conversion error into a silent null, so it is earned
-    by a collapse, never applied by default; a recovery that does not widen
-    the description is discarded, so a quoted header containing a comma costs
-    one sniff and changes nothing.
-  - No contract changed; no endpoint changed; no new feature.
-NON-GOALS: repairing the data - the stray field becomes a null and the profile
-           reports it as one, which is what the missing-data check exists to
-           catch. Quoted fields containing commas are not re-parsed in Python;
-           DuckDB's own header is authoritative once the recovery widens it.
-CONSTRAINTS: green only - nothing committed while red, and each new test was
-             proven to fail without the fix.
+  - Five new defect detectors alongside the two that exist (missing values,
+    duplicate rows):
+      * invalid_types - a column the profiler typed `other` that reads as
+        numeric for most rows but not all, or a date-shaped column holding
+        unparsable values. Reported per column with the count and the failing
+        examples.
+      * inconsistent_categories - a low-cardinality `other` column whose
+        distinct values differ only by case or whitespace ("north" vs "North"),
+        which silently splits a GROUP BY.
+      * date_gaps - a temporal column whose values are not contiguous at the
+        granularity the rest of the series implies, so a "same period last
+        year" comparison looks at different windows.
+      * extreme_values - a numeric column whose max or min is many standard
+        deviations out, which skews every average the generator proposes.
+      * insufficient_coverage - the dataset is too small for the question's
+        implied comparison (a two-row dataset cannot support a trend), or a
+        category column is dominated by one value.
+    Each returns a structured issue: class, column, severity (high/medium/low),
+    an observed sentence and an impact sentence. An issue is only ever raised
+    on evidence the profile itself computed - never on a heuristic that could
+    fire on clean data, which is how the 5% false-positive budget is held.
+  - The profile carries the list: a `quality` key on profile_csv's result and
+    on the stored Profile. Persisted in the profiles table as JSON
+    (migration 11), so a reopened case shows the same warnings without
+    reprofiling.
+  - The Data-stage panel renders each issue's observed and impact sentences
+    inline under the dataset, with the duplicate and null counts it already
+    shows - not behind a tab, because the UX document's rule is that quality
+    is visible *before* analysis. A dataset with no issues says so plainly
+    rather than rendering nothing.
+  - The validation endpoint's missing-data check derives its detail from the
+    same impact sentence when the profile has one, so the finding's audit and
+    the Data stage cannot drift apart.
+NON-GOALS: the 9-dimension validation expansion (P8-VALID-003 - this adds the
+           quality *detection*, that consumes it as one of the nine axes); the
+           causal-language guard (P8-CAUSAL-004); the golden suite that
+           *measures* the 95%/5% budgets (P8-GOLDEN-005 - this ships the
+           detectors it will measure); the orientation spine that places these
+           in a per-stage rail (P8-SHELL-006); LLM-written impacts (the
+           sentences are templated from the profile's own numbers and are
+           deterministic, by DEC-001).
+CONSTRAINTS: green only. The detectors are pure functions of the profile plus
+             at most one bounded query each, deterministic and offline, so a
+             profile costs what it costs today plus the targeted queries. The
+             schema climbs to 11 and a v10 store opens, upgrades and keeps
+             every row.
 ACCEPTANCE CRITERIA:
-- [x] a CSV with a stray trailing comma profiles as the header's columns, with
-      every row counted and the malformed cell reported as a null
-- [x] SQL written against those columns runs on the same file and returns the
-      same columns - profile and run read alike
-- [x] a well-formed CSV and a parquet file keep the strict reader, so a
-      genuine conversion error is still an error and never a silent null
-- [x] 388 server tests pass and all 25 real-server e2e steps pass
-TESTS: 4 added - test_analysis.py gains the reader-selection unit tests (the
-       clean file and the parquet keep their reader, the collapsed file gains
-       ignore_errors, and profile_csv itself reads four columns from the
-       malformed file), and test_profiles.py drives the same file through the
-       attach -> profile -> run path over HTTP. All four fail on the pre-fix
-       code.
+- [x] each of the 7 PRD defect classes has a fixture where the detector raises
+      the issue, and the issue carries both an observed and an impact sentence
+- [x] a clean dataset (no nulls, no duplicates, consistent categories, no
+      extremes) raises no issues - the false-positive guard, asserted
+- [x] the quality list persists: profile, close the case, reopen, the list is
+      the same without reprofiling
+- [x] the Data-stage panel renders the impact sentence for a dataset carrying
+      an issue, and states plainly when a dataset is clean
+- [x] a store from v10 opens, upgrades to v11 and keeps every row
+- [x] validation's missing-data detail uses the impact sentence when present
+TESTS: test_quality.py - one raising test per defect class (7), one
+       clean-dataset test, persistence across reopen, the v10->v11 migration;
+       web tests for the panel's rendering of an issue and of a clean dataset.
 VERIFICATION: `cd server && DAH_LLM_API_KEY= DAH_LLM_BASE_URL= DAH_LLM_MODEL=
-              .venv/bin/python -m pytest -q` -> 388 passed in 180s;
-              `server/.venv/bin/python verification/e2e/verify_e2e.py` ->
-              ALL STEPS PASS.
-STATE UPDATE: TASKS/CURRENT_STATE gain the fix; the three seeded cases and the
-              sidecar rebuild are recorded in HANDOFF.
-LESSON: the malformed shape is not exotic - it is one keystroke past a null,
-        and the honest null next to it works perfectly, so the failure looked
-        like a fixture bug for a while before it was a product bug. The tell
-        was that the *recovery* options disagree: null_padding widens the row
-        to cover the mistake and ignore_errors narrows the mistake to a null.
-        Only one of those keeps the table the analyst uploaded.
+              .venv/bin/python -m pytest -q` green;
+              `server/.venv/bin/python verification/e2e/verify_e2e.py` green;
+              `cd web && npm test && npm run build` green.
+STATE UPDATE: TASKS/CURRENT_STATE gain the task and the raised schema version;
+              the store is at v11.
 ```
 
-TASK: P7-CSV-002 - a CSV with a stray trailing comma no longer collapses to one column
-ID: P7-CSV-002
-PRIORITY: medium
-STATUS: DONE
-SUMMARY: read_csv_auto's delimiter guess dies on a row wider than its header,
-         and the whole file then reads as a single column of raw lines - the
-         profile describes nothing and the SQL derived from it cannot run.
-         `_sniffed_reader_for` compares the sniffed width against the header's
-         own comma count and re-sniffs with ignore_errors when sniffing
-         collapsed, keeping every row and dropping only the stray field to a
-         null. Both profiling and the run path go through it, so a file reads
-         the same way everywhere. The retry is earned by a collapse, never on
-         by default, because ignore_errors on a clean file would silence real
-         conversion errors.
-
-### P7-CORS-001 contract
-
-```
-TASK ID: P7-CORS-001
-MILESTONE: P7 Product Modes
-CAPABILITY: Reliability (the packaged desktop app talking to its own core)
-GOAL: The shipped .app opened to "Failed to load cases: Failed to fetch", and
-      its New Case form was unreachable behind that. Every fetch the packaged
-      frontend makes is cross-origin - the webview is served from Tauri's own
-      scheme, the core from 127.0.0.1:8123 - and the core answered with no
-      `Access-Control-Allow-Origin`, so the browser discarded each response
-      before the app saw it. The core's own log showed a clean 200 for the very
-      request the shell reported as failed, which is why no test caught it.
-CONTEXT: every in-process and real-server verification drives the core from an
-         origin it does not gate. Starlette's TestClient does not enforce CORS,
-         and the e2e script talks to the core directly. The browser is the only
-         gate, and nothing in the repo drove a browser at the core until a human
-         opened the app.
-INPUTS: the packaged .app as built; a real headless Chrome over the DevTools
-        protocol, serving the shipped bundle from a foreign origin to reproduce
-        the browser's view of the fetch.
-RELEVANT FILES: server/app/main.py (the CORS middleware and its allowlist),
-                server/tests/test_cors.py (new),
-                ai/HANDOFF.md, ai/TASKS.md, ai/CURRENT_STATE.md
-REQUIRED CHANGE:
-  - `server/app/main.py` gains an `ALLOWED_ORIGINS` frozenset and a CORS
-    middleware: an origin on the list is echoed back with `Vary: Origin`, an
-    OPTIONS preflight is answered 204 with the allowed methods and the
-    content-type header, and any other origin gets neither - the response still
-    succeeds, because CORS is the browser's gate and not the server's, but the
-    browser will not release it.
-  - The allowlist is narrow and deliberately has no wildcard: the core is a
-    local process holding an analyst's cases and chat history, and `*` would let
-    a webpage the user merely visits read them. Tauri's own two origins plus the
-    dev-server ports are every origin this frontend legitimately has.
-NON-GOALS: changing the frontend (it was correct - it fetched the right URL and
-           reported the browser's error honestly), changing the shell's origin
-           handling, allowing credentials, broadening the allowlist to user
-           configuration.
-CONSTRAINTS: no new dependency (the middleware is a plain FastAPI middleware,
-             not starlette's CORSMiddleware, so the preflight answers 204 rather
-             than 405 and nothing else changes); the core stays unreadable to
-             origins it does not know.
-ACCEPTANCE CRITERIA:
-- [x] a real browser, served the shipped bundle from a foreign origin, sees the
-      fetch refused; served from an allowed origin, sees it succeed
-- [x] the shell's own origin is echoed, a preflight answers 204 with methods and
-      headers, and an unknown origin gets no CORS header at all
-- [x] 4 new tests in tests/test_cors.py, proven to fail without the fix and pass
-      with it
-- [x] 384 server tests pass (was 380) and all 25 real-server e2e steps pass
-TESTS: tests/test_cors.py - 4 tests. Two were verified against a temporarily
-       disabled middleware: the origin-echo and the preflight both fail, so the
-       suite cannot go green with the bug present.
-VERIFICATION: `server/.venv/bin/python -m pytest` -> 384 passed;
-              `server/.venv/bin/python verification/e2e/verify_e2e.py` -> ALL
-              STEPS PASS; reproduced in headless Chrome that the same fetch that
-              failed before the fix succeeds after it.
-STATE UPDATE: TASKS/CURRENT_STATE/HANDOFF name the CORS gap and the rebuild
-              that remains before a release ships it.
-```
-
-TASK: P7-CORS-001 - the packaged app could not reach its own core
-ID: P7-CORS-001
+TASK: P8-QUALITY-002 - quality detection beyond missingness
+ID: P8-QUALITY-002
 PRIORITY: high
 STATUS: DONE
-SUMMARY: The shipped .app opened to a dead screen - "Failed to load cases:
-         Failed to fetch" - with the New Case form unreachable behind it. The
-         frontend was never at fault and neither was the core: the browser was
-         the only thing between them that knew. Tauri serves the bundled
-         frontend from its own scheme while the core answers on
-         127.0.0.1:8123, so every fetch the app makes is cross-origin, and the
-         core answered with no `Access-Control-Allow-Origin`. The browser
-         discarded each response - while the core's own log recorded a clean
-         200 for the identical request.
+SUMMARY: a profile now states what the data *cannot* support. Seven defect
+         classes (AT-08) each carry an observed fact and an analytical impact
+         sentence (AT-09), computed in the profiler's own pass and shown at the
+         Data stage, before analysis, rather than only after a finding exists.
+         The two classes that existed as bare counts - missing values and
+         duplicate rows - gained impacts; five are new: invalid types (a column
+         typed `other` that is mostly numeric or temporal but not entirely),
+         inconsistent categories (case/whitespace variants that split a GROUP
+         BY), date gaps (a hole in an otherwise regular series), extreme values
+         (a value dwarfing its neighbour, compared against the next value
+         rather than a mean the outlier itself moved) and insufficient coverage
+         (too few rows, or a category so dominant a group-by is about one
+         group). Every detector raises only on evidence the profile measured,
+         never on a guess about what the data should look like, which is what
+         holds the 5% false-positive budget before the golden suite that will
+         measure it exists. The list persists (schema v11), travels with an
+         exported case and survives a duplicate; the validation endpoint's
+         missing-data check now reads the same impact sentence the Data stage
+         shows, so the audit and the panel cannot drift apart.
 
-Reproduced twice before the fix, in a real headless Chrome over the DevTools
-protocol: serving the shipped bundle from a foreign origin, the fetch failed
-with exactly the message the user saw; the core logged 200. After the fix the
-same fetch returns the case list and the page renders it.
-
-`server/app/main.py` gains `ALLOWED_ORIGINS` and a CORS middleware. An origin on
-the list is echoed with `Vary: Origin`; an OPTIONS preflight is answered 204
-with the allowed methods and the content-type header - written as a plain
-middleware rather than starlette's CORSMiddleware because no endpoint handles
-OPTIONS, and leaving the preflight to Starlette answers 405 and the real
-request is never sent. Anything not on the list gets neither header: the
-response still succeeds, since CORS is the browser's gate and not the server's,
-but the browser will not release it. No wildcard - the core holds an analyst's
-cases and chat history, and `*` would let a webpage the user merely visits read
-them.
-
-LESSON: this is the sharpest illustration yet of the gap P7-WALK-001 named.
-Every automated artifact in this repo drives the core from a position CORS does
-not gate - TestClient does not enforce it, and the e2e script talks to the core
-directly. The browser is the only gate, and nothing in the repo drove a browser
-at the core. The core logging 200 while the app reported failure was not a
-contradiction; it was the whole bug, and only a human opening the .app could
-see it. The desktop suite's 22 Rust tests verified the shell could start the
-core and that the port was theirs - and stopped exactly one step short of
-asking whether the webview could read an answer.
-
-
+Contracts for the rolling window (the two most recent). Older blocks are in
+`ai/TASKS-ARCHIVE.md`.

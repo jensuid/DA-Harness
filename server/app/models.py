@@ -90,12 +90,28 @@ class Dataset(BaseModel):
     created_at: datetime
 
 
+class QualityIssue(BaseModel):
+    """One detected data-quality defect and what it costs an analysis.
+
+    `observed` is the measured fact; `impact` is the consequence (AT-09) - the
+    second sentence is the one an analyst acts on, so it is never empty.
+    `column` is None for a dataset-wide issue such as insufficient coverage.
+    """
+
+    kind: str
+    column: str | None = None
+    severity: str = "medium"
+    observed: str
+    impact: str
+
+
 class Profile(BaseModel):
     dataset_id: str
     rows: int
     columns: list[str]
     stats: dict
     duplicate_rows: int
+    quality: list[QualityIssue] = []
     profiled_at: datetime
 
 

@@ -288,7 +288,7 @@ def test_a_pre_v10_store_upgrades_and_keeps_its_rows(tmp_path) -> None:
     conn.close()
 
     db_module.DATA_DIR = tmp_path / "data"
-    from app.db import get_connection
+    from app.db import LATEST_SCHEMA_VERSION, get_connection
 
     with get_connection(db_path) as upgraded:
         version = upgraded.execute("PRAGMA user_version").fetchone()[0]
@@ -297,6 +297,9 @@ def test_a_pre_v10_store_upgrades_and_keeps_its_rows(tmp_path) -> None:
         ).fetchone()
         kept = upgraded.execute("SELECT question FROM cases").fetchone()
 
-    assert version == 10
+    # The store reaches whatever the current build's schema is, not a number
+    # pinned here: a later migration lands and this assertion stays true while
+    # still proving the upgrade ran and the row survived.
+    assert version == LATEST_SCHEMA_VERSION
     assert table is not None
     assert kept["question"] == "why?"
