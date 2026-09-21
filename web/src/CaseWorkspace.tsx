@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import {
   type Case,
   type CaseProgress,
+  type ClaimTrace,
   type ConversationTurn,
   type Dataset,
   type AgentState,
@@ -11,6 +12,8 @@ import {
   type EdaRequest,
   type EdaResult,
   type Evaluation,
+  type EvidenceGraph,
+  type EvidenceNode,
   type Finding,
   type GeneratedCode,
   type Interpretation,
@@ -22,6 +25,7 @@ import {
   draftFinding,
   approveAgentStep,
   evaluateDataset,
+  getEvidenceGraph,
   runEda,
   generateCode,
   getAgentState,
@@ -40,6 +44,7 @@ import {
   runSql,
   validateFinding,
 } from './api'
+import { ApiError } from './api'
 import { messageOf } from './CaseList'
 import { PromoteTemplate } from './Templates'
 
@@ -68,6 +73,9 @@ export function CaseWorkspace({
   const [turns, setTurns] = useState<ConversationTurn[]>([])
   const [evaluations, setEvaluations] = useState<Evaluation[]>([])
   const [agent, setAgent] = useState<AgentState | null>(null)
+  const [evidence, setEvidence] = useState<EvidenceGraph | null>(null)
+  const [evidenceError, setEvidenceError] = useState<string | null>(null)
+  const [evidenceEmpty, setEvidenceEmpty] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   async function load() {
@@ -98,6 +106,18 @@ export function CaseWorkspace({
         ),
       )
       setEvaluations(audited.flat().map(([, evaluation]) => evaluation))
+      // The evidence graph is a read-only projection; a 400 is the case having
+      // nothing to graph, which is guidance for a young case rather than a
+      // failure a reviewer caused.
+      try {
+        setEvidence(await getEvidenceGraph(caseId))
+        setEvidenceError(null)
+        setEvidenceEmpty(false)
+      } catch (err) {
+        setEvidence(null)
+        setEvidenceEmpty(err instanceof ApiError && err.status === 400)
+        setEvidenceError(messageOf(err))
+      }
       // The agent's state is read-only here: a GET never proposes, so loading a
       // page commits nothing.
       setAgent(await getAgentState(caseId))
@@ -166,6 +186,11 @@ export function CaseWorkspace({
         caseId={caseId}
         findings={findings}
         onChanged={() => void load()}
+      />
+      <EvidencePanel
+        evidence={evidence}
+        error={evidenceError}
+        empty={evidenceEmpty}
       />
       <EvaluatePanel
         caseId={caseId}
@@ -1323,6 +1348,157 @@ function Ground({
       previous case: {question}
     </button>
   )
+}
+
+// The evidence graph, as a review surface (P7-SHELL-008). The workspace's other
+// panels serve the analyst working the loop; this one serves the person reading
+// the result, answering the case-level question: what backs each claim, and
+// does every one of them reach the data?
+//
+// The graph is a read-only projection over persisted rows - nothing here writes,
+// and nothing a reviewer does changes the case. The shapes are the core's own,
+// rendered as text: an SVG layout is a library's job and DEC-001 keeps the
+// bundle dependency-free, and a sentence carries the same information a reader
+// can act on.
+function EvidencePanel({
+  evidence,
+  error,
+  empty,
+}: {
+  evidence: EvidenceGraph | null
+  error: string | null
+  empty: boolean
+}) {
+  return (
+    <div className="panel">
+      <h2>Evidence graph</h2>
+      {empty ? (
+        // A 400 is the case having no artifacts to graph. The core's sentence
+        // names what would build one, and a young case is not a failed review.
+        <p className="muted">{error}</p>
+      ) : !evidence ? (
+        <p className="muted">Loading the graph…</p>
+      ) : (
+        <GraphBody graph={evidence} />
+      )}
+      {!empty && error && (
+        <p role="alert">The graph could not be read: {error}</p>
+      )}
+    </div>
+  )
+}
+
+function GraphBody({ graph }: { graph: EvidenceGraph }) {
+  const byId = new Map(graph.nodes.map((node) => [node.id, node]))
+  // A node with no edge is still part of the case: an attached dataset nothing
+  // has queried yet, a plan nothing has run. Leaving it out would make the
+  // graph say the case has less than it does.
+  const linked = new Set<string>()
+  for (const edge of graph.edges) {
+    linked.add(edge.source)
+    linked.add(edge.target)
+  }
+  const isolated = graph.nodes.filter((node) => !linked.has(node.id))
+
+  return (
+    <>
+      <p className="muted">
+        {graph.counts.datasets} dataset{graph.counts.datasets === 1 ? '' : 's'},{' '}
+        {graph.counts.runs} run{graph.counts.runs === 1 ? '' : 's'},{' '}
+        {graph.counts.findings} finding{graph.counts.findings === 1 ? '' : 's'},{' '}
+        {graph.counts.charts} chart{graph.counts.charts === 1 ? '' : 's'},{' '}
+        {graph.counts.plans} plan{graph.counts.plans === 1 ? '' : 's'}
+      </p>
+      <h3>Claims and what they rest on</h3>
+      {graph.traces.length === 0 ? (
+        <p className="muted">No findings yet, so nothing to trace.</p>
+      ) : (
+        <ul className="items">
+          {graph.traces.map((trace) => (
+            <li key={trace.finding_id}>
+              <ClaimTraceRow
+                trace={trace}
+                orphan={graph.orphan_findings.includes(trace.finding_id)}
+              />
+            </li>
+          ))}
+        </ul>
+      )}
+      <h3>How each artifact was derived</h3>
+      {graph.edges.length === 0 ? (
+        <p className="muted">No derivations yet.</p>
+      ) : (
+        <ul className="items">
+          {graph.edges.map((edge, i) => (
+            <li key={i} className="muted">
+              {nodePhrase(byId.get(edge.source))}{' '}
+              {RELATIONS[edge.relation] ?? edge.relation}{' '}
+              {nodePhrase(byId.get(edge.target))}
+            </li>
+          ))}
+        </ul>
+      )}
+      {isolated.length > 0 && (
+        <>
+          <h3>Attached but not used yet</h3>
+          <ul className="items">
+            {isolated.map((node) => (
+              <li key={node.id} className="muted">
+                {node.kind}: {node.label}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </>
+  )
+}
+
+// One claim's path back to the data it stands on, as a chain of chips - the
+// same shape the chat uses for a citation, so a reviewer reads it the same way.
+function ClaimTraceRow({
+  trace,
+  orphan,
+}: {
+  trace: ClaimTrace
+  orphan: boolean
+}) {
+  return (
+    <div className="run">
+      <p>
+        <strong>{trace.statement}</strong>
+      </p>
+      <p className="muted">
+        status: {trace.validation_status}
+        {orphan && (
+          <span className="warn"> — a claim with no source: its run is gone</span>
+        )}
+      </p>
+      <ul className="grounds chain">
+        {trace.hops.map((hop, i) => (
+          <li key={`${hop.id}-${i}`} className="chip">
+            {hop.kind}: {hop.label}
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+// A node as a readable phrase. An edge may name an artifact the case no longer
+// has - a finding anchored on a deleted run - and that is worth saying plainly
+// rather than rendering as an id.
+function nodePhrase(node?: EvidenceNode): string {
+  if (!node) return 'an artifact no longer in the case'
+  return `${node.kind} “${node.label}”`
+}
+
+// The core's relations, as a reader would say them.
+const RELATIONS: Record<string, string> = {
+  anchored_on: 'anchored on',
+  queries: 'queries',
+  rendered_from: 'rendered from',
+  planned_from: 'planned from',
 }
 
 // The agent: the loop's driver, as a surface (P7-SHELL-003). Every other panel

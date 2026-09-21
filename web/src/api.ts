@@ -551,6 +551,52 @@ export function listEvaluations(
   )
 }
 
+// --- the evidence graph: what each claim rests on (P3-EVIDENCE-006 / P7-SHELL-008)
+
+// The graph is projected from the persisted rows, never stored, so it cannot
+// drift from what is on disk. Nodes are the case's artifacts; edges say how
+// one was derived from another.
+export interface EvidenceNode {
+  id: string
+  kind: string
+  label: string
+  detail?: string | null
+  created_at?: string | null
+}
+
+export interface EvidenceEdge {
+  source: string
+  target: string
+  relation: string
+}
+
+// One claim's path back to the data it stands on. `reaches_source` is false
+// when the finding's run is gone - a claim with no source, which is what the
+// graph exists to surface rather than to hide.
+export interface ClaimTrace {
+  finding_id: string
+  statement: string
+  validation_status: string
+  hops: EvidenceNode[]
+  reaches_source: boolean
+}
+
+export interface EvidenceGraph {
+  case_id: string
+  nodes: EvidenceNode[]
+  edges: EvidenceEdge[]
+  traces: ClaimTrace[]
+  orphan_findings: string[]
+  counts: Record<string, number>
+}
+
+// Read-only: the graph answers what is, and nothing a reviewer does here
+// changes the case. A 400 is the case having no artifacts to graph, which is
+// guidance rather than a failure.
+export function getEvidenceGraph(caseId: string): Promise<EvidenceGraph> {
+  return request<EvidenceGraph>(`/cases/${caseId}/evidence-graph`)
+}
+
 // --- the agent: the loop's driver -----------------------------------------
 
 // The GET is read-only and never proposes, so a page refresh commits nothing.

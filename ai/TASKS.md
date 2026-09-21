@@ -116,9 +116,153 @@ the gate comes first because a phase is done when a gate says so.
 | P7-SHELL-005 | UX (templates in the web shell) | DONE | +11 tests; web build PASS |
 | P7-SHELL-006 | UX (cross-case memory actionable in the shell) | DONE | +4 tests; web build PASS |
 | P7-SHELL-007 | UX (EDA in the web shell) | DONE | +6 tests; web build PASS |
+| P7-SHELL-008 | UX (the evidence graph in the web shell) | DONE | +4 tests; web build PASS |
 
 Contracts for the rolling window (the two most recent). Older blocks are in
 `ai/TASKS-ARCHIVE.md`.
+### P7-SHELL-008 contract
+
+```
+TASK ID: P7-SHELL-008
+MILESTONE: P7 Product Modes
+CAPABILITY: UX (the web-shell gap)
+GOAL: A reviewer can ask of a case "what backs each claim, and does every one
+      of them reach the data?" and get an answer. The graph exists in the core
+      as a projection over persisted rows; nothing in the shell shows it, so
+      the case's own evidence is only inspectable one finding at a time, and a
+      claim with no source is invisible.
+
+CONTEXT: P3-EVIDENCE-006 shipped `GET /cases/{id}/evidence-graph`, answering
+         nodes (datasets, runs, charts, plans, findings), edges that say how
+         one was derived from another (anchored_on, queries, rendered_from,
+         planned_from), one trace per finding walking it out to the datasets it
+         stands on, the findings that reach no source as `orphan_findings`, and
+         counts. It is derived, never stored, so it cannot drift from the rows.
+         The endpoint answers 400 with a sentence when the case has no
+         artifacts to graph - that is the normal state of a young case rather
+         than a failure, and the shell has to say so as guidance rather than as
+         an error.
+
+INPUTS: the case's persisted artifacts, read read-only.
+RELEVANT FILES: web/src/api.ts, web/src/CaseWorkspace.tsx, web/src/index.css,
+                web/src/CaseWorkspace.test.tsx
+REQUIRED CHANGE:
+  - web/src/api.ts: `EvidenceNode`, `EvidenceEdge`, `ClaimTrace` and
+    `EvidenceGraph` matching the core's models, and `getEvidenceGraph(caseId)`
+    for the GET.
+  - web/src/CaseWorkspace.tsx: an **Evidence panel** after the findings panel,
+    because the evidence graph is what reviews them. It loads with the
+    workspace, read-only. Two parts:
+      - **Claims and what they rest on** - one block per trace: the finding's
+        statement with its validation badge, and its path rendered as nodes
+        joined by arrows (finding -> run -> dataset), so a reviewer reads the
+        chain without leaving the case. A trace that does not reach a source
+        says so plainly and is marked, because a claim with no source is what
+        the graph exists to surface.
+      - **How each artifact was derived** - every edge as a sentence
+        ("chart 'Revenue by region' is rendered from the sql run"), so the
+        graph's structure is visible as text rather than as a diagram only a
+        library could draw. No node is left out: a node with no edges still
+        appears under its kind.
+  - The 400 of an artifact-free case is shown as muted guidance, not as an
+    alert: the core's own sentence names what would build a graph, and a young
+    case is not a failed review. Any other failure is the sentence in an alert,
+    the way every other panel reports one.
+NON-GOALS: a drawn graph (an SVG layout is a library's job and DEC-001 keeps
+           the bundle dependency-free; the edges-as-sentences list carries the
+           same information a reader can act on), editing the graph (it is a
+           projection; there is nothing to edit, only artifacts to add or
+           remove through the endpoints that own them), the single-finding
+           chain (`GET .../findings/{id}/evidence`, its own surface one day),
+           case history (its own task).
+CONSTRAINTS: the panel calls only the read-only GET and writes nothing; `tsc
+             -b` passes; no new dependency; the existing workspace tests stay
+             green; the desktop bundle builds from the same source.
+ACCEPTANCE CRITERIA:
+- [x] a case with artifacts shows its claims and the path each one rests on
+- [x] a finding's validation status is shown with its statement
+- [x] a claim that reaches no source is marked and does not pass silently
+- [x] every edge is visible as a sentence, and a node without one appears
+- [x] an artifact-free case shows the core's guidance rather than an error
+- [x] the panel writes nothing and reloads with the workspace
+- [x] `tsc -b` and the web suite stay green
+TESTS: web/src/CaseWorkspace.test.tsx - a case with a trace and its path, an
+       orphan flagged, the edge list, and the empty-case guidance.
+VERIFICATION: cd web && npm test PASS; cd web && npm run build PASS; cd web &&
+              npm run build:desktop PASS. The server suite and the three gates
+              are untouched by this change and stay green.
+STATE UPDATE: mark P7-SHELL-008 done on pass; ROADMAP item 2 records the
+              evidence graph as delivered.
+```
+
+
+
+```
+TASK: P7-SHELL-008 - the evidence graph, as a review surface
+ID: P7-SHELL-008
+PRIORITY: medium
+STATUS: DONE
+SUMMARY: P3-EVIDENCE-006 could answer "what backs each claim in this case, and
+         does every one of them reach the data?" - and nothing in the shell
+         showed it, so a case's own evidence was only inspectable one finding at
+         a time and a claim with no source was invisible.
+
+An **Evidence panel** now sits after the findings panel, because the graph is
+what reviews them. It loads read-only with the workspace. Two parts, both
+textual - an SVG layout is a library's job and DEC-001 keeps the bundle
+dependency-free, and a sentence carries the same information a reader can act
+on:
+
+- **Claims and what they rest on** - one block per trace: the finding's
+  statement with its validation status, and its path rendered as a chain of
+  chips (finding -> run -> dataset), the same shape the chat uses for a citation
+  so a reviewer reads it the same way.
+- **How each artifact was derived** - every edge as a sentence
+  ("chart 'Revenue by region' is rendered from the sql run"), so the graph's
+  structure is visible without a diagram. A node with no edge is still listed
+  under its kind - an attached dataset nothing has queried yet, a plan nothing
+  has run - because leaving it out would make the graph say the case has less
+  than it does.
+
+Three behaviours that had to be right rather than present:
+
+- **A claim with no source is marked, not smoothed over.** A finding whose run
+  is gone is the thing the graph exists to surface; it renders with "a claim
+  with no source: its run is gone" so a reviewer cannot read it as supported.
+- **A broken edge says so.** Such a finding still has its edge to a run the case
+  no longer has, so an edge whose target is missing renders as "an artifact no
+  longer in the case" rather than as a uuid.
+- **The 400 of an artifact-free case is guidance, not an error.** The endpoint
+  answers 400 with a sentence naming what would build a graph, and a young case
+  is not a failed review - so it is a muted paragraph, and only other failures
+  become an alert.
+
+NON-GOALS held: no drawn graph (DEC-001 keeps the bundle dependency-free; the
+             edge sentences carry the same information), no editing the graph
+             (it is a projection; there is nothing to edit, only artifacts to
+             add through the endpoints that own them), no single-finding chain
+             surface (`GET .../findings/{id}/evidence`, its own task one day).
+CONSTRAINTS held: the panel calls only the read-only GET and writes nothing; no
+             new endpoint and no new dependency; `tsc -b` passes; the desktop
+             bundle builds from the same source.
+ACCEPTANCE CRITERIA: all 7 - see the checked boxes above.
+TESTS: 4 added to web/src/CaseWorkspace.test.tsx (web suite 60 -> 64) - a claim
+       with its path, an orphan flagged, the derivations and the unused
+       artifacts, and the empty case's guidance rendered without an alert.
+VERIFICATION: cd web && npm test - 64 passed; cd web && npm run build PASS
+              (tsc -b + vite build); cd web && npm run build:desktop PASS. The
+              server suite and the three gates are untouched by this change
+              and stay green.
+LESSON: the patch script failed three times before a line of it landed, and the
+        cause was the script, not the file - an earlier replacement had moved
+        the anchor a later assertion looked for, so the whole script died at
+        an assert and nothing was written. Writing the file after each
+        replacement instead of once at the end turned a silent all-or-nothing
+        failure into a resumable one, and the same idempotency check
+        ("already applied") is what made the retry safe. The same discipline
+        that keeps a task atomic applies to the tool that edits it.
+```
+
 ### P7-SHELL-007 contract
 
 ```
@@ -265,130 +409,5 @@ LESSON: four of the ten new and existing tests failed on the first run, and all
         lesson at the compiler's level: `runEda`'s parameter was named
         `request`, shadowing the module's own request helper, and the tests
         never ran that code because the module was mocked.
-```
-
-### P7-SHELL-006 contract
-
-```
-TASK ID: P7-SHELL-006
-MILESTONE: P7 Product Modes
-CAPABILITY: UX (the web-shell gap)
-GOAL: A citation of a previous case is something the analyst can follow. The
-      core's cross-case recall already answers "what did I find before about
-      revenue?" with the prior case's question and its strongest finding, but
-      the shell renders that citation as an inert chip carrying a uuid - the
-      one thing recall exists for, going to look at what was concluded last
-      time, is not reachable.
-
-CONTEXT: P6-MEMORY-001 made memory a derived, read-only projection over the
-         cases and findings on disk, and P3-AI-014 made the chat answer carry
-         each claim's source in `grounds` as `kind:name`. A recall answer cites
-         `case:<id>` and the prior finding's `finding:<id>`. The shell's Chat
-         panel renders those grounds as plain text chips, so a prior case is
-         named in the sentence and unreachable below it. Memory has no
-         endpoint of its own and needs none: the chat turn is the contract.
-
-INPUTS: a conversation turn's grounds; a click on a cited case.
-RELEVANT FILES: web/src/api.ts, web/src/CaseWorkspace.tsx, web/src/App.tsx,
-                web/src/CaseWorkspace.test.tsx
-REQUIRED CHANGE:
-  - web/src/CaseWorkspace.tsx: the Chat panel's grounds chips are replaced by
-    a small resolver. A `case:<id>` ground is looked up once per cited case
-    (read-only GET, and only for case grounds - the other kinds are not
-    case-scoped) and rendered as a button that opens that prior case in the
-    workspace, labelled with the case's own question because that is how the
-    analyst recognises it. Any other ground keeps rendering as the chip it
-    always was. A lookup that fails - a deleted case, an unreachable core - is
-    not an error: the chip falls back to the id and the answer stays readable,
-    because a citation that cannot be resolved is still a citation.
-  - web/src/App.tsx: the workspace gains an `onOpenCase` handler so a prior
-    case opens as its own workspace rather than dumping the analyst back on
-    the list.
-NON-GOALS: a memory endpoint (memory is derived per question and already
-           answers through the chat; a GET would be a second copy of a
-           projection that cannot drift), editing or pinning memory (it is
-           computed, not stored - pinning would be a store to keep consistent),
-           resolving a cross-case `finding:<id>` to its statement (it needs a
-           case-scoped read the shell does not have, and the answer sentence
-           already quotes it), EDA, the evidence graph and case history (their
-           own tasks).
-CONSTRAINTS: no new endpoint; the lookup is a GET and writes nothing; a click
-             only navigates - it creates no case state; `tsc -b` passes; no new
-             dependency; the existing workspace tests stay green; the desktop
-             bundle builds from the same source.
-ACCEPTANCE CRITERIA:
-- [x] a chat answer citing a previous case shows that case's question as a
-      button
-- [x] clicking it opens the cited case's workspace
-- [x] a cited case that cannot be resolved degrades to a chip, not an error
-- [x] grounds of other kinds still render as they did
-- [x] a case cited by more than one turn is looked up once
-- [x] `tsc -b` and the web suite stay green
-TESTS: web/src/CaseWorkspace.test.tsx - the cited case as a button that opens,
-       the unresolved citation degrading to a chip, and other grounds
-       unaffected.
-VERIFICATION: cd web && npm test PASS; cd web && npm run build PASS; cd web &&
-              npm run build:desktop PASS. The server suite and the three gates
-              are untouched by this change and stay green.
-STATE UPDATE: mark P7-SHELL-006 done on pass; ROADMAP item 2 records
-              cross-case memory as delivered.
-```
-
-
-```
-TASK: P7-SHELL-006 - cross-case memory, actionable in the shell
-ID: P7-SHELL-006
-PRIORITY: medium
-STATUS: DONE
-SUMMARY: P6-MEMORY-001 let an answer cite what a previous case found, and the
-         shell rendered that citation as an inert chip carrying a uuid. The
-         one thing recall exists for - going to read what was concluded last
-         time - was a click that did nothing.
-
-The Chat panel now resolves each `case:<id>` ground to the prior case's own
-question and renders it as a button that opens that case as its own workspace,
-so a citation is something the analyst can follow. The question is the label
-because that is how the case is recognised; a uuid would not be.
-
-Three behaviours that had to be right rather than present:
-
-- **One lookup per cited case.** The panel collects the case ids across every
-  turn's grounds, fetches each once, and shares the result. A case cited by
-  five turns costs one call.
-- **A failed lookup is not an error.** A citation outlives the case it names -
-  the case may have been deleted while the conversation stayed. A 404 records
-  the id as absent and the chip says "a previous case that is no longer
-  available", so the answer stays readable and the missing case is not
-  refetched on every render. The state update returns the same object when
-  nothing was learned, because a fresh object on an all-failed batch would
-  re-run the effect forever.
-- **Only `case:` grounds change.** Columns, datasets, runs and findings keep
-  rendering as the chips they always were.
-
-NON-GOALS held: no memory endpoint (memory is derived per question and already
-             answers through the chat; a GET would be a second copy of a
-             projection that cannot drift), no pinning or editing memory
-             (computed, not stored), no resolution of a cross-case
-             `finding:<id>` to its statement (it needs a case-scoped read the
-             shell does not have, and the answer sentence already quotes it).
-CONSTRAINTS held: no new endpoint and no new dependency; the lookup is a GET
-             that writes nothing, and a click only navigates; `tsc -b` passes;
-             the desktop bundle builds from the same source.
-ACCEPTANCE CRITERIA: all 6 - see the checked boxes above.
-TESTS: 4 added to web/src/CaseWorkspace.test.tsx (web suite 50 -> 54) - the
-       cited case as a button that opens it, the single lookup across two
-       citations, the deleted case degrading to a chip with the answer intact,
-       and the other ground kinds unchanged.
-VERIFICATION: cd web && npm test - 54 passed; cd web && npm run build PASS
-              (tsc -b + vite build); cd web && npm run build:desktop PASS. The
-              server suite and the three gates are untouched by this change
-              and stay green.
-LESSON: two of the four tests failed on the first run for the same reason -
-        the fixture described a component in isolation, but the workspace
-        loads its own case on mount. A rejection mocked for every id took the
-        whole workspace to its error screen before the chat could render, and
-        the spy counted the workspace's own lookup alongside the citation's.
-        The workspace is the thing under test, and it has its own life in the
-        fixture's mocks.
 ```
 

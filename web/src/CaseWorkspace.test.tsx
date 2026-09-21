@@ -25,6 +25,7 @@ vi.mock('./api', async (importOriginal) => {
     postChat: vi.fn(),
     evaluateDataset: vi.fn(),
     runEda: vi.fn(),
+    getEvidenceGraph: vi.fn(),
     listEvaluations: vi.fn(),
     getAgentState: vi.fn(),
     proposeAgentStep: vi.fn(),
@@ -65,6 +66,41 @@ const profile = {
   profiled_at: '',
 }
 
+
+// The evidence graph the workspace loads by default (P7-SHELL-008). Its claim
+// is deliberately not the findings fixture's, so the two never answer the same
+// text matcher.
+const evidenceGraph = {
+  case_id: 'c1',
+  nodes: [
+    { id: 'd1', kind: 'dataset', label: 'sales.csv', detail: 'csv file', created_at: '' },
+    { id: 'r1', kind: 'run', label: 'sql run', detail: 'SELECT region, SUM(revenue)', created_at: '' },
+    { id: 'c9', kind: 'chart', label: 'Revenue by region', detail: 'bar over the run', created_at: '' },
+    { id: 'p1', kind: 'plan', label: 'How is revenue distributed?', detail: 'source: deterministic', created_at: '' },
+    { id: 'f1', kind: 'finding', label: 'The west region is the outlier.', detail: 'validation: validated', created_at: '' },
+  ],
+  edges: [
+    { source: 'f1', target: 'r1', relation: 'anchored_on' },
+    { source: 'r1', target: 'd1', relation: 'queries' },
+    { source: 'c9', target: 'r1', relation: 'rendered_from' },
+  ],
+  traces: [
+    {
+      finding_id: 'f1',
+      statement: 'The west region is the outlier.',
+      validation_status: 'validated',
+      hops: [
+        { id: 'f1', kind: 'finding', label: 'The west region is the outlier.' },
+        { id: 'r1', kind: 'run', label: 'sql run' },
+        { id: 'd1', kind: 'dataset', label: 'sales.csv' },
+      ],
+      reaches_source: true,
+    },
+  ],
+  orphan_findings: [],
+  counts: { datasets: 1, runs: 1, charts: 1, plans: 1, findings: 1, edges: 3 },
+}
+
 function runFixture(): api.RunSummary {
   return {
     id: 'r1', case_id: 'c1', dataset_id: 'd1', kind: 'sql', sql: 'q', code: null,
@@ -85,6 +121,7 @@ function mockEmptyCase() {
   vi.mocked(api.profileDataset).mockResolvedValue(profile)
   vi.mocked(api.listEvaluations).mockResolvedValue([])
   vi.mocked(api.getAgentState).mockResolvedValue(agentIdle())
+  vi.mocked(api.getEvidenceGraph).mockResolvedValue(evidenceGraph)
 }
 
 function agentStep(overrides: object = {}): api.AgentStep {
@@ -731,6 +768,78 @@ describe('CaseWorkspace', () => {
     expect(await screen.findByText(/north: 325\.0/)).toBeInTheDocument()
     expect(screen.getByText('column:north')).toBeInTheDocument()
     expect(screen.getByText('dataset:sales.csv')).toBeInTheDocument()
+  })
+
+  it('shows each claim and the path it rests on', async () => {
+    mockEmptyCase()
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+    await screen.findByText('Why did revenue decline?')
+
+    // The trace is the review question: the claim, its verdict, and the chain
+    // back to the data - as chips, the same shape a citation uses.
+    expect(await screen.findByText('The west region is the outlier.')).toBeInTheDocument()
+    expect(screen.getByText('status: validated')).toBeInTheDocument()
+    expect(screen.getByText('finding: The west region is the outlier.')).toBeInTheDocument()
+    expect(screen.getByText('run: sql run')).toBeInTheDocument()
+    expect(screen.getByText('dataset: sales.csv')).toBeInTheDocument()
+  })
+
+  it('flags a claim that reaches no source', async () => {
+    // A finding whose run is gone is what the graph exists to surface. It must
+    // not pass as a normal trace - a reviewer would read it as supported.
+    mockEmptyCase()
+    vi.mocked(api.getEvidenceGraph).mockResolvedValue({
+      ...evidenceGraph,
+      orphan_findings: ['f1'],
+      traces: [
+        {
+          finding_id: 'f1',
+          statement: 'The west region is the outlier.',
+          validation_status: 'validated',
+          hops: [
+            { id: 'f1', kind: 'finding', label: 'The west region is the outlier.' },
+          ],
+          reaches_source: false,
+        },
+      ],
+    })
+
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+    expect(
+      await screen.findByText(/a claim with no source/i),
+    ).toBeInTheDocument()
+  })
+
+  it('lists every derivation and the artifacts nothing derived yet', async () => {
+    mockEmptyCase()
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+    await screen.findByText('The west region is the outlier.')
+
+    // Edges are sentences: a reader can act on "rendered from" where an id
+    // would say nothing.
+    expect(screen.getByText(/rendered from/i)).toBeInTheDocument()
+    expect(screen.getByText(/Revenue by region/i)).toBeInTheDocument()
+    // The plan has no edge, and the graph still names it - the case has it, so
+    // the graph says so.
+    expect(screen.getByText('plan: How is revenue distributed?')).toBeInTheDocument()
+  })
+
+  it('shows the core guidance rather than an error when there is nothing to graph', async () => {
+    mockEmptyCase()
+    vi.mocked(api.getEvidenceGraph).mockRejectedValue(
+      new api.ApiError(
+        400,
+        'this case has no artifacts yet - attach data, run an analysis, or ' +
+          'record a finding to build an evidence graph',
+      ),
+    )
+
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+    expect(
+      await screen.findByText(/no artifacts yet - attach data/i),
+    ).toBeInTheDocument()
+    // A young case is guidance, not a failed review.
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   })
 
   it('runs a distribution over a profiled column and shows its spread', async () => {

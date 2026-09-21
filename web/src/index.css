@@ -264,6 +264,20 @@ select {
   font: inherit;
 }
 
+/* A claim's trace is a chain of chips; the arrow is decoration between them,
+   so it stays out of the text a test or a screen reader matches on. */
+.chain {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.chain .chip + .chip::before {
+  content: '→';
+  margin-right: 0.3rem;
+  color: #666;
+}
+
 /* An EDA result is as wide as its columns - a numeric distribution carries
    seven - so it is a table rather than a list of sentences. */
 table.eda {

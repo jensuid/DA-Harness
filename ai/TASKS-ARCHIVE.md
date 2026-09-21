@@ -3315,3 +3315,128 @@ LESSON: three of the eleven tests failed on the first run for reasons that
         fixture had to build one without. Each was the test describing a DOM
         the component did not produce, and the component was right.
 ```
+
+### P7-SHELL-006 contract
+
+```
+TASK ID: P7-SHELL-006
+MILESTONE: P7 Product Modes
+CAPABILITY: UX (the web-shell gap)
+GOAL: A citation of a previous case is something the analyst can follow. The
+      core's cross-case recall already answers "what did I find before about
+      revenue?" with the prior case's question and its strongest finding, but
+      the shell renders that citation as an inert chip carrying a uuid - the
+      one thing recall exists for, going to look at what was concluded last
+      time, is not reachable.
+
+CONTEXT: P6-MEMORY-001 made memory a derived, read-only projection over the
+         cases and findings on disk, and P3-AI-014 made the chat answer carry
+         each claim's source in `grounds` as `kind:name`. A recall answer cites
+         `case:<id>` and the prior finding's `finding:<id>`. The shell's Chat
+         panel renders those grounds as plain text chips, so a prior case is
+         named in the sentence and unreachable below it. Memory has no
+         endpoint of its own and needs none: the chat turn is the contract.
+
+INPUTS: a conversation turn's grounds; a click on a cited case.
+RELEVANT FILES: web/src/api.ts, web/src/CaseWorkspace.tsx, web/src/App.tsx,
+                web/src/CaseWorkspace.test.tsx
+REQUIRED CHANGE:
+  - web/src/CaseWorkspace.tsx: the Chat panel's grounds chips are replaced by
+    a small resolver. A `case:<id>` ground is looked up once per cited case
+    (read-only GET, and only for case grounds - the other kinds are not
+    case-scoped) and rendered as a button that opens that prior case in the
+    workspace, labelled with the case's own question because that is how the
+    analyst recognises it. Any other ground keeps rendering as the chip it
+    always was. A lookup that fails - a deleted case, an unreachable core - is
+    not an error: the chip falls back to the id and the answer stays readable,
+    because a citation that cannot be resolved is still a citation.
+  - web/src/App.tsx: the workspace gains an `onOpenCase` handler so a prior
+    case opens as its own workspace rather than dumping the analyst back on
+    the list.
+NON-GOALS: a memory endpoint (memory is derived per question and already
+           answers through the chat; a GET would be a second copy of a
+           projection that cannot drift), editing or pinning memory (it is
+           computed, not stored - pinning would be a store to keep consistent),
+           resolving a cross-case `finding:<id>` to its statement (it needs a
+           case-scoped read the shell does not have, and the answer sentence
+           already quotes it), EDA, the evidence graph and case history (their
+           own tasks).
+CONSTRAINTS: no new endpoint; the lookup is a GET and writes nothing; a click
+             only navigates - it creates no case state; `tsc -b` passes; no new
+             dependency; the existing workspace tests stay green; the desktop
+             bundle builds from the same source.
+ACCEPTANCE CRITERIA:
+- [x] a chat answer citing a previous case shows that case's question as a
+      button
+- [x] clicking it opens the cited case's workspace
+- [x] a cited case that cannot be resolved degrades to a chip, not an error
+- [x] grounds of other kinds still render as they did
+- [x] a case cited by more than one turn is looked up once
+- [x] `tsc -b` and the web suite stay green
+TESTS: web/src/CaseWorkspace.test.tsx - the cited case as a button that opens,
+       the unresolved citation degrading to a chip, and other grounds
+       unaffected.
+VERIFICATION: cd web && npm test PASS; cd web && npm run build PASS; cd web &&
+              npm run build:desktop PASS. The server suite and the three gates
+              are untouched by this change and stay green.
+STATE UPDATE: mark P7-SHELL-006 done on pass; ROADMAP item 2 records
+              cross-case memory as delivered.
+```
+
+
+```
+TASK: P7-SHELL-006 - cross-case memory, actionable in the shell
+ID: P7-SHELL-006
+PRIORITY: medium
+STATUS: DONE
+SUMMARY: P6-MEMORY-001 let an answer cite what a previous case found, and the
+         shell rendered that citation as an inert chip carrying a uuid. The
+         one thing recall exists for - going to read what was concluded last
+         time - was a click that did nothing.
+
+The Chat panel now resolves each `case:<id>` ground to the prior case's own
+question and renders it as a button that opens that case as its own workspace,
+so a citation is something the analyst can follow. The question is the label
+because that is how the case is recognised; a uuid would not be.
+
+Three behaviours that had to be right rather than present:
+
+- **One lookup per cited case.** The panel collects the case ids across every
+  turn's grounds, fetches each once, and shares the result. A case cited by
+  five turns costs one call.
+- **A failed lookup is not an error.** A citation outlives the case it names -
+  the case may have been deleted while the conversation stayed. A 404 records
+  the id as absent and the chip says "a previous case that is no longer
+  available", so the answer stays readable and the missing case is not
+  refetched on every render. The state update returns the same object when
+  nothing was learned, because a fresh object on an all-failed batch would
+  re-run the effect forever.
+- **Only `case:` grounds change.** Columns, datasets, runs and findings keep
+  rendering as the chips they always were.
+
+NON-GOALS held: no memory endpoint (memory is derived per question and already
+             answers through the chat; a GET would be a second copy of a
+             projection that cannot drift), no pinning or editing memory
+             (computed, not stored), no resolution of a cross-case
+             `finding:<id>` to its statement (it needs a case-scoped read the
+             shell does not have, and the answer sentence already quotes it).
+CONSTRAINTS held: no new endpoint and no new dependency; the lookup is a GET
+             that writes nothing, and a click only navigates; `tsc -b` passes;
+             the desktop bundle builds from the same source.
+ACCEPTANCE CRITERIA: all 6 - see the checked boxes above.
+TESTS: 4 added to web/src/CaseWorkspace.test.tsx (web suite 50 -> 54) - the
+       cited case as a button that opens it, the single lookup across two
+       citations, the deleted case degrading to a chip with the answer intact,
+       and the other ground kinds unchanged.
+VERIFICATION: cd web && npm test - 54 passed; cd web && npm run build PASS
+              (tsc -b + vite build); cd web && npm run build:desktop PASS. The
+              server suite and the three gates are untouched by this change
+              and stay green.
+LESSON: two of the four tests failed on the first run for the same reason -
+        the fixture described a component in isolation, but the workspace
+        loads its own case on mount. A rejection mocked for every id took the
+        whole workspace to its error screen before the chat could render, and
+        the spy counted the workspace's own lookup alongside the citation's.
+        The workspace is the thing under test, and it has its own life in the
+        fixture's mocks.
+```

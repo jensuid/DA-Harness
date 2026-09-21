@@ -2,6 +2,36 @@
 
 ## Next action
 
+**P7-SHELL-008 is DONE**: a case's evidence graph is a review surface. The web
+suite is 64 tests (was 60: +4 in `CaseWorkspace.test.tsx`), `npm run build`
+passes and the desktop bundle builds from the same source. The server side is
+untouched and stays at 358.
+
+### What is unbuilt, in priority order
+
+- **The last of the web-shell gap** - P7 item 2, now seven surfaces closed
+  (EVALUATE, the agent, case management, templates, cross-case memory, EDA, the
+  evidence graph). Only this still has an endpoint and no UI: **case history**
+  (`/cases/{id}/history`), the read-only timeline of everything that happened in
+  a case. It is a panel over an existing contract and needs no new endpoint.
+- **LEARN mode** - a guided Why -> What -> How -> Validate walk. Mostly a
+  sequencing layer over the workflow stages that already exist (P3-FLOW-004).
+- **Multi-agent workflows** - only after EVALUATE, which is the audit layer an
+  agent's own output has to survive.
+- **Deferred, not dropped:** signing (DEC-006, the slot is in `release.yml`),
+  cloud sync, team collaboration, warehouse connectors, enterprise governance.
+
+### If the next step is a release
+
+Tag `v<x.y.z>` where x.y.z matches server/pyproject.toml. The published build is
+arm64 and unsigned, flagged pre-release (DEC-006). Twelve tasks have landed
+since v0.1.0, so `0.2.0` is the honest next label when a release is wanted.
+
+Nothing is unblocked-but-undone.
+
+---
+
+
 **P7-SHELL-007 is DONE**: the "what should I look at first" steps are one panel
 away. The web suite is 60 tests (was 54: +6 in `CaseWorkspace.test.tsx`),
 `npm run build` passes - `tsc -b` runs first, and it caught a name the test
@@ -97,6 +127,23 @@ Nothing is unblocked-but-undone.
 ---
 
 ## What was completed
+- P7-SHELL-008 PASSED: the evidence graph, as a review surface. P3-EVIDENCE-006
+  could answer "what backs each claim in this case, and does every one of them
+  reach the data?" - and nothing in the shell showed it, so a case's own
+  evidence was inspectable only one finding at a time, and a claim with no
+  source was invisible. An **Evidence panel** now sits after the findings panel
+  and loads read-only with the workspace. Each trace renders the finding's
+  statement with its validation status and the chain back to the data as chips -
+  the same shape the chat uses for a citation; each edge renders as a sentence
+  ("chart 'Revenue by region' is rendered from the sql run"); and a node with no
+  edge is still listed under its kind, because leaving it out would make the
+  graph say the case has less than it does. Three things that had to be right
+  rather than present: a finding whose run is gone is flagged as **a claim with
+  no source** instead of being smoothed over; its broken edge says "an artifact
+  no longer in the case" rather than showing a uuid; and the endpoint's 400 for
+  an artifact-free case is muted guidance rather than an alert, because a young
+  case is not a failed review.
+
 - P7-SHELL-007 PASSED: EDA in the web shell. The "what should I look at first"
   steps needed a hand-written query: P3-ANALYSIS-005 shipped three ops -
   segment a measure by a category, correlate two columns, describe a column's

@@ -1,6 +1,6 @@
 # DAH - Current State
 
- - **Phase:** P5 Production Grade - COMPLETE. P6 Post-Launch Evolution - COMPLETE: all 5 entry-checklist items. P7 Product Modes is IN PROGRESS (1 of 4, with six web surfaces delivered): EVALUATE mode is DONE in the core and in the shell, the agent has a surface, a case can be renamed, duplicated and deleted from the list, templates are reachable from the shell, a cited previous case is something the analyst can follow, and the "what should I look at first" steps are one panel away. The web-shell gap is item 2 and is mostly closed; the evidence graph and case history still have endpoints and no UI. P4 Production Candidate was COMPLETE (all 5 checklist items: P4 Production Candidate was COMPLETE (all 5 checklist items:
+ - **Phase:** P5 Production Grade - COMPLETE. P6 Post-Launch Evolution - COMPLETE: all 5 entry-checklist items. P7 Product Modes is IN PROGRESS (1 of 4, with seven web surfaces delivered): EVALUATE mode is DONE in the core and in the shell, the agent has a surface, a case can be renamed, duplicated and deleted from the list, templates are reachable from the shell, a cited previous case is something the analyst can follow, the "what should I look at first" steps are one panel away, and a case's evidence graph is a review surface. The web-shell gap is item 2 and is nearly closed; only case history still has an endpoint and no UI. P4 Production Candidate was COMPLETE (all 5 checklist items: P4 Production Candidate was COMPLETE (all 5 checklist items:
   P4-VERIFY-001, P4-RELIABILITY-002, P4-UX-003 + P4-UX-004, P4-VALID-005,
   P4-PERF-006, P4-CI-007). P3 V1 is COMPLETE: all 10 entry-checklist items,
   231 server tests, and a P3 gate of its own. P5 Production Grade is IN
@@ -22,21 +22,22 @@ a versioned, forward-only migration path for the store, so a database from
 any past release opens, upgrades and keeps its rows (P6-MIGRATE-004);
 and an update check that tells an installed app a newer build exists - or
 says honestly that it could not tell (P6-UPDATE-005)**
-- **Active task:** P7-SHELL-007 DONE - EDA in the web shell. The three ops
-  P3-ANALYSIS-005 shipped - segment a measure by a category, correlate two
-  columns, describe a column's distribution - answered only through the API, so
-  the "what should I look at first" steps needed a hand-written query. A new
-  **EDA panel** sits between the data and runs panels, where the core's own
-  module puts exploration. The op is a chooser and each op renders only its own
-  pickers. The profile's per-column type steers the defaults (a measure or a
-  correlation axis defaults to a numeric column) without forbidding anything -
-  the core's 400 is the honest answer to a wrong choice. A stale pick can never
-  be submitted: the request is built from values resolved against the current
-  dataset's columns. The result table renders exactly the columns the core
-  returned (a numeric distribution has seven, a categorical one two), and the
-  panel says plainly that an EDA result is exploration, not evidence - making a
-  finding of it is a query the analyst writes.
-  Before it: P7-SHELL-006 (cross-case memory), P7-SHELL-005 (templates),
+- **Active task:** P7-SHELL-008 DONE - the evidence graph, as a review
+  surface. P3-EVIDENCE-006 could answer "what backs each claim, and does every
+  one of them reach the data?" and nothing in the shell showed it, so a case's
+  evidence was inspectable only one finding at a time and a claim with no
+  source was invisible. An **Evidence panel** now sits after the findings panel
+  and loads read-only with the workspace. Each trace renders the finding's
+  statement with its validation status and the chain back to the data as chips;
+  each edge renders as a sentence ("chart 'Revenue by region' is rendered from
+  the sql run"); and a node with no edge is still listed under its kind, so the
+  graph never says the case has less than it does. A finding whose run is gone
+  is flagged as **a claim with no source** rather than smoothed over, and its
+  broken edge says "an artifact no longer in the case" rather than showing a
+  uuid. The endpoint's 400 for an artifact-free case is muted guidance, not an
+  alert - a young case is not a failed review.
+  Before it: P7-SHELL-007 (EDA), P7-SHELL-006 (cross-case memory),
+  P7-SHELL-005 (templates),
   P7-SHELL-004 (case management), P7-SHELL-003 (the agent surface),
   P7-SHELL-002 (EVALUATE's surface), P7-EVAL-001 (EVALUATE's core), P6 CLOSED. P6-MEMORY-001 let a chat answer cite what a previous case found, and
   the shell rendered that citation as an inert chip carrying a uuid - the one
@@ -89,16 +90,18 @@ says honestly that it could not tell (P6-UPDATE-005)**
   documented minimum but is no longer enforced by CI, and a green run no longer
   proves the exact Intel triple a local build produces. Restoring that needs a
   self-hosted Intel runner.
-- **Test status:** server 358 passed (336 + 22 evaluate); web 60 passed
-  (CaseList 10, CaseCreation 3, CaseWorkspace 34, Templates 8, api 6 - the
-  workspace gained the EDA panel, on top of the cited-case buttons, the promote
-  panel, the templates section and the empty-204 fix); desktop shell 22 Rust tests
+- **Test status:** server 358 passed (336 + 22 evaluate); web 64 passed
+  (CaseList 10, CaseCreation 3, CaseWorkspace 38, Templates 8, api 6 - the
+  workspace gained the evidence panel, on top of EDA, the cited-case buttons,
+  the promote panel, the templates section and the empty-204 fix); desktop shell 22 Rust tests
   (`cd desktop/src-tauri && cargo test [--features e2e]`, 19 unit + 3 e2e);
   P2, P3 and P4 gates PASS (P4: all 18 journey steps, all 10 exit criteria);
   first release v0.1.0 published from tag and checksum-verified.
-- **Next task:** the rest of the web-shell gap (P7 item 2). EVALUATE, the agent,
-  case management, templates, cross-case memory and EDA have surfaces; these
-  still do not: the evidence graph (`/evidence-graph`), and case history. Each
+- **Next task:** the last of the web-shell gap (P7 item 2). EVALUATE, the
+  agent, case management, templates, cross-case memory, EDA and the evidence
+  graph have surfaces; only this still does not: case history
+  (`/cases/{id}/history`), the read-only timeline of everything that happened in
+  a case. Each
   is a panel over an existing contract - no new endpoints. After item 2:
   **LEARN** mode, a guided Why -> What -> How -> Validate walk (mostly
   sequencing over P3-FLOW-004), then multi-agent workflows, which only make
@@ -195,6 +198,7 @@ says honestly that it could not tell (P6-UPDATE-005)**
 | P7-SHELL-005 templates in the web shell | DONE |
 | P7-SHELL-006 cross-case memory, actionable | DONE |
 | P7-SHELL-007 EDA in the web shell | DONE |
+| P7-SHELL-008 the evidence graph in the shell | DONE |
 
 ## P6 progress
 
