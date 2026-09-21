@@ -62,15 +62,20 @@ The user should reload the open window (Cmd+R) to see them; the running sidecar
 is the rebuilt one, and `Origin: tauri://localhost` is answered with
 `access-control-allow-origin` and `Vary: Origin`, so the list loads.
 
-### The sidecar needs a rebuild to carry this fix
+### The shipped app now carries it
 
-The source is fixed; the binary the user runs is not yet. Rebuild before the
-next release (and to make the desktop app itself robust to this CSV shape):
+Rebuilt and relaunched: `./server/build_sidecar.sh` then `npm run tauri --
+build` in `desktop/`. This time the DMG step succeeded as well - both
+`DAH.app` and `DAH_0.1.0_x64.dmg` are fresh at
+`desktop/src-tauri/target/release/bundle/`. The old app was quit and the new
+one opened; the core on 127.0.0.1:8123 is the new sidecar, and the packaged
+binary itself was proven on an isolated data dir before the relaunch - the
+malformed CSV profiles four columns there and the SQL written from those
+columns returns `[['north', 4200.0], ['west', 8100.0]]`.
 
-    cd server && ./build_sidecar.sh && cd ../desktop && npm run tauri -- build
-
-The last build's DMG step failed (`bundle_dmg.sh`) - distribution-only, the
-`.app` itself built and runs.
+The store is at `~/Library/Application Support/com.jensuid.dah/` and survived
+the relaunch unchanged; a reload of the open window (Cmd+R) is all the shell
+needs.
 
 ---
 
