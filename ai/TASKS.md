@@ -140,6 +140,7 @@ answers.
 
 | Task ID | Capability | Status | Verification |
 |---------|-----------|--------|--------------|
+| P8-RELEASE | Distribution (the v0.2.0 release) | DONE | tag v0.2.0; 409 server tests green; artifacts built locally and published as pre-release |
 | P8-CONTEXT-001 | Data Layer (the case's context object) | DONE | 21 tests added (409 server, 82 web); schema v10; e2e green |
 | P8-QUALITY-002 | Data Layer (quality beyond missingness) | OPEN | AT-08/AT-09 |
 | P8-VALID-003 | Validation (3 checks to 9 dimensions) | OPEN | AT-17 |

@@ -66,9 +66,9 @@
     "semantic_hash": ""
   },
   "server/pyproject.toml": {
-    "mtime": 1789825056.2850838,
-    "seen": 1789826954.741707,
-    "ast_hash": "f52598142525cf8b2622c5cae4793f73",
+    "mtime": 1790027656.7408009,
+    "seen": 1790029933.788429,
+    "ast_hash": "ef706f1ba8917f696b0a2b50078590cd",
     "semantic_hash": ""
   },
   "server/tests/__init__.py": {
@@ -102,9 +102,9 @@
     "semantic_hash": "12e71bf0aec1b1b4536961acb417457e"
   },
   "web/package.json": {
-    "mtime": 1789829316.8919013,
-    "seen": 1789833738.00037,
-    "ast_hash": "bc265e79788321279b713041cb85001e",
+    "mtime": 1790027656.7468495,
+    "seen": 1790029933.7886772,
+    "ast_hash": "46412fadc2e00acfbe64fbcd0fbcf476",
     "semantic_hash": ""
   },
   "web/src/App.tsx": {
@@ -168,9 +168,9 @@
     "semantic_hash": ""
   },
   "ai/CURRENT_STATE.md": {
-    "mtime": 1790012693.5258367,
-    "seen": 1790012734.706194,
-    "ast_hash": "217f00685caa65c39ef9924307bb1ab9",
+    "mtime": 1790029739.153293,
+    "seen": 1790029933.7887669,
+    "ast_hash": "91a22fcd3048f593c9a95c504bc61759",
     "semantic_hash": ""
   },
   "ai/DECISIONS.md": {
@@ -180,15 +180,15 @@
     "semantic_hash": ""
   },
   "ai/HANDOFF.md": {
-    "mtime": 1790013892.4961476,
-    "seen": 1790026859.659606,
-    "ast_hash": "39fa6a8d42c3f1bad0f95e2d9acd7ef8",
+    "mtime": 1790029786.9471269,
+    "seen": 1790029933.788773,
+    "ast_hash": "304770bb966e0eaf06c735dcf73d7b88",
     "semantic_hash": ""
   },
   "ai/TASKS.md": {
-    "mtime": 1790018219.325574,
-    "seen": 1790026859.6596138,
-    "ast_hash": "64c48e4ebe2ed3966b0e6499b8bc8ab7",
+    "mtime": 1790029725.1413682,
+    "seen": 1790029933.7887821,
+    "ast_hash": "38994c2281598012bf68ff3a56f939ad",
     "semantic_hash": ""
   },
   "verification/p0/REPORT.md": {
@@ -324,9 +324,9 @@
     "semantic_hash": ""
   },
   "ai/ROADMAP.md": {
-    "mtime": 1789976059.0869737,
-    "seen": 1789976306.186168,
-    "ast_hash": "4e74f8d2f61abaebb824f3f5e60c2145",
+    "mtime": 1790029898.7905645,
+    "seen": 1790029933.788776,
+    "ast_hash": "b40a4c72e981b2aedd927cb326ab41a3",
     "semantic_hash": ""
   },
   "server/tests/test_charts_raster.py": {
@@ -408,9 +408,9 @@
     "semantic_hash": ""
   },
   "desktop/package.json": {
-    "mtime": 1789801799.9446042,
-    "seen": 1789804396.010219,
-    "ast_hash": "dd52f8c646b08db93c88fd4b2dcbd80b",
+    "mtime": 1790027656.7475643,
+    "seen": 1790029933.78831,
+    "ast_hash": "cbc9bfb27c1a2add7f50110150db2722",
     "semantic_hash": ""
   },
   "desktop/src-tauri/Cargo.toml": {
@@ -444,9 +444,9 @@
     "semantic_hash": ""
   },
   "desktop/src-tauri/tauri.conf.json": {
-    "mtime": 1789801472.4884322,
-    "seen": 1789804396.010253,
-    "ast_hash": "415d0ed5d2386285cc287f04fda83409",
+    "mtime": 1790027656.748252,
+    "seen": 1790029933.788338,
+    "ast_hash": "16f13422821422e66e7f0fd6da1e8bd7",
     "semantic_hash": ""
   },
   "server/app/supervisor.py": {

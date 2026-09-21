@@ -1,3 +1,50 @@
+## Next action
+**The v0.2.0 release is DONE, and it is published.** Tag `v0.2.0` sits on
+`ec819fc` (the bump commit), matching `server/pyproject.toml` as `release.yml`
+demands. 409 server tests pass on the tag, run by hand. The sidecar, `.app`
+and DMG were built locally from the same steps the workflow runs, the packaged
+core was proven on an isolated store - profile -> plan (it reads the context:
+`context_basis: ['purpose','sub_questions:2','hypotheses:2']`) -> generated SQL
+-> run -> interpret -> draft -> accept -> validate, ending honestly on
+`partially_supported` because the null revenue trips `missing_data` while
+`reproducibility` passes - and the ditto zip plus its sha256 were published as
+a flagged pre-release:
+github.com/jensuid/DA-Harness/releases/tag/v0.2.0
+
+**One thing needs your attention, and it is not code.** GitHub Actions is
+refusing to start *any* job - the Release workflow and both CI suites - with
+"recent account payments have failed or your spending limit needs to be
+increased". It is an account billing problem (Settings > Billing & plans), and
+it is why this release was built and uploaded by hand instead of by
+`release.yml`. Nothing pushed since `c73118c` has run in CI, so local gates
+are the only green signal right now. Fix the billing and the pipeline works
+unchanged; the workflow itself is correct and would have produced these exact
+artifacts.
+
+The shipped `.app` in `desktop/src-tauri/target/release/bundle/` is current to
+`ec819fc` - it carries the Context panel, the CORS fix and the comma fix. The
+user's *running* app is still the P7-CSV-002 build; relaunch from the new
+bundle if they want the Context panel, and the store at
+`~/Library/Application Support/com.jensuid.dah/` survives the swap (a Cmd+R
+in the window is all the shell needs after).
+
+### What is next, in priority order
+
+- **P8-QUALITY-002** - quality detection beyond missingness. The profile finds
+  missing values and duplicate rows; the PRD wants seven defect classes
+  (AT-08), each with an *impact* sentence (AT-09) shown at the Data stage,
+  *before* analysis, rather than only at validation. The context object is
+  already in place, so an impact can be phrased against the case's stated
+  purpose instead of generic boilerplate.
+- **P8-VALID-003** - validation from 3 checks to the PRD's 9 dimensions
+  (AT-17). The largest single trust gap. The EVALUATE engine already computes a
+  nine-axis audit; it is pointed at imported work, never at the case's own
+  findings.
+- **P8-CAUSAL-004** - the causal-language guard (AT-18).
+- **P8-GOLDEN-005** - the analytical golden suite (AT-40) and the
+  workflow-completion rate (AT-01). This is what turns the above into measured
+  numbers.
+
 # DAH - Handoff
 
 ## Next action

@@ -17,9 +17,13 @@ P4 Production Candidate DONE  ✓   (all 6 checklist items; CI runs every
 P5 Production Grade    DONE  ✓   (all deliverables; signing deferred
                               indefinitely by DEC-006 - DAH is single-user)
 P6 Evolution           COMPLETE ✓  (all 5 checklist items)
-P7 Product Modes       IN PROGRESS (4 of 4 built; web-shell gap closed,
-                              EVALUATE, LEARN and multi-agent workflows built
-                              in core and shell; only the release remains)  ← we are here
+P7 Product Modes       COMPLETE ✓  (all 4 checklist items built; the web-shell
+                              gap closed; EVALUATE, LEARN and multi-agent
+                              workflows in core and shell; v0.1.0 and v0.2.0
+                              published)
+P8 Analytical Contract IN PROGRESS (1 of 10: the case's context object; the
+                              v0.2.0 release shipped between 001 and 002)
+                              ← we are here
 ```
 
 North-star progression: prove the loop → make it useful → make it repeatable
@@ -75,8 +79,8 @@ production-grade**.
   both built, and the checklist's fourth item is delivered in both layers: P7-AGENT-001 ships
   analyst and reviewer roles over one case - the reviewer's entire method is EVALUATE, so an
   agent-proposed finding is audited by a different agent with a different objective, and the
-  verdict is recorded beside the finding rather than folded into it. What remains is the release itself - every item that builds
-  something is done. P6 is CLOSED (all 5 items); v0.1.0 published
+  verdict is recorded beside the finding rather than folded into it. The release landed:
+  v0.1.0 and v0.2.0 are both published. P6 is CLOSED (all 5 items); v0.1.0 published
   and checksum-verified; signing deferred indefinitely by DEC-006. A `v<x.y.z>` tag
   matching server/pyproject.toml now builds, smokes and publishes a versioned,
   unsigned .app as a flagged pre-release, with its checksum and generated notes
@@ -163,7 +167,7 @@ of a shrug.
 | 2 | The P4 gate — **DONE (P5-VERIFY-001)**: `verification/p4/verify_p4.py` walks the *edges* rather than the happy path - a 5000-row dataset, the result cap truncating a full scan while an aggregate stays exact, bad SQL answering 400 with the engine's message and persisting nothing, a sandbox escape refused, an injected harness fault answering 500, a deliberately broken LLM degrading to deterministic, and eight repeat validations of an unordered result agreeing. 18 steps, 10 exit criteria, all PASS; CI runs it on every push | P4 relied on the P3 gate plus CI, which never exercised the P4 capabilities against each other - the error taxonomy and rerun determinism are invisible on the happy path | P5 Verification |
 | 3 | Observability — **DONE (P5-OBSERVE-002)**: the core writes a size-capped rotating log (2MB x 3) into the user's data dir, `GET /logs?lines=N` tails it read-only, one line per request holds only method/path/status/duration, and nothing the analyst typed is ever logged | P4 made a 500 honest and logged with a traceback, but there was nowhere for that output to go in a packaged app a non-developer is running — now there is | P5 Observability |
 | 4 | Give the 500 a JSON envelope — **DONE (P5-RELIABILITY-003)**: a fault answers `{"detail": "internal error", "request_id": ...}`, the id finds the traceback in the log, the exception's own message stays in the log and never the body, and the 4xx contract is untouched | The client tolerated the plain text; now it gets the same shape as every other error, plus an id a user can quote | P5 Reliability |
-| 5 | Release automation — **DONE (P5-RELEASE-005)**: a `v<x.y.z>` tag matching `server/pyproject.toml` builds, smokes and publishes an unsigned `.app` as a flagged pre-release with its checksum and generated notes; the version has one source of truth and a tag that disagrees with it fails before any build | The `packaging` job already built and smoked the sidecar on a clean machine, but its output went nowhere; now a user can download instead of build. Signing is the slot this job leaves open — it goes between the build and the upload | P5 Distribution |
+| 5 | Release automation — **DONE (P5-RELEASE-005)**: a `v<x.y.z>` tag matching `server/pyproject.toml` builds, smokes and publishes an unsigned `.app` as a flagged pre-release with its checksum and generated notes; the version has one source of truth and a tag that disagrees with it fails before any build. v0.2.0 was built and published by hand from these same steps because GitHub Actions would not start any job (account billing suspended) — the workflow is correct; the account is the blocker | The `packaging` job already built and smoked the sidecar on a clean machine, but its output went nowhere; now a user can download instead of build. Signing is the slot this job leaves open — it goes between the build and the upload | P5 Distribution |
 
 ## P6 Post-Launch Evolution — entry checklist (COMPLETE, 5 of 5)
 

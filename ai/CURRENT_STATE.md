@@ -88,7 +88,13 @@ analysis is `docs/PRD & UX Conformance Evaluation.md`.
   surface), P7-SHELL-002 (EVALUATE's surface), P7-EVAL-001 (EVALUATE's core),
   P6 CLOSED.
 
-- **Known issues:** CI's runner is `macos-latest`, not the Ventura/Intel pin
+- **Known issues:** CI's billing is suspended: every workflow (Release, and both CI suites) is
+  rejected at start with "recent account payments have failed or your spending
+  limit needs to be increased", so nothing pushed since c73118c has run in CI.
+  The v0.2.0 artifacts were therefore built and published locally from the same
+  steps release.yml runs, and the server suite was run by hand on the tag. Fix
+  at GitHub Settings > Billing & plans; no code change is involved. Separately,
+ CI's runner is `macos-latest`, not the Ventura/Intel pin
   P5-CI-004 intended - GitHub retired the macos-13 pool, so the label hangs
   forever (probed empirically; see DEC-005). The Ventura floor stays the
   documented minimum but is no longer enforced by CI, and a green run no longer
@@ -110,16 +116,33 @@ analysis is `docs/PRD & UX Conformance Evaluation.md`.
   and the empty-204 fix); desktop shell 22 Rust tests
   (`cd desktop/src-tauri && cargo test [--features e2e]`, 19 unit + 3 e2e);
   P2, P3 and P4 gates PASS (P4: all 18 journey steps, all 10 exit criteria);
-  first release v0.1.0 published from tag and checksum-verified.
-- **Next task:** the release. Every P7 checklist item that builds something is
-  delivered and now verified against a real server as well as in-process -
-  EVALUATE, the web-shell gap, LEARN and multi-agent workflows, the last in
-  core (P7-AGENT-001) and in the shell (P7-SHELL-011). Sixteen tasks have
-  landed since v0.1.0, so `0.2.0` is the honest next label: tag `v0.2.0`, which
-  must match server/pyproject.toml, and the pipeline builds, smokes and
-  publishes an unsigned .app as a flagged pre-release with its checksum.
-  Deferred, not dropped: signing (DEC-006, the slot is in `release.yml`), cloud
-  sync, team collaboration, warehouse connectors, enterprise governance.
+  **v0.2.0 released**: tag on `ec819fc`, 409 server tests run green
+  on the tag, sidecar + .app + DMG built locally, the packaged core proven on an
+  isolated store (the full loop closes: profile -> plan (reads the context,
+  `context_basis: ['purpose','sub_questions:2','hypotheses:2']`) -> SQL run ->
+  interpret -> draft -> accept -> `partially_supported`, the null revenue
+  tripping missing_data while reproducibility passes), and the zip + sha256
+  published as a pre-release at github.com/jensuid/DA-Harness/releases/tag/v0.2.0.
+  first release v0.1.0 published from tag and checksum-verified;
+  second release v0.2.0 published (tag `v0.2.0` on `ec819fc`, built and uploaded
+  locally because CI would not start - see Known issues)
+- **Next task:** P8-QUALITY-002 - quality detection beyond missingness. The
+  profile finds missing values and duplicate rows today; the PRD's AT-08 wants
+  seven defect classes, each with an *impact* sentence (AT-09) surfaced at the
+  Data stage *before* analysis rather than only at validation. The context
+  object from P8-CONTEXT-001 is in place, so a defect's impact can be phrased
+  against what the case is actually trying to establish. After it:
+  P8-VALID-003 (3 checks to the PRD's 9 validation dimensions - the largest
+  single trust gap), P8-CAUSAL-004, P8-GOLDEN-005.
+  The release is done: **v0.2.0** is tagged on `ec819fc`, 409 server tests pass
+  on the tag, and the .app + DMG were built locally and published as a
+  flagged pre-release (see below). Note that GitHub Actions is currently
+  refusing to start ANY job - Release and both CI suites - with "recent
+  account payments have failed or your spending limit needs to be increased";
+  that is a billing problem at the account level, not a code or workflow
+  problem, and it is why the release artifacts were built and uploaded by
+  hand. It needs a look at GitHub Billing & plans; until it is fixed, no push
+  is verified by CI, so local gates are the only green signal.
 
 - **Blockers:** none.
 
