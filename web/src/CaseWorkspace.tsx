@@ -15,6 +15,7 @@ import {
   type EvidenceGraph,
   type EvidenceNode,
   type CaseHistory,
+  type LearnWalk,
   type Finding,
   type GeneratedCode,
   type Interpretation,
@@ -28,6 +29,7 @@ import {
   evaluateDataset,
   getEvidenceGraph,
   getCaseHistory,
+  getLearnWalk,
   runEda,
   generateCode,
   getAgentState,
@@ -81,6 +83,9 @@ export function CaseWorkspace({
   const [history, setHistory] = useState<CaseHistory | null>(null)
   const [historyError, setHistoryError] = useState<string | null>(null)
   const [historyMissing, setHistoryMissing] = useState(false)
+  const [walk, setWalk] = useState<LearnWalk | null>(null)
+  const [walkError, setWalkError] = useState<string | null>(null)
+  const [walkMissing, setWalkMissing] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   async function load() {
@@ -135,6 +140,18 @@ export function CaseWorkspace({
         setHistoryMissing(err instanceof ApiError && err.status === 404)
         setHistoryError(messageOf(err))
       }
+      // LEARN is a read-only projection too; a 404 means the case is unknown and
+      // the workspace's own load reports that at the top, so it is guidance
+      // here rather than a second alert.
+      try {
+        setWalk(await getLearnWalk(caseId))
+        setWalkError(null)
+        setWalkMissing(false)
+      } catch (err) {
+        setWalk(null)
+        setWalkMissing(err instanceof ApiError && err.status === 404)
+        setWalkError(messageOf(err))
+      }
       // The agent's state is read-only here: a GET never proposes, so loading a
       // page commits nothing.
       setAgent(await getAgentState(caseId))
@@ -180,6 +197,7 @@ export function CaseWorkspace({
       {error && <p role="alert">Something went wrong: {error}</p>}
 
       <Workflow progress={progress} />
+      <LearnPanel walk={walk} error={walkError} missing={walkMissing} />
       <AgentPanel
         caseId={caseId}
         agent={agent}
@@ -230,6 +248,103 @@ export function CaseWorkspace({
       <PromoteTemplate caseId={caseId} question={caseRow?.question ?? ''} />
     </section>
   )
+}
+
+// LEARN mode, as a surface (P7-SHELL-010). The workflow panel above says where
+// the case stands; this says why each step of it exists and what a learner
+// should be able to answer before leaving it - the spec's ladder, regrouped
+// from the same artifact counts, as teaching rather than as a checklist.
+//
+// Read-only like the panels beside it: nothing here writes, and the work a
+// learner does happens through the endpoints the stages name.
+function LearnPanel({
+  walk,
+  error,
+  missing,
+}: {
+  walk: LearnWalk | null
+  error: string | null
+  missing: boolean
+}) {
+  return (
+    <div className="panel">
+      <h2>Learn this case</h2>
+      {missing ? (
+        // A 404 means the case is unknown. The workspace loads its own case on
+        // mount, so the header already reports it - this panel says so once,
+        // as guidance, rather than reporting the same failure twice.
+        <p className="muted">The walk could not be read: {error}</p>
+      ) : !walk ? (
+        <p className="muted">Loading the walk…</p>
+      ) : (
+        <WalkBody walk={walk} />
+      )}
+      {!missing && error && (
+        <p role="alert">The walk could not be read: {error}</p>
+      )}
+    </div>
+  )
+}
+
+function WalkBody({ walk }: { walk: LearnWalk }) {
+  return (
+    <>
+      <p className="muted">
+        A guided walk: why ask it, what the data says, how you test it, and
+        whether it holds.
+      </p>
+      {walk.done ? (
+        // The core's own discipline: a closed loop means the loop ran, not that
+        // the answer is right - so the panel does not graduate the learner on a
+        // stronger claim than the artifacts support.
+        <p className="muted">
+          The walk is complete: every phase is done and a finding has been
+          validated. That says the trust loop ran, not that the answer is right.
+        </p>
+      ) : (
+        // One thing to do next, never two - the core guarantees at most one
+        // current phase, and the panel says which.
+        <p>
+          The phase to work on now is{' '}
+          {PHASE_TITLES[walk.current ?? ''] ?? walk.current}: {walk.next_action}
+          <br />
+          <code>{walk.next_endpoint}</code>
+        </p>
+      )}
+      <ul className="items">
+        {walk.steps.map((step) => (
+          <li key={step.name} aria-label={`phase ${step.name}: ${step.status}`}>
+            <h3>{PHASE_TITLES[step.name] ?? step.name}</h3>
+            <p className="muted">status: {step.status}</p>
+            <p className="muted">{step.purpose}</p>
+            <p>
+              Can you answer: <strong>{step.prompt}</strong>
+            </p>
+            <ul className="stages">
+              {step.stages.map((stage) => (
+                <li
+                  key={stage.name}
+                  className={stage.completed ? 'stage done' : 'stage'}
+                  aria-label={`${stage.action}: ${stage.completed ? 'done' : 'to do'}`}
+                >
+                  {stage.completed ? '✓' : '○'} {stage.action}
+                  <span className="muted"> — {stage.hint}</span>
+                </li>
+              ))}
+            </ul>
+          </li>
+        ))}
+      </ul>
+    </>
+  )
+}
+
+// The core's phase names, as a learner reads them.
+const PHASE_TITLES: Record<string, string> = {
+  why: 'Why',
+  what: 'What',
+  how: 'How',
+  validate: 'Validate',
 }
 
 function Workflow({ progress }: { progress: CaseProgress | null }) {

@@ -3590,3 +3590,286 @@ LESSON: four of the ten new and existing tests failed on the first run, and all
         `request`, shadowing the module's own request helper, and the tests
         never ran that code because the module was mocked.
 ```
+
+---
+
+### P7-SHELL-009 contract
+
+```
+TASK ID: P7-SHELL-009
+MILESTONE: P7 Product Modes
+CAPABILITY: UX (the web-shell gap)
+GOAL: A reviewer reopening a case can ask "what did I do here, and when?" and
+      read the answer. The timeline exists in the core as a projection over the
+      persisted rows; nothing in the shell shows it, so the shape of a case -
+      how it grew, and in what order - is only reconstructable by opening every
+      panel and comparing timestamps yourself.
+
+CONTEXT: P3-CASE-007 ships `GET /cases/{id}/history` -> `CaseHistory`: one event
+         per artifact (case created, dataset attached and profiled, plan
+         created, run executed, chart rendered, finding recorded), each carrying
+         the artifact's own timestamp, a label and a detail; plus counts. It is
+         a read-side projection like the evidence graph, so it cannot drift from
+         the rows. A just-created case answers one event, not an error. The only
+         failure is 404 for an unknown case - and the workspace loads its own
+         case on mount, so that answer means the workspace is already on its
+         error screen.
+
+INPUTS: the case's persisted artifacts, read read-only.
+RELEVANT FILES: web/src/api.ts, web/src/CaseWorkspace.tsx,
+                web/src/CaseWorkspace.test.tsx
+REQUIRED CHANGE:
+  - web/src/api.ts: `HistoryEvent` and `CaseHistory` matching the core's models,
+    and `getCaseHistory(caseId)` for the GET.
+  - web/src/CaseWorkspace.tsx: a **History panel** at the end of the workspace,
+    after the evidence panel, because it is the other read-only review surface -
+    where the evidence graph says what backs each claim, this says what
+    happened in the case at all. It loads with the workspace, read-only. Each
+    event is one line in chronological order: the timestamp, the kind as a
+    phrase a reader does not have to decode ("dataset attached", not
+    "dataset_attached"), the artifact's own label, and its detail - the same
+    fields the core returns, shown rather than transformed. The counts are one
+    summary sentence so a reader can see the case's shape at a glance.
+  - A 404 degrades to muted guidance, not an alert: the workspace loads its own
+    case on mount, so a 404 here means the case is already unreachable and the
+    header already says so - a second alert would report the same failure twice.
+    Any other failure is the sentence in an alert, the way every other panel
+    reports one.
+NON-GOALS: filtering or collapsing events (a case has as many events as it has
+           artifacts, and the whole timeline is the point), editing history (it
+           is a projection; the only way to change it is to change the case
+           through the endpoints that own it), per-artifact timestamps of their
+           own for validation (the finding keeps its status, not when it was
+           set, so the status rides along as the event's detail - the core's
+           decision, kept rather than re-derived).
+CONSTRAINTS: the panel calls only the read-only GET and writes nothing; `tsc -b`
+             passes; no new dependency; the existing workspace tests stay
+             green; the desktop bundle builds from the same source.
+ACCEPTANCE CRITERIA:
+- [x] a case with artifacts shows every event in chronological order
+- [x] each event's kind is readable, and its label and detail are shown
+- [x] a young case's single event is shown, not reported as emptiness
+- [x] the counts appear as one summary sentence
+- [x] an unknown case degrades to guidance rather than a duplicate alert
+- [x] the panel writes nothing and reloads with the workspace
+- [x] `tsc -b` and the web suite stay green
+TESTS: web/src/CaseWorkspace.test.tsx - the events of a worked case in order
+       with their kinds, labels and details; the single event of a just-created
+       case; the counts summary; and the 404 rendered as guidance.
+VERIFICATION: cd web && npm test PASS; cd web && npm run build PASS; cd web &&
+              npm run build:desktop PASS. The server suite and the three gates
+              are untouched by this change and stay green.
+STATE UPDATE: mark P7-SHELL-009 done on pass; ROADMAP item 2 records the
+              web-shell gap as closed.
+
+```
+
+TASK: P7-SHELL-009 - case history, as a review surface
+ID: P7-SHELL-009
+PRIORITY: medium
+STATUS: DONE
+SUMMARY: P3-CASE-007 shipped `GET /cases/{id}/history` - one event per
+         artifact, chronological, each carrying its own timestamp, a label and
+         a detail - and nothing in the shell showed it, so the shape of a case,
+         how it grew and in what order, was reconstructible only by opening
+         every panel and comparing timestamps yourself.
+
+A **Case history panel** now sits at the end of the workspace, after the
+evidence panel, because the two are the read-only review surfaces: the graph
+says what backs each claim, the timeline says what happened in the case at all.
+It loads with the workspace and writes nothing. Each event is one line in the
+order the core sends them: the timestamp, the kind as a phrase a reader does
+not have to decode ("dataset attached", not "dataset_attached"), the artifact's
+own label, and its detail beneath - the same fields the core returns, shown
+rather than transformed. The counts are one summary sentence naming only the
+kinds the case actually has, so a young case is not described by a row of
+zeroes it would have to explain away.
+
+Two behaviours that had to be right rather than present:
+
+- **A 404 is guidance, not a second alert.** The only failure the endpoint
+  answers is an unknown case, and the workspace loads its own case on mount, so
+  that answer already reaches the user at the top of the page. The panel says
+  the sentence once, muted, rather than raising an alert for a failure the
+  header already reported. Every other failure is the sentence in an alert, the
+  way every other panel reports one.
+- **A young case is its beginning, not an empty list.** A just-created case
+  answers one event, and the panel renders it - the timeline of a case that has
+  only started is the start of a story, not a placeholder.
+
+NON-GOALS held: no filtering or collapsing (a case has as many events as it has
+             artifacts, and the whole timeline is the point), no editing (it is
+             a projection; the only way to change it is to change the case
+             through the endpoints that own the artifacts), no invented
+             per-artifact timestamps for validation (the finding keeps its
+             status, not when it was set, so the status rides along as the
+             event's detail - the core's decision, kept).
+CONSTRAINTS held: the panel calls only the read-only GET and writes nothing; no
+             new endpoint and no new dependency; `tsc -b` passes; the desktop
+             bundle builds from the same source.
+ACCEPTANCE CRITERIA: all 7 - see the checked boxes above.
+TESTS: 3 added to web/src/CaseWorkspace.test.tsx (web suite 64 -> 67) - a
+       worked case's events in order with their kinds, labels, details and the
+       counts summary, a young case's single event shown rather than reported
+       as emptiness, and a 404 rendered as guidance with no alert.
+VERIFICATION: cd web && npm test - 67 passed; cd web && npm run build PASS
+              (tsc -b + vite build); cd web && npm run build:desktop PASS. The
+              server suite and the three gates are untouched by this change
+              and stay green.
+LESSON: the timeline's first event is the case's creation, whose label is the
+        case's own question - so the question now appears twice on the page,
+        once as its title and once as the timeline's first line, and five
+        existing assertions that meant the title broke on the duplication. Each
+        now asks for the heading by role, which is the accessible thing anyway:
+        an assertion that says which of two identical texts it means is the
+        same judgement a screen reader user needs. The second collision was
+        subtler and cost more guessing than it should have: a label inside a
+        <strong> is invisible to getByText, because the matcher reads an
+        element's own text nodes, not its descendants' - so a line whose label
+        is emphasised cannot be matched by the phrase it renders. The event
+        line is plain text now, and the lesson is to keep a line's asserted
+        content in its own text nodes.
+
+
+### P7-SHELL-008 contract
+
+```
+TASK ID: P7-SHELL-008
+MILESTONE: P7 Product Modes
+CAPABILITY: UX (the web-shell gap)
+GOAL: A reviewer can ask of a case "what backs each claim, and does every one
+      of them reach the data?" and get an answer. The graph exists in the core
+      as a projection over persisted rows; nothing in the shell shows it, so
+      the case's own evidence is only inspectable one finding at a time, and a
+      claim with no source is invisible.
+
+CONTEXT: P3-EVIDENCE-006 shipped `GET /cases/{id}/evidence-graph`, answering
+         nodes (datasets, runs, charts, plans, findings), edges that say how
+         one was derived from another (anchored_on, queries, rendered_from,
+         planned_from), one trace per finding walking it out to the datasets it
+         stands on, the findings that reach no source as `orphan_findings`, and
+         counts. It is derived, never stored, so it cannot drift from the rows.
+         The endpoint answers 400 with a sentence when the case has no
+         artifacts to graph - that is the normal state of a young case rather
+         than a failure, and the shell has to say so as guidance rather than as
+         an error.
+
+INPUTS: the case's persisted artifacts, read read-only.
+RELEVANT FILES: web/src/api.ts, web/src/CaseWorkspace.tsx, web/src/index.css,
+                web/src/CaseWorkspace.test.tsx
+REQUIRED CHANGE:
+  - web/src/api.ts: `EvidenceNode`, `EvidenceEdge`, `ClaimTrace` and
+    `EvidenceGraph` matching the core's models, and `getEvidenceGraph(caseId)`
+    for the GET.
+  - web/src/CaseWorkspace.tsx: an **Evidence panel** after the findings panel,
+    because the evidence graph is what reviews them. It loads with the
+    workspace, read-only. Two parts:
+      - **Claims and what they rest on** - one block per trace: the finding's
+        statement with its validation badge, and its path rendered as nodes
+        joined by arrows (finding -> run -> dataset), so a reviewer reads the
+        chain without leaving the case. A trace that does not reach a source
+        says so plainly and is marked, because a claim with no source is what
+        the graph exists to surface.
+      - **How each artifact was derived** - every edge as a sentence
+        ("chart 'Revenue by region' is rendered from the sql run"), so the
+        graph's structure is visible as text rather than as a diagram only a
+        library could draw. No node is left out: a node with no edges still
+        appears under its kind.
+  - The 400 of an artifact-free case is shown as muted guidance, not as an
+    alert: the core's own sentence names what would build a graph, and a young
+    case is not a failed review. Any other failure is the sentence in an alert,
+    the way every other panel reports one.
+NON-GOALS: a drawn graph (an SVG layout is a library's job and DEC-001 keeps
+           the bundle dependency-free; the edges-as-sentences list carries the
+           same information a reader can act on), editing the graph (it is a
+           projection; there is nothing to edit, only artifacts to add or
+           remove through the endpoints that own them), the single-finding
+           chain (`GET .../findings/{id}/evidence`, its own surface one day),
+           case history (its own task).
+CONSTRAINTS: the panel calls only the read-only GET and writes nothing; `tsc
+             -b` passes; no new dependency; the existing workspace tests stay
+             green; the desktop bundle builds from the same source.
+ACCEPTANCE CRITERIA:
+- [x] a case with artifacts shows its claims and the path each one rests on
+- [x] a finding's validation status is shown with its statement
+- [x] a claim that reaches no source is marked and does not pass silently
+- [x] every edge is visible as a sentence, and a node without one appears
+- [x] an artifact-free case shows the core's guidance rather than an error
+- [x] the panel writes nothing and reloads with the workspace
+- [x] `tsc -b` and the web suite stay green
+TESTS: web/src/CaseWorkspace.test.tsx - a case with a trace and its path, an
+       orphan flagged, the edge list, and the empty-case guidance.
+VERIFICATION: cd web && npm test PASS; cd web && npm run build PASS; cd web &&
+              npm run build:desktop PASS. The server suite and the three gates
+              are untouched by this change and stay green.
+STATE UPDATE: mark P7-SHELL-008 done on pass; ROADMAP item 2 records the
+              evidence graph as delivered.
+```
+
+
+
+```
+TASK: P7-SHELL-008 - the evidence graph, as a review surface
+ID: P7-SHELL-008
+PRIORITY: medium
+STATUS: DONE
+SUMMARY: P3-EVIDENCE-006 could answer "what backs each claim in this case, and
+         does every one of them reach the data?" - and nothing in the shell
+         showed it, so a case's own evidence was only inspectable one finding at
+         a time and a claim with no source was invisible.
+
+An **Evidence panel** now sits after the findings panel, because the graph is
+what reviews them. It loads read-only with the workspace. Two parts, both
+textual - an SVG layout is a library's job and DEC-001 keeps the bundle
+dependency-free, and a sentence carries the same information a reader can act
+on:
+
+- **Claims and what they rest on** - one block per trace: the finding's
+  statement with its validation status, and its path rendered as a chain of
+  chips (finding -> run -> dataset), the same shape the chat uses for a citation
+  so a reviewer reads it the same way.
+- **How each artifact was derived** - every edge as a sentence
+  ("chart 'Revenue by region' is rendered from the sql run"), so the graph's
+  structure is visible without a diagram. A node with no edge is still listed
+  under its kind - an attached dataset nothing has queried yet, a plan nothing
+  has run - because leaving it out would make the graph say the case has less
+  than it does.
+
+Three behaviours that had to be right rather than present:
+
+- **A claim with no source is marked, not smoothed over.** A finding whose run
+  is gone is the thing the graph exists to surface; it renders with "a claim
+  with no source: its run is gone" so a reviewer cannot read it as supported.
+- **A broken edge says so.** Such a finding still has its edge to a run the case
+  no longer has, so an edge whose target is missing renders as "an artifact no
+  longer in the case" rather than as a uuid.
+- **The 400 of an artifact-free case is guidance, not an error.** The endpoint
+  answers 400 with a sentence naming what would build a graph, and a young case
+  is not a failed review - so it is a muted paragraph, and only other failures
+  become an alert.
+
+NON-GOALS held: no drawn graph (DEC-001 keeps the bundle dependency-free; the
+             edge sentences carry the same information), no editing the graph
+             (it is a projection; there is nothing to edit, only artifacts to
+             add through the endpoints that own them), no single-finding chain
+             surface (`GET .../findings/{id}/evidence`, its own task one day).
+CONSTRAINTS held: the panel calls only the read-only GET and writes nothing; no
+             new endpoint and no new dependency; `tsc -b` passes; the desktop
+             bundle builds from the same source.
+ACCEPTANCE CRITERIA: all 7 - see the checked boxes above.
+TESTS: 4 added to web/src/CaseWorkspace.test.tsx (web suite 60 -> 64) - a claim
+       with its path, an orphan flagged, the derivations and the unused
+       artifacts, and the empty case's guidance rendered without an alert.
+VERIFICATION: cd web && npm test - 64 passed; cd web && npm run build PASS
+              (tsc -b + vite build); cd web && npm run build:desktop PASS. The
+              server suite and the three gates are untouched by this change
+              and stay green.
+LESSON: the patch script failed three times before a line of it landed, and the
+        cause was the script, not the file - an earlier replacement had moved
+        the anchor a later assertion looked for, so the whole script died at
+        an assert and nothing was written. Writing the file after each
+        replacement instead of once at the end turned a silent all-or-nothing
+        failure into a resumable one, and the same idempotency check
+        ("already applied") is what made the retry safe. The same discipline
+        that keeps a task atomic applies to the tool that edits it.
+```

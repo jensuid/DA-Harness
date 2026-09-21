@@ -27,6 +27,7 @@ vi.mock('./api', async (importOriginal) => {
     runEda: vi.fn(),
     getEvidenceGraph: vi.fn(),
     getCaseHistory: vi.fn(),
+    getLearnWalk: vi.fn(),
     listEvaluations: vi.fn(),
     getAgentState: vi.fn(),
     proposeAgentStep: vi.fn(),
@@ -144,6 +145,96 @@ const caseHistory = {
   },
 }
 
+// The walk the workspace loads by default (P7-SHELL-010). A fresh case: the
+// question stage is always complete, so the learner's first job is the data.
+const learnWalk = {
+  case_id: 'c1',
+  question: 'Why did revenue decline?',
+  steps: [
+    {
+      name: 'why',
+      purpose:
+        'An analysis starts with a question worth answering, and a reason this data can answer it.',
+      prompt: 'What do you want to know, and why would this dataset know it?',
+      stages: [
+        {
+          name: 'question',
+          completed: true,
+          action: 'Refine the analytical question',
+          hint: 'State what you want to know and how you would know it.',
+        },
+        {
+          name: 'data',
+          completed: false,
+          action: 'Attach a dataset',
+          hint: 'CSV, Parquet or Excel - the engine reads all three.',
+        },
+      ],
+      status: 'current',
+    },
+    {
+      name: 'what',
+      purpose:
+        'Before querying, read what the data actually is - the shape a question has to be.',
+      prompt: 'What is in this dataset - and what can it not tell you?',
+      stages: [
+        {
+          name: 'profile',
+          completed: false,
+          action: 'Profile every attached dataset',
+          hint: 'Profiling is what the planner and the missing-data check read.',
+        },
+        {
+          name: 'plan',
+          completed: false,
+          action: 'Generate an analysis plan',
+          hint: 'Sub-questions and hypotheses derived from the profile.',
+        },
+      ],
+      status: 'pending',
+    },
+    {
+      name: 'how',
+      purpose: 'A question is tested by a computation.',
+      prompt: 'What calculation would the data have to agree with?',
+      stages: [
+        {
+          name: 'analyze',
+          completed: false,
+          action: 'Run an analysis',
+          hint: 'SQL or Python, single- or multi-dataset.',
+        },
+        {
+          name: 'evidence',
+          completed: false,
+          action: 'Attach evidence to a finding',
+          hint: 'Record a finding against a run, and render a chart from it.',
+        },
+      ],
+      status: 'pending',
+    },
+    {
+      name: 'validate',
+      purpose: 'An answer is not finished when it is written.',
+      prompt: 'Does the finding still hold when the computation reruns?',
+      stages: [
+        {
+          name: 'validate',
+          completed: false,
+          action: 'Validate a finding',
+          hint: 'Rerun the stored computation and check its support.',
+        },
+      ],
+      status: 'pending',
+    },
+  ],
+  current: 'why',
+  next_action: 'Attach a dataset',
+  next_hint: 'CSV, Parquet or Excel - the engine reads all three.',
+  next_endpoint: 'POST /cases/c1/datasets',
+  done: false,
+}
+
 function runFixture(): api.RunSummary {
   return {
     id: 'r1', case_id: 'c1', dataset_id: 'd1', kind: 'sql', sql: 'q', code: null,
@@ -166,6 +257,7 @@ function mockEmptyCase() {
   vi.mocked(api.getAgentState).mockResolvedValue(agentIdle())
   vi.mocked(api.getEvidenceGraph).mockResolvedValue(evidenceGraph)
   vi.mocked(api.getCaseHistory).mockResolvedValue(caseHistory)
+  vi.mocked(api.getLearnWalk).mockResolvedValue(learnWalk)
 }
 
 function agentStep(overrides: object = {}): api.AgentStep {
@@ -288,7 +380,8 @@ describe('CaseWorkspace', () => {
     render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
     await screen.findByText(/no data attached yet/i)
 
-    const input = screen.getByLabelText(/attach a dataset/i)
+    const dataPanel = screen.getByRole('heading', { name: 'Data' }).parentElement!
+    const input = within(dataPanel).getByLabelText(/attach a dataset/i)
     await user.upload(input, new File(['a,b\n1,2\n'], 'new.csv', { type: 'text/csv' }))
 
     await waitFor(() => expect(api.attachDataset).toHaveBeenCalled())
@@ -887,6 +980,128 @@ describe('CaseWorkspace', () => {
       await screen.findByText(/no artifacts yet - attach data/i),
     ).toBeInTheDocument()
     // A young case is guidance, not a failed review.
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
+  it('walks the four phases and names the one to work on now', async () => {
+    mockEmptyCase()
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+
+    const panel = await screen.findByRole('heading', { name: 'Learn this case' })
+    const learn = within(panel.parentElement!)
+    // The ladder is the workflow regrouped: the four phases, in the spec's
+    // order, and exactly one of them current.
+    expect(
+      learn.getAllByRole('heading', { level: 3 }).map((h) => h.textContent),
+    ).toEqual(['Why', 'What', 'How', 'Validate'])
+    expect(learn.getByText('status: current')).toBeInTheDocument()
+    expect(learn.getAllByText(/^status: pending$/)).toHaveLength(3)
+    // A learner always has one thing to do next, never two - the panel says
+    // which phase and which action.
+    expect(
+      learn.getByText(/The phase to work on now is Why: Attach a dataset/i),
+    ).toBeInTheDocument()
+  })
+
+  it('teaches each phase - what it is for, and the question that tests it', async () => {
+    mockEmptyCase()
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+    const panel = await screen.findByRole('heading', { name: 'Learn this case' })
+    const learn = within(panel.parentElement!)
+
+    // The purpose is what the workflow's "next action" never says.
+    expect(
+      learn.getByText(/An analysis starts with a question worth answering/i),
+    ).toBeInTheDocument()
+    // The prompt is what makes it teaching rather than a checklist.
+    expect(
+      learn.getByText(/What do you want to know, and why would this dataset know it\?/i),
+    ).toBeInTheDocument()
+  })
+
+  it('shows the stages as the actions that close them, done and to do', async () => {
+    mockEmptyCase()
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+    const panel = await screen.findByRole('heading', { name: 'Learn this case' })
+    const learn = within(panel.parentElement!)
+
+    // The stages render as what the learner does, not as internal names, and a
+    // complete one is marked.
+    expect(learn.getByText(/Refine the analytical question/)).toBeInTheDocument()
+    const data = learn.getByLabelText('Attach a dataset: to do')
+    const question = learn.getByLabelText('Refine the analytical question: done')
+    expect(question).toHaveTextContent('✓')
+    expect(data).toHaveTextContent('○')
+  })
+
+  it('moves the ladder on as the case fills', async () => {
+    // A profiled, planned, run-and-charted case: Why and What are done, How is
+    // current because a finding has not been recorded yet.
+    mockEmptyCase()
+    vi.mocked(api.getLearnWalk).mockResolvedValue({
+      ...learnWalk,
+      steps: learnWalk.steps.map((step, i) => ({
+        ...step,
+        status: i < 2 ? 'complete' : i === 2 ? 'current' : 'pending',
+        stages: step.stages.map((stage) =>
+          i < 2 ? { ...stage, completed: true } : stage,
+        ),
+      })),
+      current: 'how',
+      next_action: 'Attach evidence to a finding',
+      next_endpoint: 'POST /cases/c1/findings',
+    })
+
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+    const panel = await screen.findByRole('heading', { name: 'Learn this case' })
+    const learn = within(panel.parentElement!)
+    expect(
+      learn.getByText(
+        /The phase to work on now is How: Attach evidence to a finding/i,
+      ),
+    ).toBeInTheDocument()
+  })
+
+  it('graduates a completed walk without claiming the answer is right', async () => {
+    mockEmptyCase()
+    vi.mocked(api.getLearnWalk).mockResolvedValue({
+      ...learnWalk,
+      steps: learnWalk.steps.map((step) => ({
+        ...step,
+        status: 'complete',
+        stages: step.stages.map((stage) => ({ ...stage, completed: true })),
+      })),
+      current: null,
+      next_action: null,
+      next_hint: null,
+      next_endpoint: null,
+      done: true,
+    })
+
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+    const panel = await screen.findByRole('heading', { name: 'Learn this case' })
+    const learn = within(panel.parentElement!)
+    // The core's own discipline, carried into the shell: a closed loop means
+    // the loop ran, not that the answer is right.
+    expect(
+      learn.getByText(/The walk is complete: every phase is done/i),
+    ).toBeInTheDocument()
+    expect(learn.getByText(/not that the answer is right/i)).toBeInTheDocument()
+    expect(learn.queryByText(/The phase to work on now/i)).not.toBeInTheDocument()
+  })
+
+  it('degrades to guidance when the walk cannot be read', async () => {
+    // A 404 means the case is unknown, and the workspace's own load reports
+    // that at the top - so this panel says it once, not twice.
+    mockEmptyCase()
+    vi.mocked(api.getLearnWalk).mockRejectedValue(
+      new api.ApiError(404, 'case not found'),
+    )
+
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+    expect(
+      await screen.findByText(/The walk could not be read: case not found/i),
+    ).toBeInTheDocument()
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   })
 

@@ -1,6 +1,6 @@
 # DAH - Current State
 
- - **Phase:** P5 Production Grade - COMPLETE. P6 Post-Launch Evolution - COMPLETE: all 5 entry-checklist items. P7 Product Modes is IN PROGRESS (1 of 4, with eight web surfaces delivered): EVALUATE mode is DONE in the core and in the shell, the agent has a surface, a case can be renamed, duplicated and deleted from the list, templates are reachable from the shell, a cited previous case is something the analyst can follow, the "what should I look at first" steps are one panel away, a case's evidence graph is a review surface, and its history is one too. The web-shell gap - item 2 - is CLOSED: every capability with an endpoint has a surface. LEARN mode - item 3 - has a core: the guided Why -> What -> How -> Validate walk is a read-side projection over the workflow stages, and only its shell surface remains. P4 Production Candidate was COMPLETE (all 5 checklist items: P4 Production Candidate was COMPLETE (all 5 checklist items:
+ - **Phase:** P5 Production Grade - COMPLETE. P6 Post-Launch Evolution - COMPLETE: all 5 entry-checklist items. P7 Product Modes is IN PROGRESS (1 of 4, with eight web surfaces delivered): EVALUATE mode is DONE in the core and in the shell, the agent has a surface, a case can be renamed, duplicated and deleted from the list, templates are reachable from the shell, a cited previous case is something the analyst can follow, the "what should I look at first" steps are one panel away, a case's evidence graph is a review surface, and its history is one too. The web-shell gap - item 2 - is CLOSED: every capability with an endpoint has a surface. LEARN mode - item 3 - is DONE in the core (P7-LEARN-001) and in the shell (P7-SHELL-010): the guided Why -> What -> How -> Validate walk is a read-side projection over the workflow stages, and a Learn this case panel walks it beside the workflow it explains. The P7 checklist has EVALUATE and LEARN delivered; multi-agent workflows and the release are what remain. P4 Production Candidate was COMPLETE (all 5 checklist items: P4 Production Candidate was COMPLETE (all 5 checklist items:
   P4-VERIFY-001, P4-RELIABILITY-002, P4-UX-003 + P4-UX-004, P4-VALID-005,
   P4-PERF-006, P4-CI-007). P3 V1 is COMPLETE: all 10 entry-checklist items,
   231 server tests, and a P3 gate of its own. P5 Production Grade is IN
@@ -22,8 +22,22 @@ a versioned, forward-only migration path for the store, so a database from
 any past release opens, upgrades and keeps its rows (P6-MIGRATE-004);
 and an update check that tells an installed app a newer build exists - or
 says honestly that it could not tell (P6-UPDATE-005)**
-- **Active task:** P7-LEARN-001 DONE - LEARN mode, the guided walk
-  (core). The spec's third product mode is a sequencing and teaching layer
+- **Active task:** P7-SHELL-010 DONE - LEARN mode in the web shell.
+  P7-LEARN-001 shipped the guided walk as an endpoint; nothing in the shell
+  reached it, so LEARN existed as a contract and not as a product. A **Learn
+  this case panel** now sits beside the workflow panel it explains: the workflow
+  says where the case stands, this says why each step exists and what a learner
+  should be able to answer before leaving it. Each phase renders its name and
+  status, what it is for, the question that tests understanding, and the stages
+  it covers as the actions that close them, with the workflow's own hints. It
+  loads read-only with the workspace, names the one phase and action to work on
+  now, and a completed walk says the trust loop closed - the loop ran, not that
+  the answer is right.
+  Before it: P7-LEARN-001 (LEARN's core), P7-SHELL-009 (case history),
+  P7-SHELL-008 (the evidence graph), P7-SHELL-007 (EDA), P7-SHELL-006
+  (cross-case memory), P7-SHELL-005 (templates), P7-SHELL-004 (case
+  management), P7-SHELL-003 (the agent surface), P7-SHELL-002 (EVALUATE's
+  surface), P7-EVAL-001 (EVALUATE's core), P6 CLOSED. The spec's third product mode is a sequencing and teaching layer
   over the workflow P3-FLOW-004 already ships: `server/app/learn.py` (new)
   regroups the seven ANALYZE stages into the spec's four phases - why
   (question, data), what (profile, plan), how (analyze, evidence), validate
@@ -124,20 +138,23 @@ says honestly that it could not tell (P6-UPDATE-005)**
   documented minimum but is no longer enforced by CI, and a green run no longer
   proves the exact Intel triple a local build produces. Restoring that needs a
   self-hosted Intel runner.
-- **Test status:** server 367 passed (336 + 22 evaluate + 9 learn); web 67 passed
-  (CaseList 10, CaseCreation 3, CaseWorkspace 41, Templates 8, api 6 - the
-  workspace gained the history panel, on top of the evidence graph, EDA, the
-  cited-case buttons, the promote panel, the templates section and the
-  empty-204 fix); desktop shell 22 Rust tests
+- **Test status:** server 367 passed (336 + 22 evaluate + 9 learn); web 73 passed
+  (CaseList 10, CaseCreation 3, CaseWorkspace 47, Templates 8, api 6 - the
+  workspace gained the LEARN panel, on top of the history panel, the evidence
+  graph, EDA, the cited-case buttons, the promote panel, the templates section
+  and the empty-204 fix); desktop shell 22 Rust tests
   (`cd desktop/src-tauri && cargo test [--features e2e]`, 19 unit + 3 e2e);
   P2, P3 and P4 gates PASS (P4: all 18 journey steps, all 10 exit criteria);
   first release v0.1.0 published from tag and checksum-verified.
-- **Next task:** the LEARN core is delivered (P7 item 3) and needs its surface:
-  **P7-SHELL-010**, a panel that walks the ladder - `GET /cases/{id}/learn`
-  answers the four phases, each with what it teaches, the question a learner
-  answers, and workflow's own action for the stage to do next. After it:
-  multi-agent workflows, which only make sense after EVALUATE - that is how an
-  agent's own output gets audited.
+- **Next task:** LEARN mode is delivered in core and shell (P7-LEARN-001,
+  P7-SHELL-010), and with EVALUATE before it, the P7 checklist's product modes
+  are both built. What remains on it: **multi-agent workflows** - the spec's
+  ladder above the single driver that exists (P6-AGENT-002) - which only make
+  sense after EVALUATE because that is how an agent's own output gets audited,
+  and the release itself (thirteen tasks have landed since v0.1.0, so `0.2.0`
+  is the honest next label when one is wanted). Deferred, not dropped: signing
+  (DEC-006, the slot is in `release.yml`), cloud sync, team collaboration,
+  warehouse connectors, enterprise governance.
   Deferred, not dropped: signing (DEC-006, the slot is in `release.yml`), cloud
   sync, team collaboration, warehouse connectors, enterprise governance.
   Deferred, not dropped: signing (DEC-006, the slot is in `release.yml`), cloud
@@ -199,7 +216,7 @@ says honestly that it could not tell (P6-UPDATE-005)**
 - Walk a case as the LEARN ladder: `GET /cases/{id}/learn` (read-only; the four
   phases - why, what, how, validate - over the workflow's own stages, each with
   what it teaches, the question a learner answers, and the action that
-  advances)
+  advances); the shell walks it as the **Learn this case** panel
 - Templates: `POST /cases/{id}/template` with `{"name"?}` (promote), `GET /templates`,
   `POST /cases/from-template` with `{"template_id", "question"?, "dataset"?}`,
   `DELETE /templates/{id}` (templates outlive their source case)
@@ -239,6 +256,7 @@ says honestly that it could not tell (P6-UPDATE-005)**
 | P7-SHELL-008 the evidence graph in the shell | DONE |
 | P7-SHELL-009 case history in the shell | DONE |
 | P7-LEARN-001 LEARN mode, the guided walk (core) | DONE |
+| P7-SHELL-010 LEARN mode in the web shell | DONE |
 
 ## P6 progress
 

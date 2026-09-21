@@ -2,32 +2,32 @@
 
 ## Next action
 
-**P7-LEARN-001 is DONE**: LEARN mode has a core. The spec's third product mode
-is the ANALYZE loop regrouped into its own four phases - Why -> What -> How ->
-Validate - and explained, so a learner who does not yet know the order can be
-walked through it. `server/app/learn.py` is a read-side projection over the
-artifact counts `case_progress` already derives: nothing stored, nothing
-executed, one phase current at most, and `done` says only that the trust loop
-closed. `GET /cases/{id}/learn` answers it, read-only.
+**P7-SHELL-010 is DONE**: LEARN mode has a surface as well as a core, and with
+EVALUATE before it, both product modes the spec names - and that DAH uniquely
+owns - are built. A **Learn this case panel** sits beside the workflow panel it
+explains: the workflow says where the case stands, this says why each step
+exists and what a learner should be able to answer before leaving it. Each
+phase renders what it is for, the question that tests understanding, and the
+stages as the actions that close them; the panel names the one phase and action
+to work on now, and a finished walk says the trust loop closed - the loop ran,
+not that the answer is right.
 
-The server suite is 367 tests (was 358: +9 in `server/tests/test_learn.py`),
-and the P2, P3 and P4 gates each PASS - each re-ran the suite at 367. The web
-side is untouched and stays at 67.
+The web suite is 73 tests (was 67: +6 in `CaseWorkspace.test.tsx`), `npm run
+build` passes - `tsc -b` runs first - and the desktop bundle builds from the
+same source. The server side is untouched by this change and stays at 367.
 
 ### What is unbuilt, in priority order
 
-- **LEARN's surface - P7-SHELL-010**, the panel that walks the ladder. The core
-  answers the four phases, each with what it teaches, the question a learner
-  answers before leaving it, and workflow's own action for the stage to do
-  next; none of it is reachable from the shell yet. It is a panel over an
-  existing contract and needs no new endpoint.
-- **Multi-agent workflows** - the spec's ladder above the single driver that
-  exists (P6-AGENT-002). Only after EVALUATE, which is the audit layer an
-  agent's own output has to survive.
-- **The two endpoint-only surfaces, by design.** `/updates/latest` already has
-  the **DAH > Check for Updates...** menu item; `/schema-version` answers
-  "is my data safe with this build", a question a support conversation asks
-  rather than a step in an analysis. Neither is a missing panel.
+- **Multi-agent workflows** - the last item on the P7 checklist, and the spec's
+  ladder above the single driver that exists (P6-AGENT-002). Only after
+  EVALUATE, which is the audit layer an agent's own output has to survive -
+  and EVALUATE is built now, so the precondition is met.
+- **A release.** Fourteen tasks have landed since v0.1.0; `0.2.0` is the honest
+  next label. The pipeline publishes per tag, and the update check is already
+  behind the **Check for Updates...** menu item.
+- **The two endpoint-only surfaces, by design.** `/schema-version` answers "is
+  my data safe with this build", a question a support conversation asks rather
+  than a step in an analysis.
 - **Deferred, not dropped:** signing (DEC-006, the slot is in `release.yml`),
   cloud sync, team collaboration, warehouse connectors, enterprise governance.
 
@@ -166,6 +166,33 @@ Nothing is unblocked-but-undone.
 ---
 
 ## What was completed
+- P7-SHELL-010 PASSED: LEARN mode in the web shell. P7-LEARN-001 shipped the
+  guided walk and nothing in the shell reached it, so the mode existed as a
+  contract and not as a product. A **Learn this case panel** now sits beside
+  the workflow panel it explains - the workflow says where the case stands,
+  this says why each step of that exists and what a learner should be able to
+  answer before leaving it. It loads read-only with the workspace.
+  Each phase renders its name and status, what it is for, the question that
+  tests understanding, and the stages it covers as the actions that close them
+  - with the workflow's own hints, so what to do and why sit in one place. The
+  panel names the single phase and action to work on now, the way the workflow
+  panel names the next stage, and a completed walk says the loop closed in the
+  core's own words: the trust loop ran, not that the answer is right. A learner
+  is not graduated on a stronger claim than the artifacts support, and nothing
+  is scored - for the same reason EVALUATE reports nine verdicts rather than a
+  number.
+  LESSON: three existing tests broke, all because the workspace is one page.
+  The ladder's stage rows carry the workflow's own actions as their labels, so
+  "attach a dataset" named both the data panel's uploader and a stage row;
+  fixed by saying which panel the input is in, which is the accessible thing
+  too. The other two were the previous task's trap come back: a phrase that
+  spans a <strong> cannot be matched by text, because the matcher reads an
+  element's own text nodes and not its descendants' - the "work on now"
+  sentence is plain text now. And one failure was not its own: the
+  ambiguous-label test died midway and left a queued mock value behind, so the
+  next test received a dataset id from the case before it. A failing test can
+  corrupt the one after it, which is why the fix belongs to the first.
+
 - P7-LEARN-001 PASSED: LEARN mode, the guided walk (core). The spec names three
   product modes; ANALYZE exists and its workspace answers "what do I do next"
   without ever saying why. LEARN is the same loop regrouped into the spec's

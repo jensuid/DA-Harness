@@ -597,6 +597,48 @@ export function getEvidenceGraph(caseId: string): Promise<EvidenceGraph> {
   return request<EvidenceGraph>(`/cases/${caseId}/evidence-graph`)
 }
 
+// --- LEARN mode: the analytical process as a guided walk (P7-LEARN-001 / P7-SHELL-010)
+
+// The walk regroups the ANALYZE workflow into the spec's four phases - why,
+// what, how, validate - and each phase carries what it teaches and the question
+// a learner should be able to answer before leaving it. Like the evidence graph
+// and the case history it is a read-side projection, so it cannot drift from
+// the case and nothing here writes.
+export interface LearnStage {
+  name: string
+  completed: boolean
+  // What closes the stage, from the workflow's own table - one source of truth.
+  action: string
+  hint: string
+}
+
+export interface LearnStep {
+  name: string
+  purpose: string
+  prompt: string
+  stages: LearnStage[]
+  status: string // complete | current | pending
+}
+
+export interface LearnWalk {
+  case_id: string
+  question: string
+  steps: LearnStep[]
+  current: string | null
+  next_action: string | null
+  next_hint: string | null
+  next_endpoint: string | null
+  done: boolean
+}
+
+// Read-only: the walk answers what the learner should do and understand, and
+// nothing a learner does here changes the case. A 404 means the case is
+// unknown, and the workspace loads its own case on mount, so that answer is
+// already reported at the top.
+export function getLearnWalk(caseId: string): Promise<LearnWalk> {
+  return request<LearnWalk>(`/cases/${caseId}/learn`)
+}
+
 // --- case history: what happened in this case, and when (P3-CASE-007 / P7-SHELL-009)
 
 // The timeline is projected from each artifact's own timestamp, never stored,
