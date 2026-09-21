@@ -1,6 +1,67 @@
 # DAH - Handoff
 
 ## Next action
+**P7-CORS-001 is DONE**: the packaged app could not reach its own core. A human
+opened the shipped .app and got "Failed to load cases: Failed to fetch" with the
+New Case form unreachable behind it - so the report that found the last bug was
+the thing that found this one, and it is the reason a walkthrough by hand is not
+a luxury in this repo.
+
+Tauri serves the bundled frontend from its own scheme while the core answers on
+127.0.0.1:8123, so every fetch the app makes is cross-origin, and the core
+answered with no `Access-Control-Allow-Origin`. The browser discarded each
+response before the app saw it - while the core's own log recorded a clean 200
+for the identical request. That is not a contradiction, it is the whole bug.
+
+Reproduced in a real headless Chrome before the fix - the shipped bundle served
+from a foreign origin fetches the core and fails with exactly the message the
+user saw, while the core logs 200 - and the same fetch succeeds after it.
+`server/app/main.py` gains `ALLOWED_ORIGINS` and a CORS middleware: an origin on
+the list is echoed with `Vary: Origin`, an OPTIONS preflight answers 204 with
+methods and headers, and anything else gets nothing. No wildcard: the core
+holds an analyst's cases and chat, and `*` would let a webpage the user merely
+visits read them. Written as a plain middleware rather than starlette's
+CORSMiddleware because no endpoint handles OPTIONS, and a 405 preflight means
+the real request is never sent.
+
+### The packaged .app is still stale, and this fix is not in it
+
+The bundled sidecar was built Sep 20 09:22, **33 commits ago**, and it predates
+`/schema-version`, `/updates/latest`, all of P7 and this fix. The source is
+fixed; the artifact a user runs is not. Rebuild before any release:
+
+    cd server && ./build_sidecar.sh && cd ../desktop && npm run build
+
+### What is unbuilt, in priority order
+
+- **A release, after the rebuild.** Every P7 checklist item that builds
+  something is delivered, and now both verified against a real server *and*
+  walked through the shipped shell. Eighteen tasks have landed since v0.1.0;
+  `0.2.0` is the honest next label.
+- **P7-WALK-001's five findings**, still open: evaluations do not travel with
+  an exported case; a stale agent step can be approved after its write happened
+  out of band; the plan's contents, a run's result rows and the profile's
+  per-column null count are persisted and never rendered; a draft's grounds run
+  together with its count; the chat and generate-code inputs are near-identical
+  adjacent boxes.
+- **The two endpoint-only surfaces, by design.** `/schema-version` answers "is
+  my data safe with this build", a question a support conversation asks rather
+  than a step in an analysis.
+- **Deferred, not dropped:** signing (DEC-006, the slot is in `release.yml`),
+  cloud sync, team collaboration, warehouse connectors, enterprise governance.
+
+### If the next step is a release
+
+Rebuild the sidecar first, then tag `v<x.y.z>` where x.y.z matches
+server/pyproject.toml. The published build is arm64 and unsigned, flagged
+pre-release (DEC-006). Eighteen tasks have landed since v0.1.0, so `0.2.0` is
+the honest next label when a release is wanted.
+
+Nothing is unblocked-but-undone.
+
+---
+
+## Next action
 **P7-WALK-001 is DONE**: the shipped shell, used by hand. Every other
 verification artifact in this repo drives a contract - the core through
 Starlette's TestClient, the shell through jsdom - and a contract does not

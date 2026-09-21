@@ -148,11 +148,69 @@ configure_logging()
 start_parent_watchdog()
 
 
+# Origins the desktop shell's webview may come from. The core binds to
+# 127.0.0.1 only, but loopback binding does not make it same-origin: Tauri's
+# webview is served from its own scheme, so every fetch the bundled frontend
+# makes is a cross-origin one, and a browser with no `Access-Control-Allow-Origin`
+# in the answer discards the response before the app ever sees it. That is the
+# packaged app's "Failed to load cases: Failed to fetch": the core answers 200
+# and the shell still shows nothing.
+#
+# The list is narrow on purpose. `*` would be simpler, but the core is a local
+# process holding an analyst's cases and chat history, and a webpage the user
+# merely visits in a browser runs on another origin entirely - it should not be
+# able to read this. Tauri's own origins plus the dev-server ports are every
+# origin this frontend legitimately has.
 app = FastAPI(
     title="DAH Harness Core",
     description="Deterministic core of the Data Analysis Harness.",
     version="0.1.0",
 )
+
+ALLOWED_ORIGINS = frozenset(
+    {
+        # Tauri v2 webview: `tauri://localhost` on macOS, `http://tauri.localhost`
+        # on Windows and Linux.
+        "tauri://localhost",
+        "http://tauri.localhost",
+        # `tauri dev` against the Vite dev server (web/vite.config.ts pins the
+        # port; the desktop shell's dev:hmr scripts use the same range).
+        "http://localhost:5273",
+        "http://localhost:5274",
+        "http://localhost:5275",
+        "http://localhost:5276",
+        "http://127.0.0.1:5273",
+        "http://127.0.0.1:5274",
+        "http://127.0.0.1:5275",
+        "http://127.0.0.1:5276",
+    }
+)
+
+
+@app.middleware("http")
+async def cors(request: Request, call_next):
+    """Answer the shell's own origins, and only them.
+
+    A CORS middleware answers the preflight an unfamiliar origin sends before
+    the real request, and adds the header the browser needs to release the
+    response. Anything not on the list gets neither, so the core stays
+    unreadable to a webpage on an origin of its own.
+    """
+    origin = request.headers.get("origin")
+    response = await call_next(request)
+    if origin in ALLOWED_ORIGINS:
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Vary"] = "Origin"
+        if request.method == "OPTIONS":
+            # A preflight is answered, not routed: no endpoint handles OPTIONS,
+            # so leaving it to Starlette would answer 405 and the real request
+            # would never be sent.
+            response.status_code = 204
+            response.headers["Access-Control-Allow-Methods"] = (
+                "GET, POST, PATCH, PUT, DELETE, OPTIONS"
+            )
+            response.headers["Access-Control-Allow-Headers"] = "content-type"
+    return response
 
 
 @app.exception_handler(Exception)

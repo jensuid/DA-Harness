@@ -124,6 +124,7 @@ the gate comes first because a phase is done when a gate says so.
 | P7-SHELL-011 | UX (the multi-agent surface) | DONE | +5 web tests; web build PASS |
 | P7-E2E-001 | Verification (real-server e2e) | DONE | 25 steps over real HTTP; 3 runs green |
 | P7-WALK-001 | Verification (manual shell walkthrough) | DONE | walked the shipped shell by hand; 1 bug fixed, 380 tests + e2e green |
+| P7-CORS-001 | Reliability (the packaged app's webview) | DONE | CORS for the shell's origins; 4 tests, +4 (384), e2e green |
 
 
 Contracts for the rolling window (the two most recent). Older blocks are in
@@ -265,6 +266,108 @@ LESSON: a set where a list was needed is the smallest possible bug and the
         lesson: this repo's verification drives contracts, and contracts do
         not render - three panels pass their tests while showing the analyst
         nothing, and only a hand on the shell finds that.
+
+### P7-CORS-001 contract
+
+```
+TASK ID: P7-CORS-001
+MILESTONE: P7 Product Modes
+CAPABILITY: Reliability (the packaged desktop app talking to its own core)
+GOAL: The shipped .app opened to "Failed to load cases: Failed to fetch", and
+      its New Case form was unreachable behind that. Every fetch the packaged
+      frontend makes is cross-origin - the webview is served from Tauri's own
+      scheme, the core from 127.0.0.1:8123 - and the core answered with no
+      `Access-Control-Allow-Origin`, so the browser discarded each response
+      before the app saw it. The core's own log showed a clean 200 for the very
+      request the shell reported as failed, which is why no test caught it.
+CONTEXT: every in-process and real-server verification drives the core from an
+         origin it does not gate. Starlette's TestClient does not enforce CORS,
+         and the e2e script talks to the core directly. The browser is the only
+         gate, and nothing in the repo drove a browser at the core until a human
+         opened the app.
+INPUTS: the packaged .app as built; a real headless Chrome over the DevTools
+        protocol, serving the shipped bundle from a foreign origin to reproduce
+        the browser's view of the fetch.
+RELEVANT FILES: server/app/main.py (the CORS middleware and its allowlist),
+                server/tests/test_cors.py (new),
+                ai/HANDOFF.md, ai/TASKS.md, ai/CURRENT_STATE.md
+REQUIRED CHANGE:
+  - `server/app/main.py` gains an `ALLOWED_ORIGINS` frozenset and a CORS
+    middleware: an origin on the list is echoed back with `Vary: Origin`, an
+    OPTIONS preflight is answered 204 with the allowed methods and the
+    content-type header, and any other origin gets neither - the response still
+    succeeds, because CORS is the browser's gate and not the server's, but the
+    browser will not release it.
+  - The allowlist is narrow and deliberately has no wildcard: the core is a
+    local process holding an analyst's cases and chat history, and `*` would let
+    a webpage the user merely visits read them. Tauri's own two origins plus the
+    dev-server ports are every origin this frontend legitimately has.
+NON-GOALS: changing the frontend (it was correct - it fetched the right URL and
+           reported the browser's error honestly), changing the shell's origin
+           handling, allowing credentials, broadening the allowlist to user
+           configuration.
+CONSTRAINTS: no new dependency (the middleware is a plain FastAPI middleware,
+             not starlette's CORSMiddleware, so the preflight answers 204 rather
+             than 405 and nothing else changes); the core stays unreadable to
+             origins it does not know.
+ACCEPTANCE CRITERIA:
+- [x] a real browser, served the shipped bundle from a foreign origin, sees the
+      fetch refused; served from an allowed origin, sees it succeed
+- [x] the shell's own origin is echoed, a preflight answers 204 with methods and
+      headers, and an unknown origin gets no CORS header at all
+- [x] 4 new tests in tests/test_cors.py, proven to fail without the fix and pass
+      with it
+- [x] 384 server tests pass (was 380) and all 25 real-server e2e steps pass
+TESTS: tests/test_cors.py - 4 tests. Two were verified against a temporarily
+       disabled middleware: the origin-echo and the preflight both fail, so the
+       suite cannot go green with the bug present.
+VERIFICATION: `server/.venv/bin/python -m pytest` -> 384 passed;
+              `server/.venv/bin/python verification/e2e/verify_e2e.py` -> ALL
+              STEPS PASS; reproduced in headless Chrome that the same fetch that
+              failed before the fix succeeds after it.
+STATE UPDATE: TASKS/CURRENT_STATE/HANDOFF name the CORS gap and the rebuild
+              that remains before a release ships it.
+```
+
+TASK: P7-CORS-001 - the packaged app could not reach its own core
+ID: P7-CORS-001
+PRIORITY: high
+STATUS: DONE
+SUMMARY: The shipped .app opened to a dead screen - "Failed to load cases:
+         Failed to fetch" - with the New Case form unreachable behind it. The
+         frontend was never at fault and neither was the core: the browser was
+         the only thing between them that knew. Tauri serves the bundled
+         frontend from its own scheme while the core answers on
+         127.0.0.1:8123, so every fetch the app makes is cross-origin, and the
+         core answered with no `Access-Control-Allow-Origin`. The browser
+         discarded each response - while the core's own log recorded a clean
+         200 for the identical request.
+
+Reproduced twice before the fix, in a real headless Chrome over the DevTools
+protocol: serving the shipped bundle from a foreign origin, the fetch failed
+with exactly the message the user saw; the core logged 200. After the fix the
+same fetch returns the case list and the page renders it.
+
+`server/app/main.py` gains `ALLOWED_ORIGINS` and a CORS middleware. An origin on
+the list is echoed with `Vary: Origin`; an OPTIONS preflight is answered 204
+with the allowed methods and the content-type header - written as a plain
+middleware rather than starlette's CORSMiddleware because no endpoint handles
+OPTIONS, and leaving the preflight to Starlette answers 405 and the real
+request is never sent. Anything not on the list gets neither header: the
+response still succeeds, since CORS is the browser's gate and not the server's,
+but the browser will not release it. No wildcard - the core holds an analyst's
+cases and chat history, and `*` would let a webpage the user merely visits read
+them.
+
+LESSON: this is the sharpest illustration yet of the gap P7-WALK-001 named.
+Every automated artifact in this repo drives the core from a position CORS does
+not gate - TestClient does not enforce it, and the e2e script talks to the core
+directly. The browser is the only gate, and nothing in the repo drove a browser
+at the core. The core logging 200 while the app reported failure was not a
+contradiction; it was the whole bug, and only a human opening the .app could
+see it. The desktop suite's 22 Rust tests verified the shell could start the
+core and that the port was theirs - and stopped exactly one step short of
+asking whether the webview could read an answer.
 
 ### P7-E2E-001 contract
 

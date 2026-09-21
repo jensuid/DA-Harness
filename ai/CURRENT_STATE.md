@@ -77,7 +77,7 @@ says honestly that it could not tell (P6-UPDATE-005)**
   documented minimum but is no longer enforced by CI, and a green run no longer
   proves the exact Intel triple a local build produces. Restoring that needs a
   self-hosted Intel runner.
-- **Test status:** server 380 passed (the 2 multi-agent audit tests now assert the verdict tallies) (336 + 22 evaluate + 9 learn + 13 multi-agent); web 78 passed
+- **Test status:** server 384 passed (4 in the new test_cors.py; CORS for the shell's webview) (the 2 multi-agent audit tests now assert the verdict tallies) (336 + 22 evaluate + 9 learn + 13 multi-agent); web 78 passed
   (CaseList 10, CaseCreation 3, CaseWorkspace 52, Templates 8, api 6 - the
   workspace gained the reviewer panel, on top of the LEARN panel, the evidence
   graph, EDA, the cited-case buttons, the promote panel, the templates section
@@ -205,6 +205,7 @@ says honestly that it could not tell (P6-UPDATE-005)**
 | P7-SHELL-011 the multi-agent surface (the reviewer) | DONE |
 | P7-E2E-001 the whole app against a real server | DONE |
 | P7-WALK-001 the shipped shell, used by hand | DONE |
+| P7-CORS-001 the packaged app could not reach its own core | DONE |
 
 ## P6 progress
 

@@ -54,9 +54,9 @@
     "semantic_hash": ""
   },
   "server/app/main.py": {
-    "mtime": 1789968762.8360634,
-    "seen": 1789970825.157608,
-    "ast_hash": "e195545911023e5998ac7876c5d58af9",
+    "mtime": 1789985480.033241,
+    "seen": 1789986082.752608,
+    "ast_hash": "fcf9a72d6d7f5c4fedce5aa12586aeb4",
     "semantic_hash": ""
   },
   "server/app/models.py": {
@@ -168,9 +168,9 @@
     "semantic_hash": ""
   },
   "ai/CURRENT_STATE.md": {
-    "mtime": 1789976059.084394,
-    "seen": 1789976306.1861498,
-    "ast_hash": "3058fa6a65823429b23d9965e2dcce3f",
+    "mtime": 1789986032.2799108,
+    "seen": 1789986082.753504,
+    "ast_hash": "f11b354643aa5e979e0c4c2b99da087a",
     "semantic_hash": ""
   },
   "ai/DECISIONS.md": {
@@ -180,15 +180,15 @@
     "semantic_hash": ""
   },
   "ai/HANDOFF.md": {
-    "mtime": 1789976077.837429,
-    "seen": 1789976306.186162,
-    "ast_hash": "c20c573bc8df302d175bfce108e63e30",
+    "mtime": 1789986050.6021216,
+    "seen": 1789986082.753518,
+    "ast_hash": "77cec9a8eb2014f43d3db44028f6f39f",
     "semantic_hash": ""
   },
   "ai/TASKS.md": {
-    "mtime": 1789976015.695345,
-    "seen": 1789976306.1861792,
-    "ast_hash": "0fbe6c65f56ea811f3cec88a39591794",
+    "mtime": 1789986017.4868681,
+    "seen": 1789986082.7535338,
+    "ast_hash": "65dd36e19b25e4737228862640480b14",
     "semantic_hash": ""
   },
   "verification/p0/REPORT.md": {
@@ -744,9 +744,9 @@
     "semantic_hash": ""
   },
   "server/tests/test_multi_agent.py": {
-    "mtime": 1789968762.837423,
-    "seen": 1789970825.1578119,
-    "ast_hash": "10c59f78417d5dde6840a6163c38255b",
+    "mtime": 1789985492.2519822,
+    "seen": 1789986082.753223,
+    "ast_hash": "20889e0369b1d6cc37cd8d32dc0ba7df",
     "semantic_hash": ""
   },
   "verification/e2e/verify_e2e.py": {
@@ -756,9 +756,9 @@
     "semantic_hash": ""
   },
   "verification/e2e/REPORT.md": {
-    "mtime": 1789976129.9627442,
-    "seen": 1789976306.186732,
-    "ast_hash": "03cef76a59fbaa81903adb8202230ef4",
+    "mtime": 1789985734.3621168,
+    "seen": 1789986082.753581,
+    "ast_hash": "f965656100a94b2f59f1390a42ccee76",
     "semantic_hash": ""
   }
 }
