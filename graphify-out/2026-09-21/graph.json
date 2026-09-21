@@ -10562,7 +10562,7 @@
       "file_type": "code",
       "norm_label": "stepsentence()",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L1799"
+      "source_location": "L1800"
     },
     {
       "id": "web_src_caseworkspace_stepstatus",
@@ -10574,7 +10574,7 @@
       "file_type": "code",
       "norm_label": "stepstatus()",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L1824"
+      "source_location": "L1825"
     },
     {
       "id": "web_src_caseworkspace_verdict",
@@ -13310,7 +13310,7 @@
       "file_type": "code",
       "norm_label": "agentpanel()",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L1631"
+      "source_location": "L1632"
     },
     {
       "id": "web_src_caseworkspace_agentpanel_decide",
@@ -13322,7 +13322,7 @@
       "file_type": "code",
       "norm_label": "decide()",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L1670"
+      "source_location": "L1671"
     },
     {
       "id": "web_src_caseworkspace_agentpanel_propose",
@@ -13334,7 +13334,7 @@
       "file_type": "code",
       "norm_label": "propose()",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L1655"
+      "source_location": "L1656"
     },
     {
       "id": "web_src_caseworkspace_agentpanel_refresh",
@@ -13346,7 +13346,7 @@
       "file_type": "code",
       "norm_label": "refresh()",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L1646"
+      "source_location": "L1647"
     },
     {
       "id": "web_src_caseworkspace_draftpanel",
@@ -21143,7 +21143,7 @@
       "file_type": "code",
       "norm_label": "count_kinds",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L1607"
+      "source_location": "L1605"
     },
     {
       "id": "web_src_caseworkspace_event_kinds",
@@ -21154,7 +21154,7 @@
       "file_type": "code",
       "norm_label": "event_kinds",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L1616"
+      "source_location": "L1617"
     },
     {
       "id": "web_src_caseworkspace_relations",
@@ -42718,7 +42718,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L1649",
+      "source_location": "L1650",
       "weight": 1.0
     },
     {
@@ -42730,7 +42730,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L1651",
+      "source_location": "L1652",
       "weight": 1.0
     },
     {
@@ -42742,7 +42742,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L1662",
+      "source_location": "L1663",
       "weight": 1.0
     },
     {
@@ -42754,7 +42754,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L1679",
+      "source_location": "L1680",
       "weight": 1.0
     },
     {
@@ -42766,7 +42766,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L1681",
+      "source_location": "L1682",
       "weight": 1.0
     },
     {
@@ -42778,7 +42778,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L1739",
+      "source_location": "L1740",
       "weight": 1.0
     },
     {
@@ -42790,7 +42790,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L1679",
+      "source_location": "L1680",
       "weight": 1.0
     },
     {
@@ -42802,7 +42802,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L1681",
+      "source_location": "L1682",
       "weight": 1.0
     },
     {
@@ -42814,7 +42814,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L1693",
+      "source_location": "L1694",
       "weight": 1.0
     },
     {
@@ -42826,7 +42826,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L1694",
+      "source_location": "L1695",
       "weight": 1.0
     },
     {
@@ -42838,7 +42838,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L1662",
+      "source_location": "L1663",
       "weight": 1.0
     },
     {
@@ -42850,7 +42850,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L1664",
+      "source_location": "L1665",
       "weight": 1.0
     },
     {
@@ -42862,7 +42862,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L1649",
+      "source_location": "L1650",
       "weight": 1.0
     },
     {
@@ -42874,7 +42874,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L1651",
+      "source_location": "L1652",
       "weight": 1.0
     },
     {
@@ -43702,7 +43702,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L1831",
+      "source_location": "L1832",
       "weight": 1.0
     },
     {
@@ -44146,7 +44146,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L1670",
+      "source_location": "L1671",
       "weight": 1.0
     },
     {
@@ -64577,7 +64577,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L1607",
+      "source_location": "L1605",
       "weight": 1.0
     },
     {
@@ -64588,7 +64588,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L1616",
+      "source_location": "L1617",
       "weight": 1.0
     },
     {
@@ -64599,7 +64599,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L1631",
+      "source_location": "L1632",
       "weight": 1.0
     },
     {
@@ -64610,7 +64610,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L1799",
+      "source_location": "L1800",
       "weight": 1.0
     },
     {
@@ -64621,7 +64621,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L1824",
+      "source_location": "L1825",
       "weight": 1.0
     },
     {
@@ -64753,7 +64753,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L1646",
+      "source_location": "L1647",
       "weight": 1.0
     },
     {
@@ -64764,7 +64764,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L1655",
+      "source_location": "L1656",
       "weight": 1.0
     },
     {

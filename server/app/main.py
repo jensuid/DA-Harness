@@ -39,6 +39,7 @@ from app.errors import INPUT_ERROR_TYPES
 from app.eda import EDA_OPS, run_eda
 from app.evidence import build_evidence_graph
 from app.history import build_case_history
+from app.learn import build_learn_walk
 from app.logging_config import (
     LOG_LINE_CEILING,
     configure_logging,
@@ -81,6 +82,9 @@ from app.models import (
     CaseCreate,
     CaseFromTemplate,
     CaseHistory,
+    LearnStage,
+    LearnStep,
+    LearnWalk,
     CaseProgress,
     CaseUpdate,
     EdaCreate,
@@ -2999,6 +3003,26 @@ async def import_case_package(payload: dict, db=Depends(get_db)) -> Case:
         created_at=case["created_at"],
         updated_at=case["updated_at"],
     )
+
+
+@app.get(
+    "/cases/{case_id}/learn",
+    response_model=LearnWalk,
+)
+async def get_case_learn_walk(case_id: str, db=Depends(get_db)) -> LearnWalk:
+    """The case as the LEARN ladder: why, what, how, validate (P7-LEARN-001).
+
+    Read-only, and derived from the same artifact counts the workflow derives
+    its stage from, so the walk cannot claim a phase the case does not support.
+    Each phase carries what it teaches and the question a learner should be
+    able to answer before leaving it; the walk names the single action that
+    advances, exactly as the progress endpoint does.
+    """
+    try:
+        walk = build_learn_walk(db, case_id)
+    except ValueError:
+        raise HTTPException(status_code=404, detail="case not found")
+    return LearnWalk(**walk)
 
 
 @app.get(

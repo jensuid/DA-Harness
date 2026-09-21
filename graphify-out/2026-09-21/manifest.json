@@ -576,15 +576,15 @@
     "semantic_hash": ""
   },
   "web/src/CaseWorkspace.test.tsx": {
-    "mtime": 1789962475.1743143,
-    "seen": 1789963152.901013,
-    "ast_hash": "052c62e5e308c814ea74c8e5486be578",
+    "mtime": 1789963198.6739595,
+    "seen": 1789963320.437035,
+    "ast_hash": "a66494452c2a6a5255e5060ec0960915",
     "semantic_hash": ""
   },
   "web/src/CaseWorkspace.tsx": {
-    "mtime": 1789962446.680238,
-    "seen": 1789963152.9010172,
-    "ast_hash": "78d76b89fbbd9d05cd00aa5f2da03b97",
+    "mtime": 1789963190.3104265,
+    "seen": 1789963320.4370382,
+    "ast_hash": "5efe57569cb37f9dcf0e9f4c9bc8e75f",
     "semantic_hash": ""
   },
   "server/tests/test_large_datasets.py": {

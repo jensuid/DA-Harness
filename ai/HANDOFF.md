@@ -2,18 +2,25 @@
 
 ## Next action
 
-**P7-SHELL-009 is DONE**, and with it the web-shell gap is closed: every
-capability that has an endpoint now has a surface. The web suite is 67 tests
-(was 64: +3 in `CaseWorkspace.test.tsx`), `npm run build` passes - `tsc -b`
-runs first - and the desktop bundle builds from the same source. The server
-side is untouched and stays at 358.
+**P7-LEARN-001 is DONE**: LEARN mode has a core. The spec's third product mode
+is the ANALYZE loop regrouped into its own four phases - Why -> What -> How ->
+Validate - and explained, so a learner who does not yet know the order can be
+walked through it. `server/app/learn.py` is a read-side projection over the
+artifact counts `case_progress` already derives: nothing stored, nothing
+executed, one phase current at most, and `done` says only that the trust loop
+closed. `GET /cases/{id}/learn` answers it, read-only.
+
+The server suite is 367 tests (was 358: +9 in `server/tests/test_learn.py`),
+and the P2, P3 and P4 gates each PASS - each re-ran the suite at 367. The web
+side is untouched and stays at 67.
 
 ### What is unbuilt, in priority order
 
-- **LEARN mode** - P7 item 3, and the next thing on the P7 checklist. A guided
-  Why -> What -> How -> Validate walk over a dataset. Mostly a sequencing and
-  presentation layer over the workflow stages that already exist (P3-FLOW-004),
-  which is why it was behind the shell gap.
+- **LEARN's surface - P7-SHELL-010**, the panel that walks the ladder. The core
+  answers the four phases, each with what it teaches, the question a learner
+  answers before leaving it, and workflow's own action for the stage to do
+  next; none of it is reachable from the shell yet. It is a panel over an
+  existing contract and needs no new endpoint.
 - **Multi-agent workflows** - the spec's ladder above the single driver that
   exists (P6-AGENT-002). Only after EVALUATE, which is the audit layer an
   agent's own output has to survive.
@@ -27,7 +34,7 @@ side is untouched and stays at 358.
 ### If the next step is a release
 
 Tag `v<x.y.z>` where x.y.z matches server/pyproject.toml. The published build is
-arm64 and unsigned, flagged pre-release (DEC-006). Thirteen tasks have landed
+arm64 and unsigned, flagged pre-release (DEC-006). Fourteen tasks have landed
 since v0.1.0, so `0.2.0` is the honest next label when a release is wanted.
 
 Nothing is unblocked-but-undone.
@@ -159,6 +166,32 @@ Nothing is unblocked-but-undone.
 ---
 
 ## What was completed
+- P7-LEARN-001 PASSED: LEARN mode, the guided walk (core). The spec names three
+  product modes; ANALYZE exists and its workspace answers "what do I do next"
+  without ever saying why. LEARN is the same loop regrouped into the spec's
+  four phases and explained.
+  `server/app/learn.py` (new) maps the seven ANALYZE stages onto Why (question,
+  data), What (profile, plan), How (analyze, evidence) and Validate (validate)
+  - every stage in exactly one phase, asserted as a property by the suite. Each
+  phase carries a **purpose** (what the phase is for, the thing the workflow's
+  next action never says) and a **prompt** (the question a learner should be
+  able to answer before leaving it - what makes it teaching rather than a
+  checklist). It recomputes from the same counts `case_progress` derives, so it
+  cannot drift: deleting an artifact moves the walk back as honestly as adding
+  one. At most one phase is current, and `done` says only that the trust loop
+  closed - a finding was validated - which per workflow.py means the loop *ran*,
+  not that the answer is right.
+  Two non-decisions worth naming: LEARN does not score a learner, for the same
+  reason EVALUATE reports nine verdicts instead of a number - a score would
+  imply a precision no data here can back; and it stores no progress, because a
+  derived walk cannot disagree with the case the way a stored one can.
+  LESSON carried into the record: two of the nine tests initially asserted a
+  premise the core does not permit - deleting runs and findings to force a
+  phase to reopen. No such DELETE exists: a run is evidence a finding binds, and
+  the core refuses to delete bound evidence (405). Rewritten against what the
+  core permits, the invariant is now checked at every step of a build rather
+  than in one contrived state.
+
 - P7-SHELL-009 PASSED: case history, as a review surface. P3-CASE-007 shipped
   `GET /cases/{id}/history` - one event per artifact, chronological, each
   carrying its own timestamp, a label and a detail, plus counts - and nothing in

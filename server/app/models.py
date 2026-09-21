@@ -398,6 +398,49 @@ class CaseHistory(BaseModel):
     counts: dict[str, int]
 
 
+class LearnStage(BaseModel):
+    """One ANALYZE stage inside a LEARN phase (P7-LEARN-001)."""
+    name: str
+    completed: bool
+    # What closes the stage, from workflow's own table - the ladder is the
+    # workflow regrouped, so there is one source of truth for the actions.
+    action: str
+    hint: str
+
+
+class LearnStep(BaseModel):
+    """One phase of the LEARN ladder: why, what, how or validate.
+
+    `purpose` is what the phase teaches - the thing the workflow's next action
+    never says. `prompt` is the question a learner should be able to answer
+    before leaving the phase, which is what makes it teaching rather than a
+    checklist.
+    """
+    name: str
+    purpose: str
+    prompt: str
+    stages: list[LearnStage]
+    status: str  # complete | current | pending
+
+
+class LearnWalk(BaseModel):
+    """A case as the LEARN ladder (P7-LEARN-001).
+
+    A read-side projection over the artifact counts, like the evidence graph
+    and the case history: nothing is stored, so the walk cannot drift from the
+    case. `done` says the trust loop closed - a finding was validated - which
+    means the loop ran, not that the answer is right.
+    """
+    case_id: str
+    question: str
+    steps: list[LearnStep]
+    current: str | None
+    next_action: str | None
+    next_hint: str | None
+    next_endpoint: str | None
+    done: bool
+
+
 class Interpretation(BaseModel):
     """A plain-language read of a persisted run result (P3-AI-011).
 

@@ -1,7 +1,7 @@
 # Graph Report - DA-Harness  (2026-09-21)
 
 ## Corpus Check
-- 118 files · ~183,106 words
+- 118 files · ~183,126 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 7 file(s) not represented in the graph (top: (none) 2, .icns 1, .ico 1)
 

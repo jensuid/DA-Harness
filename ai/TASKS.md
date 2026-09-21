@@ -118,10 +118,168 @@ the gate comes first because a phase is done when a gate says so.
 | P7-SHELL-007 | UX (EDA in the web shell) | DONE | +6 tests; web build PASS |
 | P7-SHELL-008 | UX (the evidence graph in the web shell) | DONE | +4 tests; web build PASS |
 | P7-SHELL-009 | UX (case history in the web shell) | DONE | +3 tests; web build PASS |
+| P7-LEARN-001 | LEARN mode (the guided walk, core) | DONE | +9 tests; P2/P3/P4 gates PASS |
 
 
 Contracts for the rolling window (the two most recent). Older blocks are in
 `ai/TASKS-ARCHIVE.md`.
+### P7-LEARN-001 contract
+
+```
+TASK ID: P7-LEARN-001
+MILESTONE: P7 Product Modes
+CAPABILITY: Product mode: LEARN
+GOAL: A learner - someone who does not yet know what order to do these things
+      in - can open a case and be walked through the analytical process as the
+      spec's LEARN ladder: Why -> What -> How -> Validate. The machinery is all
+      there (P3-FLOW-004 derives the stage, names the action and owns the
+      endpoints); nothing sequences it as teaching, so the workspace answers
+      "what do I do next" and never "why am I doing it".
+
+CONTEXT: `case_progress` (P3-FLOW-004) derives seven stages - question, data,
+         profile, plan, analyze, evidence, validate - from the artifacts the
+         case actually has, and names the single action and endpoint that
+         advance. The spec's LEARN ladder is four phases over those same
+         stages. This task is the mapping and the teaching, nothing more: a
+         read-side projection like evidence.py and history.py, recomputed from
+         the same counts, writing nothing.
+
+INPUTS: the case row and the artifact counts workflow.py already computes.
+RELEVANT FILES: server/app/learn.py (new), server/app/models.py,
+                server/app/main.py, server/tests/test_learn.py (new)
+REQUIRED CHANGE:
+  - server/app/learn.py (new): `build_learn_walk(db, case_id)` maps the seven
+    ANALYZE stages onto the four LEARN phases - why (question, data), what
+    (profile, plan), how (analyze, evidence), validate (validate). Every stage
+    appears in exactly one phase, so the ladder is the workflow, regrouped -
+    not a second sequence the case can disagree with. Each phase carries:
+      - `purpose` - what this phase of the process teaches, the thing the
+        workspace's "next action" never says;
+      - `prompt` - the question a learner should be able to answer before
+        moving on, which is what makes it teaching rather than a checklist;
+      - the stages it covers, each with its own completion and the action that
+        closes it, from workflow's own table so there is one source of truth;
+      - `status` - complete / current / pending, derived as: complete when
+        every stage it covers is complete, current when it is the first phase
+        that is not, pending otherwise.
+  - server/app/models.py: `LearnStage`, `LearnStep` and `LearnWalk`.
+  - server/app/main.py: `GET /cases/{case_id}/learn` -> `LearnWalk`, read-only;
+    404 for an unknown case.
+  - The walk reports `done` when the trust loop has closed - a finding has been
+    validated - and says only that. Per workflow.py, a closed loop means the
+    loop RAN, not that the answer is right; LEARN must not graduate a learner
+    on a stronger claim than the artifacts support.
+NON-GOALS: executing anything (LEARN sequences work the learner does through
+           the endpoints that already own it; the projection writes nothing),
+           scoring the learner (there is no measure of understanding here, and
+           inventing one would imply a precision the data cannot back - the
+           same reason EVALUATE reports verdicts and not a score), storing
+           progress (it is derived, so it cannot drift from the artifacts, and
+           a learner who deletes a dataset moves back honestly), teaching
+           content per dataset (the phases are the process; the specifics come
+           from the profile and the plan, which the learner reads), the shell
+           surface (its own task, P7-SHELL-010).
+CONSTRAINTS: no new dependency; the endpoint is GET-only and writes nothing;
+             the mapping is exhaustive and non-overlapping by construction and
+             tested as a property; the seven stages' actions and hints come
+             from workflow.py's table, not a copy; the existing suite stays
+             green.
+ACCEPTANCE CRITERIA:
+- [x] a just-created case answers a walk whose first phase is current and whose
+      last is pending
+- [x] a case that has walked the whole loop answers every phase complete and
+      done true
+- [x] the phase statuses are exactly complete / current / pending, with at most
+      one current
+- [x] every workflow stage appears in exactly one phase
+- [x] deleting an artifact moves the walk back - the projection is derived, not
+      stored
+- [x] each phase carries a purpose and a prompt, both sentences
+- [x] an unknown case answers 404
+- [x] the endpoint writes nothing; the server suite and the three gates stay
+      green
+TESTS: server/tests/test_learn.py - the fresh case, the walked-through case,
+       the mid-case phase boundary, the one-current invariant, the
+       exhaustive-mapping property, the deletion moving the walk back, the
+       teaching content, and the 404.
+VERIFICATION: cd server && .venv/bin/python -m pytest PASS (358 + N); the P2,
+              P3 and P4 gates PASS. The web suite is untouched by this change
+              and stays at 67.
+STATE UPDATE: mark P7-LEARN-001 done on pass; ROADMAP item 3 records the core
+              of LEARN mode as delivered, with the surface still to build.
+
+```
+
+TASK: P7-LEARN-001 - LEARN mode, the guided walk (core)
+ID: P7-LEARN-001
+PRIORITY: medium
+STATUS: DONE
+SUMMARY: The spec names three product modes; ANALYZE is the one that exists,
+         and its workspace answers "what do I do next" without ever saying
+         why. LEARN is that loop regrouped into the spec's four phases -
+         Why -> What -> How -> Validate - and explained, so a learner who does
+         not yet know the order can be walked through it.
+
+The core piece is a mapping and the teaching, nothing more.
+`server/app/learn.py` (new) is a read-side projection like evidence.py and
+history.py: it recomputes the walk from the artifact counts `case_progress`
+already derives, so it cannot drift from the case, and nothing is stored or
+executed. Each phase covers the ANALYZE stages it is made of - why (question,
+data), what (profile, plan), how (analyze, evidence), validate (validate) -
+and every stage appears in exactly one phase, which the suite asserts as a
+property rather than an intention. Each phase carries:
+
+- **`purpose`** - what the phase of the process is *for*, the thing the
+  workflow's "next action" never says.
+- **`prompt`** - the question a learner should be able to answer before
+  leaving the phase. That is what makes it teaching rather than a checklist,
+  and answering it is what the artifacts then rest on.
+- its stages, each with workflow's own action and hint read out of
+  `_STAGE_ACTIONS`, so there is one source of truth for what closes a stage
+  and no second copy to disagree with it.
+
+Statuses are complete / current / pending, with at most one current - a
+learner always has one thing to do next, never two - and `done` says the trust
+loop closed, which per workflow.py means the loop *ran*, not that the answer is
+right. LEARN does not graduate a learner on a stronger claim than the artifacts
+support, and it does not score understanding, for the same reason EVALUATE
+reports verdicts instead of a number: a score would imply a precision no data
+here can back.
+
+NON-GOALS held: no execution (LEARN sequences work the learner does through
+             the endpoints that already own it; the projection writes
+             nothing), no scoring, no stored progress (deleting an artifact
+             moves the walk back as honestly as adding one), no per-dataset
+             teaching content (the phases are the process; the specifics come
+             from the profile and the plan), no shell surface (its own task,
+             P7-SHELL-010).
+CONSTRAINTS held: no new dependency; the endpoint is GET-only and writes
+             nothing; the mapping is exhaustive and non-overlapping by
+             construction and tested as a property.
+ACCEPTANCE CRITERIA: all 8 - see the checked boxes above.
+TESTS: 9 added in server/tests/test_learn.py (server suite 358 -> 367) - the
+       exhaustive-once-only mapping property, the just-created case starting
+       on Why, the walked-through case graduating, the phase boundary at
+       profiled-but-unplanned, the one-current invariant held at every step of
+       the build rather than in one state, a deletion reopening a phase and
+       restoring it, the teaching being sentences, the 404, and the walk
+       reading only.
+VERIFICATION: cd server && .venv/bin/python -m pytest - 367 passed; the P2,
+              P3 and P4 gates each PASS (each re-ran the suite at 367). The
+              web suite is untouched and stays at 67.
+LESSON: two of the nine tests failed on the first run for a reason that was
+        the tests' own premise, not the code's - they deleted runs and
+        findings to force a phase to reopen, and no such DELETE exists (only
+        cases, datasets and templates are deletable, because a run is evidence
+        a finding binds and the core refuses to delete bound evidence). The
+        deletes answered 405 and the walk, correctly, did not move. Rewritten
+        against what the core actually permits - attach an unprofiled dataset
+        to reopen What, then delete it to close the case again - the same
+        property is asserted with a mechanism that exists, and the assertion
+        is stronger for checking the invariant at every step of a build rather
+        than in one contrived state.
+
+
 ### P7-SHELL-009 contract
 
 ```
