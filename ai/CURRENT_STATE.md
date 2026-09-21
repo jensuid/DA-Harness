@@ -22,7 +22,21 @@ a versioned, forward-only migration path for the store, so a database from
 any past release opens, upgrades and keeps its rows (P6-MIGRATE-004);
 and an update check that tells an installed app a newer build exists - or
 says honestly that it could not tell (P6-UPDATE-005)**
-- **Active task:** P7-WALK-001 DONE - the shipped shell, used by hand. The
+- **Active task:** P7-CSV-002 DONE - a CSV with a row wider than its header
+  (a stray trailing comma, as a spreadsheet export or a hand-edit produces)
+  no longer reads as one column of raw lines. read_csv_auto's delimiter guess
+  dies on that row, so the profile answered
+  `columns: ['order_id,quarter,region,revenue']` and described nothing, and
+  the SQL an analyst wrote from those columns then failed on the same file.
+  `_sniffed_reader_for` compares the sniffed width against the header's own
+  comma count and re-sniffs with `ignore_errors=true` when sniffing collapsed
+  - keeping every row and dropping only the stray field to a null, rather
+  than null_padding's synthetic extra column. Both profiling and the run path
+  go through it, so a file reads the same way everywhere, and the retry is
+  earned by a collapse: a clean file keeps the strict reader, so a genuine
+  conversion error is still an error and never a silent null.
+  Before it: P7-CORS-001 (the packaged app's webview could not reach its own
+  core), P7-WALK-001 (the shipped shell, used by hand). The
   automated artifacts drive contracts: the core through TestClient, the shell
   through jsdom. Neither renders, so a walkthrough is the only check that a
   panel shows the analyst the number behind it. This one drove the real shell
@@ -77,7 +91,11 @@ says honestly that it could not tell (P6-UPDATE-005)**
   documented minimum but is no longer enforced by CI, and a green run no longer
   proves the exact Intel triple a local build produces. Restoring that needs a
   self-hosted Intel runner.
-- **Test status:** server 384 passed (4 in the new test_cors.py; CORS for the shell's webview) (the 2 multi-agent audit tests now assert the verdict tallies) (336 + 22 evaluate + 9 learn + 13 multi-agent); web 78 passed
+- **Test status:** server 388 passed (4 for the shell's CORS; 4 for the
+  stray-trailing-comma recovery - a CSV with a row wider than its header no
+  longer collapses to one column, in the profile *and* in the SQL written
+  from it; all 4 fail on the pre-fix code) (336 + 22 evaluate + 9 learn + 13
+  multi-agent + 4 cors + 4 csv); web 78 passed
   (CaseList 10, CaseCreation 3, CaseWorkspace 52, Templates 8, api 6 - the
   workspace gained the reviewer panel, on top of the LEARN panel, the evidence
   graph, EDA, the cited-case buttons, the promote panel, the templates section
@@ -206,6 +224,7 @@ says honestly that it could not tell (P6-UPDATE-005)**
 | P7-E2E-001 the whole app against a real server | DONE |
 | P7-WALK-001 the shipped shell, used by hand | DONE |
 | P7-CORS-001 the packaged app could not reach its own core | DONE |
+| P7-CSV-002 a stray trailing comma no longer collapses a file | DONE |
 
 ## P6 progress
 

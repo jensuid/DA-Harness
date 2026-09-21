@@ -1,6 +1,80 @@
 # DAH - Handoff
 
 ## Next action
+**P7-CSV-002 is DONE**: an analyst's CSV is accepted as it arrives. The first
+three worked cases were being seeded into the shipped app when one fixture -
+`106,2024q3,west,,` - made the profiler answer `columns:
+['order_id,quarter,region,revenue']`: one column holding each raw line, and a
+profile that describes nothing. The SQL written from those columns then failed
+on the same file it was derived from.
+
+The file was not corrupt; one row was *wider* than its header. read_csv_auto
+guesses the delimiter, and a row carrying more fields than the header derails
+that guess. The bisect is worth remembering, because the honest shape next to
+it works: `106,2024q3,west,` (an empty revenue, matching the header's four
+fields) is a null and always profiled correctly; the collapse needs the *extra*
+comma, and only when more rows follow it. One keystroke past a null, and the
+whole table stops being a table.
+
+`server/app/analysis.py` gains `_sniffed_reader_for`, and all four reader call
+sites go through it - `_bind_dataset`, `_bind_datasets`, `profile_csv` and
+`_duplicate_row_count` - because a profile that recovered while its runs
+collapsed would describe columns the SQL cannot see. It compares the sniffed
+width against the header's own comma count and re-sniffs with
+`ignore_errors=true` when sniffing collapsed, taking that only when it widens
+the description. Every row survives; the stray field becomes a null, which is
+what the missing-data check exists to catch.
+
+`null_padding=true` is *not* the fix and the reason is the lesson: it widens
+the table to fit the mistake, inventing a synthetic `column4` and silently
+extending every row. `ignore_errors` narrows the mistake to fit the table.
+Only one of those keeps the file the analyst uploaded.
+
+The retry is conditional on purpose and that is a security-shaped decision, not
+a lazy one: `ignore_errors` on a well-formed file would turn a genuine
+conversion error into a silent null, so it is *earned* by a collapse, never
+applied by default. A quoted header containing a comma overcounts by one, and
+the widening guard means that costs a single sniff and changes nothing.
+
+**388 server tests** (4 new; each proven to fail on the pre-fix code), all 25
+real-server e2e steps green, and the three seeded cases below are in the
+running app's store.
+
+### The seeded cases are in the app right now
+
+The store at `~/Library/Application Support/com.jensuid.dah/` holds three
+worked cases at three different stages, so the case list shows the ladder the
+app walks rather than one finished example:
+
+1. **"Why did western region revenue dip in Q3?"** (sales_q3.csv) - the closed
+   loop: profiled (8 rows, 4 columns, 1 duplicate, 1 null revenue), planned, a
+   GROUP BY run, interpreted, the drafted finding **accepted**, a bar chart
+   rendered, and **validated `partially_supported`** - the null revenue trips
+   the missing-data check while reproducibility itself passes, which is the
+   honesty budget doing its job.
+2. **"Does marketing spend drive signups?"** (spend.csv) - stopped at a
+   **drafted but unaccepted** finding: profiled, planned, run, interpreted, and
+   the draft waiting in the panel for the analyst to accept or edit.
+3. **"Which support category is slowest to resolve?"** (tickets.csv) - freshly
+   attached and profiled only, so the "what do I do next" state is visible.
+
+The user should reload the open window (Cmd+R) to see them; the running sidecar
+is the rebuilt one, and `Origin: tauri://localhost` is answered with
+`access-control-allow-origin` and `Vary: Origin`, so the list loads.
+
+### The sidecar needs a rebuild to carry this fix
+
+The source is fixed; the binary the user runs is not yet. Rebuild before the
+next release (and to make the desktop app itself robust to this CSV shape):
+
+    cd server && ./build_sidecar.sh && cd ../desktop && npm run tauri -- build
+
+The last build's DMG step failed (`bundle_dmg.sh`) - distribution-only, the
+`.app` itself built and runs.
+
+---
+
+## Next action
 **P7-CORS-001 is DONE**: the packaged app could not reach its own core. A human
 opened the shipped .app and got "Failed to load cases: Failed to fetch" with the
 New Case form unreachable behind it - so the report that found the last bug was

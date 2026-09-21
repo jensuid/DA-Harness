@@ -162,3 +162,50 @@ def test_deep_profile_survives_reopen(tmp_path) -> None:
     assert stored.status_code == 200
     assert stored.json()["duplicate_rows"] == 1
     assert stored.json()["stats"]["score"]["avg"] == 86.25
+
+
+# A stray trailing comma on a middle row gives that row more fields than the
+# header, which collapses read_csv_auto's delimiter guess to a single column.
+# Both the profile and the SQL an analyst writes from its columns have to
+# recover, or the profile describes columns the run cannot see.
+STRAY_COMMA_CSV = (
+    b"order_id,quarter,region,revenue\n"
+    b"101,2024q2,north,4200.0\n"
+    b"106,2024q3,west,,\n"
+    b"107,2024q3,west,2700.0\n"
+    b"103,2024q2,west,5400.0\n"
+)
+
+
+def test_stray_trailing_comma_recovers_profile_and_run(tmp_path) -> None:
+    _temp_env(tmp_path)
+
+    with TestClient(app) as client:
+        case_id = client.post(
+            "/cases", json={"question": "q", "dataset": "messy.csv"}
+        ).json()["id"]
+        dataset_id = _attach(client, case_id, "messy.csv", STRAY_COMMA_CSV)
+
+        profile = client.post(
+            f"/cases/{case_id}/datasets/{dataset_id}/profile"
+        ).json()
+        assert profile["rows"] == 4
+        assert profile["columns"] == ["order_id", "quarter", "region", "revenue"]
+        assert profile["stats"]["revenue"]["null_count"] == 1
+
+        # The SQL the profiled columns imply runs against the same file and
+        # sees the same four columns, not a collapse to one.
+        run_id = client.post(
+            f"/cases/{case_id}/datasets/{dataset_id}/runs",
+            json={
+                "sql": "SELECT region, SUM(revenue) AS total "
+                "FROM read_csv_auto(?) GROUP BY 1 ORDER BY 1"
+            },
+        ).json()["id"]
+        run = client.get(f"/cases/{case_id}/runs/{run_id}").json()
+        assert run["columns"] == ["region", "total"]
+        # 4200 + 5400 north/... west: 2700 (the null row contributes nothing)
+        assert [(row[0], row[1]) for row in run["rows"]] == [
+            ("north", 4200.0),
+            ("west", 8100.0),
+        ]

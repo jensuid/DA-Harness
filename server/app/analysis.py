@@ -57,6 +57,62 @@ def _reader_for(path: str) -> tuple[str, str]:
     return "read_parquet(?)", _XLSX_CACHE[path]
 
 
+def _header_field_count(path: str) -> int:
+    """How many fields the header row claims, by comma count.
+
+    Only commas are counted: the recovery this feeds fires when sniffing
+    collapsed, and a tab- or semicolon-delimited file has a header with no
+    commas, so it cannot trigger one. A quoted header field containing a comma
+    overcounts by one, and the retry below rejects any recovery that does not
+    widen the description, so an overcount costs a single sniff.
+    """
+    try:
+        with open(path, "r", encoding="utf-8", errors="replace", newline="") as handle:
+            header = handle.readline()
+    except OSError:
+        return 0
+    return header.count(",") + 1 if header.strip() else 0
+
+
+def _sniffed_reader_for(path: str) -> tuple[str, str]:
+    """The reader for a file, recovering when delimiter sniffing collapses it.
+
+    read_csv_auto guesses the delimiter, and a row carrying more fields than
+    the header - a stray trailing comma, common in hand-edited and spreadsheet
+    exports - derails that guess: the whole file then reads as one column
+    holding each raw line. A profile that collapses like that describes
+    nothing, and the SQL an analyst writes from the profiled columns then fails
+    on the same file, so the recovery applies to runs as well as profiles.
+
+    The header's own comma count says how many columns the file really has, and
+    retrying with ignore_errors keeps every row while dropping only the stray
+    field, so a malformed cell becomes a null rather than a lost table. Null
+    padding is not the fix: it appends a synthetic column for the stray field
+    and widens every row. The retry stays conditional - ignore_errors on a
+    well-formed file would turn a genuine conversion error into a silent null.
+    """
+    reader_call, bind_path = _reader_for(path)
+    claimed = _header_field_count(bind_path)
+    if not reader_call.startswith("read_csv_auto") or claimed <= 1:
+        return reader_call, bind_path
+    connection = duckdb.connect()
+    try:
+        sniffed = connection.execute(
+            f"SELECT * FROM {reader_call} LIMIT 0", [bind_path]
+        ).description or []
+        if claimed > len(sniffed):
+            recovered = connection.execute(
+                "SELECT * FROM read_csv_auto(?, ignore_errors=true) LIMIT 0", [bind_path]
+            ).description or []
+            if len(recovered) > len(sniffed):
+                return "read_csv_auto(?, ignore_errors=true)", bind_path
+    except duckdb.Error:
+        pass
+    finally:
+        connection.close()
+    return reader_call, bind_path
+
+
 _DATASET_PLACEHOLDERS = ("read_csv_auto(?)", "read_parquet(?)")
 # The same placeholders, as one pattern so a query can be split positionally
 # and the k-th occurrence bound to the k-th dataset (run_query_multi). Each is
@@ -72,7 +128,7 @@ def _bind_dataset(sql: str, path: str) -> tuple[str, list]:
     Returns the rewritten SQL plus the parameter(s) to bind - one per
     placeholder occurrence, since xlsx reads bind the converted parquet path.
     """
-    reader_call, bind_path = _reader_for(path)
+    reader_call, bind_path = _sniffed_reader_for(path)
     occurrences = sum(sql.count(p) for p in _DATASET_PLACEHOLDERS)
     for placeholder in _DATASET_PLACEHOLDERS:
         sql = sql.replace(placeholder, reader_call)
@@ -123,7 +179,7 @@ def profile_csv(path: str) -> dict:
     """
     connection = duckdb.connect()
     try:
-        reader_call, bind_path = _reader_for(path)
+        reader_call, bind_path = _sniffed_reader_for(path)
         # LIMIT 0: the description - names *and* the inferred logical types,
         # which is what selects each column's stats - is available without
         # materialising a single row. Fetching the whole dataset here used to
@@ -229,7 +285,7 @@ def _duplicate_row_count(connection, path: str, total_rows: int) -> int:
     duplicates. Computed on the full row, not per column. The total is already
     known from the aggregate pass, so only the distinct count rescans the file.
     """
-    reader_call, bind_path = _reader_for(path)
+    reader_call, bind_path = _sniffed_reader_for(path)
     distinct = int(connection.execute(
         f"SELECT COUNT(*) FROM (SELECT DISTINCT * FROM {reader_call})",
         [bind_path],
@@ -260,7 +316,7 @@ def _bind_datasets(sql: str, paths: list[str]) -> tuple[str, list]:
     params: list[str] = []
     last = 0
     for match, path in zip(matches, paths):
-        reader_call, bind_path = _reader_for(path)
+        reader_call, bind_path = _sniffed_reader_for(path)
         parts.append(sql[last : match.start()])
         parts.append(reader_call)
         params.append(bind_path)
