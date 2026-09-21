@@ -2,6 +2,39 @@
 
 ## Next action
 
+**P7-SHELL-007 is DONE**: the "what should I look at first" steps are one panel
+away. The web suite is 60 tests (was 54: +6 in `CaseWorkspace.test.tsx`),
+`npm run build` passes - `tsc -b` runs first, and it caught a name the test
+suite could not see: `runEda`'s parameter was named `request`, shadowing the
+module's own request helper, and the tests never ran that code because the
+module was mocked - and the desktop bundle builds from the same source. The
+server side is untouched and stays at 358.
+
+### What is unbuilt, in priority order
+
+- **The last of the web-shell gap** - P7 item 2, now six surfaces closed
+  (EVALUATE, the agent, case management, templates, cross-case memory, EDA).
+  Still no UI: the evidence graph (`/evidence-graph`), case history,
+  `/schema-version` and `/updates/latest`. Each is a panel over an existing
+  contract; none needs a new endpoint.
+- **LEARN mode** - a guided Why -> What -> How -> Validate walk. Mostly a
+  sequencing layer over the workflow stages that already exist (P3-FLOW-004).
+- **Multi-agent workflows** - only after EVALUATE, which is the audit layer an
+  agent's own output has to survive.
+- **Deferred, not dropped:** signing (DEC-006, the slot is in `release.yml`),
+  cloud sync, team collaboration, warehouse connectors, enterprise governance.
+
+### If the next step is a release
+
+Tag `v<x.y.z>` where x.y.z matches server/pyproject.toml. The published build is
+arm64 and unsigned, flagged pre-release (DEC-006). Eleven tasks have landed
+since v0.1.0, so `0.2.0` is the honest next label when a release is wanted.
+
+Nothing is unblocked-but-undone.
+
+---
+
+
 **P7-SHELL-006 is DONE**: a cited previous case is something the analyst can
 follow. The web suite is 54 tests (was 50: +4 in `CaseWorkspace.test.tsx`),
 `npm run build` passes and the desktop bundle builds from the same source. The
@@ -64,6 +97,20 @@ Nothing is unblocked-but-undone.
 ---
 
 ## What was completed
+- P7-SHELL-007 PASSED: EDA in the web shell. The "what should I look at first"
+  steps needed a hand-written query: P3-ANALYSIS-005 shipped three ops -
+  segment a measure by a category, correlate two columns, describe a column's
+  distribution - each compiling to read-only SQL under the same gate and row
+  cap as any query, and nothing in the shell could ask for one. A new **EDA
+  panel** sits between the data and runs panels, where the core's own module
+  puts exploration. The op is a chooser and each op renders only its own
+  pickers, so a question is asked with the shape of its answer. The profile's
+  per-column type steers the defaults without forbidding anything, a stale pick
+  is resolved against the current dataset's columns rather than submitted, the
+  table is exactly the columns the core returned (seven for a numeric
+  distribution, two for a categorical one), and the panel says plainly that an
+  EDA result is exploration, not evidence.
+
 - P7-SHELL-006 PASSED: cross-case memory, actionable in the shell. P6-MEMORY-001
   let a chat answer cite what a previous case found - "Before this case, a
   previous case, \"Why did revenue decline?\", which found North leads

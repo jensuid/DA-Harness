@@ -3148,3 +3148,170 @@ LESSON: the two-click delete and the aria-labels solved each other. The first
         spy-accumulation bug CaseWorkspace hit recurred here, and for the same
         reason: this file's module-level mocks had no reset between tests.
 ```
+
+### P7-SHELL-005 contract
+
+```
+TASK ID: P7-SHELL-005
+MILESTONE: P7 Product Modes
+CAPABILITY: UX (the web-shell gap)
+GOAL: A finished investigation becomes a reusable template and a template
+      becomes a new case, both from the shell. Today the four template
+      endpoints answer only through the API, so the shape of a case that was
+      worked out once is never offered to the next one.
+
+CONTEXT: P6-TEMPLATE-003 made a template carry the analytical shape of the case
+         it came from - its plan and which engine produced it, the proposals it
+         offered, and its findings' statements with the verdicts validation gave
+         them - and made a case started from a template offer that shape as
+         proposals a human accepts. Four endpoints serve it and all are tested
+         in the core; none has a surface. Templates are not case children and
+         outlive the case they came from, so they do not belong inside a case
+         workspace - they belong on the front door beside the case list.
+
+INPUTS: the case list screen (where templates are listed and started); a case
+        workspace (where one is promoted); an optional name for a promotion.
+RELEVANT FILES: web/src/api.ts, web/src/Templates.tsx (NEW), web/src/CaseList.tsx,
+                web/src/CaseWorkspace.tsx, web/src/index.css,
+                web/src/Templates.test.tsx (NEW), web/src/CaseWorkspace.test.tsx,
+                web/src/api.test.ts
+REQUIRED CHANGE:
+  - web/src/api.ts: `Template`, `TemplateShape`, `TemplateProposal` and
+    `TemplateFindingSummary` types matching the core's models, and four
+    functions - `promoteCaseToTemplate(caseId, name?)` for the POST, a GET
+    `listTemplates`, `createCaseFromTemplate(templateId, {question?, dataset?})`
+    for the POST that seeds a case, and `deleteTemplate(templateId)` for the
+    DELETE. A DELETE answers 204 and an empty body, so the shared request
+    helper returns nothing for an empty body rather than trying to parse one -
+    without that, every DELETE the shell makes fails at the parse after
+    succeeding at the write.
+  - web/src/Templates.tsx (NEW): a section for the front door. Each template
+    row shows its name, the question and the dataset label it seeds, and a
+    shape summary - how many proposals it carries and how many findings, with
+    each finding's validation verdict - so a template says what kind of
+    investigation it is, not only what it asked. A template with no shape says
+    so instead of showing zeroes that imply an empty case. Each row has two
+    actions: **Start a case from this**, which posts to the from-template
+    endpoint and opens the seeded case, and **Retire**, which removes the
+    template. A template carries no data of its own - no datasets, runs or
+    findings travel with it - and the core's contract is that cases already
+    created from a template are unaffected when it goes, degrading to normal
+    derivation, so retiring needs no second confirmation the way deleting a
+    case does.
+  - web/src/CaseList.tsx: the templates section renders below the case list on
+    the same screen, because templates are the other thing a user comes to the
+    front door for.
+  - web/src/CaseWorkspace.tsx: a **Save as a template** panel. The name is
+    optional - the core defaults it to the case's question, because the common
+    gesture needs no second prompt - and a promotion reports success as a
+    sentence and leaves the workspace usable on failure.
+  - Every write posts to its endpoint and nothing else; the list reloads after
+    a write rather than mutating its own copy; a failure degrades to the
+    core's own sentence.
+NON-GOALS: editing a template (a template is a snapshot; changing one would
+           make it disagree with the case it was captured from - the honest
+           edit is to fix the case and promote again), a template gallery or
+           sharing (single user, local-first), promoting from the case list
+           (promotion belongs to the workspace that shows what would be
+           captured), cross-case memory, EDA, the evidence graph and case
+           history (read-only views, their own tasks).
+CONSTRAINTS: each action calls its endpoint and nothing else; `tsc -b` passes;
+             no new dependency; the existing list, workspace and client tests
+             stay green; the desktop bundle builds from the same source.
+ACCEPTANCE CRITERIA:
+- [x] a case can be saved as a template from its workspace, with an optional name
+- [x] a promotion without a name is named for the case's question
+- [x] the template list shows a template's name, question, dataset and shape
+- [x] a shapeless template is shown as such, not as an empty case
+- [x] a case started from a template is created and opened
+- [x] a template can be retired, and cases created from it are unaffected
+- [x] a failed write shows the core's message and leaves the screen usable
+- [x] `tsc -b` and the web suite stay green
+TESTS: web/src/Templates.test.tsx - the list and its shape summary, the
+       shapeless template, starting a case, retiring, and a failure rendered as
+       a sentence; web/src/CaseWorkspace.test.tsx - the promotion, named and
+       unnamed; web/src/api.test.ts - an empty 204 body parses to nothing.
+VERIFICATION: cd web && npm test PASS; cd web && npm run build PASS; cd web &&
+              npm run build:desktop PASS. The server suite and the three gates
+              are untouched by this change and stay green.
+STATE UPDATE: mark P7-SHELL-005 done on pass; ROADMAP item 2 records templates
+              as delivered.
+```
+
+
+```
+TASK: P7-SHELL-005 - templates in the web shell
+ID: P7-SHELL-005
+PRIORITY: medium
+STATUS: DONE
+SUMMARY: The four template endpoints answered only through the API, so the
+         shape of an investigation worked out once was never offered to the
+         next one from the shell. A finished case becomes a template from its
+         workspace, and a template becomes a new case from the front door.
+
+Two surfaces:
+
+- **web/src/Templates.tsx (NEW)** sits on the case-list screen, because
+  templates are not case children and outlive the case they came from - they
+  are the other thing a user comes to the front door for. Each row shows the
+  name, the question and the dataset label it seeds, and a **shape summary**:
+  how many proposals it carries and how many findings, with each finding's
+  validation verdict counted. A name alone cannot say whether a template is a
+  finished method or a question-only skeleton, so a shapeless template *says
+  so* - "A question-only skeleton - no shape was captured" - rather than
+  showing zeroes that would imply an empty investigation. Each row has
+  **Start a case from this**, which posts to the from-template endpoint and
+  opens the seeded case, and **Retire**. Retiring is one click, deliberately:
+  a template carries no data of its own, and the core's contract is that cases
+  created from it are unaffected when it goes - `_template_of` answers None and
+  the case degrades to normal derivation - so unlike deleting a case, nothing
+  is lost.
+- **CaseWorkspace** gains a **Save as a template** panel. The name is optional
+  - the core defaults it to the case's question, because the common gesture
+  needs no second prompt - and a promotion reports the saved name as a
+  sentence, so a user learns where to find it.
+
+One real bug surfaced while wiring the DELETE, and it was not in this task's
+endpoints: the shared `request` helper parsed every successful body as JSON,
+and the core answers 204 with an empty body for all three of the shell's
+DELETEs (a case, a dataset, now a template). The write had already landed when
+the response arrived, so the client threw "Unexpected end of JSON input" and
+the row reported a success as "The action failed". The helper now returns
+nothing for an empty body. The case-delete that P7-SHELL-004 shipped was
+broken in exactly this way - its tests mocked the client, so the path never
+ran for real - and it is fixed by the same two lines.
+
+NON-GOALS held: no editing a template (a template is a snapshot; changing one
+             would make it disagree with the case it was captured from, and
+             the honest edit is to fix the case and promote again), no gallery
+             or sharing (single user, local-first), no promoting from the list
+             (promotion belongs to the workspace that shows what would be
+             captured), and the remaining shell surfaces (cross-case memory,
+             EDA, the evidence graph, case history) stay unowned.
+CONSTRAINTS held: every write posts to its endpoint and nothing else, and the
+             template list reloads after a write rather than mutating its own
+             copy; `tsc -b` passes; no new dependency; the desktop bundle
+             builds from the same source.
+ACCEPTANCE CRITERIA: all 8 - see the checked boxes above.
+TESTS: 11 added (web suite 39 -> 50) - 7 in the new web/src/Templates.test.tsx
+       (the shape summary, the shapeless template, the empty list, starting a
+       case, retiring, a failed start rendered as a sentence, a failed load),
+       3 in web/src/CaseWorkspace.test.tsx (the unnamed promotion naming it for
+       the question, a chosen name, a failed promotion leaving the panel
+       usable), and 1 in web/src/api.test.ts (an empty 204 body parses to
+       nothing).
+VERIFICATION: cd web && npm test - 50 passed; cd web && npm run build PASS
+              (tsc -b + vite build); cd web && npm run build:desktop PASS. The
+              server suite and the three gates are untouched by this change
+              and stay green.
+LESSON: three of the eleven tests failed on the first run for reasons that
+        were the fixtures' fault, and each taught the same thing - a test
+        suite is only as honest as the DOM it asserts against. The template
+        row renders the question and the dataset label as one sentence, so an
+        exact `getByText('sales.csv')` could not find it; the list screen now
+        loads templates beside the cases, so a test that mocked only the case
+        calls saw a second alert from an unresolved spy; and the WHATWG
+        Response constructor refuses a body with a 204, so the client's own
+        fixture had to build one without. Each was the test describing a DOM
+        the component did not produce, and the component was right.
+```

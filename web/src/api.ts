@@ -474,6 +474,50 @@ export function listFindings(caseId: string): Promise<Finding[]> {
   return request<Finding[]>(`/cases/${caseId}/findings`)
 }
 
+// --- EDA: what to look at first (P3-ANALYSIS-005 / P7-SHELL-007) ------------
+
+// Each op compiles to read-only SQL under the same gate and row cap as a
+// hand-written query, and each takes only its own inputs:
+//   segment - `by` and `measure`; correlation needs two numerics.
+//   correlate - `x` and `y`.
+//   distribution - one `column`; numeric yields a spread, a category its
+//   most common values.
+export type EdaOp = 'segment' | 'correlate' | 'distribution'
+
+export interface EdaRequest {
+  op: EdaOp
+  by?: string
+  measure?: string
+  x?: string
+  y?: string
+  column?: string
+}
+
+export interface EdaResult {
+  op: string
+  columns: string[]
+  rows: unknown[][]
+  row_count: number
+  truncated: boolean
+}
+
+// Exploration, not evidence: the result is returned and never persisted, so a
+// finding still has to anchor on a query the analyst wrote. A 400 is part of
+// the contract rather than a failure - a column the dataset lacks, or a
+// correlation over a column with no paired numerics - and its sentence is what
+// teaches the correction.
+export function runEda(
+  caseId: string,
+  datasetId: string,
+  payload: EdaRequest,
+): Promise<EdaResult> {
+  return request<EdaResult>(`/cases/${caseId}/datasets/${datasetId}/eda`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+}
+
 // --- EVALUATE: audit work that came from elsewhere -------------------------
 
 // The submission executes through the same engine the runs endpoints use, so

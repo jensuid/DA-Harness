@@ -115,9 +115,158 @@ the gate comes first because a phase is done when a gate says so.
 | P7-SHELL-004 | UX (rename, duplicate, delete a case) | DONE | +5 tests; web build PASS |
 | P7-SHELL-005 | UX (templates in the web shell) | DONE | +11 tests; web build PASS |
 | P7-SHELL-006 | UX (cross-case memory actionable in the shell) | DONE | +4 tests; web build PASS |
+| P7-SHELL-007 | UX (EDA in the web shell) | DONE | +6 tests; web build PASS |
 
 Contracts for the rolling window (the two most recent). Older blocks are in
 `ai/TASKS-ARCHIVE.md`.
+### P7-SHELL-007 contract
+
+```
+TASK ID: P7-SHELL-007
+MILESTONE: P7 Product Modes
+CAPABILITY: UX (the web-shell gap)
+GOAL: The "what should I look at first" steps are reachable. Segment a measure
+      by a category, correlate two columns, or read a column's spread - each
+      one click from the profile - instead of a hand-written query the analyst
+      only wrote because there was no button.
+
+CONTEXT: P3-ANALYSIS-005 shipped `POST /cases/{id}/datasets/{id}/eda` with
+         three ops (segment, correlate, distribution), each compiling to
+         read-only SQL under the same gate and row cap as a hand-written query,
+         and each deliberately *not persisted* - EDA is exploration, and a
+         finding must anchor on a query the analyst wrote. Nothing in the shell
+         reaches it, so the profile that names every column is shown one screen
+         away from the question those columns pose.
+
+INPUTS: a profiled dataset's columns and per-column types; the op and its
+        column choices.
+RELEVANT FILES: web/src/api.ts, web/src/CaseWorkspace.tsx, web/src/index.css,
+                web/src/CaseWorkspace.test.tsx
+REQUIRED CHANGE:
+  - web/src/api.ts: `EdaOp`, an `EdaRequest` for the three ops' inputs, an
+    `EdaResult` matching the core's, and `runEda(caseId, datasetId, request)`.
+  - web/src/CaseWorkspace.tsx: an **EDA panel** between the data and runs
+    panels - exploration sits between profiling and a hand-written query, which
+    is where the core's own module puts it. It needs a profile (the columns are
+    the inputs and the types decide which summary a distribution yields), and
+    it says so rather than offering a submission that cannot succeed, the way
+    the EVALUATE panel does. Where several datasets are profiled there is a
+    chooser, because the ops are per-dataset.
+    The op is a chooser and each op renders only its own column pickers:
+    segment asks *by* and *measure*, correlate asks *x* and *y*, distribution
+    asks one *column*. The profile's per-column type steers the defaults - a
+    measure or a correlation axis defaults to a numeric column - but every
+    column stays selectable, because the core's 400 is the honest answer to a
+    wrong choice and the sentence is what teaches it.
+    The result is a table of the columns the core returned, with the row count
+    and a truncated marker. Nothing is kept: the panel says plainly that an EDA
+    result is not a finding, and making it one is a query the analyst writes -
+    the same discipline the runs and findings panels keep.
+  - Every write is the one POST to the eda endpoint; a failure degrades to the
+    core's own sentence and the panel stays usable for a corrected attempt.
+NON-GOALS: persisting an EDA result (the core's contract is that exploration
+           is not evidence; persistence would make a snapshot look like a
+           finding), charts from EDA results (the chart endpoint belongs to a
+           persisted run), generating the "equivalent query" from an op (the
+           core does not return one, and inventing SQL the analyst did not
+           write is exactly what EDA is not), new ops (their own task in the
+           core), the evidence graph and case history (their own tasks).
+CONSTRAINTS: the panel calls only the eda endpoint and reads only the profile;
+             `tsc -b` passes; no new dependency; the existing workspace tests
+             stay green; the desktop bundle builds from the same source.
+ACCEPTANCE CRITERIA:
+- [x] a profiled dataset offers the three ops with column pickers
+- [x] each op shows only the inputs it takes
+- [x] a segment returns a table grouped by the chosen category
+- [x] a correlation returns the coefficient and the paired row count
+- [x] a distribution adapts to a numeric or a categorical column
+- [x] an unprofiled dataset explains itself rather than offering a run
+- [x] a 400 shows the core's sentence and leaves the panel usable
+- [x] the panel states that an EDA result is not a finding
+- [x] `tsc -b` and the web suite stay green
+TESTS: web/src/CaseWorkspace.test.tsx - the three ops' round trips, the op
+       chooser swapping pickers, the unprofiled message, and a refusal as a
+       sentence.
+VERIFICATION: cd web && npm test PASS; cd web && npm run build PASS; cd web &&
+              npm run build:desktop PASS. The server suite and the three gates
+              are untouched by this change and stay green.
+STATE UPDATE: mark P7-SHELL-007 done on pass; ROADMAP item 2 records EDA as
+              delivered.
+```
+
+
+```
+TASK: P7-SHELL-007 - EDA in the web shell
+ID: P7-SHELL-007
+PRIORITY: medium
+STATUS: DONE
+SUMMARY: The "what should I look at first" steps were reachable only by
+         writing a query. P3-ANALYSIS-005 shipped three ops - segment a measure
+         by a category, correlate two columns, describe a column's distribution
+         - each compiling to read-only SQL under the same gate and row cap as a
+         hand-written query, and nothing in the shell could ask for one. The
+         profile that names every column was shown one panel away from the
+         question those columns pose.
+
+A new **EDA panel** sits between the data and runs panels, which is where the
+core's own module puts exploration: between profiling and a hand-written query.
+The op is a chooser, and each op renders only its own pickers - segment asks
+*by* and *measure*, correlate asks *x* and *y*, distribution asks one *column* -
+so a question is asked with the shape of its answer, not a free-form form.
+
+Four behaviours that had to be right rather than present:
+
+- **The profile steers, but does not forbid.** A measure or a correlation axis
+  defaults to a numeric column, read off the profile's per-column type family;
+  every column stays selectable, because the core's 400 is the honest answer to
+  a wrong choice and its sentence is what teaches the correction. A dataset with
+  no numeric columns offers all of them and lets the core say why not.
+- **A stale pick can never be submitted.** The pickers hold advisory state; the
+  request is built from values resolved against the *current* dataset's columns,
+  so a choice left over from another dataset or another op is replaced rather
+  than sent.
+- **The table is what the core returned.** A numeric distribution has seven
+  columns and a categorical one has two, and the panel assumes neither - it
+  renders the columns the answer carries. Numbers are rounded to four decimals
+  for reading; the stored value is untouched.
+- **Nothing is kept.** The panel says plainly that an EDA result is exploration,
+  not evidence, and that making a finding of it is a query the analyst writes -
+  the discipline the runs and findings panels keep. Switching ops drops an
+  earlier result, because a distribution's answer is not an answer to a
+  correlation's question.
+
+NON-GOALS held: no persistence of an EDA result (the core's contract is that
+             exploration is not evidence; persistence would make a snapshot
+             look like a finding), no charts from EDA results (the chart
+             endpoint belongs to a persisted run), no generated "equivalent
+             query" (the core does not return one, and inventing SQL the analyst
+             did not write is exactly what EDA is not), no new ops.
+CONSTRAINTS held: the panel calls only the eda endpoint and reads only the
+             profile; no new endpoint and no new dependency; `tsc -b` passes;
+             the desktop bundle builds from the same source.
+ACCEPTANCE CRITERIA: all 9 - see the checked boxes above.
+TESTS: 6 added to web/src/CaseWorkspace.test.tsx (web suite 54 -> 60) - the
+       three ops' round trips, the op chooser swapping pickers, an earlier
+       result dropping on an op change, the unprofiled message, and a 400 as a
+       sentence with the op still runnable.
+VERIFICATION: cd web && npm test - 60 passed; cd web && npm run build PASS
+              (tsc -b + vite build); cd web && npm run build:desktop PASS. The
+              server suite and the three gates are untouched by this change
+              and stay green.
+LESSON: four of the ten new and existing tests failed on the first run, and all
+        four were the same failure - the workspace is one page, and a sentence
+        or a button name that was unique when its panel was alone is not unique
+        beside another panel. "Run this" matched "Run this op"; "Attach and
+        profile a dataset first" matched the EVALUATE panel's version; a cell
+        value of 100 appeared twice in one table. Each is fixed by saying
+        exactly which thing the test means, and each fix is also the accessible
+        thing - a button that two panels answer to is a button a screen reader
+        cannot aim. The one type error the suite could not see was the same
+        lesson at the compiler's level: `runEda`'s parameter was named
+        `request`, shadowing the module's own request helper, and the tests
+        never ran that code because the module was mocked.
+```
+
 ### P7-SHELL-006 contract
 
 ```
@@ -241,172 +390,5 @@ LESSON: two of the four tests failed on the first run for the same reason -
         the spy counted the workspace's own lookup alongside the citation's.
         The workspace is the thing under test, and it has its own life in the
         fixture's mocks.
-```
-
-### P7-SHELL-005 contract
-
-```
-TASK ID: P7-SHELL-005
-MILESTONE: P7 Product Modes
-CAPABILITY: UX (the web-shell gap)
-GOAL: A finished investigation becomes a reusable template and a template
-      becomes a new case, both from the shell. Today the four template
-      endpoints answer only through the API, so the shape of a case that was
-      worked out once is never offered to the next one.
-
-CONTEXT: P6-TEMPLATE-003 made a template carry the analytical shape of the case
-         it came from - its plan and which engine produced it, the proposals it
-         offered, and its findings' statements with the verdicts validation gave
-         them - and made a case started from a template offer that shape as
-         proposals a human accepts. Four endpoints serve it and all are tested
-         in the core; none has a surface. Templates are not case children and
-         outlive the case they came from, so they do not belong inside a case
-         workspace - they belong on the front door beside the case list.
-
-INPUTS: the case list screen (where templates are listed and started); a case
-        workspace (where one is promoted); an optional name for a promotion.
-RELEVANT FILES: web/src/api.ts, web/src/Templates.tsx (NEW), web/src/CaseList.tsx,
-                web/src/CaseWorkspace.tsx, web/src/index.css,
-                web/src/Templates.test.tsx (NEW), web/src/CaseWorkspace.test.tsx,
-                web/src/api.test.ts
-REQUIRED CHANGE:
-  - web/src/api.ts: `Template`, `TemplateShape`, `TemplateProposal` and
-    `TemplateFindingSummary` types matching the core's models, and four
-    functions - `promoteCaseToTemplate(caseId, name?)` for the POST, a GET
-    `listTemplates`, `createCaseFromTemplate(templateId, {question?, dataset?})`
-    for the POST that seeds a case, and `deleteTemplate(templateId)` for the
-    DELETE. A DELETE answers 204 and an empty body, so the shared request
-    helper returns nothing for an empty body rather than trying to parse one -
-    without that, every DELETE the shell makes fails at the parse after
-    succeeding at the write.
-  - web/src/Templates.tsx (NEW): a section for the front door. Each template
-    row shows its name, the question and the dataset label it seeds, and a
-    shape summary - how many proposals it carries and how many findings, with
-    each finding's validation verdict - so a template says what kind of
-    investigation it is, not only what it asked. A template with no shape says
-    so instead of showing zeroes that imply an empty case. Each row has two
-    actions: **Start a case from this**, which posts to the from-template
-    endpoint and opens the seeded case, and **Retire**, which removes the
-    template. A template carries no data of its own - no datasets, runs or
-    findings travel with it - and the core's contract is that cases already
-    created from a template are unaffected when it goes, degrading to normal
-    derivation, so retiring needs no second confirmation the way deleting a
-    case does.
-  - web/src/CaseList.tsx: the templates section renders below the case list on
-    the same screen, because templates are the other thing a user comes to the
-    front door for.
-  - web/src/CaseWorkspace.tsx: a **Save as a template** panel. The name is
-    optional - the core defaults it to the case's question, because the common
-    gesture needs no second prompt - and a promotion reports success as a
-    sentence and leaves the workspace usable on failure.
-  - Every write posts to its endpoint and nothing else; the list reloads after
-    a write rather than mutating its own copy; a failure degrades to the
-    core's own sentence.
-NON-GOALS: editing a template (a template is a snapshot; changing one would
-           make it disagree with the case it was captured from - the honest
-           edit is to fix the case and promote again), a template gallery or
-           sharing (single user, local-first), promoting from the case list
-           (promotion belongs to the workspace that shows what would be
-           captured), cross-case memory, EDA, the evidence graph and case
-           history (read-only views, their own tasks).
-CONSTRAINTS: each action calls its endpoint and nothing else; `tsc -b` passes;
-             no new dependency; the existing list, workspace and client tests
-             stay green; the desktop bundle builds from the same source.
-ACCEPTANCE CRITERIA:
-- [x] a case can be saved as a template from its workspace, with an optional name
-- [x] a promotion without a name is named for the case's question
-- [x] the template list shows a template's name, question, dataset and shape
-- [x] a shapeless template is shown as such, not as an empty case
-- [x] a case started from a template is created and opened
-- [x] a template can be retired, and cases created from it are unaffected
-- [x] a failed write shows the core's message and leaves the screen usable
-- [x] `tsc -b` and the web suite stay green
-TESTS: web/src/Templates.test.tsx - the list and its shape summary, the
-       shapeless template, starting a case, retiring, and a failure rendered as
-       a sentence; web/src/CaseWorkspace.test.tsx - the promotion, named and
-       unnamed; web/src/api.test.ts - an empty 204 body parses to nothing.
-VERIFICATION: cd web && npm test PASS; cd web && npm run build PASS; cd web &&
-              npm run build:desktop PASS. The server suite and the three gates
-              are untouched by this change and stay green.
-STATE UPDATE: mark P7-SHELL-005 done on pass; ROADMAP item 2 records templates
-              as delivered.
-```
-
-
-```
-TASK: P7-SHELL-005 - templates in the web shell
-ID: P7-SHELL-005
-PRIORITY: medium
-STATUS: DONE
-SUMMARY: The four template endpoints answered only through the API, so the
-         shape of an investigation worked out once was never offered to the
-         next one from the shell. A finished case becomes a template from its
-         workspace, and a template becomes a new case from the front door.
-
-Two surfaces:
-
-- **web/src/Templates.tsx (NEW)** sits on the case-list screen, because
-  templates are not case children and outlive the case they came from - they
-  are the other thing a user comes to the front door for. Each row shows the
-  name, the question and the dataset label it seeds, and a **shape summary**:
-  how many proposals it carries and how many findings, with each finding's
-  validation verdict counted. A name alone cannot say whether a template is a
-  finished method or a question-only skeleton, so a shapeless template *says
-  so* - "A question-only skeleton - no shape was captured" - rather than
-  showing zeroes that would imply an empty investigation. Each row has
-  **Start a case from this**, which posts to the from-template endpoint and
-  opens the seeded case, and **Retire**. Retiring is one click, deliberately:
-  a template carries no data of its own, and the core's contract is that cases
-  created from it are unaffected when it goes - `_template_of` answers None and
-  the case degrades to normal derivation - so unlike deleting a case, nothing
-  is lost.
-- **CaseWorkspace** gains a **Save as a template** panel. The name is optional
-  - the core defaults it to the case's question, because the common gesture
-  needs no second prompt - and a promotion reports the saved name as a
-  sentence, so a user learns where to find it.
-
-One real bug surfaced while wiring the DELETE, and it was not in this task's
-endpoints: the shared `request` helper parsed every successful body as JSON,
-and the core answers 204 with an empty body for all three of the shell's
-DELETEs (a case, a dataset, now a template). The write had already landed when
-the response arrived, so the client threw "Unexpected end of JSON input" and
-the row reported a success as "The action failed". The helper now returns
-nothing for an empty body. The case-delete that P7-SHELL-004 shipped was
-broken in exactly this way - its tests mocked the client, so the path never
-ran for real - and it is fixed by the same two lines.
-
-NON-GOALS held: no editing a template (a template is a snapshot; changing one
-             would make it disagree with the case it was captured from, and
-             the honest edit is to fix the case and promote again), no gallery
-             or sharing (single user, local-first), no promoting from the list
-             (promotion belongs to the workspace that shows what would be
-             captured), and the remaining shell surfaces (cross-case memory,
-             EDA, the evidence graph, case history) stay unowned.
-CONSTRAINTS held: every write posts to its endpoint and nothing else, and the
-             template list reloads after a write rather than mutating its own
-             copy; `tsc -b` passes; no new dependency; the desktop bundle
-             builds from the same source.
-ACCEPTANCE CRITERIA: all 8 - see the checked boxes above.
-TESTS: 11 added (web suite 39 -> 50) - 7 in the new web/src/Templates.test.tsx
-       (the shape summary, the shapeless template, the empty list, starting a
-       case, retiring, a failed start rendered as a sentence, a failed load),
-       3 in web/src/CaseWorkspace.test.tsx (the unnamed promotion naming it for
-       the question, a chosen name, a failed promotion leaving the panel
-       usable), and 1 in web/src/api.test.ts (an empty 204 body parses to
-       nothing).
-VERIFICATION: cd web && npm test - 50 passed; cd web && npm run build PASS
-              (tsc -b + vite build); cd web && npm run build:desktop PASS. The
-              server suite and the three gates are untouched by this change
-              and stay green.
-LESSON: three of the eleven tests failed on the first run for reasons that
-        were the fixtures' fault, and each taught the same thing - a test
-        suite is only as honest as the DOM it asserts against. The template
-        row renders the question and the dataset label as one sentence, so an
-        exact `getByText('sales.csv')` could not find it; the list screen now
-        loads templates beside the cases, so a test that mocked only the case
-        calls saw a second alert from an unresolved spy; and the WHATWG
-        Response constructor refuses a body with a 204, so the client's own
-        fixture had to build one without. Each was the test describing a DOM
-        the component did not produce, and the component was right.
 ```
 

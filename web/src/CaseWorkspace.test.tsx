@@ -24,6 +24,7 @@ vi.mock('./api', async (importOriginal) => {
     validateFinding: vi.fn(),
     postChat: vi.fn(),
     evaluateDataset: vi.fn(),
+    runEda: vi.fn(),
     listEvaluations: vi.fn(),
     getAgentState: vi.fn(),
     proposeAgentStep: vi.fn(),
@@ -55,7 +56,11 @@ const profile = {
   dataset_id: 'd1',
   rows: 3,
   columns: ['order_id', 'revenue', 'region'],
-  stats: {},
+  stats: {
+    order_id: { type: 'other' },
+    revenue: { type: 'numeric' },
+    region: { type: 'other' },
+  },
   duplicate_rows: 0,
   profiled_at: '',
 }
@@ -726,6 +731,162 @@ describe('CaseWorkspace', () => {
     expect(await screen.findByText(/north: 325\.0/)).toBeInTheDocument()
     expect(screen.getByText('column:north')).toBeInTheDocument()
     expect(screen.getByText('dataset:sales.csv')).toBeInTheDocument()
+  })
+
+  it('runs a distribution over a profiled column and shows its spread', async () => {
+    mockEmptyCase()
+    vi.mocked(api.runEda).mockResolvedValue({
+      op: 'distribution',
+      columns: ['rows', 'min', 'max', 'mean', 'median', 'q1', 'q3', 'stddev'],
+      rows: [[3, 100, 300, 216.67, 250, 100, 300, 102.6]],
+      row_count: 1,
+      truncated: false,
+    })
+
+    const user = userEvent.setup()
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+    await screen.findByText('Why did revenue decline?')
+
+    await user.selectOptions(screen.getByLabelText(/column to describe/i), 'revenue')
+    await user.click(screen.getByRole('button', { name: /run the op/i }))
+
+    await waitFor(() =>
+      expect(api.runEda).toHaveBeenCalledWith('c1', 'd1', {
+        op: 'distribution',
+        column: 'revenue',
+      }),
+    )
+    const table = await screen.findByTestId('eda-result')
+    // The columns the core returned are the table; the panel assumes nothing
+    // about which summary a column yields.
+    expect(within(table).getByText('median')).toBeInTheDocument()
+    expect(within(table).getByText('216.67')).toBeInTheDocument()
+    expect(within(table).getByText(/exploration, not evidence/i)).toBeInTheDocument()
+  })
+
+  it('segments a measure by a category and groups the table by it', async () => {
+    mockEmptyCase()
+    vi.mocked(api.runEda).mockResolvedValue({
+      op: 'segment',
+      columns: ['segment', 'rows', 'mean', 'median', 'min', 'max', 'stddev'],
+      rows: [['north', 2, 275, 275, 250, 300, 35.36], ['south', 1, 150, 150, 150, 150, 0]],
+      row_count: 2,
+      truncated: false,
+    })
+
+    const user = userEvent.setup()
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+    await screen.findByText('Why did revenue decline?')
+
+    // The op chooser swaps the pickers: segment asks for a category and a
+    // measure, and nothing else.
+    await user.selectOptions(screen.getByLabelText(/exploratory operation/i), 'segment')
+    expect(screen.getByLabelText(/column to group by/i)).toBeInTheDocument()
+    expect(screen.queryByLabelText(/x column/i)).not.toBeInTheDocument()
+
+    await user.selectOptions(screen.getByLabelText(/column to group by/i), 'region')
+    await user.selectOptions(screen.getByLabelText(/measure to summarise/i), 'revenue')
+    await user.click(screen.getByRole('button', { name: /run the op/i }))
+
+    await waitFor(() =>
+      expect(api.runEda).toHaveBeenCalledWith('c1', 'd1', {
+        op: 'segment',
+        by: 'region',
+        measure: 'revenue',
+      }),
+    )
+    const table = await screen.findByTestId('eda-result')
+    expect(within(table).getByText('north')).toBeInTheDocument()
+    expect(within(table).getByText('south')).toBeInTheDocument()
+  })
+
+  it('correlates two numeric columns', async () => {
+    mockEmptyCase()
+    vi.mocked(api.profileDataset).mockResolvedValue({
+      ...profile,
+      columns: ['order_id', 'revenue', 'orders'],
+      stats: {
+        order_id: { type: 'other' },
+        revenue: { type: 'numeric' },
+        orders: { type: 'numeric' },
+      },
+    })
+    vi.mocked(api.runEda).mockResolvedValue({
+      op: 'correlate',
+      columns: ['pearson_r', 'paired_rows'],
+      rows: [[0.816496580927726, 3]],
+      row_count: 1,
+      truncated: false,
+    })
+
+    const user = userEvent.setup()
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+    await screen.findByText('Why did revenue decline?')
+
+    await user.selectOptions(screen.getByLabelText(/exploratory operation/i), 'correlate')
+    await user.selectOptions(screen.getByLabelText(/x column/i), 'revenue')
+    await user.selectOptions(screen.getByLabelText(/y column/i), 'orders')
+    await user.click(screen.getByRole('button', { name: /run the op/i }))
+
+    await waitFor(() =>
+      expect(api.runEda).toHaveBeenCalledWith('c1', 'd1', {
+        op: 'correlate',
+        x: 'revenue',
+        y: 'orders',
+      }),
+    )
+    // The coefficient is rounded for reading; the stored value is untouched.
+    expect(await screen.findByText('0.8165')).toBeInTheDocument()
+  })
+
+  it('drops an earlier result when the op changes', async () => {
+    mockEmptyCase()
+    vi.mocked(api.runEda).mockResolvedValue({
+      op: 'distribution',
+      columns: ['rows', 'min'],
+      rows: [[3, 100]],
+      row_count: 1,
+      truncated: false,
+    })
+
+    const user = userEvent.setup()
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+    await screen.findByText('Why did revenue decline?')
+    await user.click(screen.getByRole('button', { name: /run the op/i }))
+    expect(await screen.findByTestId('eda-result')).toBeInTheDocument()
+
+    // A distribution's answer is not an answer to a correlation's question.
+    await user.selectOptions(screen.getByLabelText(/exploratory operation/i), 'correlate')
+    expect(screen.queryByTestId('eda-result')).not.toBeInTheDocument()
+  })
+
+  it('waits for a profile before offering an op', async () => {
+    mockEmptyCase()
+    vi.mocked(api.profileDataset).mockRejectedValue(new api.ApiError(404, 'not profiled'))
+
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+    await waitFor(() =>
+      expect(
+      screen.getByText(/profile a dataset first - the ops read its columns/i),
+    ).toBeInTheDocument(),
+    )
+    expect(screen.queryByLabelText(/exploratory operation/i)).not.toBeInTheDocument()
+  })
+
+  it('shows the core refusal as a sentence and keeps the op runnable', async () => {
+    mockEmptyCase()
+    vi.mocked(api.runEda).mockRejectedValue(
+      new api.ApiError(400, "column 'nope' is not part of the dataset"),
+    )
+
+    const user = userEvent.setup()
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+    await screen.findByText('Why did revenue decline?')
+    await user.click(screen.getByRole('button', { name: /run the op/i }))
+
+    const alert = await screen.findByRole('alert')
+    expect(alert).toHaveTextContent(/not part of the dataset/i)
+    expect(screen.getByRole('button', { name: /run the op/i })).toBeEnabled()
   })
 
   it('saves the case as a template, named for the question when no name is given', async () => {
