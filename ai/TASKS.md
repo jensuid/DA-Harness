@@ -120,10 +120,197 @@ the gate comes first because a phase is done when a gate says so.
 | P7-SHELL-009 | UX (case history in the web shell) | DONE | +3 tests; web build PASS |
 | P7-LEARN-001 | LEARN mode (the guided walk, core) | DONE | +9 tests; P2/P3/P4 gates PASS |
 | P7-SHELL-010 | UX (LEARN mode in the web shell) | DONE | +6 tests; web build PASS |
+| P7-AGENT-001 | Multi-agent workflows (roles, core) | DONE | +13 tests; P2/P3/P4 gates PASS |
 
 
 Contracts for the rolling window (the two most recent). Older blocks are in
 `ai/TASKS-ARCHIVE.md`.
+### P7-AGENT-001 contract
+
+```
+TASK ID: P7-AGENT-001
+MILESTONE: P7 Product Modes
+CAPABILITY: P6 Agentic Analysis (continued) - multi-agent workflows
+GOAL: A case can be worked by more than one agent, each with a role of its own,
+      and the roles disagree in the case's own audit trail rather than in
+      private. The single driver (P6-AGENT-002) proposes the analysis loop one
+      human-approved step at a time; nothing examines what it produced. This
+      task adds a second role whose entire method is EVALUATE (P7-EVAL-001) -
+      the reason the roadmap gated multi-agent work behind it - so an
+      agent-proposed finding is audited by a different agent with a different
+      objective, and a verdict that fails the analyst's own finding is recorded
+      where a reviewer can read it.
+
+CONTEXT: the spec names "autonomous multi-agent system" as an explicit
+         non-goal and "Human control" in its Never-lose list, while "Agent
+         orchestration" sits on the LEVEL 5 -> 6 ladder. So this is
+         orchestration, not autonomy: every role shares the one approval gate
+         the existing driver already uses, every write still runs through the
+         endpoint that owns it, and a page refresh commits nothing. What is new
+         is specialisation and a second point of view, not self-direction.
+
+INPUTS: the case's artifacts - for the analyst, exactly what it reads today;
+        for the reviewer, the findings and the runs that back them, plus the
+        evaluations already recorded (an audit matching a finding's run and its
+        statement means that finding has been examined).
+RELEVANT FILES: server/app/agent.py, server/app/db.py, server/app/main.py,
+                server/app/models.py, server/tests/test_multi_agent.py (new),
+                server/tests/test_migrations.py (a case for the new migration)
+REQUIRED CHANGE:
+  - server/app/db.py: migration 9 - `agent_steps` gains a `role` column
+    defaulting to `analyst`, so every step recorded before this task reads as
+    the analyst role and the legacy paths keep their meaning. LATEST_SCHEMA_VERSION
+    becomes 9.
+  - server/app/agent.py: the driver becomes role-aware - the pending step, the
+    history, the proposals and the settle/decide path all take a role. The
+    `analyst` role is today's decision procedure, unchanged. The `reviewer`
+    role is new and small: derive the case's first finding whose (run, claim)
+    has no evaluation, and propose an `evaluate` step carrying the run's own
+    code and the finding's statement. Every finding audited means no step, and
+    an end row names what the reviewer is waiting for rather than falling
+    silent.
+  - server/app/main.py: `/cases/{case_id}/agents/{role}` with the same four
+    verbs the single driver answers (GET state, POST propose, approve, reject),
+    and the `evaluate` step kind applied through the existing evaluate
+    endpoint - the reviewer has no write path of its own, exactly as the
+    analyst has none. The existing `/cases/{case_id}/agent` family stays, as
+    the analyst role, so the shell's agent panel and every existing test keep
+    working. An unknown role is a 400 naming the roles that exist.
+  - server/app/models.py: `AgentState` carries the role; `AgentStep` already
+    exists.
+  - The case export and the duplicate path carry the role with the steps they
+    copy, so an agent-run case round-trips with its roles intact.
+NON-GOALS: autonomy (the spec's own non-goal - a role never writes without an
+           approval, and a GET never proposes), inter-agent messages or
+           negotiation (two agents do not talk to each other; each addresses
+           the case, and the case's rows are the shared state), resolving a
+           disagreement (a reviewer's failing verdict is recorded beside the
+           analyst's finding, not folded into the finding's own validation
+           status - rerun support and an audit are two honest notions, and
+           conflating them would make both say less), new analysis capability
+           (the reviewer audits; it does not discover), the shell surface (its
+           own task, P7-SHELL-011).
+CONSTRAINTS: no new dependency; at most one pending step per role, and an
+             approval that is not that role's live step is a 409; the
+             reviewer's audits land in the evaluations table through the same
+             endpoint a human audit uses; the existing agent tests stay green
+             unchanged.
+ACCEPTANCE CRITERIA:
+- [x] a case carries agents in two roles, each with its own pending step and
+      audit trail
+- [x] the analyst role behaves exactly as P6-AGENT-002's driver did
+- [x] the reviewer proposes an evaluate step over an unaudited finding, and
+      approving it records an evaluation whose claim is the finding's
+      statement and whose code is the run's
+- [x] a finding that has been audited is not re-proposed
+- [x] an approval for one role is not the other's; a mismatch answers 409 with
+      that role's own pending step
+- [x] an unknown role answers 400 naming the roles that exist
+- [x] a reviewer's failing verdict does not touch the finding's
+      validation_status
+- [x] the legacy /agent paths are the analyst role and keep working
+- [x] a store from before this task upgrades and its existing steps read as
+      analyst
+- [x] the export round trip carries the role
+- [x] the endpoint family writes only through approvals; the server suite and
+      the three gates stay green
+TESTS: server/tests/test_multi_agent.py - the two roles side by side, the
+       reviewer's audit and its idempotence, the 409 naming the right role's
+       step, the unknown-role 400, the failing verdict leaving the finding's
+       own status alone, the legacy paths as the analyst role, and the export
+       round trip carrying the role; test_migrations.py gains a case for
+       migration 9.
+VERIFICATION: cd server && .venv/bin/python -m pytest PASS (367 + N); the P2,
+              P3 and P4 gates PASS. The web suite is untouched by this change
+              and stays at 73.
+STATE UPDATE: mark P7-AGENT-001 done on pass; ROADMAP item 4 records the core
+              of multi-agent workflows as delivered, with the surface still to
+              build.
+
+```
+
+TASK: P7-AGENT-001 - multi-agent workflows, roles over one case (core)
+ID: P7-AGENT-001
+PRIORITY: medium
+STATUS: DONE
+SUMMARY: A case can be worked by more than one agent, each with a role of its
+         own - and the roles disagree in the case's own audit trail rather than
+         in private. The single driver (P6-AGENT-002) proposes the analysis
+         loop one human-approved step at a time; nothing examined what it
+         produced. This task adds a second role whose entire method is
+         EVALUATE, so an agent-proposed finding is audited by a different agent
+         with a different objective, and a verdict that fails the analyst's own
+         finding is recorded where a reviewer can read it.
+
+The design turns on a distinction the spec itself draws: an *autonomous*
+multi-agent system is an explicit non-goal, and "Human control" is in the
+Never-lose list, while "Agent orchestration" is on the LEVEL 5 -> 6 ladder. So
+this is orchestration, not autonomy. Every role shares the one approval gate
+the existing driver already uses, every write still runs through the endpoint
+that owns it, and a GET never proposes - a page refresh commits nothing no
+matter how many roles are open.
+
+Two roles, one case:
+
+- **analyst** - the existing decision procedure, unchanged: profile, plan,
+  analyze, interpret, accept, chart, validate.
+- **reviewer** - deliberately small, and deliberately not the analyst's. It
+  derives the case's first finding whose (code, claim) has no evaluation and
+  proposes the EVALUATE audit of the run that backs it: the claim is the
+  finding's own statement, the code is the run's own query. The reviewer
+  invents neither, discovers nothing, and writes nothing of its own - the audit
+  goes through the same evaluate endpoint a human audit uses, and the verdict
+  lands in the evaluations table beside every other audit.
+
+Three things that had to be right rather than present:
+
+- **Idempotence keyed on code and claim, not run.** EVALUATE stores the
+  artifact as a run of its own, so an evaluation's run_id is the audit's
+  artifact, not the finding's - joining on it would never match, and the
+  reviewer would re-audit forever. The (code, claim) pair is exactly what the
+  reviewer proposed, so matching it is a projection: an audit cannot be
+  repeated without an evaluation existing, and a finding cannot be skipped by
+  forgetting.
+- **Two honest notions stay distinct.** A failing audit is recorded beside the
+  finding; it does not touch the finding's own validation_status, which is
+  about rerun support. Folding them together would make both say less.
+- **One role's approval never authorises another role's write.** A mismatch is
+  a 409 naming that role's own pending step, so two open panels cannot collide
+  into a double write.
+
+NON-GOALS held: autonomy (a role never writes without an approval), inter-agent
+             messages or negotiation (the roles do not talk to each other; each
+             addresses the case, and the case's rows are the shared state),
+             resolving disagreement (a failing verdict is recorded, not folded
+             in), new analysis capability (the reviewer audits; it does not
+             discover), the shell surface (its own task, P7-SHELL-011).
+CONSTRAINTS held: no new dependency; at most one pending step per role; the
+             reviewer's audits land through the evaluate endpoint; the existing
+             agent tests stayed green unchanged.
+ACCEPTANCE CRITERIA: all 11 - see the checked boxes above.
+TESTS: 12 in server/tests/test_multi_agent.py (server suite 367 -> 380, with one
+       migration case) - the two roles side by side, the audit's claim and code
+       being the finding's own, the recorded evaluation, idempotence, the
+       no-findings reason, the cross-role 409, the unknown-role 400, the
+       failing verdict leaving the finding's status alone, rejection writing
+       nothing, the export round trip carrying the role, and the GET that never
+       proposes. Plus test_migrations.py: a pre-roles store whose steps read as
+       analyst.
+VERIFICATION: cd server && .venv/bin/python -m pytest - 380 passed; the P2, P3
+              and P4 gates each PASS (each re-ran the suite at 380). The web
+              suite is untouched and stays at 73.
+LESSON: most of the failures on the way to green were the migration's own
+        bookkeeping - a changed INSERT column list here, a values tuple that
+        kept its old length there, a SELECT that gained a WHERE column without
+        gaining the SELECT column - each surfacing as "incorrect number of
+        bindings" or a KeyError far from the site of the edit. The discipline
+        that caught them was running the existing agent and export suites
+        first, before writing a new test, because those suites already encode
+        every write path and said exactly which statement was wrong. A schema
+        change is not one edit; it is one edit per writer, and the writers are
+        found by the tests, not by grep.
+
+
 ### P7-SHELL-010 contract
 
 ```
@@ -257,160 +444,3 @@ LESSON: three existing tests broke, and all three for the reason the workspace
         and left a queued mock value behind, so the next test received a
         dataset id from the case before it. A test that fails can corrupt the
         one after it, which is why the fix belongs to the first one.
-
-
-### P7-LEARN-001 contract
-
-```
-TASK ID: P7-LEARN-001
-MILESTONE: P7 Product Modes
-CAPABILITY: Product mode: LEARN
-GOAL: A learner - someone who does not yet know what order to do these things
-      in - can open a case and be walked through the analytical process as the
-      spec's LEARN ladder: Why -> What -> How -> Validate. The machinery is all
-      there (P3-FLOW-004 derives the stage, names the action and owns the
-      endpoints); nothing sequences it as teaching, so the workspace answers
-      "what do I do next" and never "why am I doing it".
-
-CONTEXT: `case_progress` (P3-FLOW-004) derives seven stages - question, data,
-         profile, plan, analyze, evidence, validate - from the artifacts the
-         case actually has, and names the single action and endpoint that
-         advance. The spec's LEARN ladder is four phases over those same
-         stages. This task is the mapping and the teaching, nothing more: a
-         read-side projection like evidence.py and history.py, recomputed from
-         the same counts, writing nothing.
-
-INPUTS: the case row and the artifact counts workflow.py already computes.
-RELEVANT FILES: server/app/learn.py (new), server/app/models.py,
-                server/app/main.py, server/tests/test_learn.py (new)
-REQUIRED CHANGE:
-  - server/app/learn.py (new): `build_learn_walk(db, case_id)` maps the seven
-    ANALYZE stages onto the four LEARN phases - why (question, data), what
-    (profile, plan), how (analyze, evidence), validate (validate). Every stage
-    appears in exactly one phase, so the ladder is the workflow, regrouped -
-    not a second sequence the case can disagree with. Each phase carries:
-      - `purpose` - what this phase of the process teaches, the thing the
-        workspace's "next action" never says;
-      - `prompt` - the question a learner should be able to answer before
-        moving on, which is what makes it teaching rather than a checklist;
-      - the stages it covers, each with its own completion and the action that
-        closes it, from workflow's own table so there is one source of truth;
-      - `status` - complete / current / pending, derived as: complete when
-        every stage it covers is complete, current when it is the first phase
-        that is not, pending otherwise.
-  - server/app/models.py: `LearnStage`, `LearnStep` and `LearnWalk`.
-  - server/app/main.py: `GET /cases/{case_id}/learn` -> `LearnWalk`, read-only;
-    404 for an unknown case.
-  - The walk reports `done` when the trust loop has closed - a finding has been
-    validated - and says only that. Per workflow.py, a closed loop means the
-    loop RAN, not that the answer is right; LEARN must not graduate a learner
-    on a stronger claim than the artifacts support.
-NON-GOALS: executing anything (LEARN sequences work the learner does through
-           the endpoints that already own it; the projection writes nothing),
-           scoring the learner (there is no measure of understanding here, and
-           inventing one would imply a precision the data cannot back - the
-           same reason EVALUATE reports verdicts and not a score), storing
-           progress (it is derived, so it cannot drift from the artifacts, and
-           a learner who deletes a dataset moves back honestly), teaching
-           content per dataset (the phases are the process; the specifics come
-           from the profile and the plan, which the learner reads), the shell
-           surface (its own task, P7-SHELL-010).
-CONSTRAINTS: no new dependency; the endpoint is GET-only and writes nothing;
-             the mapping is exhaustive and non-overlapping by construction and
-             tested as a property; the seven stages' actions and hints come
-             from workflow.py's table, not a copy; the existing suite stays
-             green.
-ACCEPTANCE CRITERIA:
-- [x] a just-created case answers a walk whose first phase is current and whose
-      last is pending
-- [x] a case that has walked the whole loop answers every phase complete and
-      done true
-- [x] the phase statuses are exactly complete / current / pending, with at most
-      one current
-- [x] every workflow stage appears in exactly one phase
-- [x] deleting an artifact moves the walk back - the projection is derived, not
-      stored
-- [x] each phase carries a purpose and a prompt, both sentences
-- [x] an unknown case answers 404
-- [x] the endpoint writes nothing; the server suite and the three gates stay
-      green
-TESTS: server/tests/test_learn.py - the fresh case, the walked-through case,
-       the mid-case phase boundary, the one-current invariant, the
-       exhaustive-mapping property, the deletion moving the walk back, the
-       teaching content, and the 404.
-VERIFICATION: cd server && .venv/bin/python -m pytest PASS (358 + N); the P2,
-              P3 and P4 gates PASS. The web suite is untouched by this change
-              and stays at 67.
-STATE UPDATE: mark P7-LEARN-001 done on pass; ROADMAP item 3 records the core
-              of LEARN mode as delivered, with the surface still to build.
-
-```
-
-TASK: P7-LEARN-001 - LEARN mode, the guided walk (core)
-ID: P7-LEARN-001
-PRIORITY: medium
-STATUS: DONE
-SUMMARY: The spec names three product modes; ANALYZE is the one that exists,
-         and its workspace answers "what do I do next" without ever saying
-         why. LEARN is that loop regrouped into the spec's four phases -
-         Why -> What -> How -> Validate - and explained, so a learner who does
-         not yet know the order can be walked through it.
-
-The core piece is a mapping and the teaching, nothing more.
-`server/app/learn.py` (new) is a read-side projection like evidence.py and
-history.py: it recomputes the walk from the artifact counts `case_progress`
-already derives, so it cannot drift from the case, and nothing is stored or
-executed. Each phase covers the ANALYZE stages it is made of - why (question,
-data), what (profile, plan), how (analyze, evidence), validate (validate) -
-and every stage appears in exactly one phase, which the suite asserts as a
-property rather than an intention. Each phase carries:
-
-- **`purpose`** - what the phase of the process is *for*, the thing the
-  workflow's "next action" never says.
-- **`prompt`** - the question a learner should be able to answer before
-  leaving the phase. That is what makes it teaching rather than a checklist,
-  and answering it is what the artifacts then rest on.
-- its stages, each with workflow's own action and hint read out of
-  `_STAGE_ACTIONS`, so there is one source of truth for what closes a stage
-  and no second copy to disagree with it.
-
-Statuses are complete / current / pending, with at most one current - a
-learner always has one thing to do next, never two - and `done` says the trust
-loop closed, which per workflow.py means the loop *ran*, not that the answer is
-right. LEARN does not graduate a learner on a stronger claim than the artifacts
-support, and it does not score understanding, for the same reason EVALUATE
-reports verdicts instead of a number: a score would imply a precision no data
-here can back.
-
-NON-GOALS held: no execution (LEARN sequences work the learner does through
-             the endpoints that already own it; the projection writes
-             nothing), no scoring, no stored progress (deleting an artifact
-             moves the walk back as honestly as adding one), no per-dataset
-             teaching content (the phases are the process; the specifics come
-             from the profile and the plan), no shell surface (its own task,
-             P7-SHELL-010).
-CONSTRAINTS held: no new dependency; the endpoint is GET-only and writes
-             nothing; the mapping is exhaustive and non-overlapping by
-             construction and tested as a property.
-ACCEPTANCE CRITERIA: all 8 - see the checked boxes above.
-TESTS: 9 added in server/tests/test_learn.py (server suite 358 -> 367) - the
-       exhaustive-once-only mapping property, the just-created case starting
-       on Why, the walked-through case graduating, the phase boundary at
-       profiled-but-unplanned, the one-current invariant held at every step of
-       the build rather than in one state, a deletion reopening a phase and
-       restoring it, the teaching being sentences, the 404, and the walk
-       reading only.
-VERIFICATION: cd server && .venv/bin/python -m pytest - 367 passed; the P2,
-              P3 and P4 gates each PASS (each re-ran the suite at 367). The
-              web suite is untouched and stays at 67.
-LESSON: two of the nine tests failed on the first run for a reason that was
-        the tests' own premise, not the code's - they deleted runs and
-        findings to force a phase to reopen, and no such DELETE exists (only
-        cases, datasets and templates are deletable, because a run is evidence
-        a finding binds and the core refuses to delete bound evidence). The
-        deletes answered 405 and the walk, correctly, did not move. Rewritten
-        against what the core actually permits - attach an unprofiled dataset
-        to reopen What, then delete it to close the case again - the same
-        property is asserted with a mechanism that exists, and the assertion
-        is stronger for checking the invariant at every step of a build rather
-        than in one contrived state.

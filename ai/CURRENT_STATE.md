@@ -1,6 +1,6 @@
 # DAH - Current State
 
- - **Phase:** P5 Production Grade - COMPLETE. P6 Post-Launch Evolution - COMPLETE: all 5 entry-checklist items. P7 Product Modes is IN PROGRESS (1 of 4, with eight web surfaces delivered): EVALUATE mode is DONE in the core and in the shell, the agent has a surface, a case can be renamed, duplicated and deleted from the list, templates are reachable from the shell, a cited previous case is something the analyst can follow, the "what should I look at first" steps are one panel away, a case's evidence graph is a review surface, and its history is one too. The web-shell gap - item 2 - is CLOSED: every capability with an endpoint has a surface. LEARN mode - item 3 - is DONE in the core (P7-LEARN-001) and in the shell (P7-SHELL-010): the guided Why -> What -> How -> Validate walk is a read-side projection over the workflow stages, and a Learn this case panel walks it beside the workflow it explains. The P7 checklist has EVALUATE and LEARN delivered; multi-agent workflows and the release are what remain. P4 Production Candidate was COMPLETE (all 5 checklist items: P4 Production Candidate was COMPLETE (all 5 checklist items:
+ - **Phase:** P5 Production Grade - COMPLETE. P6 Post-Launch Evolution - COMPLETE: all 5 entry-checklist items. P7 Product Modes is IN PROGRESS (1 of 4, with eight web surfaces delivered): EVALUATE mode is DONE in the core and in the shell, the agent has a surface, a case can be renamed, duplicated and deleted from the list, templates are reachable from the shell, a cited previous case is something the analyst can follow, the "what should I look at first" steps are one panel away, a case's evidence graph is a review surface, and its history is one too. The web-shell gap - item 2 - is CLOSED: every capability with an endpoint has a surface. LEARN mode - item 3 - is DONE in the core (P7-LEARN-001) and in the shell (P7-SHELL-010): the guided Why -> What -> How -> Validate walk is a read-side projection over the workflow stages, and a Learn this case panel walks it beside the workflow it explains. The P7 checklist has EVALUATE, LEARN and multi-agent workflows delivered - the last as a core (P7-AGENT-001): a case carries agents in two roles, analyst and reviewer, each with its own pending step and audit trail behind the one approval gate both share. Only the reviewer's shell surface and the release remain. P4 Production Candidate was COMPLETE (all 5 checklist items: P4 Production Candidate was COMPLETE (all 5 checklist items:
   P4-VERIFY-001, P4-RELIABILITY-002, P4-UX-003 + P4-UX-004, P4-VALID-005,
   P4-PERF-006, P4-CI-007). P3 V1 is COMPLETE: all 10 entry-checklist items,
   231 server tests, and a P3 gate of its own. P5 Production Grade is IN
@@ -22,123 +22,33 @@ a versioned, forward-only migration path for the store, so a database from
 any past release opens, upgrades and keeps its rows (P6-MIGRATE-004);
 and an update check that tells an installed app a newer build exists - or
 says honestly that it could not tell (P6-UPDATE-005)**
-- **Active task:** P7-SHELL-010 DONE - LEARN mode in the web shell.
-  P7-LEARN-001 shipped the guided walk as an endpoint; nothing in the shell
-  reached it, so LEARN existed as a contract and not as a product. A **Learn
-  this case panel** now sits beside the workflow panel it explains: the workflow
-  says where the case stands, this says why each step exists and what a learner
-  should be able to answer before leaving it. Each phase renders its name and
-  status, what it is for, the question that tests understanding, and the stages
-  it covers as the actions that close them, with the workflow's own hints. It
-  loads read-only with the workspace, names the one phase and action to work on
-  now, and a completed walk says the trust loop closed - the loop ran, not that
-  the answer is right.
-  Before it: P7-LEARN-001 (LEARN's core), P7-SHELL-009 (case history),
-  P7-SHELL-008 (the evidence graph), P7-SHELL-007 (EDA), P7-SHELL-006
-  (cross-case memory), P7-SHELL-005 (templates), P7-SHELL-004 (case
-  management), P7-SHELL-003 (the agent surface), P7-SHELL-002 (EVALUATE's
-  surface), P7-EVAL-001 (EVALUATE's core), P6 CLOSED. The spec's third product mode is a sequencing and teaching layer
-  over the workflow P3-FLOW-004 already ships: `server/app/learn.py` (new)
-  regroups the seven ANALYZE stages into the spec's four phases - why
-  (question, data), what (profile, plan), how (analyze, evidence), validate
-  (validate) - every stage in exactly one phase, and each phase carrying what
-  it *teaches* and the question a learner should be able to answer before
-  leaving it. It is a read-side projection like the evidence graph and the
-  case history: nothing stored, nothing executed, and deleting an artifact
-  moves the walk back as honestly as adding one. At most one phase is
-  current, and `done` says only that the trust loop closed - a finding was
-  validated - never that the answer is right. Endpoint: `GET
-  /cases/{id}/learn` (read-only, 404 for an unknown case).
-  Next: P7-SHELL-010, the walk as a panel - the surface this core still
-  lacks. Before it: P7-SHELL-009 (case history), P7-SHELL-008 (the evidence
-  graph), P7-SHELL-007 (EDA), P7-SHELL-006 (cross-case memory),
-  P7-SHELL-005 (templates), P7-SHELL-004 (case management),
-  P7-SHELL-003 (the agent surface), P7-SHELL-002 (EVALUATE's surface),
-  P7-EVAL-001 (EVALUATE's core), P6 CLOSED.
-  P3-CASE-007 could answer "what did I do here, and when?" and nothing in the
-  shell showed it, so the shape of a case - how it grew, and in what order -
-  was reconstructible only by opening every panel and comparing timestamps.
-  A **Case history panel** now sits at the end of the workspace, after the
-  evidence panel, because the two are the read-only review surfaces: the graph
-  says what backs each claim, the timeline says what happened in the case at
-  all. It loads with the workspace and writes nothing; each event is one line
-  in the order the core sends them, with the kind as a phrase ("dataset
-  attached", not "dataset_attached"), the artifact's own label and its detail,
-  and the counts as one summary sentence naming only the kinds the case has.
-  A 404 is guidance rather than a second alert - the workspace loads its own
-  case on mount, so an unknown case is already reported at the top of the page
-  - and a young case renders its single event rather than an empty list.
-  Before it: P7-SHELL-008 (the evidence graph), P7-SHELL-007 (EDA),
-  P7-SHELL-006 (cross-case memory), P7-SHELL-005 (templates),
-  P7-SHELL-004 (case management), P7-SHELL-003 (the agent surface),
-  P7-SHELL-002 (EVALUATE's surface), P7-EVAL-001 (EVALUATE's core), P6 CLOSED. P3-EVIDENCE-006 could answer "what backs each claim, and does every
-  one of them reach the data?" and nothing in the shell showed it, so a case's
-  evidence was inspectable only one finding at a time and a claim with no
-  source was invisible. An **Evidence panel** now sits after the findings panel
-  and loads read-only with the workspace. Each trace renders the finding's
-  statement with its validation status and the chain back to the data as chips;
-  each edge renders as a sentence ("chart 'Revenue by region' is rendered from
-  the sql run"); and a node with no edge is still listed under its kind, so the
-  graph never says the case has less than it does. A finding whose run is gone
-  is flagged as **a claim with no source** rather than smoothed over, and its
-  broken edge says "an artifact no longer in the case" rather than showing a
-  uuid. The endpoint's 400 for an artifact-free case is muted guidance, not an
-  alert - a young case is not a failed review.
-  Before it: P7-SHELL-007 (EDA), P7-SHELL-006 (cross-case memory),
-  P7-SHELL-005 (templates),
-  P7-SHELL-004 (case management), P7-SHELL-003 (the agent surface),
-  P7-SHELL-002 (EVALUATE's surface), P7-EVAL-001 (EVALUATE's core), P6 CLOSED. P6-MEMORY-001 let a chat answer cite what a previous case found, and
-  the shell rendered that citation as an inert chip carrying a uuid - the one
-  thing recall exists for, going to read what was concluded last time, was a
-  click that did nothing. The Chat panel now resolves each `case:<id>` ground
-  to the prior case's own question (one lookup per cited case, shared across
-  every turn) and renders it as a **button that opens that case as its own
-  workspace**. A lookup that fails - the cited case was deleted, or the core
-  could not answer - records the id as absent and degrades to a chip saying
-  the case is no longer available, so the answer stays readable and the
-  missing case is not refetched on every render. Grounds of other kinds
-  (columns, datasets, runs, findings) render exactly as before.
-  Before it: P7-SHELL-005 (templates), P7-SHELL-004 (case management),
-  P7-SHELL-003 (the agent surface), P7-SHELL-002 (EVALUATE's surface),
-  P7-EVAL-001 (EVALUATE's core), P6 CLOSED. The four
-  template endpoints (promote, list, start a case, retire) answered only
-  through the API. A workspace now carries a **Save as a template** panel -
-  the name is optional and defaults to the case's question - and the case-list
-  screen carries a **Templates** section below the list, because templates are
-  not case children and outlive the case they came from. Each row shows the
-  name, the question and dataset label it seeds, and a shape summary (how many
-  proposals, how many findings and their validation verdicts); a shapeless
-  template says so rather than showing zeroes. **Start a case from this**
-  creates and opens the seeded case, and **Retire** removes the template in one
-  click - it carries no data of its own, and the core degrades a case that
-  loses its template to normal derivation, so nothing is lost the way it is
-  when a case is deleted.
-  Wiring the DELETE surfaced a bug older than this task: the shared client
-  helper parsed every successful body as JSON, and the core answers 204 with an
-  empty body for each of the shell's DELETEs, so the write landed and the
-  client then threw "Unexpected end of JSON input" and reported a success as a
-  failure. The case delete P7-SHELL-004 shipped was broken this way - its test
-  mocked the client, so the path never ran for real. The helper now returns
-  nothing for an empty body.
-  Before it: P7-SHELL-004 (case management), P7-SHELL-003 (the agent surface),
-  P7-SHELL-002 (EVALUATE's surface), P7-EVAL-001 (EVALUATE's core), P6 CLOSED. The three
-  everyday operations on the front door answered only through the API; the list
-  rendered a row whose only affordance was opening it. Each row now keeps
-  opening the case as its primary action and gains **Rename** (inline, with
-  Save and Cancel - a correction never needs a second screen), **Duplicate**
-  and **Delete**. Delete asks twice because the core's deletion is final and
-  takes the case's on-disk directory: the first click arms the row, the second
-  is labelled with the case's own question, and the armed state is per row so
-  confirming one case never endangers another.
-  Before it: P7-SHELL-003 (the agent surface), P7-SHELL-002 (EVALUATE's
-  surface), P7-EVAL-001 (EVALUATE's core), P6 CLOSED.
+- **Active task:** P7-AGENT-001 DONE - multi-agent workflows, roles over one case (core).
+  P6-AGENT-002's driver proposes the analysis loop one human-approved step at a time, and
+  nothing examined what it produced. A case now carries a second role whose entire method is
+  EVALUATE: the **reviewer** derives the case's first finding whose (code, claim) has no
+  evaluation and proposes the audit of the run that backs it - the claim is the finding's own
+  statement, the code is the run's own query, and the verdict lands in the evaluations table
+  through the same endpoint a human audit uses. The **analyst** role is the existing decision
+  procedure, unchanged, and the legacy `/agent` family is it. This is orchestration, not
+  autonomy: every role shares the one approval gate, every write still runs through the
+  endpoint that owns it, a GET never proposes, and a role's approval never authorises the
+  other's (a mismatch answers 409 naming that role's own pending step). A failing verdict is
+  recorded beside the finding and never touches its validation_status - rerun support and an
+  audit are two honest notions. `agent_steps` gained a `role` column (migration 9), and the
+  export round trip carries it.
+  Before it: P7-SHELL-010 (LEARN's surface), P7-LEARN-001 (LEARN's core), P7-SHELL-009
+  (case history), P7-SHELL-008 (the evidence graph), P7-SHELL-007 (EDA), P7-SHELL-006
+  (cross-case memory), P7-SHELL-005 (templates), P7-SHELL-004 (case management),
+  P7-SHELL-003 (the agent surface), P7-SHELL-002 (EVALUATE's surface), P7-EVAL-001
+  (EVALUATE's core), P6 CLOSED.
+
 - **Known issues:** CI's runner is `macos-latest`, not the Ventura/Intel pin
   P5-CI-004 intended - GitHub retired the macos-13 pool, so the label hangs
   forever (probed empirically; see DEC-005). The Ventura floor stays the
   documented minimum but is no longer enforced by CI, and a green run no longer
   proves the exact Intel triple a local build produces. Restoring that needs a
   self-hosted Intel runner.
-- **Test status:** server 367 passed (336 + 22 evaluate + 9 learn); web 73 passed
+- **Test status:** server 380 passed (336 + 22 evaluate + 9 learn + 13 multi-agent); web 73 passed
   (CaseList 10, CaseCreation 3, CaseWorkspace 47, Templates 8, api 6 - the
   workspace gained the LEARN panel, on top of the history panel, the evidence
   graph, EDA, the cited-case buttons, the promote panel, the templates section
@@ -146,20 +56,16 @@ says honestly that it could not tell (P6-UPDATE-005)**
   (`cd desktop/src-tauri && cargo test [--features e2e]`, 19 unit + 3 e2e);
   P2, P3 and P4 gates PASS (P4: all 18 journey steps, all 10 exit criteria);
   first release v0.1.0 published from tag and checksum-verified.
-- **Next task:** LEARN mode is delivered in core and shell (P7-LEARN-001,
-  P7-SHELL-010), and with EVALUATE before it, the P7 checklist's product modes
-  are both built. What remains on it: **multi-agent workflows** - the spec's
-  ladder above the single driver that exists (P6-AGENT-002) - which only make
-  sense after EVALUATE because that is how an agent's own output gets audited,
-  and the release itself (thirteen tasks have landed since v0.1.0, so `0.2.0`
-  is the honest next label when one is wanted). Deferred, not dropped: signing
-  (DEC-006, the slot is in `release.yml`), cloud sync, team collaboration,
-  warehouse connectors, enterprise governance.
-  Deferred, not dropped: signing (DEC-006, the slot is in `release.yml`), cloud
-  sync, team collaboration, warehouse connectors, enterprise governance.
-  Deferred, not dropped: signing (DEC-006, the slot is in `release.yml`), cloud
-  sync, team collaboration, warehouse connectors, enterprise governance. None
-  pays for itself at a user count of one.
+- **Next task:** P7-SHELL-011 - the reviewer in the web shell. The multi-agent core is
+  delivered (P7-AGENT-001); nothing in the shell reaches the role endpoints, so a second
+  agent's audits are observable today only through the API, exactly as the single driver was
+  before P7-SHELL-003. A typed client for `/cases/{id}/agents/{role}` and an agent panel per
+  role in the workspace. After it the P7 checklist is complete, and what remains is the
+  release itself (fifteen tasks have landed since v0.1.0, so `0.2.0` is the honest next
+  label when one is wanted).
+  Deferred, not dropped: signing (DEC-006, the slot is in `release.yml`), cloud sync, team
+  collaboration, warehouse connectors, enterprise governance.
+
 - **Blockers:** none.
 
 ## P2 progress
@@ -231,6 +137,15 @@ says honestly that it could not tell (P6-UPDATE-005)**
   step's write through the endpoint that owns it and proposes the next one;
   `POST .../agent/reject {step_id, reason?}` records the analyst's no and
   writes nothing. An id that is not the case's current pending step is a 409.
+- Run the agents: `GET /cases/{id}/agents/{role}` (state, read-only - nothing is proposed
+  on a read; `role` is `analyst` or `reviewer`); `POST /cases/{id}/agents/{role}` derives and
+  records that role's next step, idempotent so a pending step is returned unchanged;
+  `POST .../approve {step_id}` runs the step's write through the endpoint that owns it (for
+  the reviewer, an `evaluate` step auditing the finding's own run and claim) and proposes the
+  next one; `POST .../reject {step_id, reason?}` records the analyst's no and writes nothing.
+  The analyst role is the legacy `/agent` family exactly. An approval that is not that role's
+  live step is a 409 naming that role's pending step; an unknown role is a 400 naming the
+  roles that exist.
 - Check the store's schema: `GET /schema-version` (read-only; reports the
   recorded version, whether it is current for this build, and the migrations
   that were applied - the answer to "is my data safe with this build")
@@ -257,6 +172,7 @@ says honestly that it could not tell (P6-UPDATE-005)**
 | P7-SHELL-009 case history in the shell | DONE |
 | P7-LEARN-001 LEARN mode, the guided walk (core) | DONE |
 | P7-SHELL-010 LEARN mode in the web shell | DONE |
+| P7-AGENT-001 multi-agent workflows (roles, core) | DONE |
 
 ## P6 progress
 

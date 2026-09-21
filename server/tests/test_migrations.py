@@ -210,6 +210,45 @@ def test_existing_rows_survive_the_upgrade(tmp_path):
     assert dataset == ("ds-1", "sales.csv")
 
 
+def test_a_pre_multi_agent_store_reads_its_steps_as_the_analyst(tmp_path):
+    """Migration 9: a step recorded before roles existed is the analyst role -
+    the one driver the store had - so the upgrade preserves what those rows
+    meant rather than inventing a new one."""
+    db_path = tmp_path / "legacy.db"
+    _build_legacy(db_path)
+    conn = sqlite3.connect(db_path)
+    try:
+        # The store as a version-8 build left it: an agent_steps table with no
+        # notion of a role, because there was only ever one driver.
+        conn.executescript(
+            "CREATE TABLE agent_steps ("
+            "id TEXT PRIMARY KEY, case_id TEXT NOT NULL, kind TEXT NOT NULL, "
+            "payload_json TEXT NOT NULL, source TEXT NOT NULL, "
+            "status TEXT NOT NULL, note TEXT NOT NULL DEFAULT '', "
+            "created_at TEXT NOT NULL, decided_at TEXT, "
+            "FOREIGN KEY (case_id) REFERENCES cases(id));"
+        )
+        conn.execute(
+            "INSERT INTO agent_steps (id, case_id, kind, payload_json, source, "
+            "status, note, created_at, decided_at) VALUES "
+            "('s1', 'case-1', 'end', '{}', 'deterministic', 'done', '', "
+            "'2026-01-01T00:00:00+00:00', '2026-01-01T00:00:00+00:00')"
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+    with get_connection(db_path):
+        pass
+
+    conn = sqlite3.connect(db_path)
+    try:
+        row = conn.execute("SELECT role, kind FROM agent_steps WHERE id = 's1'").fetchone()
+    finally:
+        conn.close()
+    assert row == ("analyst", "end")
+
+
 def test_reopening_a_current_store_is_a_noop(tmp_path):
     db_path = tmp_path / "fresh.db"
     with get_connection(db_path):

@@ -21,9 +21,9 @@ Package layout (version 1):
     findings       - statement, interpretation, caveat, validation status
     charts         - rendering parameters plus the SVG itself
     plans          - the structured plan and which engine produced it
-    agent_steps    - the agent's audit trail: each proposal, its source,
-                     the human's decision, and what the write produced
-                     (P6-AGENT-002)
+    agent_steps    - the agent's audit trail: each proposal, its role, its
+                     source, the human's decision, and what the write produced
+                     (P6-AGENT-002, P7-AGENT-001)
 
 Original IDs are carried through so relationships inside the package stay
 traceable (a finding points at its run, a chart at its run); import remaps
@@ -216,6 +216,7 @@ def export_case(db, case_id: str) -> dict | None:
     agent_steps = [
         {
             "id": row["id"],
+            "role": row["role"],
             "kind": row["kind"],
             "payload": json.loads(row["payload_json"]),
             "source": row["source"],
@@ -225,8 +226,9 @@ def export_case(db, case_id: str) -> dict | None:
             "decided_at": row["decided_at"],
         }
         for row in db.execute(
-            "SELECT id, kind, payload_json, source, status, note, created_at, "
-            "decided_at FROM agent_steps WHERE case_id = ? ORDER BY created_at",
+            "SELECT id, role, kind, payload_json, source, status, note, "
+            "created_at, decided_at FROM agent_steps "
+            "WHERE case_id = ? ORDER BY created_at",
             (case_id,),
         ).fetchall()
     ]
@@ -450,12 +452,13 @@ def import_package(db, package: dict, data_dir: Path) -> dict:
             if isinstance(remapped.get(key), str):
                 remapped[key] = mapping.get(remapped[key], remapped[key])
         db.execute(
-            "INSERT INTO agent_steps (id, case_id, kind, payload_json, source, "
-            "status, note, created_at, decided_at) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO agent_steps (id, case_id, role, kind, payload_json, "
+            "source, status, note, created_at, decided_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 str(uuid4()),
                 new_case_id,
+                step.get("role") or "analyst",
                 step.get("kind") or "end",
                 json.dumps(remapped),
                 step.get("source") or "deterministic",

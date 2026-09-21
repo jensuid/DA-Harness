@@ -1,6 +1,54 @@
 # DAH - Handoff
 
 ## Next action
+**P7-AGENT-001 is DONE**: a case can be worked by more than one agent, each with a
+role of its own, and the roles disagree in the case's own audit trail rather than in
+private. P6-AGENT-002's driver proposes the analysis loop one human-approved step at a
+time; nothing examined what it produced. A second role joins it whose entire method is
+EVALUATE - the reason the roadmap gated multi-agent work behind it - so an
+agent-proposed finding is audited by a different agent with a different objective, and a
+verdict that fails the analyst's own finding is recorded where a reviewer can read it.
+
+Two roles, one case: **analyst** is the existing decision procedure, unchanged, and the
+legacy `/agent` family is it; **reviewer** derives the case's first finding whose
+(code, claim) has no evaluation and proposes the EVALUATE audit of the run that backs it
+- the claim is the finding's own statement, the code is the run's own query, the verdict
+lands in the evaluations table through the same endpoint a human audit uses, and the
+reviewer invents neither and writes nothing of its own. This is orchestration, not
+autonomy (the spec's own distinction - an autonomous multi-agent system is a non-goal,
+"Human control" is in its Never-lose list): every role shares the one approval gate, a
+GET never proposes, and a page refresh commits nothing.
+
+The server suite is 380 tests (was 367: +12 in the new `tests/test_multi_agent.py`, +1
+migration case in `tests/test_migrations.py`), and the P2, P3 and P4 gates each PASS,
+each re-running the suite at 380. The web suite is untouched and stays at 73.
+
+### What is unbuilt, in priority order
+
+- **The reviewer in the shell** - P7-SHELL-011, and the last item on the P7 checklist.
+  `/cases/{id}/agents/{role}` has the same four verbs the single driver has, and nothing
+  in the shell reaches it, so a second agent's audits are observable today only through
+  the API - exactly where the single driver was before P7-SHELL-003. A typed client for
+  the role family plus an agent panel per role in `web/src/CaseWorkspace.tsx`.
+- **A release.** Fifteen tasks have landed since v0.1.0; `0.2.0` is the honest next
+  label. The pipeline publishes per tag, and the update check is already behind the
+  **Check for Updates...** menu item.
+- **The two endpoint-only surfaces, by design.** `/schema-version` answers "is my data
+  safe with this build", a question a support conversation asks rather than a step in an
+  analysis.
+- **Deferred, not dropped:** signing (DEC-006, the slot is in `release.yml`), cloud sync,
+  team collaboration, warehouse connectors, enterprise governance.
+
+### If the next step is a release
+
+Tag `v<x.y.z>` where x.y.z matches server/pyproject.toml. The published build is arm64
+and unsigned, flagged pre-release (DEC-006). Fifteen tasks have landed since v0.1.0, so
+`0.2.0` is the honest next label when a release is wanted.
+
+Nothing is unblocked-but-undone.
+
+---
+
 
 **P7-SHELL-010 is DONE**: LEARN mode has a surface as well as a core, and with
 EVALUATE before it, both product modes the spec names - and that DAH uniquely
@@ -166,6 +214,42 @@ Nothing is unblocked-but-undone.
 ---
 
 ## What was completed
+- P7-AGENT-001 PASSED: multi-agent workflows, roles over one case (core). The single
+  driver (P6-AGENT-002) proposes the analysis loop one human-approved step at a time,
+  and nothing examined what it produced. A second role joins it whose entire method is
+  EVALUATE, so an agent-proposed finding is audited by a different agent with a
+  different objective, and a failing verdict is recorded where a reviewer can read it
+  rather than folded into the finding it failed.
+  `server/app/db.py` gains migration 9 - `agent_steps.role TEXT NOT NULL DEFAULT
+  'analyst'` - so every step recorded before this task reads as the analyst role and
+  the legacy paths keep their meaning. `server/app/agent.py` becomes role-aware: the
+  pending step, history, attempt count, proposals and the settle/decide path all take
+  a role, dispatching to `_analyst_step` (unchanged procedure) or `_reviewer_step`
+  (derives the first unaudited finding and proposes an `evaluate` step carrying that
+  finding's claim and its run's code). `server/app/main.py` answers
+  `/cases/{id}/agents/{role}` - GET state, POST propose, approve, reject - with
+  `_require_role` answering 400 naming the roles that exist, and the legacy `/agent`
+  family delegating to the shared approvers as the analyst role. The `evaluate` step
+  kind posts through the existing evaluate endpoint, and its settle note is
+  "audited finding {id}: 9 axes, N pass, M concern, K fail" plus the failing axes'
+  own detail. `models.py`, `exporter.py` and the duplicate path carry the role.
+  Three things that had to be right rather than present: **idempotence is keyed on
+  (code, claim), not (run_id, claim)** - EVALUATE stores the artifact as a run of its
+  own, so an evaluation's run_id is the audit's artifact rather than the finding's, and
+  joining on it would re-audit forever; **two honest notions stay distinct** - a
+  failing audit sits beside the finding and never touches its validation_status, which
+  is about rerun support; and **one role's approval never authorises another role's
+  write** - a mismatch is a 409 naming that role's own pending step.
+  LESSON: most of the failures on the way to green were the migration's own
+  bookkeeping - a changed INSERT column list here, a values tuple that kept its old
+  length there, a SELECT that gained a WHERE column without gaining the SELECT column
+  - each surfacing as "incorrect number of bindings" or a KeyError far from the site
+  of the edit. The discipline that caught them was running the existing agent and
+  export suites first, before writing a new test, because those suites already encode
+  every write path and said exactly which statement was wrong. A schema change is not
+  one edit; it is one edit per writer, and the writers are found by the tests, not by
+  grep.
+
 - P7-SHELL-010 PASSED: LEARN mode in the web shell. P7-LEARN-001 shipped the
   guided walk and nothing in the shell reached it, so the mode existed as a
   contract and not as a product. A **Learn this case panel** now sits beside

@@ -55,6 +55,19 @@ from app.generator import create_code as create_code_module
 # mid-loop.
 STEP_END = "end"
 
+# The roles a case can be worked by (P7-AGENT-001). Each shares the one
+# approval gate: a role never writes without a human's yes, and a GET never
+# proposes. What differs is the objective - the analyst drives the analysis
+# loop, the reviewer audits what it produced - so an agent-run case can be
+# examined by an agent that did not write it.
+ROLE_ANALYST = "analyst"
+ROLE_REVIEWER = "reviewer"
+ROLES = (ROLE_ANALYST, ROLE_REVIEWER)
+
+# The step kinds are shared, because the write paths are: a reviewer's audit
+# runs through the evaluate endpoint, exactly as a human audit would.
+STEP_EVALUATE = "evaluate"
+
 STATUS_PENDING = "pending"
 STATUS_DONE = "done"
 STATUS_REJECTED = "rejected"
@@ -171,25 +184,25 @@ def _interpretation_exists(db, case_id: str, run_id: str) -> bool:
     return row is not None
 
 
-def _pending(db, case_id: str) -> dict | None:
+def _pending(db, case_id: str, role: str) -> dict | None:
     """The step awaiting a human, if any. There is at most one.
 
     An `end` row is settled when it is written - it records a conclusion, not
     work - so it is excluded even though nothing decides it afterwards.
     """
     row = db.execute(
-        f"SELECT id, case_id, kind, payload_json, source, status, note, "
+        f"SELECT id, case_id, role, kind, payload_json, source, status, note, "
         f"created_at, decided_at FROM {_TABLE} "
-        "WHERE case_id = ? AND status = ? AND kind != ? "
+        "WHERE case_id = ? AND role = ? AND status = ? AND kind != ? "
         "ORDER BY created_at DESC LIMIT 1",
-        (case_id, STATUS_PENDING, STEP_END),
+        (case_id, role, STATUS_PENDING, STEP_END),
     ).fetchone()
     if row is None:
         return None
     return dict(row, payload=json.loads(row["payload_json"]))
 
 
-def _history(db, case_id: str) -> list[dict]:
+def _history(db, case_id: str, role: str) -> list[dict]:
     """The settled steps, newest first.
 
     The pending step is reported separately, so it is excluded here - a caller
@@ -198,10 +211,10 @@ def _history(db, case_id: str) -> list[dict]:
     return [
         dict(row, payload=json.loads(row["payload_json"]))
         for row in db.execute(
-            f"SELECT id, case_id, kind, payload_json, source, status, note, "
-            f"created_at, decided_at FROM {_TABLE} WHERE case_id = ? "
-            f"AND status != ? ORDER BY created_at DESC",
-            (case_id, STATUS_PENDING),
+            f"SELECT id, case_id, role, kind, payload_json, source, status, "
+            f"note, created_at, decided_at FROM {_TABLE} WHERE case_id = ? "
+            f"AND role = ? AND status != ? ORDER BY created_at DESC",
+            (case_id, role, STATUS_PENDING),
         ).fetchall()
     ]
 
@@ -221,16 +234,19 @@ def _attempted_codes(db, case_id: str) -> set[str]:
     }
 
 
-def _attempt_count(db, case_id: str) -> int:
+def _attempt_count(db, case_id: str, role: str) -> int:
     return int(
         db.execute(
-            f"SELECT COUNT(*) AS n FROM {_TABLE} WHERE case_id = ? AND kind = 'analyze'",
-            (case_id,),
+            f"SELECT COUNT(*) AS n FROM {_TABLE} WHERE case_id = ? "
+            f"AND role = ? AND kind = 'analyze'",
+            (case_id, role),
         ).fetchone()["n"]
     )
 
 
-def _record(db, case_id: str, kind: str, payload: dict, source: str, note: str = "") -> dict:
+def _record(
+    db, case_id: str, role: str, kind: str, payload: dict, source: str, note: str = ""
+) -> dict:
     step = {
         "id": str(uuid4()),
         "case_id": case_id,
@@ -243,11 +259,12 @@ def _record(db, case_id: str, kind: str, payload: dict, source: str, note: str =
         "decided_at": None,
     }
     db.execute(
-        f"INSERT INTO {_TABLE} (id, case_id, kind, payload_json, source, status, "
-        "note, created_at, decided_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        f"INSERT INTO {_TABLE} (id, case_id, role, kind, payload_json, source, "
+        "status, note, created_at, decided_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         (
             step["id"],
             case_id,
+            role,
             kind,
             json.dumps(payload),
             source,
@@ -285,7 +302,7 @@ def _analyze_proposal(
     the caller states rather than retries.
     """
     tried = _attempted_codes(db, case_id)
-    attempts = _attempt_count(db, case_id)
+    attempts = _attempt_count(db, case_id, ROLE_ANALYST)
     for variant in range(attempts, _MAX_ATTEMPTS):
         proposal, source = create_code_module(question, profile, "sql", variant)
         if proposal.get("code") and proposal["code"] not in tried:
@@ -302,7 +319,7 @@ def _analyze_proposal(
     return None
 
 
-def next_step(db, case_id: str) -> dict | None:
+def _analyst_step(db, case_id: str) -> dict | None:
     """Derive the next step from the case's artifacts, or None if the loop is closed.
 
     This is the agent's whole decision procedure, and it is a pure projection
@@ -343,7 +360,7 @@ def next_step(db, case_id: str) -> dict | None:
         proposal["note"] = (
             "The previous query returned no rows; this proposal reads "
             "different columns."
-            if _attempt_count(db, case_id)
+            if _attempt_count(db, case_id, ROLE_ANALYST)
             else "The first read of the dataset."
         )
         return proposal
@@ -408,8 +425,84 @@ def next_step(db, case_id: str) -> dict | None:
     return None
 
 
-def _end_reason(db, case_id: str) -> str | None:
-    """Why the agent has no next step, or None when the loop genuinely closed."""
+def _audited_claims(db, case_id: str) -> set[tuple[str, str]]:
+    """The (code, claim) pairs the reviewer has already examined.
+
+    An evaluation records the code it ran and the claim it was offered to
+    support, and stores the artifact as a run of its own - so its run_id is the
+    audit's own artifact, not the finding's, and cannot be the join key. The
+    code and the claim together are: they are exactly what the reviewer
+    proposed, so matching them is a projection, and the reviewer cannot audit a
+    finding twice without an evaluation existing, nor skip one by forgetting.
+    """
+    rows = db.execute(
+        "SELECT code, claim FROM evaluations WHERE case_id = ?",
+        (case_id,),
+    ).fetchall()
+    return {(row["code"], row["claim"]) for row in rows}
+
+
+def _reviewer_step(db, case_id: str) -> dict | None:
+    """The reviewer's whole decision procedure: audit what the case claims.
+
+    It is deliberately small, and deliberately not the analyst's. The reviewer
+    does not discover, does not propose queries and does not draft findings -
+    it takes each finding the case has recorded and proposes the EVALUATE audit
+    of the run that backs it. That a different agent with a different objective
+    examines the analyst's output is the point of the role, and the reason the
+    roadmap gated multi-agent work on EVALUATE existing at all.
+    """
+    audited = _audited_claims(db, case_id)
+    rows = db.execute(
+        "SELECT f.id AS finding_id, f.statement, f.run_id, f.validation_status, "
+        "r.dataset_id, r.kind, r.sql, r.code "
+        "FROM findings f JOIN runs r ON r.id = f.run_id "
+        "WHERE f.case_id = ? ORDER BY f.created_at",
+        (case_id,),
+    ).fetchall()
+    for row in rows:
+        # A finding whose stored code is gone cannot be rerun for audit, so it
+        # is skipped with the rest still considered rather than ending the run.
+        code = row["sql"] if row["kind"] == "sql" else row["code"]
+        if not code:
+            continue
+        if (code, row["statement"]) in audited:
+            continue
+        return {
+            "kind": STEP_EVALUATE,
+            "payload": {
+                "dataset_id": row["dataset_id"],
+                "run_id": row["run_id"],
+                "finding_id": row["finding_id"],
+                "kind": row["kind"],
+                "code": code,
+                "claim": row["statement"],
+            },
+            "source": "deterministic",
+            "note": (
+                "An audit of the finding this case recorded: the claim its own "
+                "run was offered to support, judged on the nine axes."
+            ),
+        }
+    return None
+
+
+def next_step(db, case_id: str, role: str = ROLE_ANALYST) -> dict | None:
+    """Derive the next step for this role from the case's artifacts.
+
+    The dispatch is the whole of the orchestration: two objectives over one
+    case, each reading the artifacts the other wrote. Neither writes anything
+    without an approval.
+    """
+    if role == ROLE_REVIEWER:
+        return _reviewer_step(db, case_id)
+    return _analyst_step(db, case_id)
+
+def _end_reason(db, case_id: str, role: str = ROLE_ANALYST) -> str | None:
+    """Why this role has no next step, or None when its work is genuinely done."""
+    if role == ROLE_REVIEWER:
+        return _reviewer_end_reason(db, case_id)
+
     from app.workflow import case_progress
 
     progress = case_progress(db, case_id)
@@ -420,7 +513,7 @@ def _end_reason(db, case_id: str) -> str | None:
         return "the case has no dataset attached; nothing to analyse"
     run = _latest_run(db, case_id)
     if _empty(run):
-        attempts = _attempt_count(db, case_id)
+        attempts = _attempt_count(db, case_id, ROLE_ANALYST)
         if attempts >= _MAX_ATTEMPTS:
             return (
                 f"{attempts} quer{'y' if attempts == 1 else 'ies'} returned no rows "
@@ -430,7 +523,37 @@ def _end_reason(db, case_id: str) -> str | None:
     return "the loop is open but the agent has no further automated step"
 
 
-def propose(db, case_id: str) -> dict | None:
+def _reviewer_end_reason(db, case_id: str) -> str | None:
+    """The reviewer is done when every finding has been audited.
+
+    A case with no findings is not a finished review - it is a case the
+    analyst has not concluded yet, so the reviewer states what it is waiting
+    for rather than claiming to be finished.
+    """
+    findings = db.execute(
+        "SELECT COUNT(*) AS n FROM findings WHERE case_id = ?", (case_id,)
+    ).fetchone()["n"]
+    if findings == 0:
+        return "the case has no findings yet; the reviewer audits what the analyst concludes"
+    audited = _audited_claims(db, case_id)
+    rows = db.execute(
+        "SELECT f.statement, r.kind, r.sql, r.code "
+        "FROM findings f JOIN runs r ON r.id = f.run_id "
+        "WHERE f.case_id = ? ORDER BY f.created_at",
+        (case_id,),
+    ).fetchall()
+    unaudited = [
+        row
+        for row in rows
+        if (row["sql"] if row["kind"] == "sql" else row["code"], row["statement"])
+        not in audited
+    ]
+    if not unaudited:
+        return None
+    return f"{len(unaudited)} finding{'s' if len(unaudited) == 1 else ''} remain to be audited"
+
+
+def propose(db, case_id: str, role: str = ROLE_ANALYST) -> dict | None:
     """Record the next pending step, or leave the current one standing.
 
     Idempotent: a pending step is returned as-is, so calling this twice before
@@ -438,25 +561,30 @@ def propose(db, case_id: str) -> dict | None:
     but no step can be taken, an `end` row records the reason rather than
     leaving a caller to guess whether the agent is idle or finished.
     """
-    pending = _pending(db, case_id)
+    pending = _pending(db, case_id, role)
     if pending is not None:
         return pending
-    step = next_step(db, case_id)
+    step = next_step(db, case_id, role)
     if step is None:
-        reason = _end_reason(db, case_id)
+        reason = _end_reason(db, case_id, role)
         if reason is None:
             return None
         # An end row is a recorded conclusion, not work awaiting a decision, so
         # it is written already settled.
-        step = _record(db, case_id, STEP_END, {"reason": reason}, "deterministic", reason)
+        step = _record(
+            db, case_id, role, STEP_END, {"reason": reason}, "deterministic", reason
+        )
         _decide(db, step["id"], STATUS_DONE, reason)
         return None
-    return _record(db, case_id, step["kind"], step["payload"], step["source"], step.get("note", ""))
+    return _record(
+        db, case_id, role, step["kind"], step["payload"], step["source"],
+        step.get("note", ""),
+    )
 
 
-def approve(db, case_id: str, step_id: str) -> dict:
-    """The human's yes. Refuses anything that is not this case's live step."""
-    pending = _pending(db, case_id)
+def approve(db, case_id: str, step_id: str, role: str = ROLE_ANALYST) -> dict:
+    """The human's yes. Refuses anything that is not this role's live step."""
+    pending = _pending(db, case_id, role)
     if pending is None:
         raise ValueError("no pending step to approve")
     if pending["id"] != step_id:
@@ -476,9 +604,9 @@ class PendingStepError(Exception):
         )
 
 
-def reject(db, case_id: str, step_id: str, reason: str = "") -> dict:
+def reject(db, case_id: str, step_id: str, reason: str = "", role: str = ROLE_ANALYST) -> dict:
     """The human's no, recorded with their reason. Never a write."""
-    pending = _pending(db, case_id)
+    pending = _pending(db, case_id, role)
     if pending is None:
         raise ValueError("no pending step to reject")
     if pending["id"] != step_id:
@@ -492,12 +620,13 @@ def settle(db, step_id: str, note: str = "") -> None:
     _decide(db, step_id, STATUS_DONE, note)
 
 
-def state(db, case_id: str) -> dict[str, Any]:
-    """The agent's whole position: the pending step and the audit trail."""
+def state(db, case_id: str, role: str = ROLE_ANALYST) -> dict[str, Any]:
+    """One role's whole position: its pending step and its audit trail."""
     return {
         "case_id": case_id,
-        "pending": _pending(db, case_id),
-        "history": _history(db, case_id),
+        "role": role,
+        "pending": _pending(db, case_id, role),
+        "history": _history(db, case_id, role),
     }
 
 

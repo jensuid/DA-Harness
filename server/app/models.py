@@ -544,6 +544,7 @@ class AgentStep(BaseModel):
 
     id: str
     case_id: str
+    role: str
     kind: str
     payload: dict
     source: str
@@ -558,10 +559,13 @@ class AgentState(BaseModel):
 
     `pending` is None when the loop has closed or the case has no further step
     - both are stated in `history` rather than signalled by silence, so a caller
-    never has to guess whether the agent is idle or finished.
+    never has to guess whether the agent is idle or finished. `role` names which
+    agent this state belongs to (P7-AGENT-001): a case can be worked by several,
+    each with its own pending step and its own trail.
     """
 
     case_id: str
+    role: str
     pending: AgentStep | None
     history: list[AgentStep]
 

@@ -140,6 +140,7 @@ CREATE TABLE IF NOT EXISTS agent_steps (
     payload_json TEXT NOT NULL,
     source TEXT NOT NULL,
     status TEXT NOT NULL,
+    role TEXT NOT NULL DEFAULT 'analyst',
     note TEXT NOT NULL DEFAULT '',
     created_at TEXT NOT NULL,
     decided_at TEXT,
@@ -200,7 +201,7 @@ def _ensure_column(conn, table: str, column: str, definition: str) -> None:
 # opening one above it is refused (see _check_version) rather than silently
 # treated as current, because a downgrade against an unknown schema is how a
 # store is corrupted quietly.
-LATEST_SCHEMA_VERSION = 8
+LATEST_SCHEMA_VERSION = 9
 
 
 class Migration:
@@ -269,6 +270,14 @@ def _m_evaluations_table(conn: sqlite3.Connection) -> None:
     )
 
 
+
+def _m_agent_steps_role(conn: sqlite3.Connection) -> None:
+    # Multi-agent workflows: a step belongs to a role (P7-AGENT-001). Every
+    # step recorded before the column existed is the analyst role - the one
+    # driver the store had - so the default is the meaning those rows already
+    # had rather than a new one invented by an upgrade.
+    _ensure_column(conn, "agent_steps", "role", "TEXT NOT NULL DEFAULT 'analyst'")
+
 # The history of the store, oldest first. Each entry corresponds to a change
 # that once shipped as an ad-hoc `_ensure_column` call; the chain is the same
 # set of changes, now named, ordered and recorded. Append here - never edit an
@@ -282,6 +291,7 @@ MIGRATIONS: tuple[Migration, ...] = (
     Migration(6, "templates gain the analytical shape they carry", _m_templates_shape_json),
     Migration(7, "cases gain the template they came from", _m_cases_template_id),
     Migration(8, "evaluations: EVALUATE mode stores its audits", _m_evaluations_table),
+    Migration(9, "agent_steps gain the role they belong to", _m_agent_steps_role),
 )
 
 

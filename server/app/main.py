@@ -636,8 +636,8 @@ async def duplicate_case(
     # let those proposals run, so the copy is as inspectable as the original.
     # Payload ids are remapped to the copy's own artifacts, exactly as above.
     for step in db.execute(
-        "SELECT kind, payload_json, source, status, note, created_at, decided_at "
-        "FROM agent_steps WHERE case_id = ? ORDER BY created_at",
+        "SELECT role, kind, payload_json, source, status, note, created_at, "
+        "decided_at FROM agent_steps WHERE case_id = ? ORDER BY created_at",
         (case_id,),
     ).fetchall():
         remapped = json.loads(step["payload_json"])
@@ -648,12 +648,13 @@ async def duplicate_case(
             if isinstance(remapped.get(key), str):
                 remapped[key] = mapping.get(remapped[key], remapped[key])
         db.execute(
-            "INSERT INTO agent_steps (id, case_id, kind, payload_json, source, "
-            "status, note, created_at, decided_at) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO agent_steps (id, case_id, role, kind, payload_json, "
+            "source, status, note, created_at, decided_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 str(uuid4()),
                 new_case_id,
+                step["role"],
                 step["kind"],
                 json.dumps(remapped),
                 step["source"],
@@ -2537,6 +2538,7 @@ def _agent_step_of(row) -> AgentStep:
     return AgentStep(
         id=row["id"],
         case_id=row["case_id"],
+        role=row["role"],
         kind=row["kind"],
         payload=json.loads(row["payload_json"]),
         source=row["source"],
@@ -2547,10 +2549,11 @@ def _agent_step_of(row) -> AgentStep:
     )
 
 
-def _agent_state(db, case_id: str) -> AgentState:
-    state = agent_module.state(db, case_id)
+def _agent_state(db, case_id: str, role: str = agent_module.ROLE_ANALYST) -> AgentState:
+    state = agent_module.state(db, case_id, role)
     return AgentState(
         case_id=case_id,
+        role=role,
         pending=_agent_step_of(state["pending"]) if state["pending"] else None,
         history=[_agent_step_of(row) for row in state["history"]],
     )
@@ -2614,26 +2617,7 @@ async def approve_agent_step(
     same single path that creates a finding.
     """
     _require_case(db, case_id)
-    try:
-        step = agent_module.approve(db, case_id, payload.step_id)
-    except agent_module.PendingStepError as error:
-        raise HTTPException(
-            status_code=409,
-            detail={
-                "detail": "the step id is not this case's pending step",
-                "expected": error.expected,
-                "given": error.given,
-            },
-        )
-    except ValueError as error:
-        raise HTTPException(status_code=409, detail=str(error))
-
-    note = await _apply_agent_step(db, case_id, step)
-    agent_module.settle(db, step["id"], note)
-    # The next proposal is part of the approval's answer, so a human approving
-    # their way down the loop needs no second call to see what comes next.
-    agent_module.propose(db, case_id)
-    return _agent_state(db, case_id)
+    return await _approve_agent_step(db, case_id, agent_module.ROLE_ANALYST, payload)
 
 
 @app.post(
@@ -2652,22 +2636,163 @@ async def reject_agent_step(
     refusing a query leaves no run behind.
     """
     _require_case(db, case_id)
+    return await _reject_agent_step(db, case_id, agent_module.ROLE_ANALYST, payload)
+
+
+def _require_role(role: str) -> str:
+    """The roles a case can be worked by, or a sentence naming what exists."""
+    if role not in agent_module.ROLES:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"unknown agent role '{role}'; the roles are "
+                f"{', '.join(agent_module.ROLES)}"
+            ),
+        )
+    return role
+
+
+async def _approve_agent_step(
+    db, case_id: str, role: str, payload: AgentApproval
+) -> AgentState:
+    """The human's yes for one role. The step's write runs, and the role's next
+    step is proposed.
+
+    The approval must name THIS role's current pending step - an id from a
+    stale page, or from another role's panel, is a 409 naming that role's own
+    live step, never a second write of an old proposal.
+    """
     try:
-        agent_module.reject(db, case_id, payload.step_id, payload.reason or "")
+        step = agent_module.approve(db, case_id, payload.step_id, role)
     except agent_module.PendingStepError as error:
         raise HTTPException(
             status_code=409,
             detail={
-                "detail": "the step id is not this case's pending step",
+                "detail": f"the step id is not this role's pending step (role: {role})",
+                "role": role,
                 "expected": error.expected,
                 "given": error.given,
             },
         )
     except ValueError as error:
         raise HTTPException(status_code=409, detail=str(error))
-    agent_module.propose(db, case_id)
-    return _agent_state(db, case_id)
 
+    note = await _apply_agent_step(db, case_id, step)
+    agent_module.settle(db, step["id"], note)
+    # The next proposal is part of the approval's answer, so a human approving
+    # their way down the loop needs no second call to see what comes next.
+    agent_module.propose(db, case_id, role)
+    return _agent_state(db, case_id, role)
+
+
+async def _reject_agent_step(
+    db, case_id: str, role: str, payload: AgentApproval
+) -> AgentState:
+    """The human's no for one role, recorded with their reason. Never a write."""
+    try:
+        agent_module.reject(db, case_id, payload.step_id, payload.reason or "", role)
+    except agent_module.PendingStepError as error:
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "detail": f"the step id is not this role's pending step (role: {role})",
+                "role": role,
+                "expected": error.expected,
+                "given": error.given,
+            },
+        )
+    except ValueError as error:
+        raise HTTPException(status_code=409, detail=str(error))
+    agent_module.propose(db, case_id, role)
+    return _agent_state(db, case_id, role)
+
+
+@app.get(
+    "/cases/{case_id}/agents/{role}",
+    response_model=AgentState,
+)
+async def get_role_agent_state(
+    case_id: str, role: str, db=Depends(get_db)
+) -> AgentState:
+    """Where one role stands on a case: its live proposal and its audit trail.
+
+    A case can be worked by several agents, each with its own role (P7-AGENT-001).
+    This is the read-only view of one; nothing is proposed on a GET, so a page
+    refresh commits nothing no matter how many roles are open.
+    """
+    _require_case(db, case_id)
+    _require_role(role)
+    return _agent_state(db, case_id, role)
+
+
+@app.post(
+    "/cases/{case_id}/agents/{role}",
+    response_model=AgentState,
+    status_code=200,
+    summary="Start or advance one role's agent",
+    description=(
+        "Derive and record this role's next step, if there is one. The step is "
+        "*proposed*, not taken: the human approves it, and only then does the "
+        "write run. Idempotent - a pending step is returned unchanged. The "
+        "roles are analyst (the analysis loop) and reviewer (EVALUATE over the "
+        "case's own findings)."
+    ),
+)
+async def propose_role_agent_step(
+    case_id: str, role: str, db=Depends(get_db)
+) -> AgentState:
+    """Start or advance one role: derive and record its next step.
+
+    A POST that performed the write would be autonomous, so this proposes and
+    stops. Each role derives independently from the same artifacts, so the
+    reviewer's next step can react to a finding the analyst just recorded.
+    """
+    _require_case(db, case_id)
+    _require_role(role)
+    agent_module.propose(db, case_id, role)
+    return _agent_state(db, case_id, role)
+
+
+@app.post(
+    "/cases/{case_id}/agents/{role}/approve",
+    response_model=AgentState,
+)
+async def approve_role_agent_step(
+    case_id: str,
+    role: str,
+    payload: AgentApproval,
+    db=Depends(get_db),
+) -> AgentState:
+    """The human's yes for one role. Its write runs through the endpoint that
+    owns it, and the role's next step is proposed with it.
+
+    The approval must name this role's current pending step; an id from another
+    role's panel is a 409, because one role's write is never authorised by
+    another role's approval.
+    """
+    _require_case(db, case_id)
+    _require_role(role)
+    return await _approve_agent_step(db, case_id, role, payload)
+
+
+@app.post(
+    "/cases/{case_id}/agents/{role}/reject",
+    response_model=AgentState,
+)
+async def reject_role_agent_step(
+    case_id: str,
+    role: str,
+    payload: AgentApproval,
+    db=Depends(get_db),
+) -> AgentState:
+    """The human's no for one role, with the reason recorded on the step.
+
+    Rejection never writes case state, for any role: a refused audit leaves no
+    evaluation behind, exactly as a refused draft leaves no finding behind.
+    """
+    _require_case(db, case_id)
+    _require_role(role)
+    return await _reject_agent_step(db, case_id, role, payload)
 
 async def _apply_agent_step(db, case_id: str, step: dict) -> str:
     """Run one approved step through the endpoint that owns the write.
@@ -2733,6 +2858,33 @@ async def _apply_agent_step(db, case_id: str, step: dict) -> str:
     if kind == "validate":
         result = await validate_finding(case_id, body["finding_id"], db)
         return f"validated: {result.status}"
+
+    if kind == agent_module.STEP_EVALUATE:
+        # The reviewer's only write: an audit of the finding its own run backs,
+        # through the same endpoint a submitted artifact answers. The reviewer
+        # has no audit path of its own, exactly as the analyst has no write
+        # path of its own - and the verdict lands in the evaluations table,
+        # where a reader finds every other audit.
+        evaluation = await evaluate_dataset(
+            case_id,
+            body["dataset_id"],
+            EvaluationCreate(code=body["code"], claim=body["claim"], kind=body["kind"]),
+            db,
+        )
+        axes = evaluation.findings
+        verdicts = {axis.verdict for axis in axes}
+        failed = [axis for axis in axes if axis.verdict == "fail"]
+        summary = (
+            f"audited finding {body.get('finding_id', '?')}: "
+            f"{len(axes)} axes, {sum(v == 'pass' for v in verdicts)} pass, "
+            f"{sum(v == 'concern' for v in verdicts)} concern, "
+            f"{len(failed)} fail"
+        )
+        if failed:
+            # The axes that failed, each with its own sentence - the ones a
+            # reader has to act on.
+            summary += " (" + "; ".join(f"{a.axis}: {a.detail}" for a in failed) + ")"
+        return summary
 
     raise HTTPException(status_code=500, detail=f"unknown agent step kind {kind}")
 
