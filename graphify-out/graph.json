@@ -21,19 +21,6 @@
   },
   "nodes": [
     {
-      "id": "server_app_models_agentstep",
-      "label": "AgentStep",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 1,
-      "community_name": "models.py",
-      "file_type": "code",
-      "norm_label": "agentstep",
-      "source_file": "server/app/models.py",
-      "source_location": "L492"
-    },
-    {
       "id": "server_app_models_casecreate",
       "label": "CaseCreate",
       "_callable": true,
@@ -86,6 +73,19 @@
       "source_location": "L37"
     },
     {
+      "id": "server_app_models_chart",
+      "label": "Chart",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 1,
+      "community_name": "models.py",
+      "file_type": "code",
+      "norm_label": "chart",
+      "source_file": "server/app/models.py",
+      "source_location": "L242"
+    },
+    {
       "id": "server_app_models_chartcreate",
       "label": "ChartCreate",
       "_callable": true,
@@ -123,19 +123,6 @@
       "norm_label": "claimtrace",
       "source_file": "server/app/models.py",
       "source_location": "L196"
-    },
-    {
-      "id": "server_app_models_draftfinding",
-      "label": "DraftFinding",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 1,
-      "community_name": "models.py",
-      "file_type": "code",
-      "norm_label": "draftfinding",
-      "source_file": "server/app/models.py",
-      "source_location": "L420"
     },
     {
       "id": "server_app_models_edacreate",
@@ -424,17 +411,17 @@
       "source_location": "L442"
     },
     {
-      "id": "web_src_api_apierror",
-      "label": "ApiError",
+      "id": "server_app_models_plansummary",
+      "label": "PlanSummary",
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
       "community": 113,
-      "community_name": "api.test.ts",
+      "community_name": "list_plans",
       "file_type": "code",
-      "norm_label": "apierror",
-      "source_file": "web/src/api.ts",
-      "source_location": "L189"
+      "norm_label": "plansummary",
+      "source_file": "server/app/models.py",
+      "source_location": "L281"
     },
     {
       "id": "server_app_generator_llmgenerator",
@@ -500,6 +487,32 @@
       "norm_label": "_brokenllm",
       "source_file": "verification/p4/verify_p4.py",
       "source_location": "L115"
+    },
+    {
+      "id": "web_src_api_template",
+      "label": "Template",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 20,
+      "community_name": "Templates.tsx",
+      "file_type": "code",
+      "norm_label": "template",
+      "source_file": "web/src/api.ts",
+      "source_location": "L312"
+    },
+    {
+      "id": "web_src_api_templateshape",
+      "label": "TemplateShape",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 20,
+      "community_name": "Templates.tsx",
+      "file_type": "code",
+      "norm_label": "templateshape",
+      "source_file": "web/src/api.ts",
+      "source_location": "L302"
     },
     {
       "id": "server_app_updates_httpclient",
@@ -768,7 +781,7 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 33,
-      "community_name": "check_for_update",
+      "community_name": "updates_latest",
       "file_type": "code",
       "norm_label": "updatecheckresult",
       "source_file": "server/app/models.py",
@@ -879,17 +892,17 @@
       "source_location": "L90"
     },
     {
-      "id": "server_app_models_plansummary",
-      "label": "PlanSummary",
+      "id": "server_app_models_plan",
+      "label": "Plan",
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
       "community": 44,
       "community_name": "_require_dataset",
       "file_type": "code",
-      "norm_label": "plansummary",
+      "norm_label": "plan",
       "source_file": "server/app/models.py",
-      "source_location": "L281"
+      "source_location": "L270"
     },
     {
       "id": "server_app_models_profile",
@@ -968,6 +981,19 @@
       "norm_label": "conversationturn",
       "source_file": "server/app/models.py",
       "source_location": "L473"
+    },
+    {
+      "id": "web_src_api_apierror",
+      "label": "ApiError",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 61,
+      "community_name": "CaseList.tsx",
+      "file_type": "code",
+      "norm_label": "apierror",
+      "source_file": "web/src/api.ts",
+      "source_location": "L189"
     },
     {
       "id": "web_src_api_case",
@@ -1093,7 +1119,7 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 71,
-      "community_name": "CaseWorkspace.tsx",
+      "community_name": "api.ts",
       "file_type": "code",
       "norm_label": "agentstate",
       "source_file": "web/src/api.ts",
@@ -1106,7 +1132,7 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 71,
-      "community_name": "CaseWorkspace.tsx",
+      "community_name": "api.ts",
       "file_type": "code",
       "norm_label": "agentstep",
       "source_file": "web/src/api.ts",
@@ -1119,7 +1145,7 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 71,
-      "community_name": "CaseWorkspace.tsx",
+      "community_name": "api.ts",
       "file_type": "code",
       "norm_label": "axisfinding",
       "source_file": "web/src/api.ts",
@@ -1132,7 +1158,7 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 71,
-      "community_name": "CaseWorkspace.tsx",
+      "community_name": "api.ts",
       "file_type": "code",
       "norm_label": "caseprogress",
       "source_file": "web/src/api.ts",
@@ -1145,7 +1171,7 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 71,
-      "community_name": "CaseWorkspace.tsx",
+      "community_name": "api.ts",
       "file_type": "code",
       "norm_label": "conversationturn",
       "source_file": "web/src/api.ts",
@@ -1158,7 +1184,7 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 71,
-      "community_name": "CaseWorkspace.tsx",
+      "community_name": "api.ts",
       "file_type": "code",
       "norm_label": "dataset",
       "source_file": "web/src/api.ts",
@@ -1171,7 +1197,7 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 71,
-      "community_name": "CaseWorkspace.tsx",
+      "community_name": "api.ts",
       "file_type": "code",
       "norm_label": "evaluation",
       "source_file": "web/src/api.ts",
@@ -1184,7 +1210,7 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 71,
-      "community_name": "CaseWorkspace.tsx",
+      "community_name": "api.ts",
       "file_type": "code",
       "norm_label": "finding",
       "source_file": "web/src/api.ts",
@@ -1197,7 +1223,7 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 71,
-      "community_name": "CaseWorkspace.tsx",
+      "community_name": "api.ts",
       "file_type": "code",
       "norm_label": "generatedcode",
       "source_file": "web/src/api.ts",
@@ -1210,7 +1236,7 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 71,
-      "community_name": "CaseWorkspace.tsx",
+      "community_name": "api.ts",
       "file_type": "code",
       "norm_label": "health",
       "source_file": "web/src/api.ts",
@@ -1223,7 +1249,7 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 71,
-      "community_name": "CaseWorkspace.tsx",
+      "community_name": "api.ts",
       "file_type": "code",
       "norm_label": "interpretation",
       "source_file": "web/src/api.ts",
@@ -1236,7 +1262,7 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 71,
-      "community_name": "CaseWorkspace.tsx",
+      "community_name": "api.ts",
       "file_type": "code",
       "norm_label": "newcase",
       "source_file": "web/src/api.ts",
@@ -1249,7 +1275,7 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 71,
-      "community_name": "CaseWorkspace.tsx",
+      "community_name": "api.ts",
       "file_type": "code",
       "norm_label": "profile",
       "source_file": "web/src/api.ts",
@@ -1262,11 +1288,37 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 71,
-      "community_name": "CaseWorkspace.tsx",
+      "community_name": "api.ts",
       "file_type": "code",
       "norm_label": "runsummary",
       "source_file": "web/src/api.ts",
       "source_location": "L33"
+    },
+    {
+      "id": "web_src_api_templatefindingsummary",
+      "label": "TemplateFindingSummary",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 71,
+      "community_name": "api.ts",
+      "file_type": "code",
+      "norm_label": "templatefindingsummary",
+      "source_file": "web/src/api.ts",
+      "source_location": "L297"
+    },
+    {
+      "id": "web_src_api_templateproposal",
+      "label": "TemplateProposal",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 71,
+      "community_name": "api.ts",
+      "file_type": "code",
+      "norm_label": "templateproposal",
+      "source_file": "web/src/api.ts",
+      "source_location": "L290"
     },
     {
       "id": "web_src_api_validationresult",
@@ -1275,7 +1327,7 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 71,
-      "community_name": "CaseWorkspace.tsx",
+      "community_name": "api.ts",
       "file_type": "code",
       "norm_label": "validationresult",
       "source_file": "web/src/api.ts",
@@ -1288,7 +1340,7 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 71,
-      "community_name": "CaseWorkspace.tsx",
+      "community_name": "api.ts",
       "file_type": "code",
       "norm_label": "workflowstage",
       "source_file": "web/src/api.ts",
@@ -1373,17 +1425,17 @@
       "source_location": "L327"
     },
     {
-      "id": "server_app_models_chart",
-      "label": "Chart",
+      "id": "server_app_models_casehistory",
+      "label": "CaseHistory",
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
       "community": 85,
       "community_name": "main.py",
       "file_type": "code",
-      "norm_label": "chart",
+      "norm_label": "casehistory",
       "source_file": "server/app/models.py",
-      "source_location": "L242"
+      "source_location": "L389"
     },
     {
       "id": "server_app_models_chartsummary",
@@ -1397,6 +1449,19 @@
       "norm_label": "chartsummary",
       "source_file": "server/app/models.py",
       "source_location": "L257"
+    },
+    {
+      "id": "server_app_models_draftfinding",
+      "label": "DraftFinding",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 85,
+      "community_name": "main.py",
+      "file_type": "code",
+      "norm_label": "draftfinding",
+      "source_file": "server/app/models.py",
+      "source_location": "L420"
     },
     {
       "id": "server_app_models_interpretation",
@@ -1464,19 +1529,6 @@
       "source_location": "L564"
     },
     {
-      "id": "server_app_models_plan",
-      "label": "Plan",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 90,
-      "community_name": "create_plan",
-      "file_type": "code",
-      "norm_label": "plan",
-      "source_file": "server/app/models.py",
-      "source_location": "L270"
-    },
-    {
       "id": "server_app_evaluator_axisfinding",
       "label": "AxisFinding",
       "_callable": true,
@@ -1490,17 +1542,17 @@
       "source_location": "L69"
     },
     {
-      "id": "server_app_models_casehistory",
-      "label": "CaseHistory",
+      "id": "server_app_models_agentstep",
+      "label": "AgentStep",
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
       "community": 97,
-      "community_name": "get_case_history",
+      "community_name": "AgentStep",
       "file_type": "code",
-      "norm_label": "casehistory",
+      "norm_label": "agentstep",
       "source_file": "server/app/models.py",
-      "source_location": "L389"
+      "source_location": "L492"
     },
     {
       "id": "web_src_api_draftfinding",
@@ -1513,7 +1565,7 @@
       "file_type": "code",
       "norm_label": "draftfinding",
       "source_file": "web/src/api.ts",
-      "source_location": "L355"
+      "source_location": "L438"
     },
     {
       "id": "server_app_main_apply_agent_step",
@@ -1526,6 +1578,18 @@
       "norm_label": "_apply_agent_step()",
       "source_file": "server/app/main.py",
       "source_location": "L2668"
+    },
+    {
+      "id": "server_app_main_create_chart",
+      "label": "create_chart()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 1,
+      "community_name": "models.py",
+      "file_type": "code",
+      "norm_label": "create_chart()",
+      "source_file": "server/app/main.py",
+      "source_location": "L2113"
     },
     {
       "id": "server_app_main_create_finding",
@@ -2308,40 +2372,16 @@
       "source_location": "L135"
     },
     {
-      "id": "web_src_api_apierror_constructor",
-      "label": ".constructor()",
+      "id": "server_app_main_list_plans",
+      "label": "list_plans()",
       "_callable": true,
       "_origin": "ast",
       "community": 113,
-      "community_name": "api.test.ts",
+      "community_name": "list_plans",
       "file_type": "code",
-      "norm_label": ".constructor()",
-      "source_file": "web/src/api.ts",
-      "source_location": "L190"
-    },
-    {
-      "id": "web_src_api_test_failureof",
-      "label": "failureOf()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 113,
-      "community_name": "api.test.ts",
-      "file_type": "code",
-      "norm_label": "failureof()",
-      "source_file": "web/src/api.test.ts",
-      "source_location": "L19"
-    },
-    {
-      "id": "web_src_api_test_respond",
-      "label": "respond()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 113,
-      "community_name": "api.test.ts",
-      "file_type": "code",
-      "norm_label": "respond()",
-      "source_file": "web/src/api.test.ts",
-      "source_location": "L11"
+      "norm_label": "list_plans()",
+      "source_file": "server/app/main.py",
+      "source_location": "L2936"
     },
     {
       "id": "server_app_evaluator_candidate_reads",
@@ -2884,52 +2924,160 @@
       "source_location": "L74"
     },
     {
-      "id": "server_app_main_dataset_ids_of",
-      "label": "_dataset_ids_of()",
+      "id": "web_src_api_createcasefromtemplate",
+      "label": "createCaseFromTemplate()",
       "_callable": true,
       "_origin": "ast",
       "community": 20,
-      "community_name": "list_runs",
+      "community_name": "Templates.tsx",
       "file_type": "code",
-      "norm_label": "_dataset_ids_of()",
-      "source_file": "server/app/main.py",
-      "source_location": "L821"
+      "norm_label": "createcasefromtemplate()",
+      "source_file": "web/src/api.ts",
+      "source_location": "L343"
     },
     {
-      "id": "server_app_main_get_run",
-      "label": "get_run()",
+      "id": "web_src_api_deletetemplate",
+      "label": "deleteTemplate()",
       "_callable": true,
       "_origin": "ast",
       "community": 20,
-      "community_name": "list_runs",
+      "community_name": "Templates.tsx",
       "file_type": "code",
-      "norm_label": "get_run()",
-      "source_file": "server/app/main.py",
-      "source_location": "L1491"
+      "norm_label": "deletetemplate()",
+      "source_file": "web/src/api.ts",
+      "source_location": "L357"
     },
     {
-      "id": "server_app_main_list_runs",
-      "label": "list_runs()",
+      "id": "web_src_api_listtemplates",
+      "label": "listTemplates()",
       "_callable": true,
       "_origin": "ast",
       "community": 20,
-      "community_name": "list_runs",
+      "community_name": "Templates.tsx",
       "file_type": "code",
-      "norm_label": "list_runs()",
-      "source_file": "server/app/main.py",
-      "source_location": "L1464"
+      "norm_label": "listtemplates()",
+      "source_file": "web/src/api.ts",
+      "source_location": "L337"
     },
     {
-      "id": "server_app_main_runs_touching_dataset",
-      "label": "_runs_touching_dataset()",
+      "id": "web_src_api_promotecasetotemplate",
+      "label": "promoteCaseToTemplate()",
       "_callable": true,
       "_origin": "ast",
       "community": 20,
-      "community_name": "list_runs",
+      "community_name": "Templates.tsx",
       "file_type": "code",
-      "norm_label": "_runs_touching_dataset()",
-      "source_file": "server/app/main.py",
-      "source_location": "L837"
+      "norm_label": "promotecasetotemplate()",
+      "source_file": "web/src/api.ts",
+      "source_location": "L325"
+    },
+    {
+      "id": "web_src_templates_promotetemplate",
+      "label": "PromoteTemplate()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 20,
+      "community_name": "Templates.tsx",
+      "file_type": "code",
+      "norm_label": "promotetemplate()",
+      "source_file": "web/src/Templates.tsx",
+      "source_location": "L180"
+    },
+    {
+      "id": "web_src_templates_promotetemplate_save",
+      "label": "save()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 20,
+      "community_name": "Templates.tsx",
+      "file_type": "code",
+      "norm_label": "save()",
+      "source_file": "web/src/Templates.tsx",
+      "source_location": "L186"
+    },
+    {
+      "id": "web_src_templates_shapesummary",
+      "label": "ShapeSummary()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 20,
+      "community_name": "Templates.tsx",
+      "file_type": "code",
+      "norm_label": "shapesummary()",
+      "source_file": "web/src/Templates.tsx",
+      "source_location": "L150"
+    },
+    {
+      "id": "web_src_templates_templaterow",
+      "label": "TemplateRow()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 20,
+      "community_name": "Templates.tsx",
+      "file_type": "code",
+      "norm_label": "templaterow()",
+      "source_file": "web/src/Templates.tsx",
+      "source_location": "L68"
+    },
+    {
+      "id": "web_src_templates_templaterow_retire",
+      "label": "retire()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 20,
+      "community_name": "Templates.tsx",
+      "file_type": "code",
+      "norm_label": "retire()",
+      "source_file": "web/src/Templates.tsx",
+      "source_location": "L96"
+    },
+    {
+      "id": "web_src_templates_templaterow_start",
+      "label": "start()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 20,
+      "community_name": "Templates.tsx",
+      "file_type": "code",
+      "norm_label": "start()",
+      "source_file": "web/src/Templates.tsx",
+      "source_location": "L80"
+    },
+    {
+      "id": "web_src_templates_templates",
+      "label": "Templates()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 20,
+      "community_name": "Templates.tsx",
+      "file_type": "code",
+      "norm_label": "templates()",
+      "source_file": "web/src/Templates.tsx",
+      "source_location": "L20"
+    },
+    {
+      "id": "web_src_templates_templates_reload",
+      "label": "reload()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 20,
+      "community_name": "Templates.tsx",
+      "file_type": "code",
+      "norm_label": "reload()",
+      "source_file": "web/src/Templates.tsx",
+      "source_location": "L25"
+    },
+    {
+      "id": "server_app_updates_check_for_update",
+      "label": "check_for_update()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 21,
+      "community_name": "test_updates.py",
+      "file_type": "code",
+      "norm_label": "check_for_update()",
+      "source_file": "server/app/updates.py",
+      "source_location": "L233"
     },
     {
       "id": "server_app_updates_current_version",
@@ -2954,6 +3102,30 @@
       "norm_label": ".__call__()",
       "source_file": "server/app/updates.py",
       "source_location": "L88"
+    },
+    {
+      "id": "server_app_updates_httpx_client",
+      "label": "httpx_client()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 21,
+      "community_name": "test_updates.py",
+      "file_type": "code",
+      "norm_label": "httpx_client()",
+      "source_file": "server/app/updates.py",
+      "source_location": "L266"
+    },
+    {
+      "id": "server_app_updates_httpx_client_fetch",
+      "label": "fetch()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 21,
+      "community_name": "test_updates.py",
+      "file_type": "code",
+      "norm_label": "fetch()",
+      "source_file": "server/app/updates.py",
+      "source_location": "L274"
     },
     {
       "id": "server_app_updates_is_update_available",
@@ -3316,6 +3488,18 @@
       "source_location": "L170"
     },
     {
+      "id": "server_tests_test_updates_test_the_live_feed_answer_is_honest",
+      "label": "test_the_live_feed_answer_is_honest()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 21,
+      "community_name": "test_updates.py",
+      "file_type": "code",
+      "norm_label": "test_the_live_feed_answer_is_honest()",
+      "source_file": "server/tests/test_updates.py",
+      "source_location": "L239"
+    },
+    {
       "id": "server_app_main_case_of",
       "label": "_case_of()",
       "_callable": true,
@@ -3352,18 +3536,6 @@
       "source_location": "L3110"
     },
     {
-      "id": "server_app_main_draft_finding",
-      "label": "draft_finding()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 22,
-      "community_name": "get",
-      "file_type": "code",
-      "norm_label": "draft_finding()",
-      "source_file": "server/app/main.py",
-      "source_location": "L2044"
-    },
-    {
       "id": "server_app_main_duplicate_case",
       "label": "duplicate_case()",
       "_callable": true,
@@ -3398,6 +3570,18 @@
       "norm_label": "get_case()",
       "source_file": "server/app/main.py",
       "source_location": "L333"
+    },
+    {
+      "id": "server_app_main_get_case_progress",
+      "label": "get_case_progress()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 22,
+      "community_name": "get",
+      "file_type": "code",
+      "norm_label": "get_case_progress()",
+      "source_file": "server/app/main.py",
+      "source_location": "L349"
     },
     {
       "id": "server_app_main_health",
@@ -3472,28 +3656,40 @@
       "source_location": "L945"
     },
     {
-      "id": "server_app_main_update_case",
-      "label": "update_case()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 22,
-      "community_name": "get",
-      "file_type": "code",
-      "norm_label": "update_case()",
-      "source_file": "server/app/main.py",
-      "source_location": "L429"
-    },
-    {
-      "id": "server_app_main_create_python_run",
-      "label": "create_python_run()",
+      "id": "server_app_analysis_is_read_only",
+      "label": "_is_read_only()",
       "_callable": true,
       "_origin": "ast",
       "community": 23,
       "community_name": "validate_finding",
       "file_type": "code",
-      "norm_label": "create_python_run()",
+      "norm_label": "_is_read_only()",
+      "source_file": "server/app/analysis.py",
+      "source_location": "L82"
+    },
+    {
+      "id": "server_app_analysis_run_query_multi",
+      "label": "run_query_multi()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "validate_finding",
+      "file_type": "code",
+      "norm_label": "run_query_multi()",
+      "source_file": "server/app/analysis.py",
+      "source_location": "L305"
+    },
+    {
+      "id": "server_app_main_create_multi_dataset_run",
+      "label": "create_multi_dataset_run()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "validate_finding",
+      "file_type": "code",
+      "norm_label": "create_multi_dataset_run()",
       "source_file": "server/app/main.py",
-      "source_location": "L1143"
+      "source_location": "L865"
     },
     {
       "id": "server_app_main_record_repro",
@@ -3554,18 +3750,6 @@
       "norm_label": "validate_finding()",
       "source_file": "server/app/main.py",
       "source_location": "L1812"
-    },
-    {
-      "id": "server_app_python_exec_run_python",
-      "label": "run_python()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 23,
-      "community_name": "validate_finding",
-      "file_type": "code",
-      "norm_label": "run_python()",
-      "source_file": "server/app/python_exec.py",
-      "source_location": "L389"
     },
     {
       "id": "server_tests_test_multi_dataset_runs_case_with_datasets",
@@ -5589,59 +5773,11 @@
       "_callable": true,
       "_origin": "ast",
       "community": 33,
-      "community_name": "check_for_update",
+      "community_name": "updates_latest",
       "file_type": "code",
       "norm_label": "updates_latest()",
       "source_file": "server/app/main.py",
       "source_location": "L274"
-    },
-    {
-      "id": "server_app_updates_check_for_update",
-      "label": "check_for_update()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 33,
-      "community_name": "check_for_update",
-      "file_type": "code",
-      "norm_label": "check_for_update()",
-      "source_file": "server/app/updates.py",
-      "source_location": "L233"
-    },
-    {
-      "id": "server_app_updates_httpx_client",
-      "label": "httpx_client()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 33,
-      "community_name": "check_for_update",
-      "file_type": "code",
-      "norm_label": "httpx_client()",
-      "source_file": "server/app/updates.py",
-      "source_location": "L266"
-    },
-    {
-      "id": "server_app_updates_httpx_client_fetch",
-      "label": "fetch()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 33,
-      "community_name": "check_for_update",
-      "file_type": "code",
-      "norm_label": "fetch()",
-      "source_file": "server/app/updates.py",
-      "source_location": "L274"
-    },
-    {
-      "id": "server_tests_test_updates_test_the_live_feed_answer_is_honest",
-      "label": "test_the_live_feed_answer_is_honest()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 33,
-      "community_name": "check_for_update",
-      "file_type": "code",
-      "norm_label": "test_the_live_feed_answer_is_honest()",
-      "source_file": "server/tests/test_updates.py",
-      "source_location": "L239"
     },
     {
       "id": "server_app_exporter_chart_format",
@@ -6194,18 +6330,6 @@
       "norm_label": "_temp_env()",
       "source_file": "server/tests/test_large_datasets.py",
       "source_location": "L24"
-    },
-    {
-      "id": "server_tests_test_large_datasets_temp_env_override",
-      "label": "override()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 40,
-      "community_name": "test_large_datasets.py",
-      "file_type": "code",
-      "norm_label": "override()",
-      "source_file": "server/tests/test_large_datasets.py",
-      "source_location": "L29"
     },
     {
       "id": "server_tests_test_large_datasets_test_aggregation_across_a_large_dataset_is_exact",
@@ -6820,16 +6944,16 @@
       "source_location": "L718"
     },
     {
-      "id": "server_app_main_chart_media_type",
-      "label": "_chart_media_type()",
+      "id": "server_app_main_create_plan",
+      "label": "create_plan()",
       "_callable": true,
       "_origin": "ast",
       "community": 44,
       "community_name": "_require_dataset",
       "file_type": "code",
-      "norm_label": "_chart_media_type()",
+      "norm_label": "create_plan()",
       "source_file": "server/app/main.py",
-      "source_location": "L2268"
+      "source_location": "L2830"
     },
     {
       "id": "server_app_main_delete_dataset",
@@ -6844,28 +6968,28 @@
       "source_location": "L790"
     },
     {
-      "id": "server_app_main_format_for",
-      "label": "_format_for()",
+      "id": "server_app_main_generate_code",
+      "label": "generate_code()",
       "_callable": true,
       "_origin": "ast",
       "community": 44,
       "community_name": "_require_dataset",
       "file_type": "code",
-      "norm_label": "_format_for()",
+      "norm_label": "generate_code()",
       "source_file": "server/app/main.py",
-      "source_location": "L702"
+      "source_location": "L2767"
     },
     {
-      "id": "server_app_main_get_chart_image",
-      "label": "get_chart_image()",
+      "id": "server_app_main_get_plan",
+      "label": "get_plan()",
       "_callable": true,
       "_origin": "ast",
       "community": 44,
       "community_name": "_require_dataset",
       "file_type": "code",
-      "norm_label": "get_chart_image()",
+      "norm_label": "get_plan()",
       "source_file": "server/app/main.py",
-      "source_location": "L2259"
+      "source_location": "L2910"
     },
     {
       "id": "server_app_main_get_profile",
@@ -6890,18 +7014,6 @@
       "norm_label": "list_datasets()",
       "source_file": "server/app/main.py",
       "source_location": "L768"
-    },
-    {
-      "id": "server_app_main_list_plans",
-      "label": "list_plans()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 44,
-      "community_name": "_require_dataset",
-      "file_type": "code",
-      "norm_label": "list_plans()",
-      "source_file": "server/app/main.py",
-      "source_location": "L2936"
     },
     {
       "id": "server_app_main_profile_dataset",
@@ -6938,6 +7050,42 @@
       "norm_label": "run_exploratory_analysis()",
       "source_file": "server/app/main.py",
       "source_location": "L1047"
+    },
+    {
+      "id": "server_app_main_template_of",
+      "label": "_template_of()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 44,
+      "community_name": "_require_dataset",
+      "file_type": "code",
+      "norm_label": "_template_of()",
+      "source_file": "server/app/main.py",
+      "source_location": "L2446"
+    },
+    {
+      "id": "server_app_main_template_plan",
+      "label": "_template_plan()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 44,
+      "community_name": "_require_dataset",
+      "file_type": "code",
+      "norm_label": "_template_plan()",
+      "source_file": "server/app/main.py",
+      "source_location": "L2463"
+    },
+    {
+      "id": "server_app_main_template_proposal",
+      "label": "_template_proposal()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 44,
+      "community_name": "_require_dataset",
+      "file_type": "code",
+      "norm_label": "_template_proposal()",
+      "source_file": "server/app/main.py",
+      "source_location": "L2492"
     },
     {
       "id": "server_tests_test_agent_approve",
@@ -7648,18 +7796,6 @@
       "source_location": "L2546"
     },
     {
-      "id": "server_app_main_agent_step_of",
-      "label": "_agent_step_of()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 48,
-      "community_name": "_require_case",
-      "file_type": "code",
-      "norm_label": "_agent_step_of()",
-      "source_file": "server/app/main.py",
-      "source_location": "L2532"
-    },
-    {
       "id": "server_app_main_approve_agent_step",
       "label": "approve_agent_step()",
       "_callable": true,
@@ -7684,6 +7820,18 @@
       "source_location": "L2287"
     },
     {
+      "id": "server_app_main_dataset_ids_of",
+      "label": "_dataset_ids_of()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 48,
+      "community_name": "_require_case",
+      "file_type": "code",
+      "norm_label": "_dataset_ids_of()",
+      "source_file": "server/app/main.py",
+      "source_location": "L821"
+    },
+    {
       "id": "server_app_main_get_agent_state",
       "label": "get_agent_state()",
       "_callable": true,
@@ -7696,16 +7844,16 @@
       "source_location": "L2559"
     },
     {
-      "id": "server_app_main_get_case_progress",
-      "label": "get_case_progress()",
+      "id": "server_app_main_get_run",
+      "label": "get_run()",
       "_callable": true,
       "_origin": "ast",
       "community": 48,
       "community_name": "_require_case",
       "file_type": "code",
-      "norm_label": "get_case_progress()",
+      "norm_label": "get_run()",
       "source_file": "server/app/main.py",
-      "source_location": "L349"
+      "source_location": "L1491"
     },
     {
       "id": "server_app_main_list_chat",
@@ -7718,6 +7866,18 @@
       "norm_label": "list_chat()",
       "source_file": "server/app/main.py",
       "source_location": "L2740"
+    },
+    {
+      "id": "server_app_main_list_runs",
+      "label": "list_runs()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 48,
+      "community_name": "_require_case",
+      "file_type": "code",
+      "norm_label": "list_runs()",
+      "source_file": "server/app/main.py",
+      "source_location": "L1464"
     },
     {
       "id": "server_app_main_propose_agent_step",
@@ -7754,6 +7914,18 @@
       "norm_label": "_require_case()",
       "source_file": "server/app/main.py",
       "source_location": "L707"
+    },
+    {
+      "id": "server_app_main_runs_touching_dataset",
+      "label": "_runs_touching_dataset()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 48,
+      "community_name": "_require_case",
+      "file_type": "code",
+      "norm_label": "_runs_touching_dataset()",
+      "source_file": "server/app/main.py",
+      "source_location": "L837"
     },
     {
       "id": "server_tests_test_case_templates_env",
@@ -8632,6 +8804,18 @@
       "source_location": "L20"
     },
     {
+      "id": "web_src_api_apierror_constructor",
+      "label": ".constructor()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 61,
+      "community_name": "CaseList.tsx",
+      "file_type": "code",
+      "norm_label": ".constructor()",
+      "source_file": "web/src/api.ts",
+      "source_location": "L190"
+    },
+    {
       "id": "web_src_api_deletecase",
       "label": "deleteCase()",
       "_callable": true,
@@ -8641,7 +8825,7 @@
       "file_type": "code",
       "norm_label": "deletecase()",
       "source_file": "web/src/api.ts",
-      "source_location": "L274"
+      "source_location": "L281"
     },
     {
       "id": "web_src_api_duplicatecase",
@@ -8653,7 +8837,7 @@
       "file_type": "code",
       "norm_label": "duplicatecase()",
       "source_file": "web/src/api.ts",
-      "source_location": "L268"
+      "source_location": "L275"
     },
     {
       "id": "web_src_api_listcases",
@@ -8665,7 +8849,31 @@
       "file_type": "code",
       "norm_label": "listcases()",
       "source_file": "web/src/api.ts",
-      "source_location": "L242"
+      "source_location": "L249"
+    },
+    {
+      "id": "web_src_api_test_failureof",
+      "label": "failureOf()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 61,
+      "community_name": "CaseList.tsx",
+      "file_type": "code",
+      "norm_label": "failureof()",
+      "source_file": "web/src/api.test.ts",
+      "source_location": "L19"
+    },
+    {
+      "id": "web_src_api_test_respond",
+      "label": "respond()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 61,
+      "community_name": "CaseList.tsx",
+      "file_type": "code",
+      "norm_label": "respond()",
+      "source_file": "web/src/api.test.ts",
+      "source_location": "L11"
     },
     {
       "id": "web_src_api_updatecase",
@@ -8677,7 +8885,7 @@
       "file_type": "code",
       "norm_label": "updatecase()",
       "source_file": "web/src/api.ts",
-      "source_location": "L255"
+      "source_location": "L262"
     },
     {
       "id": "web_src_app_app",
@@ -8701,7 +8909,7 @@
       "file_type": "code",
       "norm_label": "caselist()",
       "source_file": "web/src/CaseList.tsx",
-      "source_location": "L13"
+      "source_location": "L14"
     },
     {
       "id": "web_src_caselist_caselist_reload",
@@ -8713,7 +8921,7 @@
       "file_type": "code",
       "norm_label": "reload()",
       "source_file": "web/src/CaseList.tsx",
-      "source_location": "L25"
+      "source_location": "L26"
     },
     {
       "id": "web_src_caselist_caserow",
@@ -8725,7 +8933,7 @@
       "file_type": "code",
       "norm_label": "caserow()",
       "source_file": "web/src/CaseList.tsx",
-      "source_location": "L91"
+      "source_location": "L96"
     },
     {
       "id": "web_src_caselist_caserow_canceledit",
@@ -8737,7 +8945,7 @@
       "file_type": "code",
       "norm_label": "canceledit()",
       "source_file": "web/src/CaseList.tsx",
-      "source_location": "L152"
+      "source_location": "L157"
     },
     {
       "id": "web_src_caselist_caserow_duplicate",
@@ -8749,7 +8957,7 @@
       "file_type": "code",
       "norm_label": "duplicate()",
       "source_file": "web/src/CaseList.tsx",
-      "source_location": "L123"
+      "source_location": "L128"
     },
     {
       "id": "web_src_caselist_caserow_remove",
@@ -8761,7 +8969,7 @@
       "file_type": "code",
       "norm_label": "remove()",
       "source_file": "web/src/CaseList.tsx",
-      "source_location": "L137"
+      "source_location": "L142"
     },
     {
       "id": "web_src_caselist_caserow_save",
@@ -8773,7 +8981,7 @@
       "file_type": "code",
       "norm_label": "save()",
       "source_file": "web/src/CaseList.tsx",
-      "source_location": "L107"
+      "source_location": "L112"
     },
     {
       "id": "server_dah_core_main_main",
@@ -8824,6 +9032,18 @@
       "source_location": "L88"
     },
     {
+      "id": "server_app_logging_config_current_log_file",
+      "label": "current_log_file()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 66,
+      "community_name": "test_logging.py",
+      "file_type": "code",
+      "norm_label": "current_log_file()",
+      "source_file": "server/app/logging_config.py",
+      "source_location": "L169"
+    },
+    {
       "id": "server_app_logging_config_read_tail",
       "label": "read_tail()",
       "_callable": true,
@@ -8846,18 +9066,6 @@
       "norm_label": "resolve_log_dir()",
       "source_file": "server/app/logging_config.py",
       "source_location": "L59"
-    },
-    {
-      "id": "server_app_logging_config_rotated_log_files",
-      "label": "rotated_log_files()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 66,
-      "community_name": "test_logging.py",
-      "file_type": "code",
-      "norm_label": "rotated_log_files()",
-      "source_file": "server/app/logging_config.py",
-      "source_location": "L177"
     },
     {
       "id": "server_tests_test_logging_log_dir",
@@ -10096,16 +10304,52 @@
       "source_location": "L47"
     },
     {
+      "id": "web_src_api_acceptfinding",
+      "label": "acceptFinding()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 71,
+      "community_name": "api.ts",
+      "file_type": "code",
+      "norm_label": "acceptfinding()",
+      "source_file": "web/src/api.ts",
+      "source_location": "L450"
+    },
+    {
       "id": "web_src_caseworkspace_audit",
       "label": "Audit()",
       "_callable": true,
       "_origin": "ast",
       "community": 71,
-      "community_name": "CaseWorkspace.tsx",
+      "community_name": "api.ts",
       "file_type": "code",
       "norm_label": "audit()",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L884"
+      "source_location": "L886"
+    },
+    {
+      "id": "web_src_caseworkspace_draftpanel",
+      "label": "DraftPanel()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 71,
+      "community_name": "api.ts",
+      "file_type": "code",
+      "norm_label": "draftpanel()",
+      "source_file": "web/src/CaseWorkspace.tsx",
+      "source_location": "L503"
+    },
+    {
+      "id": "web_src_caseworkspace_draftpanel_accept",
+      "label": "accept()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 71,
+      "community_name": "api.ts",
+      "file_type": "code",
+      "norm_label": "accept()",
+      "source_file": "web/src/CaseWorkspace.tsx",
+      "source_location": "L517"
     },
     {
       "id": "web_src_caseworkspace_findingspanel",
@@ -10113,11 +10357,11 @@
       "_callable": true,
       "_origin": "ast",
       "community": 71,
-      "community_name": "CaseWorkspace.tsx",
+      "community_name": "api.ts",
       "file_type": "code",
       "norm_label": "findingspanel()",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L554"
+      "source_location": "L556"
     },
     {
       "id": "web_src_caseworkspace_recordedaudit",
@@ -10125,11 +10369,11 @@
       "_callable": true,
       "_origin": "ast",
       "community": 71,
-      "community_name": "CaseWorkspace.tsx",
+      "community_name": "api.ts",
       "file_type": "code",
       "norm_label": "recordedaudit()",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L928"
+      "source_location": "L930"
     },
     {
       "id": "web_src_caseworkspace_runspanel",
@@ -10137,11 +10381,11 @@
       "_callable": true,
       "_origin": "ast",
       "community": 71,
-      "community_name": "CaseWorkspace.tsx",
+      "community_name": "api.ts",
       "file_type": "code",
       "norm_label": "runspanel()",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L365"
+      "source_location": "L367"
     },
     {
       "id": "web_src_caseworkspace_stepsentence",
@@ -10149,11 +10393,11 @@
       "_callable": true,
       "_origin": "ast",
       "community": 71,
-      "community_name": "CaseWorkspace.tsx",
+      "community_name": "api.ts",
       "file_type": "code",
       "norm_label": "stepsentence()",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L1116"
+      "source_location": "L1118"
     },
     {
       "id": "web_src_caseworkspace_stepstatus",
@@ -10161,11 +10405,11 @@
       "_callable": true,
       "_origin": "ast",
       "community": 71,
-      "community_name": "CaseWorkspace.tsx",
+      "community_name": "api.ts",
       "file_type": "code",
       "norm_label": "stepstatus()",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L1141"
+      "source_location": "L1143"
     },
     {
       "id": "web_src_caseworkspace_verdict",
@@ -10173,11 +10417,11 @@
       "_callable": true,
       "_origin": "ast",
       "community": 71,
-      "community_name": "CaseWorkspace.tsx",
+      "community_name": "api.ts",
       "file_type": "code",
       "norm_label": "verdict()",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L910"
+      "source_location": "L912"
     },
     {
       "id": "web_src_caseworkspace_workflow",
@@ -10185,11 +10429,11 @@
       "_callable": true,
       "_origin": "ast",
       "community": 71,
-      "community_name": "CaseWorkspace.tsx",
+      "community_name": "api.ts",
       "file_type": "code",
       "norm_label": "workflow()",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L167"
+      "source_location": "L169"
     },
     {
       "id": "server_app_evidence_build_evidence_graph",
@@ -10442,6 +10686,18 @@
       "norm_label": "override()",
       "source_file": "server/tests/test_cases.py",
       "source_location": "L70"
+    },
+    {
+      "id": "server_tests_test_large_datasets_temp_env_override",
+      "label": "override()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 74,
+      "community_name": "get_connection",
+      "file_type": "code",
+      "norm_label": "override()",
+      "source_file": "server/tests/test_large_datasets.py",
+      "source_location": "L29"
     },
     {
       "id": "server_tests_test_migrations_build_legacy",
@@ -11845,7 +12101,7 @@
       "file_type": "code",
       "norm_label": "attachdataset()",
       "source_file": "web/src/api.ts",
-      "source_location": "L304"
+      "source_location": "L387"
     },
     {
       "id": "web_src_api_getagentstate",
@@ -11857,7 +12113,7 @@
       "file_type": "code",
       "norm_label": "getagentstate()",
       "source_file": "web/src/api.ts",
-      "source_location": "L430"
+      "source_location": "L513"
     },
     {
       "id": "web_src_api_getcase",
@@ -11869,7 +12125,7 @@
       "file_type": "code",
       "norm_label": "getcase()",
       "source_file": "web/src/api.ts",
-      "source_location": "L247"
+      "source_location": "L254"
     },
     {
       "id": "web_src_api_getprogress",
@@ -11881,7 +12137,7 @@
       "file_type": "code",
       "norm_label": "getprogress()",
       "source_file": "web/src/api.ts",
-      "source_location": "L278"
+      "source_location": "L361"
     },
     {
       "id": "web_src_api_listchat",
@@ -11893,7 +12149,7 @@
       "file_type": "code",
       "norm_label": "listchat()",
       "source_file": "web/src/api.ts",
-      "source_location": "L298"
+      "source_location": "L381"
     },
     {
       "id": "web_src_api_listdatasets",
@@ -11905,7 +12161,7 @@
       "file_type": "code",
       "norm_label": "listdatasets()",
       "source_file": "web/src/api.ts",
-      "source_location": "L282"
+      "source_location": "L365"
     },
     {
       "id": "web_src_api_listevaluations",
@@ -11917,7 +12173,7 @@
       "file_type": "code",
       "norm_label": "listevaluations()",
       "source_file": "web/src/api.ts",
-      "source_location": "L418"
+      "source_location": "L501"
     },
     {
       "id": "web_src_api_listfindings",
@@ -11929,7 +12185,7 @@
       "file_type": "code",
       "norm_label": "listfindings()",
       "source_file": "web/src/api.ts",
-      "source_location": "L390"
+      "source_location": "L473"
     },
     {
       "id": "web_src_api_listruns",
@@ -11941,7 +12197,7 @@
       "file_type": "code",
       "norm_label": "listruns()",
       "source_file": "web/src/api.ts",
-      "source_location": "L286"
+      "source_location": "L369"
     },
     {
       "id": "web_src_api_profiledataset",
@@ -11953,7 +12209,7 @@
       "file_type": "code",
       "norm_label": "profiledataset()",
       "source_file": "web/src/api.ts",
-      "source_location": "L313"
+      "source_location": "L396"
     },
     {
       "id": "web_src_api_request",
@@ -11977,7 +12233,7 @@
       "file_type": "code",
       "norm_label": "caseworkspace()",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L47"
+      "source_location": "L48"
     },
     {
       "id": "web_src_caseworkspace_caseworkspace_load",
@@ -11989,7 +12245,7 @@
       "file_type": "code",
       "norm_label": "load()",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L59"
+      "source_location": "L60"
     },
     {
       "id": "web_src_caseworkspace_datapanel",
@@ -12001,7 +12257,7 @@
       "file_type": "code",
       "norm_label": "datapanel()",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L204"
+      "source_location": "L206"
     },
     {
       "id": "web_src_caseworkspace_datapanel_attach",
@@ -12013,19 +12269,19 @@
       "file_type": "code",
       "norm_label": "attach()",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L218"
+      "source_location": "L220"
     },
     {
-      "id": "server_app_logging_config_current_log_file",
-      "label": "current_log_file()",
+      "id": "server_app_logging_config_rotated_log_files",
+      "label": "rotated_log_files()",
       "_callable": true,
       "_origin": "ast",
       "community": 85,
       "community_name": "main.py",
       "file_type": "code",
-      "norm_label": "current_log_file()",
+      "norm_label": "rotated_log_files()",
       "source_file": "server/app/logging_config.py",
-      "source_location": "L169"
+      "source_location": "L177"
     },
     {
       "id": "server_app_main_chart_row_to_summary",
@@ -12040,18 +12296,6 @@
       "source_location": "L2195"
     },
     {
-      "id": "server_app_main_create_chart",
-      "label": "create_chart()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 85,
-      "community_name": "main.py",
-      "file_type": "code",
-      "norm_label": "create_chart()",
-      "source_file": "server/app/main.py",
-      "source_location": "L2113"
-    },
-    {
       "id": "server_app_main_create_interpretation",
       "label": "create_interpretation()",
       "_callable": true,
@@ -12064,16 +12308,28 @@
       "source_location": "L1915"
     },
     {
-      "id": "server_app_main_get_chart",
-      "label": "get_chart()",
+      "id": "server_app_main_draft_finding",
+      "label": "draft_finding()",
       "_callable": true,
       "_origin": "ast",
       "community": 85,
       "community_name": "main.py",
       "file_type": "code",
-      "norm_label": "get_chart()",
+      "norm_label": "draft_finding()",
       "source_file": "server/app/main.py",
-      "source_location": "L2236"
+      "source_location": "L2044"
+    },
+    {
+      "id": "server_app_main_get_case_history",
+      "label": "get_case_history()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 85,
+      "community_name": "main.py",
+      "file_type": "code",
+      "norm_label": "get_case_history()",
+      "source_file": "server/app/main.py",
+      "source_location": "L3008"
     },
     {
       "id": "server_app_main_get_interpretation",
@@ -12134,18 +12390,6 @@
       "norm_label": "recent_logs()",
       "source_file": "server/app/main.py",
       "source_location": "L216"
-    },
-    {
-      "id": "server_app_main_require_chart",
-      "label": "_require_chart()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 85,
-      "community_name": "main.py",
-      "file_type": "code",
-      "norm_label": "_require_chart()",
-      "source_file": "server/app/main.py",
-      "source_location": "L2224"
     },
     {
       "id": "server_app_main_require_run",
@@ -12220,6 +12464,18 @@
       "source_location": "L1717"
     },
     {
+      "id": "server_app_main_update_case",
+      "label": "update_case()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 86,
+      "community_name": "get_finding",
+      "file_type": "code",
+      "norm_label": "update_case()",
+      "source_file": "server/app/main.py",
+      "source_location": "L429"
+    },
+    {
       "id": "web_src_caseworkspace_test_agentidle",
       "label": "agentIdle()",
       "_callable": true,
@@ -12229,7 +12485,7 @@
       "file_type": "code",
       "norm_label": "agentidle()",
       "source_file": "web/src/CaseWorkspace.test.tsx",
-      "source_location": "L99"
+      "source_location": "L100"
     },
     {
       "id": "web_src_caseworkspace_test_agentstep",
@@ -12241,7 +12497,7 @@
       "file_type": "code",
       "norm_label": "agentstep()",
       "source_file": "web/src/CaseWorkspace.test.tsx",
-      "source_location": "L84"
+      "source_location": "L85"
     },
     {
       "id": "web_src_caseworkspace_test_cleanfindings",
@@ -12253,7 +12509,7 @@
       "file_type": "code",
       "norm_label": "cleanfindings()",
       "source_file": "web/src/CaseWorkspace.test.tsx",
-      "source_location": "L107"
+      "source_location": "L108"
     },
     {
       "id": "web_src_caseworkspace_test_evaluation",
@@ -12265,7 +12521,7 @@
       "file_type": "code",
       "norm_label": "evaluation()",
       "source_file": "web/src/CaseWorkspace.test.tsx",
-      "source_location": "L121"
+      "source_location": "L122"
     },
     {
       "id": "web_src_caseworkspace_test_finding",
@@ -12277,7 +12533,7 @@
       "file_type": "code",
       "norm_label": "finding()",
       "source_file": "web/src/CaseWorkspace.test.tsx",
-      "source_location": "L103"
+      "source_location": "L104"
     },
     {
       "id": "web_src_caseworkspace_test_mockemptycase",
@@ -12289,7 +12545,7 @@
       "file_type": "code",
       "norm_label": "mockemptycase()",
       "source_file": "web/src/CaseWorkspace.test.tsx",
-      "source_location": "L69"
+      "source_location": "L70"
     },
     {
       "id": "web_src_caseworkspace_test_runfixture",
@@ -12301,7 +12557,7 @@
       "file_type": "code",
       "norm_label": "runfixture()",
       "source_file": "web/src/CaseWorkspace.test.tsx",
-      "source_location": "L62"
+      "source_location": "L63"
     },
     {
       "id": "web_src_caseworkspace_test_submitaudit",
@@ -12313,43 +12569,19 @@
       "file_type": "code",
       "norm_label": "submitaudit()",
       "source_file": "web/src/CaseWorkspace.test.tsx",
-      "source_location": "L137"
+      "source_location": "L138"
     },
     {
-      "id": "server_app_analysis_is_read_only",
-      "label": "_is_read_only()",
+      "id": "server_app_main_create_python_run",
+      "label": "create_python_run()",
       "_callable": true,
       "_origin": "ast",
       "community": 89,
       "community_name": "evaluate_dataset",
       "file_type": "code",
-      "norm_label": "_is_read_only()",
-      "source_file": "server/app/analysis.py",
-      "source_location": "L82"
-    },
-    {
-      "id": "server_app_analysis_run_query_multi",
-      "label": "run_query_multi()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 89,
-      "community_name": "evaluate_dataset",
-      "file_type": "code",
-      "norm_label": "run_query_multi()",
-      "source_file": "server/app/analysis.py",
-      "source_location": "L305"
-    },
-    {
-      "id": "server_app_main_create_multi_dataset_run",
-      "label": "create_multi_dataset_run()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 89,
-      "community_name": "evaluate_dataset",
-      "file_type": "code",
-      "norm_label": "create_multi_dataset_run()",
+      "norm_label": "create_python_run()",
       "source_file": "server/app/main.py",
-      "source_location": "L865"
+      "source_location": "L1143"
     },
     {
       "id": "server_app_main_evaluate_dataset",
@@ -12412,76 +12644,76 @@
       "source_location": "L1410"
     },
     {
-      "id": "server_app_main_create_plan",
-      "label": "create_plan()",
+      "id": "server_app_python_exec_run_python",
+      "label": "run_python()",
       "_callable": true,
       "_origin": "ast",
-      "community": 90,
-      "community_name": "create_plan",
+      "community": 89,
+      "community_name": "evaluate_dataset",
       "file_type": "code",
-      "norm_label": "create_plan()",
-      "source_file": "server/app/main.py",
-      "source_location": "L2830"
+      "norm_label": "run_python()",
+      "source_file": "server/app/python_exec.py",
+      "source_location": "L389"
     },
     {
-      "id": "server_app_main_generate_code",
-      "label": "generate_code()",
+      "id": "server_app_main_chart_media_type",
+      "label": "_chart_media_type()",
       "_callable": true,
       "_origin": "ast",
       "community": 90,
-      "community_name": "create_plan",
+      "community_name": "get_chart_image",
       "file_type": "code",
-      "norm_label": "generate_code()",
+      "norm_label": "_chart_media_type()",
       "source_file": "server/app/main.py",
-      "source_location": "L2767"
+      "source_location": "L2268"
     },
     {
-      "id": "server_app_main_get_plan",
-      "label": "get_plan()",
+      "id": "server_app_main_format_for",
+      "label": "_format_for()",
       "_callable": true,
       "_origin": "ast",
       "community": 90,
-      "community_name": "create_plan",
+      "community_name": "get_chart_image",
       "file_type": "code",
-      "norm_label": "get_plan()",
+      "norm_label": "_format_for()",
       "source_file": "server/app/main.py",
-      "source_location": "L2910"
+      "source_location": "L702"
     },
     {
-      "id": "server_app_main_template_of",
-      "label": "_template_of()",
+      "id": "server_app_main_get_chart",
+      "label": "get_chart()",
       "_callable": true,
       "_origin": "ast",
       "community": 90,
-      "community_name": "create_plan",
+      "community_name": "get_chart_image",
       "file_type": "code",
-      "norm_label": "_template_of()",
+      "norm_label": "get_chart()",
       "source_file": "server/app/main.py",
-      "source_location": "L2446"
+      "source_location": "L2236"
     },
     {
-      "id": "server_app_main_template_plan",
-      "label": "_template_plan()",
+      "id": "server_app_main_get_chart_image",
+      "label": "get_chart_image()",
       "_callable": true,
       "_origin": "ast",
       "community": 90,
-      "community_name": "create_plan",
+      "community_name": "get_chart_image",
       "file_type": "code",
-      "norm_label": "_template_plan()",
+      "norm_label": "get_chart_image()",
       "source_file": "server/app/main.py",
-      "source_location": "L2463"
+      "source_location": "L2259"
     },
     {
-      "id": "server_app_main_template_proposal",
-      "label": "_template_proposal()",
+      "id": "server_app_main_require_chart",
+      "label": "_require_chart()",
       "_callable": true,
       "_origin": "ast",
       "community": 90,
-      "community_name": "create_plan",
+      "community_name": "get_chart_image",
       "file_type": "code",
-      "norm_label": "_template_proposal()",
+      "norm_label": "_require_chart()",
       "source_file": "server/app/main.py",
-      "source_location": "L2492"
+      "source_location": "L2224"
     },
     {
       "id": "server_app_assistant_profile_of",
@@ -12724,18 +12956,6 @@
       "source_location": "L97"
     },
     {
-      "id": "web_src_api_acceptfinding",
-      "label": "acceptFinding()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 94,
-      "community_name": "messageOf",
-      "file_type": "code",
-      "norm_label": "acceptfinding()",
-      "source_file": "web/src/api.ts",
-      "source_location": "L367"
-    },
-    {
       "id": "web_src_api_createcase",
       "label": "createCase()",
       "_callable": true,
@@ -12745,7 +12965,7 @@
       "file_type": "code",
       "norm_label": "createcase()",
       "source_file": "web/src/api.ts",
-      "source_location": "L234"
+      "source_location": "L241"
     },
     {
       "id": "web_src_api_evaluatedataset",
@@ -12757,7 +12977,7 @@
       "file_type": "code",
       "norm_label": "evaluatedataset()",
       "source_file": "web/src/api.ts",
-      "source_location": "L401"
+      "source_location": "L484"
     },
     {
       "id": "web_src_api_gethealth",
@@ -12769,7 +12989,7 @@
       "file_type": "code",
       "norm_label": "gethealth()",
       "source_file": "web/src/api.ts",
-      "source_location": "L230"
+      "source_location": "L237"
     },
     {
       "id": "web_src_api_postchat",
@@ -12781,7 +13001,7 @@
       "file_type": "code",
       "norm_label": "postchat()",
       "source_file": "web/src/api.ts",
-      "source_location": "L290"
+      "source_location": "L373"
     },
     {
       "id": "web_src_api_validatefinding",
@@ -12793,7 +13013,7 @@
       "file_type": "code",
       "norm_label": "validatefinding()",
       "source_file": "web/src/api.ts",
-      "source_location": "L384"
+      "source_location": "L467"
     },
     {
       "id": "web_src_casecreation_casecreation",
@@ -12829,7 +13049,7 @@
       "file_type": "code",
       "norm_label": "messageof()",
       "source_file": "web/src/CaseList.tsx",
-      "source_location": "L76"
+      "source_location": "L81"
     },
     {
       "id": "web_src_caseworkspace_chat",
@@ -12841,7 +13061,7 @@
       "file_type": "code",
       "norm_label": "chat()",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L641"
+      "source_location": "L643"
     },
     {
       "id": "web_src_caseworkspace_chat_send",
@@ -12853,31 +13073,7 @@
       "file_type": "code",
       "norm_label": "send()",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L654"
-    },
-    {
-      "id": "web_src_caseworkspace_draftpanel",
-      "label": "DraftPanel()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 94,
-      "community_name": "messageOf",
-      "file_type": "code",
-      "norm_label": "draftpanel()",
-      "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L501"
-    },
-    {
-      "id": "web_src_caseworkspace_draftpanel_accept",
-      "label": "accept()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 94,
-      "community_name": "messageOf",
-      "file_type": "code",
-      "norm_label": "accept()",
-      "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L515"
+      "source_location": "L656"
     },
     {
       "id": "web_src_caseworkspace_evaluatepanel",
@@ -12889,7 +13085,7 @@
       "file_type": "code",
       "norm_label": "evaluatepanel()",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L719"
+      "source_location": "L721"
     },
     {
       "id": "web_src_caseworkspace_evaluatepanel_submit",
@@ -12901,7 +13097,7 @@
       "file_type": "code",
       "norm_label": "submit()",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L758"
+      "source_location": "L760"
     },
     {
       "id": "web_src_caseworkspace_findingrow",
@@ -12913,7 +13109,7 @@
       "file_type": "code",
       "norm_label": "findingrow()",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L585"
+      "source_location": "L587"
     },
     {
       "id": "web_src_caseworkspace_findingrow_validate",
@@ -12925,7 +13121,7 @@
       "file_type": "code",
       "norm_label": "validate()",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L598"
+      "source_location": "L600"
     },
     {
       "id": "web_src_api_approveagentstep",
@@ -12937,7 +13133,7 @@
       "file_type": "code",
       "norm_label": "approveagentstep()",
       "source_file": "web/src/api.ts",
-      "source_location": "L444"
+      "source_location": "L527"
     },
     {
       "id": "web_src_api_proposeagentstep",
@@ -12949,7 +13145,7 @@
       "file_type": "code",
       "norm_label": "proposeagentstep()",
       "source_file": "web/src/api.ts",
-      "source_location": "L436"
+      "source_location": "L519"
     },
     {
       "id": "web_src_api_rejectagentstep",
@@ -12961,7 +13157,7 @@
       "file_type": "code",
       "norm_label": "rejectagentstep()",
       "source_file": "web/src/api.ts",
-      "source_location": "L454"
+      "source_location": "L537"
     },
     {
       "id": "web_src_caseworkspace_agentpanel",
@@ -12973,7 +13169,7 @@
       "file_type": "code",
       "norm_label": "agentpanel()",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L948"
+      "source_location": "L950"
     },
     {
       "id": "web_src_caseworkspace_agentpanel_decide",
@@ -12985,7 +13181,7 @@
       "file_type": "code",
       "norm_label": "decide()",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L987"
+      "source_location": "L989"
     },
     {
       "id": "web_src_caseworkspace_agentpanel_propose",
@@ -12997,7 +13193,7 @@
       "file_type": "code",
       "norm_label": "propose()",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L972"
+      "source_location": "L974"
     },
     {
       "id": "web_src_caseworkspace_agentpanel_refresh",
@@ -13009,19 +13205,19 @@
       "file_type": "code",
       "norm_label": "refresh()",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L963"
+      "source_location": "L965"
     },
     {
-      "id": "server_app_main_get_case_history",
-      "label": "get_case_history()",
+      "id": "server_app_main_agent_step_of",
+      "label": "_agent_step_of()",
       "_callable": true,
       "_origin": "ast",
       "community": 97,
-      "community_name": "get_case_history",
+      "community_name": "AgentStep",
       "file_type": "code",
-      "norm_label": "get_case_history()",
+      "norm_label": "_agent_step_of()",
       "source_file": "server/app/main.py",
-      "source_location": "L3008"
+      "source_location": "L2532"
     },
     {
       "id": "web_src_api_interpretrun",
@@ -13033,7 +13229,7 @@
       "file_type": "code",
       "norm_label": "interpretrun()",
       "source_file": "web/src/api.ts",
-      "source_location": "L349"
+      "source_location": "L432"
     },
     {
       "id": "web_src_caseworkspace_runrow",
@@ -13045,7 +13241,7 @@
       "file_type": "code",
       "norm_label": "runrow()",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L403"
+      "source_location": "L405"
     },
     {
       "id": "web_src_caseworkspace_runrow_draftit",
@@ -13057,7 +13253,7 @@
       "file_type": "code",
       "norm_label": "draftit()",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L432"
+      "source_location": "L434"
     },
     {
       "id": "web_src_caseworkspace_runrow_read",
@@ -13069,7 +13265,7 @@
       "file_type": "code",
       "norm_label": "read()",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L419"
+      "source_location": "L421"
     },
     {
       "id": "web_src_api_generatecode",
@@ -13081,7 +13277,7 @@
       "file_type": "code",
       "norm_label": "generatecode()",
       "source_file": "web/src/api.ts",
-      "source_location": "L333"
+      "source_location": "L416"
     },
     {
       "id": "web_src_api_runsql",
@@ -13093,7 +13289,7 @@
       "file_type": "code",
       "norm_label": "runsql()",
       "source_file": "web/src/api.ts",
-      "source_location": "L319"
+      "source_location": "L402"
     },
     {
       "id": "web_src_caseworkspace_generatepanel",
@@ -13105,7 +13301,7 @@
       "file_type": "code",
       "norm_label": "generatepanel()",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L283"
+      "source_location": "L285"
     },
     {
       "id": "web_src_caseworkspace_generatepanel_propose",
@@ -13117,7 +13313,7 @@
       "file_type": "code",
       "norm_label": "propose()",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L298"
+      "source_location": "L300"
     },
     {
       "id": "web_src_caseworkspace_generatepanel_run",
@@ -13129,7 +13325,7 @@
       "file_type": "code",
       "norm_label": "run()",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L313"
+      "source_location": "L315"
     },
     {
       "id": "basemodel",
@@ -13174,6 +13370,17 @@
       "norm_label": "record a finding against a specific analysis run. the finding starts...",
       "source_file": "server/app/main.py",
       "source_location": "L1536"
+    },
+    {
+      "id": "server_app_main_rationale_2119",
+      "label": "Render a chart from a persisted run result and store it with the case. The\u2026",
+      "_origin": "ast",
+      "community": 1,
+      "community_name": "models.py",
+      "file_type": "rationale",
+      "norm_label": "render a chart from a persisted run result and store it with the case. the...",
+      "source_file": "server/app/main.py",
+      "source_location": "L2119"
     },
     {
       "id": "server_app_main_rationale_250",
@@ -13297,17 +13504,6 @@
       "source_location": "L38"
     },
     {
-      "id": "server_app_models_rationale_421",
-      "label": "The candidate finding a result would support (P3-AI-012). A proposal, not an\u2026",
-      "_origin": "ast",
-      "community": 1,
-      "community_name": "models.py",
-      "file_type": "rationale",
-      "norm_label": "the candidate finding a result would support (p3-ai-012). a proposal, not an...",
-      "source_file": "server/app/models.py",
-      "source_location": "L421"
-    },
-    {
       "id": "server_app_models_rationale_441",
       "label": "A natural-language request for the computation that would answer it.",
       "_origin": "ast",
@@ -13339,17 +13535,6 @@
       "norm_label": "a question put to the case's assistant.",
       "source_file": "server/app/models.py",
       "source_location": "L468"
-    },
-    {
-      "id": "server_app_models_rationale_493",
-      "label": "One step of an agent run (P6-AGENT-002). The agent proposes; the human\u2026",
-      "_origin": "ast",
-      "community": 1,
-      "community_name": "models.py",
-      "file_type": "rationale",
-      "norm_label": "one step of an agent run (p6-agent-002). the agent proposes; the human...",
-      "source_file": "server/app/models.py",
-      "source_location": "L493"
     },
     {
       "id": "server_app_models_rationale_587",
@@ -14155,15 +14340,26 @@
       "source_location": "L385"
     },
     {
-      "id": "web_src_api_test",
-      "label": "api.test.ts",
+      "id": "server_app_main_rationale_2939",
+      "label": "Every plan recorded for a case's dataset, newest first.",
       "_origin": "ast",
       "community": 113,
-      "community_name": "api.test.ts",
-      "file_type": "code",
-      "norm_label": "api.test.ts",
-      "source_file": "web/src/api.test.ts",
-      "source_location": "L1"
+      "community_name": "list_plans",
+      "file_type": "rationale",
+      "norm_label": "every plan recorded for a case's dataset, newest first.",
+      "source_file": "server/app/main.py",
+      "source_location": "L2939"
+    },
+    {
+      "id": "server_app_models_rationale_282",
+      "label": "Plan metadata without the plan body.",
+      "_origin": "ast",
+      "community": 113,
+      "community_name": "list_plans",
+      "file_type": "rationale",
+      "norm_label": "plan metadata without the plan body.",
+      "source_file": "server/app/models.py",
+      "source_location": "L282"
     },
     {
       "id": "server_app_evaluator_rationale_105",
@@ -14879,59 +15075,15 @@
       "source_location": "L19"
     },
     {
-      "id": "runsummary",
-      "label": "RunSummary",
+      "id": "web_src_templates",
+      "label": "Templates.tsx",
       "_origin": "ast",
       "community": 20,
-      "community_name": "list_runs",
+      "community_name": "Templates.tsx",
       "file_type": "code",
-      "norm_label": "runsummary",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
-      "id": "server_app_main_rationale_1465",
-      "label": "List analysis runs for a case, without the heavy result rows.",
-      "_origin": "ast",
-      "community": 20,
-      "community_name": "list_runs",
-      "file_type": "rationale",
-      "norm_label": "list analysis runs for a case, without the heavy result rows.",
-      "source_file": "server/app/main.py",
-      "source_location": "L1465"
-    },
-    {
-      "id": "server_app_main_rationale_1492",
-      "label": "Reopen a persisted analysis run, including its result rows.",
-      "_origin": "ast",
-      "community": 20,
-      "community_name": "list_runs",
-      "file_type": "rationale",
-      "norm_label": "reopen a persisted analysis run, including its result rows.",
-      "source_file": "server/app/main.py",
-      "source_location": "L1492"
-    },
-    {
-      "id": "server_app_main_rationale_822",
-      "label": "The datasets a run touches; None means an unknown (legacy) set. Older runs\u2026",
-      "_origin": "ast",
-      "community": 20,
-      "community_name": "list_runs",
-      "file_type": "rationale",
-      "norm_label": "the datasets a run touches; none means an unknown (legacy) set. older runs...",
-      "source_file": "server/app/main.py",
-      "source_location": "L822"
-    },
-    {
-      "id": "server_app_main_rationale_838",
-      "label": "IDs of the runs that bind this dataset, newest-independent order. A run binds a\u2026",
-      "_origin": "ast",
-      "community": 20,
-      "community_name": "list_runs",
-      "file_type": "rationale",
-      "norm_label": "ids of the runs that bind this dataset, newest-independent order. a run binds a...",
-      "source_file": "server/app/main.py",
-      "source_location": "L838"
+      "norm_label": "templates.tsx",
+      "source_file": "web/src/Templates.tsx",
+      "source_location": "L1"
     },
     {
       "id": "protocol",
@@ -15042,6 +15194,28 @@
       "norm_label": "turn a feed body into an answer, or into unknown with a reason. never raises:...",
       "source_file": "server/app/updates.py",
       "source_location": "L184"
+    },
+    {
+      "id": "server_app_updates_rationale_239",
+      "label": "Ask the feed whether a newer build exists. `fetch` is the transport seam: the\u2026",
+      "_origin": "ast",
+      "community": 21,
+      "community_name": "test_updates.py",
+      "file_type": "rationale",
+      "norm_label": "ask the feed whether a newer build exists. `fetch` is the transport seam: the...",
+      "source_file": "server/app/updates.py",
+      "source_location": "L239"
+    },
+    {
+      "id": "server_app_updates_rationale_267",
+      "label": "The real transport: httpx, bounded by a timeout. Built lazily and returned as a\u2026",
+      "_origin": "ast",
+      "community": 21,
+      "community_name": "test_updates.py",
+      "file_type": "rationale",
+      "norm_label": "the real transport: httpx, bounded by a timeout. built lazily and returned as a...",
+      "source_file": "server/app/updates.py",
+      "source_location": "L267"
     },
     {
       "id": "server_app_updates_rationale_54",
@@ -15165,6 +15339,17 @@
       "source_location": "L216"
     },
     {
+      "id": "server_tests_test_updates_rationale_240",
+      "label": "Against the real (private) repository the answer is unknown, never a silent\u2026",
+      "_origin": "ast",
+      "community": 21,
+      "community_name": "test_updates.py",
+      "file_type": "rationale",
+      "norm_label": "against the real (private) repository the answer is unknown, never a silent...",
+      "source_file": "server/tests/test_updates.py",
+      "source_location": "L240"
+    },
+    {
       "id": "case",
       "label": "Case",
       "_origin": "ast",
@@ -15176,13 +15361,13 @@
       "source_location": ""
     },
     {
-      "id": "draftfinding",
-      "label": "DraftFinding",
+      "id": "caseprogress",
+      "label": "CaseProgress",
       "_origin": "ast",
       "community": 22,
       "community_name": "get",
       "file_type": "code",
-      "norm_label": "draftfinding",
+      "norm_label": "caseprogress",
       "source_file": "",
       "source_location": ""
     },
@@ -15207,17 +15392,6 @@
       "norm_label": "post",
       "source_file": "",
       "source_location": ""
-    },
-    {
-      "id": "server_app_main_rationale_2049",
-      "label": "Draft the finding a result would support, without writing anything. A finding\u2026",
-      "_origin": "ast",
-      "community": 22,
-      "community_name": "get",
-      "file_type": "rationale",
-      "norm_label": "draft the finding a result would support, without writing anything. a finding...",
-      "source_file": "server/app/main.py",
-      "source_location": "L2049"
     },
     {
       "id": "server_app_main_rationale_211",
@@ -15297,6 +15471,17 @@
       "source_location": "L334"
     },
     {
+      "id": "server_app_main_rationale_350",
+      "label": "Where this case stands in the guided workflow (P3-FLOW-004). The stage is\u2026",
+      "_origin": "ast",
+      "community": 22,
+      "community_name": "get",
+      "file_type": "rationale",
+      "norm_label": "where this case stands in the guided workflow (p3-flow-004). the stage is...",
+      "source_file": "server/app/main.py",
+      "source_location": "L350"
+    },
+    {
       "id": "server_app_main_rationale_377",
       "label": "Turn a search term into a literal-substring LIKE pattern (P3-CASE-007). LIKE\u2026",
       "_origin": "ast",
@@ -15328,17 +15513,6 @@
       "norm_label": "list all persisted analysis cases. `q` filters case-insensitively on the...",
       "source_file": "server/app/main.py",
       "source_location": "L406"
-    },
-    {
-      "id": "server_app_main_rationale_434",
-      "label": "Rename a case: its question and/or dataset label. Omitted fields are left as\u2026",
-      "_origin": "ast",
-      "community": 22,
-      "community_name": "get",
-      "file_type": "rationale",
-      "norm_label": "rename a case: its question and/or dataset label. omitted fields are left as...",
-      "source_file": "server/app/main.py",
-      "source_location": "L434"
     },
     {
       "id": "server_app_main_rationale_471",
@@ -15374,15 +15548,26 @@
       "source_location": ""
     },
     {
-      "id": "server_app_main_rationale_1149",
-      "label": "Run user Python against an attached dataset and persist the result. The code\u2026",
+      "id": "server_app_analysis_rationale_306",
+      "label": "Run a read-only SQL query across several attached files (P3-DATA-003).\u2026",
       "_origin": "ast",
       "community": 23,
       "community_name": "validate_finding",
       "file_type": "rationale",
-      "norm_label": "run user python against an attached dataset and persist the result. the code...",
-      "source_file": "server/app/main.py",
-      "source_location": "L1149"
+      "norm_label": "run a read-only sql query across several attached files (p3-data-003)....",
+      "source_file": "server/app/analysis.py",
+      "source_location": "L306"
+    },
+    {
+      "id": "server_app_analysis_rationale_83",
+      "label": "Reject anything that is not a single read-only statement.",
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "validate_finding",
+      "file_type": "rationale",
+      "norm_label": "reject anything that is not a single read-only statement.",
+      "source_file": "server/app/analysis.py",
+      "source_location": "L83"
     },
     {
       "id": "server_app_main_rationale_1739",
@@ -15440,6 +15625,17 @@
       "source_location": "L1817"
     },
     {
+      "id": "server_app_main_rationale_870",
+      "label": "Run user SQL across several attached datasets (P3-DATA-003). Placeholders bind\u2026",
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "validate_finding",
+      "file_type": "rationale",
+      "norm_label": "run user sql across several attached datasets (p3-data-003). placeholders bind...",
+      "source_file": "server/app/main.py",
+      "source_location": "L870"
+    },
+    {
       "id": "server_app_models_rationale_292",
       "label": "One check from the validation pass.",
       "_origin": "ast",
@@ -15449,17 +15645,6 @@
       "norm_label": "one check from the validation pass.",
       "source_file": "server/app/models.py",
       "source_location": "L292"
-    },
-    {
-      "id": "server_app_python_exec_rationale_394",
-      "label": "Execute user Python in a separate, OS-sandboxed process and tabulate it. Raises\u2026",
-      "_origin": "ast",
-      "community": 23,
-      "community_name": "validate_finding",
-      "file_type": "rationale",
-      "norm_label": "execute user python in a separate, os-sandboxed process and tabulate it. raises...",
-      "source_file": "server/app/python_exec.py",
-      "source_location": "L394"
     },
     {
       "id": "server_tests_test_multi_dataset_runs",
@@ -16775,7 +16960,7 @@
       "label": "Whether a newer published build of DAH exists. Read-only, and deliberately\u2026",
       "_origin": "ast",
       "community": 33,
-      "community_name": "check_for_update",
+      "community_name": "updates_latest",
       "file_type": "rationale",
       "norm_label": "whether a newer published build of dah exists. read-only, and deliberately...",
       "source_file": "server/app/main.py",
@@ -16786,44 +16971,11 @@
       "label": "Whether a newer published build exists (P6-UPDATE-005). Three answers, and they\u2026",
       "_origin": "ast",
       "community": 33,
-      "community_name": "check_for_update",
+      "community_name": "updates_latest",
       "file_type": "rationale",
       "norm_label": "whether a newer published build exists (p6-update-005). three answers, and they...",
       "source_file": "server/app/models.py",
       "source_location": "L595"
-    },
-    {
-      "id": "server_app_updates_rationale_239",
-      "label": "Ask the feed whether a newer build exists. `fetch` is the transport seam: the\u2026",
-      "_origin": "ast",
-      "community": 33,
-      "community_name": "check_for_update",
-      "file_type": "rationale",
-      "norm_label": "ask the feed whether a newer build exists. `fetch` is the transport seam: the...",
-      "source_file": "server/app/updates.py",
-      "source_location": "L239"
-    },
-    {
-      "id": "server_app_updates_rationale_267",
-      "label": "The real transport: httpx, bounded by a timeout. Built lazily and returned as a\u2026",
-      "_origin": "ast",
-      "community": 33,
-      "community_name": "check_for_update",
-      "file_type": "rationale",
-      "norm_label": "the real transport: httpx, bounded by a timeout. built lazily and returned as a...",
-      "source_file": "server/app/updates.py",
-      "source_location": "L267"
-    },
-    {
-      "id": "server_tests_test_updates_rationale_240",
-      "label": "Against the real (private) repository the answer is unknown, never a silent\u2026",
-      "_origin": "ast",
-      "community": 33,
-      "community_name": "check_for_update",
-      "file_type": "rationale",
-      "norm_label": "against the real (private) repository the answer is unknown, never a silent...",
-      "source_file": "server/tests/test_updates.py",
-      "source_location": "L240"
     },
     {
       "id": "server_app_exporter",
@@ -17613,13 +17765,13 @@
       "source_location": ""
     },
     {
-      "id": "fileresponse",
-      "label": "FileResponse",
+      "id": "generatedcode",
+      "label": "GeneratedCode",
       "_origin": "ast",
       "community": 44,
       "community_name": "_require_dataset",
       "file_type": "code",
-      "norm_label": "fileresponse",
+      "norm_label": "generatedcode",
       "source_file": "",
       "source_location": ""
     },
@@ -17631,17 +17783,6 @@
       "community_name": "_require_dataset",
       "file_type": "code",
       "norm_label": "profile",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
-      "id": "server_app_main_py_path",
-      "label": "Path",
-      "_origin": "ast",
-      "community": 44,
-      "community_name": "_require_dataset",
-      "file_type": "code",
-      "norm_label": "path",
       "source_file": "",
       "source_location": ""
     },
@@ -17679,48 +17820,70 @@
       "source_location": "L1053"
     },
     {
-      "id": "server_app_main_rationale_2260",
-      "label": "Serve the persisted chart image itself.",
+      "id": "server_app_main_rationale_2447",
+      "label": "The template row a case was seeded from, or None. None covers both 'no\u2026",
       "_origin": "ast",
       "community": 44,
       "community_name": "_require_dataset",
       "file_type": "rationale",
-      "norm_label": "serve the persisted chart image itself.",
+      "norm_label": "the template row a case was seeded from, or none. none covers both 'no...",
       "source_file": "server/app/main.py",
-      "source_location": "L2260"
+      "source_location": "L2447"
     },
     {
-      "id": "server_app_main_rationale_2269",
-      "label": "The artifact's content type, sniffed from its stored bytes. Charts created\u2026",
+      "id": "server_app_main_rationale_2464",
+      "label": "The template's plan, offered when the case has no plan of its own yet. A plan\u2026",
       "_origin": "ast",
       "community": 44,
       "community_name": "_require_dataset",
       "file_type": "rationale",
-      "norm_label": "the artifact's content type, sniffed from its stored bytes. charts created...",
+      "norm_label": "the template's plan, offered when the case has no plan of its own yet. a plan...",
       "source_file": "server/app/main.py",
-      "source_location": "L2269"
+      "source_location": "L2464"
     },
     {
-      "id": "server_app_main_rationale_2939",
-      "label": "Every plan recorded for a case's dataset, newest first.",
+      "id": "server_app_main_rationale_2493",
+      "label": "A template proposal the profiled dataset can actually run. The proposal is\u2026",
       "_origin": "ast",
       "community": 44,
       "community_name": "_require_dataset",
       "file_type": "rationale",
-      "norm_label": "every plan recorded for a case's dataset, newest first.",
+      "norm_label": "a template proposal the profiled dataset can actually run. the proposal is...",
       "source_file": "server/app/main.py",
-      "source_location": "L2939"
+      "source_location": "L2493"
     },
     {
-      "id": "server_app_main_rationale_703",
-      "label": "Dataset format is the lowercased extension, without the dot.",
+      "id": "server_app_main_rationale_2773",
+      "label": "Propose the read-only computation that would answer a question. The dataset's\u2026",
       "_origin": "ast",
       "community": 44,
       "community_name": "_require_dataset",
       "file_type": "rationale",
-      "norm_label": "dataset format is the lowercased extension, without the dot.",
+      "norm_label": "propose the read-only computation that would answer a question. the dataset's...",
       "source_file": "server/app/main.py",
-      "source_location": "L703"
+      "source_location": "L2773"
+    },
+    {
+      "id": "server_app_main_rationale_2835",
+      "label": "Plan an analysis from the case question and the dataset profile. The plan is\u2026",
+      "_origin": "ast",
+      "community": 44,
+      "community_name": "_require_dataset",
+      "file_type": "rationale",
+      "norm_label": "plan an analysis from the case question and the dataset profile. the plan is...",
+      "source_file": "server/app/main.py",
+      "source_location": "L2835"
+    },
+    {
+      "id": "server_app_main_rationale_2911",
+      "label": "Retrieve the latest plan for a case's dataset.",
+      "_origin": "ast",
+      "community": 44,
+      "community_name": "_require_dataset",
+      "file_type": "rationale",
+      "norm_label": "retrieve the latest plan for a case's dataset.",
+      "source_file": "server/app/main.py",
+      "source_location": "L2911"
     },
     {
       "id": "server_app_main_rationale_723",
@@ -17767,15 +17930,15 @@
       "source_location": "L984"
     },
     {
-      "id": "server_app_models_rationale_282",
-      "label": "Plan metadata without the plan body.",
+      "id": "server_app_models_rationale_271",
+      "label": "A structured analysis plan, persisted against a case and dataset.",
       "_origin": "ast",
       "community": 44,
       "community_name": "_require_dataset",
       "file_type": "rationale",
-      "norm_label": "plan metadata without the plan body.",
+      "norm_label": "a structured analysis plan, persisted against a case and dataset.",
       "source_file": "server/app/models.py",
-      "source_location": "L282"
+      "source_location": "L271"
     },
     {
       "id": "server_tests_test_agent",
@@ -18240,28 +18403,6 @@
       "source_location": ""
     },
     {
-      "id": "agentstep",
-      "label": "AgentStep",
-      "_origin": "ast",
-      "community": 48,
-      "community_name": "_require_case",
-      "file_type": "code",
-      "norm_label": "agentstep",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
-      "id": "caseprogress",
-      "label": "CaseProgress",
-      "_origin": "ast",
-      "community": 48,
-      "community_name": "_require_case",
-      "file_type": "code",
-      "norm_label": "caseprogress",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
       "id": "conversationturn",
       "label": "ConversationTurn",
       "_origin": "ast",
@@ -18271,6 +18412,39 @@
       "norm_label": "conversationturn",
       "source_file": "",
       "source_location": ""
+    },
+    {
+      "id": "runsummary",
+      "label": "RunSummary",
+      "_origin": "ast",
+      "community": 48,
+      "community_name": "_require_case",
+      "file_type": "code",
+      "norm_label": "runsummary",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "server_app_main_rationale_1465",
+      "label": "List analysis runs for a case, without the heavy result rows.",
+      "_origin": "ast",
+      "community": 48,
+      "community_name": "_require_case",
+      "file_type": "rationale",
+      "norm_label": "list analysis runs for a case, without the heavy result rows.",
+      "source_file": "server/app/main.py",
+      "source_location": "L1465"
+    },
+    {
+      "id": "server_app_main_rationale_1492",
+      "label": "Reopen a persisted analysis run, including its result rows.",
+      "_origin": "ast",
+      "community": 48,
+      "community_name": "_require_case",
+      "file_type": "rationale",
+      "norm_label": "reopen a persisted analysis run, including its result rows.",
+      "source_file": "server/app/main.py",
+      "source_location": "L1492"
     },
     {
       "id": "server_app_main_rationale_2292",
@@ -18339,15 +18513,26 @@
       "source_location": "L2741"
     },
     {
-      "id": "server_app_main_rationale_350",
-      "label": "Where this case stands in the guided workflow (P3-FLOW-004). The stage is\u2026",
+      "id": "server_app_main_rationale_822",
+      "label": "The datasets a run touches; None means an unknown (legacy) set. Older runs\u2026",
       "_origin": "ast",
       "community": 48,
       "community_name": "_require_case",
       "file_type": "rationale",
-      "norm_label": "where this case stands in the guided workflow (p3-flow-004). the stage is...",
+      "norm_label": "the datasets a run touches; none means an unknown (legacy) set. older runs...",
       "source_file": "server/app/main.py",
-      "source_location": "L350"
+      "source_location": "L822"
+    },
+    {
+      "id": "server_app_main_rationale_838",
+      "label": "IDs of the runs that bind this dataset, newest-independent order. A run binds a\u2026",
+      "_origin": "ast",
+      "community": 48,
+      "community_name": "_require_case",
+      "file_type": "rationale",
+      "norm_label": "ids of the runs that bind this dataset, newest-independent order. a run binds a...",
+      "source_file": "server/app/main.py",
+      "source_location": "L838"
     },
     {
       "id": "server_app_models_rationale_474",
@@ -19534,6 +19719,17 @@
       "source_location": "L5"
     },
     {
+      "id": "web_src_api_test",
+      "label": "api.test.ts",
+      "_origin": "ast",
+      "community": 61,
+      "community_name": "CaseList.tsx",
+      "file_type": "code",
+      "norm_label": "api.test.ts",
+      "source_file": "web/src/api.test.ts",
+      "source_location": "L1"
+    },
+    {
       "id": "web_src_app",
       "label": "App.tsx",
       "_origin": "ast",
@@ -19721,15 +19917,15 @@
       "source_location": "L1"
     },
     {
-      "id": "server_app_logging_config_rationale_178",
-      "label": "The older backups, newest first. Empty when file logging is off.",
+      "id": "server_app_logging_config_rationale_170",
+      "label": "The log file `GET /logs` reads, or None when file logging is off.",
       "_origin": "ast",
       "community": 66,
       "community_name": "test_logging.py",
       "file_type": "rationale",
-      "norm_label": "the older backups, newest first. empty when file logging is off.",
+      "norm_label": "the log file `get /logs` reads, or none when file logging is off.",
       "source_file": "server/app/logging_config.py",
-      "source_location": "L178"
+      "source_location": "L170"
     },
     {
       "id": "server_app_logging_config_rationale_195",
@@ -20569,7 +20765,7 @@
       "label": "api.ts",
       "_origin": "ast",
       "community": 71,
-      "community_name": "CaseWorkspace.tsx",
+      "community_name": "api.ts",
       "file_type": "code",
       "norm_label": "api.ts",
       "source_file": "web/src/api.ts",
@@ -20580,7 +20776,7 @@
       "label": "CaseWorkspace.tsx",
       "_origin": "ast",
       "community": 71,
-      "community_name": "CaseWorkspace.tsx",
+      "community_name": "api.ts",
       "file_type": "code",
       "norm_label": "caseworkspace.tsx",
       "source_file": "web/src/CaseWorkspace.tsx",
@@ -20591,11 +20787,11 @@
       "label": "AXES",
       "_origin": "ast",
       "community": 71,
-      "community_name": "CaseWorkspace.tsx",
+      "community_name": "api.ts",
       "file_type": "code",
       "norm_label": "axes",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L879"
+      "source_location": "L881"
     },
     {
       "id": "server_app_evidence",
@@ -21186,6 +21382,28 @@
       "norm_label": "where the log lives",
       "source_file": "docs/Observability.md",
       "source_location": "L12"
+    },
+    {
+      "id": "template",
+      "label": "Template",
+      "_origin": "ast",
+      "community": 78,
+      "community_name": "_capture_shape",
+      "file_type": "code",
+      "norm_label": "template",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "templateshape",
+      "label": "TemplateShape",
+      "_origin": "ast",
+      "community": 78,
+      "community_name": "_capture_shape",
+      "file_type": "code",
+      "norm_label": "templateshape",
+      "source_file": "",
+      "source_location": ""
     },
     {
       "id": "server_app_main_rationale_2347",
@@ -21936,6 +22154,17 @@
       "source_location": "L147"
     },
     {
+      "id": "draftfinding",
+      "label": "DraftFinding",
+      "_origin": "ast",
+      "community": 85,
+      "community_name": "main.py",
+      "file_type": "code",
+      "norm_label": "draftfinding",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
       "id": "interpretation",
       "label": "Interpretation",
       "_origin": "ast",
@@ -21991,15 +22220,15 @@
       "source_location": "L1"
     },
     {
-      "id": "server_app_logging_config_rationale_170",
-      "label": "The log file `GET /logs` reads, or None when file logging is off.",
+      "id": "server_app_logging_config_rationale_178",
+      "label": "The older backups, newest first. Empty when file logging is off.",
       "_origin": "ast",
       "community": 85,
       "community_name": "main.py",
       "file_type": "rationale",
-      "norm_label": "the log file `get /logs` reads, or none when file logging is off.",
+      "norm_label": "the older backups, newest first. empty when file logging is off.",
       "source_file": "server/app/logging_config.py",
-      "source_location": "L170"
+      "source_location": "L178"
     },
     {
       "id": "server_app_main_rationale_1920",
@@ -22035,15 +22264,15 @@
       "source_location": "L2028"
     },
     {
-      "id": "server_app_main_rationale_2119",
-      "label": "Render a chart from a persisted run result and store it with the case. The\u2026",
+      "id": "server_app_main_rationale_2049",
+      "label": "Draft the finding a result would support, without writing anything. A finding\u2026",
       "_origin": "ast",
       "community": 85,
       "community_name": "main.py",
       "file_type": "rationale",
-      "norm_label": "render a chart from a persisted run result and store it with the case. the...",
+      "norm_label": "draft the finding a result would support, without writing anything. a finding...",
       "source_file": "server/app/main.py",
-      "source_location": "L2119"
+      "source_location": "L2049"
     },
     {
       "id": "server_app_main_rationale_217",
@@ -22068,15 +22297,15 @@
       "source_location": "L2214"
     },
     {
-      "id": "server_app_main_rationale_2237",
-      "label": "Retrieve a chart's metadata.",
+      "id": "server_app_main_rationale_3009",
+      "label": "Everything that happened in a case, in order (P3-CASE-007). A read-side\u2026",
       "_origin": "ast",
       "community": 85,
       "community_name": "main.py",
       "file_type": "rationale",
-      "norm_label": "retrieve a chart's metadata.",
+      "norm_label": "everything that happened in a case, in order (p3-case-007). a read-side...",
       "source_file": "server/app/main.py",
-      "source_location": "L2237"
+      "source_location": "L3009"
     },
     {
       "id": "server_app_models_rationale_258",
@@ -22090,6 +22319,17 @@
       "source_location": "L258"
     },
     {
+      "id": "server_app_models_rationale_390",
+      "label": "Everything that happened in a case, in the order it happened. A read-side\u2026",
+      "_origin": "ast",
+      "community": 85,
+      "community_name": "main.py",
+      "file_type": "rationale",
+      "norm_label": "everything that happened in a case, in the order it happened. a read-side...",
+      "source_file": "server/app/models.py",
+      "source_location": "L390"
+    },
+    {
       "id": "server_app_models_rationale_402",
       "label": "A plain-language read of a persisted run result (P3-AI-011). An artifact of the\u2026",
       "_origin": "ast",
@@ -22099,6 +22339,17 @@
       "norm_label": "a plain-language read of a persisted run result (p3-ai-011). an artifact of the...",
       "source_file": "server/app/models.py",
       "source_location": "L402"
+    },
+    {
+      "id": "server_app_models_rationale_421",
+      "label": "The candidate finding a result would support (P3-AI-012). A proposal, not an\u2026",
+      "_origin": "ast",
+      "community": 85,
+      "community_name": "main.py",
+      "file_type": "rationale",
+      "norm_label": "the candidate finding a result would support (p3-ai-012). a proposal, not an...",
+      "source_file": "server/app/models.py",
+      "source_location": "L421"
     },
     {
       "id": "server_app_models_rationale_539",
@@ -22178,6 +22429,17 @@
       "source_location": "L1723"
     },
     {
+      "id": "server_app_main_rationale_434",
+      "label": "Rename a case: its question and/or dataset label. Omitted fields are left as\u2026",
+      "_origin": "ast",
+      "community": 86,
+      "community_name": "get_finding",
+      "file_type": "rationale",
+      "norm_label": "rename a case: its question and/or dataset label. omitted fields are left as...",
+      "source_file": "server/app/main.py",
+      "source_location": "L434"
+    },
+    {
       "id": "server_app_models_rationale_221",
       "label": "The trust chain a reviewer walks to verify a finding.",
       "_origin": "ast",
@@ -22219,7 +22481,7 @@
       "file_type": "code",
       "norm_label": "cases",
       "source_file": "web/src/CaseList.test.tsx",
-      "source_location": "L20"
+      "source_location": "L21"
     },
     {
       "id": "web_src_caseworkspace_test",
@@ -22241,7 +22503,7 @@
       "file_type": "code",
       "norm_label": "dataset",
       "source_file": "web/src/CaseWorkspace.test.tsx",
-      "source_location": "L52"
+      "source_location": "L53"
     },
     {
       "id": "web_src_caseworkspace_test_profile",
@@ -22252,7 +22514,7 @@
       "file_type": "code",
       "norm_label": "profile",
       "source_file": "web/src/CaseWorkspace.test.tsx",
-      "source_location": "L53"
+      "source_location": "L54"
     },
     {
       "id": "web_src_caseworkspace_test_progress",
@@ -22263,7 +22525,40 @@
       "file_type": "code",
       "norm_label": "progress",
       "source_file": "web/src/CaseWorkspace.test.tsx",
-      "source_location": "L35"
+      "source_location": "L36"
+    },
+    {
+      "id": "web_src_templates_test",
+      "label": "Templates.test.tsx",
+      "_origin": "ast",
+      "community": 87,
+      "community_name": "CaseWorkspace.test.tsx",
+      "file_type": "code",
+      "norm_label": "templates.test.tsx",
+      "source_file": "web/src/Templates.test.tsx",
+      "source_location": "L1"
+    },
+    {
+      "id": "web_src_templates_test_shaped",
+      "label": "shaped",
+      "_origin": "ast",
+      "community": 87,
+      "community_name": "CaseWorkspace.test.tsx",
+      "file_type": "code",
+      "norm_label": "shaped",
+      "source_file": "web/src/Templates.test.tsx",
+      "source_location": "L19"
+    },
+    {
+      "id": "web_src_templates_test_shapeless",
+      "label": "shapeless",
+      "_origin": "ast",
+      "community": 87,
+      "community_name": "CaseWorkspace.test.tsx",
+      "file_type": "code",
+      "norm_label": "shapeless",
+      "source_file": "web/src/Templates.test.tsx",
+      "source_location": "L43"
     },
     {
       "id": "ref_testing_library_react",
@@ -22503,6 +22798,18 @@
       "source_location": "L2470"
     },
     {
+      "id": "ai_tasks_archive_p7_shell_003_contract",
+      "label": "P7-SHELL-003 contract",
+      "_origin": "ast",
+      "community": 88,
+      "community_name": "DAH - Task Archive",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "p7-shell-003 contract",
+      "source_file": "ai/TASKS-ARCHIVE.md",
+      "source_location": "L2649"
+    },
+    {
       "id": "evaluation",
       "label": "Evaluation",
       "_origin": "ast",
@@ -22514,26 +22821,15 @@
       "source_location": ""
     },
     {
-      "id": "server_app_analysis_rationale_306",
-      "label": "Run a read-only SQL query across several attached files (P3-DATA-003).\u2026",
+      "id": "server_app_main_rationale_1149",
+      "label": "Run user Python against an attached dataset and persist the result. The code\u2026",
       "_origin": "ast",
       "community": 89,
       "community_name": "evaluate_dataset",
       "file_type": "rationale",
-      "norm_label": "run a read-only sql query across several attached files (p3-data-003)....",
-      "source_file": "server/app/analysis.py",
-      "source_location": "L306"
-    },
-    {
-      "id": "server_app_analysis_rationale_83",
-      "label": "Reject anything that is not a single read-only statement.",
-      "_origin": "ast",
-      "community": 89,
-      "community_name": "evaluate_dataset",
-      "file_type": "rationale",
-      "norm_label": "reject anything that is not a single read-only statement.",
-      "source_file": "server/app/analysis.py",
-      "source_location": "L83"
+      "norm_label": "run user python against an attached dataset and persist the result. the code...",
+      "source_file": "server/app/main.py",
+      "source_location": "L1149"
     },
     {
       "id": "server_app_main_rationale_1201",
@@ -22591,17 +22887,6 @@
       "source_location": "L1435"
     },
     {
-      "id": "server_app_main_rationale_870",
-      "label": "Run user SQL across several attached datasets (P3-DATA-003). Placeholders bind\u2026",
-      "_origin": "ast",
-      "community": 89,
-      "community_name": "evaluate_dataset",
-      "file_type": "rationale",
-      "norm_label": "run user sql across several attached datasets (p3-data-003). placeholders bind...",
-      "source_file": "server/app/main.py",
-      "source_location": "L870"
-    },
-    {
       "id": "server_app_models_rationale_557",
       "label": "One axis of an EVALUATE audit: a verdict and a sentence.",
       "_origin": "ast",
@@ -22624,92 +22909,81 @@
       "source_location": "L565"
     },
     {
-      "id": "generatedcode",
-      "label": "GeneratedCode",
+      "id": "server_app_python_exec_rationale_394",
+      "label": "Execute user Python in a separate, OS-sandboxed process and tabulate it. Raises\u2026",
+      "_origin": "ast",
+      "community": 89,
+      "community_name": "evaluate_dataset",
+      "file_type": "rationale",
+      "norm_label": "execute user python in a separate, os-sandboxed process and tabulate it. raises...",
+      "source_file": "server/app/python_exec.py",
+      "source_location": "L394"
+    },
+    {
+      "id": "fileresponse",
+      "label": "FileResponse",
       "_origin": "ast",
       "community": 90,
-      "community_name": "create_plan",
+      "community_name": "get_chart_image",
       "file_type": "code",
-      "norm_label": "generatedcode",
+      "norm_label": "fileresponse",
       "source_file": "",
       "source_location": ""
     },
     {
-      "id": "server_app_main_rationale_2447",
-      "label": "The template row a case was seeded from, or None. None covers both 'no\u2026",
+      "id": "server_app_main_py_path",
+      "label": "Path",
       "_origin": "ast",
       "community": 90,
-      "community_name": "create_plan",
-      "file_type": "rationale",
-      "norm_label": "the template row a case was seeded from, or none. none covers both 'no...",
-      "source_file": "server/app/main.py",
-      "source_location": "L2447"
+      "community_name": "get_chart_image",
+      "file_type": "code",
+      "norm_label": "path",
+      "source_file": "",
+      "source_location": ""
     },
     {
-      "id": "server_app_main_rationale_2464",
-      "label": "The template's plan, offered when the case has no plan of its own yet. A plan\u2026",
+      "id": "server_app_main_rationale_2237",
+      "label": "Retrieve a chart's metadata.",
       "_origin": "ast",
       "community": 90,
-      "community_name": "create_plan",
+      "community_name": "get_chart_image",
       "file_type": "rationale",
-      "norm_label": "the template's plan, offered when the case has no plan of its own yet. a plan...",
+      "norm_label": "retrieve a chart's metadata.",
       "source_file": "server/app/main.py",
-      "source_location": "L2464"
+      "source_location": "L2237"
     },
     {
-      "id": "server_app_main_rationale_2493",
-      "label": "A template proposal the profiled dataset can actually run. The proposal is\u2026",
+      "id": "server_app_main_rationale_2260",
+      "label": "Serve the persisted chart image itself.",
       "_origin": "ast",
       "community": 90,
-      "community_name": "create_plan",
+      "community_name": "get_chart_image",
       "file_type": "rationale",
-      "norm_label": "a template proposal the profiled dataset can actually run. the proposal is...",
+      "norm_label": "serve the persisted chart image itself.",
       "source_file": "server/app/main.py",
-      "source_location": "L2493"
+      "source_location": "L2260"
     },
     {
-      "id": "server_app_main_rationale_2773",
-      "label": "Propose the read-only computation that would answer a question. The dataset's\u2026",
+      "id": "server_app_main_rationale_2269",
+      "label": "The artifact's content type, sniffed from its stored bytes. Charts created\u2026",
       "_origin": "ast",
       "community": 90,
-      "community_name": "create_plan",
+      "community_name": "get_chart_image",
       "file_type": "rationale",
-      "norm_label": "propose the read-only computation that would answer a question. the dataset's...",
+      "norm_label": "the artifact's content type, sniffed from its stored bytes. charts created...",
       "source_file": "server/app/main.py",
-      "source_location": "L2773"
+      "source_location": "L2269"
     },
     {
-      "id": "server_app_main_rationale_2835",
-      "label": "Plan an analysis from the case question and the dataset profile. The plan is\u2026",
+      "id": "server_app_main_rationale_703",
+      "label": "Dataset format is the lowercased extension, without the dot.",
       "_origin": "ast",
       "community": 90,
-      "community_name": "create_plan",
+      "community_name": "get_chart_image",
       "file_type": "rationale",
-      "norm_label": "plan an analysis from the case question and the dataset profile. the plan is...",
+      "norm_label": "dataset format is the lowercased extension, without the dot.",
       "source_file": "server/app/main.py",
-      "source_location": "L2835"
-    },
-    {
-      "id": "server_app_main_rationale_2911",
-      "label": "Retrieve the latest plan for a case's dataset.",
-      "_origin": "ast",
-      "community": 90,
-      "community_name": "create_plan",
-      "file_type": "rationale",
-      "norm_label": "retrieve the latest plan for a case's dataset.",
-      "source_file": "server/app/main.py",
-      "source_location": "L2911"
-    },
-    {
-      "id": "server_app_models_rationale_271",
-      "label": "A structured analysis plan, persisted against a case and dataset.",
-      "_origin": "ast",
-      "community": 90,
-      "community_name": "create_plan",
-      "file_type": "rationale",
-      "norm_label": "a structured analysis plan, persisted against a case and dataset.",
-      "source_file": "server/app/models.py",
-      "source_location": "L271"
+      "source_location": "L703"
     },
     {
       "id": "server_app_memory",
@@ -23163,26 +23437,26 @@
       "source_location": "L209"
     },
     {
-      "id": "server_app_main_rationale_3009",
-      "label": "Everything that happened in a case, in order (P3-CASE-007). A read-side\u2026",
+      "id": "agentstep",
+      "label": "AgentStep",
       "_origin": "ast",
       "community": 97,
-      "community_name": "get_case_history",
-      "file_type": "rationale",
-      "norm_label": "everything that happened in a case, in order (p3-case-007). a read-side...",
-      "source_file": "server/app/main.py",
-      "source_location": "L3009"
+      "community_name": "AgentStep",
+      "file_type": "code",
+      "norm_label": "agentstep",
+      "source_file": "",
+      "source_location": ""
     },
     {
-      "id": "server_app_models_rationale_390",
-      "label": "Everything that happened in a case, in the order it happened. A read-side\u2026",
+      "id": "server_app_models_rationale_493",
+      "label": "One step of an agent run (P6-AGENT-002). The agent proposes; the human\u2026",
       "_origin": "ast",
       "community": 97,
-      "community_name": "get_case_history",
+      "community_name": "AgentStep",
       "file_type": "rationale",
-      "norm_label": "everything that happened in a case, in the order it happened. a read-side...",
+      "norm_label": "one step of an agent run (p6-agent-002). the agent proposes; the human...",
       "source_file": "server/app/models.py",
-      "source_location": "L390"
+      "source_location": "L493"
     },
     {
       "id": "docs_product___engineering_master_specification_analysis_case",
@@ -27495,6 +27769,18 @@
       "weight": 1.0
     },
     {
+      "source": "server_app_main_capture_shape",
+      "target": "templateshape",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "server/app/main.py",
+      "source_location": "L2438",
+      "weight": 1.0
+    },
+    {
       "source": "server_app_main_case_of",
       "target": "case",
       "relation": "calls",
@@ -28804,7 +29090,7 @@
     },
     {
       "source": "server_app_main_list_templates",
-      "target": "server_app_models_template",
+      "target": "template",
       "relation": "calls",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -28876,7 +29162,7 @@
     },
     {
       "source": "server_app_main_promote_template",
-      "target": "server_app_models_template",
+      "target": "template",
       "relation": "calls",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -29189,6 +29475,18 @@
     {
       "source": "server_app_main_shape_of",
       "target": "server_app_models_templateshape",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "server/app/main.py",
+      "source_location": "L3103",
+      "weight": 1.0
+    },
+    {
+      "source": "server_app_main_shape_of",
+      "target": "templateshape",
       "relation": "calls",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -41351,7 +41649,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/api.ts",
-      "source_location": "L372",
+      "source_location": "L455",
       "weight": 1.0
     },
     {
@@ -41363,7 +41661,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/api.ts",
-      "source_location": "L445",
+      "source_location": "L528",
       "weight": 1.0
     },
     {
@@ -41375,7 +41673,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/api.ts",
-      "source_location": "L307",
+      "source_location": "L390",
       "weight": 1.0
     },
     {
@@ -41387,7 +41685,19 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/api.ts",
-      "source_location": "L235",
+      "source_location": "L242",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_api_createcasefromtemplate",
+      "target": "web_src_api_request",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "web/src/api.ts",
+      "source_location": "L347",
       "weight": 1.0
     },
     {
@@ -41399,7 +41709,19 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/api.ts",
-      "source_location": "L275",
+      "source_location": "L282",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_api_deletetemplate",
+      "target": "web_src_api_request",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "web/src/api.ts",
+      "source_location": "L358",
       "weight": 1.0
     },
     {
@@ -41411,7 +41733,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/api.ts",
-      "source_location": "L359",
+      "source_location": "L442",
       "weight": 1.0
     },
     {
@@ -41423,7 +41745,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/api.ts",
-      "source_location": "L269",
+      "source_location": "L276",
       "weight": 1.0
     },
     {
@@ -41435,7 +41757,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/api.ts",
-      "source_location": "L408",
+      "source_location": "L491",
       "weight": 1.0
     },
     {
@@ -41447,7 +41769,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/api.ts",
-      "source_location": "L339",
+      "source_location": "L422",
       "weight": 1.0
     },
     {
@@ -41459,7 +41781,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/api.ts",
-      "source_location": "L431",
+      "source_location": "L514",
       "weight": 1.0
     },
     {
@@ -41471,7 +41793,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/api.ts",
-      "source_location": "L248",
+      "source_location": "L255",
       "weight": 1.0
     },
     {
@@ -41483,7 +41805,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/api.ts",
-      "source_location": "L231",
+      "source_location": "L238",
       "weight": 1.0
     },
     {
@@ -41495,7 +41817,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/api.ts",
-      "source_location": "L279",
+      "source_location": "L362",
       "weight": 1.0
     },
     {
@@ -41507,7 +41829,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/api.ts",
-      "source_location": "L350",
+      "source_location": "L433",
       "weight": 1.0
     },
     {
@@ -41519,7 +41841,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/api.ts",
-      "source_location": "L244",
+      "source_location": "L251",
       "weight": 1.0
     },
     {
@@ -41531,7 +41853,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/api.ts",
-      "source_location": "L299",
+      "source_location": "L382",
       "weight": 1.0
     },
     {
@@ -41543,7 +41865,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/api.ts",
-      "source_location": "L283",
+      "source_location": "L366",
       "weight": 1.0
     },
     {
@@ -41555,7 +41877,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/api.ts",
-      "source_location": "L422",
+      "source_location": "L505",
       "weight": 1.0
     },
     {
@@ -41567,7 +41889,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/api.ts",
-      "source_location": "L391",
+      "source_location": "L474",
       "weight": 1.0
     },
     {
@@ -41579,7 +41901,19 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/api.ts",
-      "source_location": "L287",
+      "source_location": "L370",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_api_listtemplates",
+      "target": "web_src_api_request",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "web/src/api.ts",
+      "source_location": "L338",
       "weight": 1.0
     },
     {
@@ -41591,7 +41925,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/api.ts",
-      "source_location": "L291",
+      "source_location": "L374",
       "weight": 1.0
     },
     {
@@ -41603,7 +41937,19 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/api.ts",
-      "source_location": "L314",
+      "source_location": "L397",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_api_promotecasetotemplate",
+      "target": "web_src_api_request",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "web/src/api.ts",
+      "source_location": "L330",
       "weight": 1.0
     },
     {
@@ -41615,7 +41961,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/api.ts",
-      "source_location": "L437",
+      "source_location": "L520",
       "weight": 1.0
     },
     {
@@ -41627,7 +41973,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/api.ts",
-      "source_location": "L459",
+      "source_location": "L542",
       "weight": 1.0
     },
     {
@@ -41651,7 +41997,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/api.ts",
-      "source_location": "L324",
+      "source_location": "L407",
       "weight": 1.0
     },
     {
@@ -41663,7 +42009,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/api.ts",
-      "source_location": "L259",
+      "source_location": "L266",
       "weight": 1.0
     },
     {
@@ -41675,7 +42021,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/api.ts",
-      "source_location": "L385",
+      "source_location": "L468",
       "weight": 1.0
     },
     {
@@ -41747,7 +42093,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseList.tsx",
-      "source_location": "L29",
+      "source_location": "L30",
       "weight": 1.0
     },
     {
@@ -41759,7 +42105,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseList.tsx",
-      "source_location": "L29",
+      "source_location": "L30",
       "weight": 1.0
     },
     {
@@ -41771,7 +42117,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseList.tsx",
-      "source_location": "L31",
+      "source_location": "L32",
       "weight": 1.0
     },
     {
@@ -41783,7 +42129,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseList.tsx",
-      "source_location": "L113",
+      "source_location": "L118",
       "weight": 1.0
     },
     {
@@ -41795,7 +42141,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseList.tsx",
-      "source_location": "L128",
+      "source_location": "L133",
       "weight": 1.0
     },
     {
@@ -41807,7 +42153,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseList.tsx",
-      "source_location": "L142",
+      "source_location": "L147",
       "weight": 1.0
     },
     {
@@ -41819,7 +42165,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseList.tsx",
-      "source_location": "L128",
+      "source_location": "L133",
       "weight": 1.0
     },
     {
@@ -41831,7 +42177,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseList.tsx",
-      "source_location": "L131",
+      "source_location": "L136",
       "weight": 1.0
     },
     {
@@ -41843,7 +42189,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseList.tsx",
-      "source_location": "L142",
+      "source_location": "L147",
       "weight": 1.0
     },
     {
@@ -41855,7 +42201,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseList.tsx",
-      "source_location": "L145",
+      "source_location": "L150",
       "weight": 1.0
     },
     {
@@ -41867,7 +42213,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseList.tsx",
-      "source_location": "L113",
+      "source_location": "L118",
       "weight": 1.0
     },
     {
@@ -41879,67 +42225,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseList.tsx",
-      "source_location": "L117",
-      "weight": 1.0
-    },
-    {
-      "source": "web_src_caseworkspace_agentpanel",
-      "target": "web_src_caseworkspace_stepsentence",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L1056",
-      "weight": 1.0
-    },
-    {
-      "source": "web_src_caseworkspace_agentpanel",
-      "target": "web_src_api_getagentstate",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L966",
-      "weight": 1.0
-    },
-    {
-      "source": "web_src_caseworkspace_agentpanel",
-      "target": "web_src_caselist_messageof",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L968",
-      "weight": 1.0
-    },
-    {
-      "source": "web_src_caseworkspace_agentpanel",
-      "target": "web_src_api_proposeagentstep",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L979",
-      "weight": 1.0
-    },
-    {
-      "source": "web_src_caseworkspace_agentpanel",
-      "target": "web_src_api_approveagentstep",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L996",
+      "source_location": "L122",
       "weight": 1.0
     },
     {
@@ -41951,7 +42237,79 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
+      "source_location": "L1000",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_caseworkspace_agentpanel",
+      "target": "web_src_caseworkspace_stepsentence",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "web/src/CaseWorkspace.tsx",
+      "source_location": "L1058",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_caseworkspace_agentpanel",
+      "target": "web_src_api_getagentstate",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "web/src/CaseWorkspace.tsx",
+      "source_location": "L968",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_caseworkspace_agentpanel",
+      "target": "web_src_caselist_messageof",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "web/src/CaseWorkspace.tsx",
+      "source_location": "L970",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_caseworkspace_agentpanel",
+      "target": "web_src_api_proposeagentstep",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "web/src/CaseWorkspace.tsx",
+      "source_location": "L981",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_caseworkspace_agentpanel",
+      "target": "web_src_api_approveagentstep",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "web/src/CaseWorkspace.tsx",
       "source_location": "L998",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_caseworkspace_agentpanel_decide",
+      "target": "web_src_api_rejectagentstep",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "web/src/CaseWorkspace.tsx",
+      "source_location": "L1000",
       "weight": 1.0
     },
     {
@@ -41963,7 +42321,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L1010",
+      "source_location": "L1012",
       "weight": 1.0
     },
     {
@@ -41975,24 +42333,12 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L1011",
+      "source_location": "L1013",
       "weight": 1.0
     },
     {
       "source": "web_src_caseworkspace_agentpanel_decide",
       "target": "web_src_api_approveagentstep",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L996",
-      "weight": 1.0
-    },
-    {
-      "source": "web_src_caseworkspace_agentpanel_decide",
-      "target": "web_src_api_rejectagentstep",
       "relation": "calls",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -42011,7 +42357,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L979",
+      "source_location": "L981",
       "weight": 1.0
     },
     {
@@ -42023,24 +42369,12 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L981",
+      "source_location": "L983",
       "weight": 1.0
     },
     {
       "source": "web_src_caseworkspace_agentpanel_refresh",
       "target": "web_src_api_getagentstate",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L966",
-      "weight": 1.0
-    },
-    {
-      "source": "web_src_caseworkspace_agentpanel_refresh",
-      "target": "web_src_caselist_messageof",
       "relation": "calls",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -42051,6 +42385,18 @@
       "weight": 1.0
     },
     {
+      "source": "web_src_caseworkspace_agentpanel_refresh",
+      "target": "web_src_caselist_messageof",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "web/src/CaseWorkspace.tsx",
+      "source_location": "L970",
+      "weight": 1.0
+    },
+    {
       "source": "web_src_caseworkspace_caseworkspace",
       "target": "web_src_caselist_messageof",
       "relation": "calls",
@@ -42059,7 +42405,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L103",
+      "source_location": "L104",
       "weight": 1.0
     },
     {
@@ -42071,7 +42417,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L63",
+      "source_location": "L64",
       "weight": 1.0
     },
     {
@@ -42083,7 +42429,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L64",
+      "source_location": "L65",
       "weight": 1.0
     },
     {
@@ -42095,7 +42441,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L65",
+      "source_location": "L66",
       "weight": 1.0
     },
     {
@@ -42107,7 +42453,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L66",
+      "source_location": "L67",
       "weight": 1.0
     },
     {
@@ -42119,7 +42465,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L67",
+      "source_location": "L68",
       "weight": 1.0
     },
     {
@@ -42131,7 +42477,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L68",
+      "source_location": "L69",
       "weight": 1.0
     },
     {
@@ -42143,7 +42489,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L81",
+      "source_location": "L82",
       "weight": 1.0
     },
     {
@@ -42155,7 +42501,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L89",
+      "source_location": "L90",
       "weight": 1.0
     },
     {
@@ -42167,7 +42513,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L94",
+      "source_location": "L95",
       "weight": 1.0
     },
     {
@@ -42179,7 +42525,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L103",
+      "source_location": "L104",
       "weight": 1.0
     },
     {
@@ -42191,7 +42537,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L63",
+      "source_location": "L64",
       "weight": 1.0
     },
     {
@@ -42203,7 +42549,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L64",
+      "source_location": "L65",
       "weight": 1.0
     },
     {
@@ -42215,7 +42561,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L65",
+      "source_location": "L66",
       "weight": 1.0
     },
     {
@@ -42227,7 +42573,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L66",
+      "source_location": "L67",
       "weight": 1.0
     },
     {
@@ -42239,7 +42585,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L67",
+      "source_location": "L68",
       "weight": 1.0
     },
     {
@@ -42251,7 +42597,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L68",
+      "source_location": "L69",
       "weight": 1.0
     },
     {
@@ -42263,7 +42609,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L81",
+      "source_location": "L82",
       "weight": 1.0
     },
     {
@@ -42275,7 +42621,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L89",
+      "source_location": "L90",
       "weight": 1.0
     },
     {
@@ -42287,7 +42633,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L94",
+      "source_location": "L95",
       "weight": 1.0
     },
     {
@@ -42299,7 +42645,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L661",
+      "source_location": "L663",
       "weight": 1.0
     },
     {
@@ -42311,7 +42657,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L665",
+      "source_location": "L667",
       "weight": 1.0
     },
     {
@@ -42323,7 +42669,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L661",
+      "source_location": "L663",
       "weight": 1.0
     },
     {
@@ -42335,7 +42681,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L665",
+      "source_location": "L667",
       "weight": 1.0
     },
     {
@@ -42347,7 +42693,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L224",
+      "source_location": "L226",
       "weight": 1.0
     },
     {
@@ -42359,7 +42705,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L227",
+      "source_location": "L229",
       "weight": 1.0
     },
     {
@@ -42371,7 +42717,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L230",
+      "source_location": "L232",
       "weight": 1.0
     },
     {
@@ -42383,7 +42729,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L224",
+      "source_location": "L226",
       "weight": 1.0
     },
     {
@@ -42395,7 +42741,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L227",
+      "source_location": "L229",
       "weight": 1.0
     },
     {
@@ -42407,7 +42753,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L230",
+      "source_location": "L232",
       "weight": 1.0
     },
     {
@@ -42419,7 +42765,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L519",
+      "source_location": "L521",
       "weight": 1.0
     },
     {
@@ -42431,7 +42777,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L522",
+      "source_location": "L524",
       "weight": 1.0
     },
     {
@@ -42443,7 +42789,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L519",
+      "source_location": "L521",
       "weight": 1.0
     },
     {
@@ -42455,7 +42801,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L522",
+      "source_location": "L524",
       "weight": 1.0
     },
     {
@@ -42467,7 +42813,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L764",
+      "source_location": "L766",
       "weight": 1.0
     },
     {
@@ -42479,7 +42825,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L772",
+      "source_location": "L774",
       "weight": 1.0
     },
     {
@@ -42491,7 +42837,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L764",
+      "source_location": "L766",
       "weight": 1.0
     },
     {
@@ -42503,7 +42849,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L772",
+      "source_location": "L774",
       "weight": 1.0
     },
     {
@@ -42515,7 +42861,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L602",
+      "source_location": "L604",
       "weight": 1.0
     },
     {
@@ -42527,7 +42873,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L607",
+      "source_location": "L609",
       "weight": 1.0
     },
     {
@@ -42539,7 +42885,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L602",
+      "source_location": "L604",
       "weight": 1.0
     },
     {
@@ -42551,7 +42897,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L607",
+      "source_location": "L609",
       "weight": 1.0
     },
     {
@@ -42563,7 +42909,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L305",
+      "source_location": "L307",
       "weight": 1.0
     },
     {
@@ -42575,7 +42921,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L307",
+      "source_location": "L309",
       "weight": 1.0
     },
     {
@@ -42587,7 +42933,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L318",
+      "source_location": "L320",
       "weight": 1.0
     },
     {
@@ -42599,7 +42945,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L305",
+      "source_location": "L307",
       "weight": 1.0
     },
     {
@@ -42611,7 +42957,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L307",
+      "source_location": "L309",
       "weight": 1.0
     },
     {
@@ -42623,7 +42969,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L318",
+      "source_location": "L320",
       "weight": 1.0
     },
     {
@@ -42635,7 +42981,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L322",
+      "source_location": "L324",
       "weight": 1.0
     },
     {
@@ -42647,7 +42993,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L423",
+      "source_location": "L425",
       "weight": 1.0
     },
     {
@@ -42659,7 +43005,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L426",
+      "source_location": "L428",
       "weight": 1.0
     },
     {
@@ -42671,7 +43017,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L436",
+      "source_location": "L438",
       "weight": 1.0
     },
     {
@@ -42683,7 +43029,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L436",
+      "source_location": "L438",
       "weight": 1.0
     },
     {
@@ -42695,7 +43041,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L439",
+      "source_location": "L441",
       "weight": 1.0
     },
     {
@@ -42707,7 +43053,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L423",
+      "source_location": "L425",
       "weight": 1.0
     },
     {
@@ -42719,7 +43065,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L426",
+      "source_location": "L428",
       "weight": 1.0
     },
     {
@@ -42731,7 +43077,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L1148",
+      "source_location": "L1150",
       "weight": 1.0
     },
     {
@@ -42743,7 +43089,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.test.tsx",
-      "source_location": "L109",
+      "source_location": "L110",
       "weight": 1.0
     },
     {
@@ -42755,7 +43101,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.test.tsx",
-      "source_location": "L130",
+      "source_location": "L131",
       "weight": 1.0
     },
     {
@@ -42767,7 +43113,187 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.test.tsx",
-      "source_location": "L81",
+      "source_location": "L82",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_templates_promotetemplate",
+      "target": "web_src_api_promotecasetotemplate",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "web/src/Templates.tsx",
+      "source_location": "L192",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_templates_promotetemplate",
+      "target": "web_src_caselist_messageof",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "web/src/Templates.tsx",
+      "source_location": "L196",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_templates_promotetemplate_save",
+      "target": "web_src_api_promotecasetotemplate",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "web/src/Templates.tsx",
+      "source_location": "L192",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_templates_promotetemplate_save",
+      "target": "web_src_caselist_messageof",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "web/src/Templates.tsx",
+      "source_location": "L196",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_templates_templaterow",
+      "target": "web_src_api_deletetemplate",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "web/src/Templates.tsx",
+      "source_location": "L101",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_templates_templaterow",
+      "target": "web_src_api_createcasefromtemplate",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "web/src/Templates.tsx",
+      "source_location": "L87",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_templates_templaterow",
+      "target": "web_src_caselist_messageof",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "web/src/Templates.tsx",
+      "source_location": "L90",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_templates_templaterow_retire",
+      "target": "web_src_api_deletetemplate",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "web/src/Templates.tsx",
+      "source_location": "L101",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_templates_templaterow_retire",
+      "target": "web_src_caselist_messageof",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "web/src/Templates.tsx",
+      "source_location": "L104",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_templates_templaterow_start",
+      "target": "web_src_api_createcasefromtemplate",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "web/src/Templates.tsx",
+      "source_location": "L87",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_templates_templaterow_start",
+      "target": "web_src_caselist_messageof",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "web/src/Templates.tsx",
+      "source_location": "L90",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_templates_templates",
+      "target": "web_src_api_listtemplates",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "web/src/Templates.tsx",
+      "source_location": "L29",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_templates_templates",
+      "target": "web_src_caselist_messageof",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "web/src/Templates.tsx",
+      "source_location": "L31",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_templates_templates_reload",
+      "target": "web_src_api_listtemplates",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "web/src/Templates.tsx",
+      "source_location": "L29",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_templates_templates_reload",
+      "target": "web_src_caselist_messageof",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "web/src/Templates.tsx",
+      "source_location": "L31",
       "weight": 1.0
     },
     {
@@ -42959,7 +43485,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseList.tsx",
-      "source_location": "L25",
+      "source_location": "L26",
       "weight": 1.0
     },
     {
@@ -42971,7 +43497,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseList.tsx",
-      "source_location": "L123",
+      "source_location": "L128",
       "weight": 1.0
     },
     {
@@ -42983,7 +43509,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseList.tsx",
-      "source_location": "L137",
+      "source_location": "L142",
       "weight": 1.0
     },
     {
@@ -42995,7 +43521,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L987",
+      "source_location": "L989",
       "weight": 1.0
     },
     {
@@ -43007,7 +43533,19 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L59",
+      "source_location": "L60",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_templates_templates",
+      "target": "web_src_templates_templates_reload",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "web/src/Templates.tsx",
+      "source_location": "L25",
       "weight": 1.0
     },
     {
@@ -46672,6 +47210,18 @@
     },
     {
       "source": "web_src_api_test",
+      "target": "web_src_api_deletecase",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "web/src/api.test.ts",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_api_test",
       "target": "web_src_api_getcase",
       "relation": "imports",
       "_origin": "ast",
@@ -46776,6 +47326,18 @@
       "context": "import",
       "source_file": "web/src/CaseCreation.test.tsx",
       "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_caselist",
+      "target": "web_src_templates_templates",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "web/src/CaseList.tsx",
+      "source_location": "L10",
       "weight": 1.0
     },
     {
@@ -47283,6 +47845,18 @@
       "weight": 1.0
     },
     {
+      "source": "web_src_caseworkspace",
+      "target": "web_src_templates_promotetemplate",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "web/src/CaseWorkspace.tsx",
+      "source_location": "L40",
+      "weight": 1.0
+    },
+    {
       "source": "web_src_caseworkspace_test",
       "target": "web_src_caseworkspace_caseworkspace",
       "relation": "imports",
@@ -47304,6 +47878,102 @@
       "context": "import",
       "source_file": "web/src/main.tsx",
       "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_templates",
+      "target": "web_src_caselist_messageof",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "web/src/Templates.tsx",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_templates",
+      "target": "web_src_api_createcasefromtemplate",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "web/src/Templates.tsx",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_templates",
+      "target": "web_src_api_deletetemplate",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "web/src/Templates.tsx",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_templates",
+      "target": "web_src_api_listtemplates",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "web/src/Templates.tsx",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_templates",
+      "target": "web_src_api_promotecasetotemplate",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "web/src/Templates.tsx",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_templates",
+      "target": "web_src_api_template",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "web/src/Templates.tsx",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_templates",
+      "target": "web_src_api_templateshape",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "web/src/Templates.tsx",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_templates_test",
+      "target": "web_src_templates_templates",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "web/src/Templates.test.tsx",
+      "source_location": "L4",
       "weight": 1.0
     },
     {
@@ -49036,6 +49706,18 @@
     },
     {
       "source": "web_src_caselist",
+      "target": "web_src_templates",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "web/src/CaseList.tsx",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_caselist",
       "target": "web_src_api",
       "relation": "imports_from",
       "_origin": "ast",
@@ -49143,6 +49825,18 @@
       "weight": 1.0
     },
     {
+      "source": "web_src_caseworkspace",
+      "target": "web_src_templates",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "web/src/CaseWorkspace.tsx",
+      "source_location": "L40",
+      "weight": 1.0
+    },
+    {
       "source": "web_src_caseworkspace_test",
       "target": "ref_vitest",
       "relation": "imports_from",
@@ -49224,6 +49918,90 @@
       "context": "import",
       "source_file": "web/src/main.tsx",
       "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_templates",
+      "target": "ref_react",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "web/src/Templates.tsx",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_templates",
+      "target": "web_src_api",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "web/src/Templates.tsx",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_templates_test",
+      "target": "ref_vitest",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "web/src/Templates.test.tsx",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_templates_test",
+      "target": "ref_testing_library_react",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "web/src/Templates.test.tsx",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_templates_test",
+      "target": "ref_testing_library_user_event",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "web/src/Templates.test.tsx",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_templates_test",
+      "target": "web_src_templates",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "web/src/Templates.test.tsx",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_templates_test",
+      "target": "web_src_api",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "web/src/Templates.test.tsx",
+      "source_location": "L5",
       "weight": 1.0
     },
     {
@@ -50415,6 +51193,17 @@
       "confidence_score": 1.0,
       "source_file": "ai/TASKS-ARCHIVE.md",
       "source_location": "L2470",
+      "weight": 1.0
+    },
+    {
+      "source": "ai_tasks_archive_dah_task_archive",
+      "target": "ai_tasks_archive_p7_shell_003_contract",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "ai/TASKS-ARCHIVE.md",
+      "source_location": "L2649",
       "weight": 1.0
     },
     {
@@ -62052,7 +62841,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "web/src/api.ts",
-      "source_location": "L230",
+      "source_location": "L237",
       "weight": 1.0
     },
     {
@@ -62063,7 +62852,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "web/src/api.ts",
-      "source_location": "L234",
+      "source_location": "L241",
       "weight": 1.0
     },
     {
@@ -62074,18 +62863,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "web/src/api.ts",
-      "source_location": "L242",
-      "weight": 1.0
-    },
-    {
-      "source": "web_src_api",
-      "target": "web_src_api_getcase",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "web/src/api.ts",
-      "source_location": "L247",
+      "source_location": "L249",
       "weight": 1.0
     },
     {
@@ -62101,13 +62879,24 @@
     },
     {
       "source": "web_src_api",
+      "target": "web_src_api_getcase",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "web/src/api.ts",
+      "source_location": "L254",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_api",
       "target": "web_src_api_updatecase",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "web/src/api.ts",
-      "source_location": "L255",
+      "source_location": "L262",
       "weight": 1.0
     },
     {
@@ -62118,7 +62907,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "web/src/api.ts",
-      "source_location": "L268",
+      "source_location": "L275",
       "weight": 1.0
     },
     {
@@ -62129,45 +62918,12 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "web/src/api.ts",
-      "source_location": "L274",
+      "source_location": "L281",
       "weight": 1.0
     },
     {
       "source": "web_src_api",
-      "target": "web_src_api_getprogress",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "web/src/api.ts",
-      "source_location": "L278",
-      "weight": 1.0
-    },
-    {
-      "source": "web_src_api",
-      "target": "web_src_api_listdatasets",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "web/src/api.ts",
-      "source_location": "L282",
-      "weight": 1.0
-    },
-    {
-      "source": "web_src_api",
-      "target": "web_src_api_listruns",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "web/src/api.ts",
-      "source_location": "L286",
-      "weight": 1.0
-    },
-    {
-      "source": "web_src_api",
-      "target": "web_src_api_postchat",
+      "target": "web_src_api_templateproposal",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -62178,46 +62934,46 @@
     },
     {
       "source": "web_src_api",
-      "target": "web_src_api_listchat",
+      "target": "web_src_api_templatefindingsummary",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "web/src/api.ts",
-      "source_location": "L298",
+      "source_location": "L297",
       "weight": 1.0
     },
     {
       "source": "web_src_api",
-      "target": "web_src_api_attachdataset",
+      "target": "web_src_api_templateshape",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "web/src/api.ts",
-      "source_location": "L304",
+      "source_location": "L302",
       "weight": 1.0
     },
     {
       "source": "web_src_api",
-      "target": "web_src_api_profiledataset",
+      "target": "web_src_api_template",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "web/src/api.ts",
-      "source_location": "L313",
+      "source_location": "L312",
       "weight": 1.0
     },
     {
       "source": "web_src_api",
-      "target": "web_src_api_runsql",
+      "target": "web_src_api_promotecasetotemplate",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "web/src/api.ts",
-      "source_location": "L319",
+      "source_location": "L325",
       "weight": 1.0
     },
     {
@@ -62233,13 +62989,134 @@
     },
     {
       "source": "web_src_api",
+      "target": "web_src_api_listtemplates",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "web/src/api.ts",
+      "source_location": "L337",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_api",
+      "target": "web_src_api_createcasefromtemplate",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "web/src/api.ts",
+      "source_location": "L343",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_api",
+      "target": "web_src_api_deletetemplate",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "web/src/api.ts",
+      "source_location": "L357",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_api",
+      "target": "web_src_api_getprogress",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "web/src/api.ts",
+      "source_location": "L361",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_api",
+      "target": "web_src_api_listdatasets",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "web/src/api.ts",
+      "source_location": "L365",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_api",
+      "target": "web_src_api_listruns",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "web/src/api.ts",
+      "source_location": "L369",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_api",
+      "target": "web_src_api_postchat",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "web/src/api.ts",
+      "source_location": "L373",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_api",
+      "target": "web_src_api_listchat",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "web/src/api.ts",
+      "source_location": "L381",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_api",
+      "target": "web_src_api_attachdataset",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "web/src/api.ts",
+      "source_location": "L387",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_api",
+      "target": "web_src_api_profiledataset",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "web/src/api.ts",
+      "source_location": "L396",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_api",
+      "target": "web_src_api_runsql",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "web/src/api.ts",
+      "source_location": "L402",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_api",
       "target": "web_src_api_generatecode",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "web/src/api.ts",
-      "source_location": "L333",
+      "source_location": "L416",
       "weight": 1.0
     },
     {
@@ -62250,7 +63127,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "web/src/api.ts",
-      "source_location": "L349",
+      "source_location": "L432",
       "weight": 1.0
     },
     {
@@ -62261,95 +63138,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "web/src/api.ts",
-      "source_location": "L355",
-      "weight": 1.0
-    },
-    {
-      "source": "web_src_api",
-      "target": "web_src_api_acceptfinding",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "web/src/api.ts",
-      "source_location": "L367",
-      "weight": 1.0
-    },
-    {
-      "source": "web_src_api",
-      "target": "web_src_api_validatefinding",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "web/src/api.ts",
-      "source_location": "L384",
-      "weight": 1.0
-    },
-    {
-      "source": "web_src_api",
-      "target": "web_src_api_listfindings",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "web/src/api.ts",
-      "source_location": "L390",
-      "weight": 1.0
-    },
-    {
-      "source": "web_src_api",
-      "target": "web_src_api_evaluatedataset",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "web/src/api.ts",
-      "source_location": "L401",
-      "weight": 1.0
-    },
-    {
-      "source": "web_src_api",
-      "target": "web_src_api_listevaluations",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "web/src/api.ts",
-      "source_location": "L418",
-      "weight": 1.0
-    },
-    {
-      "source": "web_src_api",
-      "target": "web_src_api_getagentstate",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "web/src/api.ts",
-      "source_location": "L430",
-      "weight": 1.0
-    },
-    {
-      "source": "web_src_api",
-      "target": "web_src_api_proposeagentstep",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "web/src/api.ts",
-      "source_location": "L436",
-      "weight": 1.0
-    },
-    {
-      "source": "web_src_api",
-      "target": "web_src_api_approveagentstep",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "web/src/api.ts",
-      "source_location": "L444",
+      "source_location": "L438",
       "weight": 1.0
     },
     {
@@ -62365,13 +63154,46 @@
     },
     {
       "source": "web_src_api",
-      "target": "web_src_api_rejectagentstep",
+      "target": "web_src_api_acceptfinding",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "web/src/api.ts",
-      "source_location": "L454",
+      "source_location": "L450",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_api",
+      "target": "web_src_api_validatefinding",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "web/src/api.ts",
+      "source_location": "L467",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_api",
+      "target": "web_src_api_listfindings",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "web/src/api.ts",
+      "source_location": "L473",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_api",
+      "target": "web_src_api_evaluatedataset",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "web/src/api.ts",
+      "source_location": "L484",
       "weight": 1.0
     },
     {
@@ -62394,6 +63216,61 @@
       "confidence_score": 1.0,
       "source_file": "web/src/api.ts",
       "source_location": "L50",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_api",
+      "target": "web_src_api_listevaluations",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "web/src/api.ts",
+      "source_location": "L501",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_api",
+      "target": "web_src_api_getagentstate",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "web/src/api.ts",
+      "source_location": "L513",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_api",
+      "target": "web_src_api_proposeagentstep",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "web/src/api.ts",
+      "source_location": "L519",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_api",
+      "target": "web_src_api_approveagentstep",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "web/src/api.ts",
+      "source_location": "L527",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_api",
+      "target": "web_src_api_rejectagentstep",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "web/src/api.ts",
+      "source_location": "L537",
       "weight": 1.0
     },
     {
@@ -62514,7 +63391,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "web/src/CaseList.tsx",
-      "source_location": "L13",
+      "source_location": "L14",
       "weight": 1.0
     },
     {
@@ -62525,7 +63402,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "web/src/CaseList.tsx",
-      "source_location": "L76",
+      "source_location": "L81",
       "weight": 1.0
     },
     {
@@ -62536,7 +63413,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "web/src/CaseList.tsx",
-      "source_location": "L91",
+      "source_location": "L96",
       "weight": 1.0
     },
     {
@@ -62547,7 +63424,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "web/src/CaseList.tsx",
-      "source_location": "L107",
+      "source_location": "L112",
       "weight": 1.0
     },
     {
@@ -62558,7 +63435,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "web/src/CaseList.tsx",
-      "source_location": "L152",
+      "source_location": "L157",
       "weight": 1.0
     },
     {
@@ -62569,7 +63446,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "web/src/CaseList.test.tsx",
-      "source_location": "L20",
+      "source_location": "L21",
       "weight": 1.0
     },
     {
@@ -62580,7 +63457,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L1116",
+      "source_location": "L1118",
       "weight": 1.0
     },
     {
@@ -62591,7 +63468,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L1141",
+      "source_location": "L1143",
       "weight": 1.0
     },
     {
@@ -62602,7 +63479,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L167",
+      "source_location": "L169",
       "weight": 1.0
     },
     {
@@ -62613,7 +63490,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L204",
+      "source_location": "L206",
       "weight": 1.0
     },
     {
@@ -62624,7 +63501,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L283",
+      "source_location": "L285",
       "weight": 1.0
     },
     {
@@ -62635,7 +63512,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L365",
+      "source_location": "L367",
       "weight": 1.0
     },
     {
@@ -62646,7 +63523,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L403",
+      "source_location": "L405",
       "weight": 1.0
     },
     {
@@ -62657,7 +63534,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L47",
+      "source_location": "L48",
       "weight": 1.0
     },
     {
@@ -62668,7 +63545,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L501",
+      "source_location": "L503",
       "weight": 1.0
     },
     {
@@ -62679,7 +63556,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L554",
+      "source_location": "L556",
       "weight": 1.0
     },
     {
@@ -62690,7 +63567,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L585",
+      "source_location": "L587",
       "weight": 1.0
     },
     {
@@ -62701,7 +63578,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L641",
+      "source_location": "L643",
       "weight": 1.0
     },
     {
@@ -62712,7 +63589,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L719",
+      "source_location": "L721",
       "weight": 1.0
     },
     {
@@ -62723,7 +63600,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L879",
+      "source_location": "L881",
       "weight": 1.0
     },
     {
@@ -62734,7 +63611,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L884",
+      "source_location": "L886",
       "weight": 1.0
     },
     {
@@ -62745,7 +63622,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L910",
+      "source_location": "L912",
       "weight": 1.0
     },
     {
@@ -62756,7 +63633,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L928",
+      "source_location": "L930",
       "weight": 1.0
     },
     {
@@ -62767,7 +63644,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L948",
+      "source_location": "L950",
       "weight": 1.0
     },
     {
@@ -62778,7 +63655,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L963",
+      "source_location": "L965",
       "weight": 1.0
     },
     {
@@ -62789,7 +63666,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L972",
+      "source_location": "L974",
       "weight": 1.0
     },
     {
@@ -62800,7 +63677,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L654",
+      "source_location": "L656",
       "weight": 1.0
     },
     {
@@ -62811,7 +63688,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L218",
+      "source_location": "L220",
       "weight": 1.0
     },
     {
@@ -62822,7 +63699,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L515",
+      "source_location": "L517",
       "weight": 1.0
     },
     {
@@ -62833,7 +63710,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L758",
+      "source_location": "L760",
       "weight": 1.0
     },
     {
@@ -62844,7 +63721,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L598",
+      "source_location": "L600",
       "weight": 1.0
     },
     {
@@ -62855,7 +63732,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L298",
+      "source_location": "L300",
       "weight": 1.0
     },
     {
@@ -62866,7 +63743,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L313",
+      "source_location": "L315",
       "weight": 1.0
     },
     {
@@ -62877,7 +63754,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L419",
+      "source_location": "L421",
       "weight": 1.0
     },
     {
@@ -62888,117 +63765,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "web/src/CaseWorkspace.tsx",
-      "source_location": "L432",
-      "weight": 1.0
-    },
-    {
-      "source": "web_src_caseworkspace_test",
-      "target": "web_src_caseworkspace_test_finding",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "web/src/CaseWorkspace.test.tsx",
-      "source_location": "L103",
-      "weight": 1.0
-    },
-    {
-      "source": "web_src_caseworkspace_test",
-      "target": "web_src_caseworkspace_test_cleanfindings",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "web/src/CaseWorkspace.test.tsx",
-      "source_location": "L107",
-      "weight": 1.0
-    },
-    {
-      "source": "web_src_caseworkspace_test",
-      "target": "web_src_caseworkspace_test_evaluation",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "web/src/CaseWorkspace.test.tsx",
-      "source_location": "L121",
-      "weight": 1.0
-    },
-    {
-      "source": "web_src_caseworkspace_test",
-      "target": "web_src_caseworkspace_test_submitaudit",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "web/src/CaseWorkspace.test.tsx",
-      "source_location": "L137",
-      "weight": 1.0
-    },
-    {
-      "source": "web_src_caseworkspace_test",
-      "target": "web_src_caseworkspace_test_progress",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "web/src/CaseWorkspace.test.tsx",
-      "source_location": "L35",
-      "weight": 1.0
-    },
-    {
-      "source": "web_src_caseworkspace_test",
-      "target": "web_src_caseworkspace_test_dataset",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "web/src/CaseWorkspace.test.tsx",
-      "source_location": "L52",
-      "weight": 1.0
-    },
-    {
-      "source": "web_src_caseworkspace_test",
-      "target": "web_src_caseworkspace_test_profile",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "web/src/CaseWorkspace.test.tsx",
-      "source_location": "L53",
-      "weight": 1.0
-    },
-    {
-      "source": "web_src_caseworkspace_test",
-      "target": "web_src_caseworkspace_test_runfixture",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "web/src/CaseWorkspace.test.tsx",
-      "source_location": "L62",
-      "weight": 1.0
-    },
-    {
-      "source": "web_src_caseworkspace_test",
-      "target": "web_src_caseworkspace_test_mockemptycase",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "web/src/CaseWorkspace.test.tsx",
-      "source_location": "L69",
-      "weight": 1.0
-    },
-    {
-      "source": "web_src_caseworkspace_test",
-      "target": "web_src_caseworkspace_test_agentstep",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "web/src/CaseWorkspace.test.tsx",
-      "source_location": "L84",
+      "source_location": "L434",
       "weight": 1.0
     },
     {
@@ -63009,7 +63776,216 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "web/src/CaseWorkspace.test.tsx",
-      "source_location": "L99",
+      "source_location": "L100",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_caseworkspace_test",
+      "target": "web_src_caseworkspace_test_finding",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "web/src/CaseWorkspace.test.tsx",
+      "source_location": "L104",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_caseworkspace_test",
+      "target": "web_src_caseworkspace_test_cleanfindings",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "web/src/CaseWorkspace.test.tsx",
+      "source_location": "L108",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_caseworkspace_test",
+      "target": "web_src_caseworkspace_test_evaluation",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "web/src/CaseWorkspace.test.tsx",
+      "source_location": "L122",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_caseworkspace_test",
+      "target": "web_src_caseworkspace_test_submitaudit",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "web/src/CaseWorkspace.test.tsx",
+      "source_location": "L138",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_caseworkspace_test",
+      "target": "web_src_caseworkspace_test_progress",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "web/src/CaseWorkspace.test.tsx",
+      "source_location": "L36",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_caseworkspace_test",
+      "target": "web_src_caseworkspace_test_dataset",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "web/src/CaseWorkspace.test.tsx",
+      "source_location": "L53",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_caseworkspace_test",
+      "target": "web_src_caseworkspace_test_profile",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "web/src/CaseWorkspace.test.tsx",
+      "source_location": "L54",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_caseworkspace_test",
+      "target": "web_src_caseworkspace_test_runfixture",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "web/src/CaseWorkspace.test.tsx",
+      "source_location": "L63",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_caseworkspace_test",
+      "target": "web_src_caseworkspace_test_mockemptycase",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "web/src/CaseWorkspace.test.tsx",
+      "source_location": "L70",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_caseworkspace_test",
+      "target": "web_src_caseworkspace_test_agentstep",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "web/src/CaseWorkspace.test.tsx",
+      "source_location": "L85",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_templates",
+      "target": "web_src_templates_shapesummary",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "web/src/Templates.tsx",
+      "source_location": "L150",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_templates",
+      "target": "web_src_templates_promotetemplate",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "web/src/Templates.tsx",
+      "source_location": "L180",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_templates",
+      "target": "web_src_templates_templates",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "web/src/Templates.tsx",
+      "source_location": "L20",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_templates",
+      "target": "web_src_templates_templaterow",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "web/src/Templates.tsx",
+      "source_location": "L68",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_templates_promotetemplate",
+      "target": "web_src_templates_promotetemplate_save",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "web/src/Templates.tsx",
+      "source_location": "L186",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_templates_templaterow",
+      "target": "web_src_templates_templaterow_start",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "web/src/Templates.tsx",
+      "source_location": "L80",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_templates_templaterow",
+      "target": "web_src_templates_templaterow_retire",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "web/src/Templates.tsx",
+      "source_location": "L96",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_templates_test",
+      "target": "web_src_templates_test_shaped",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "web/src/Templates.test.tsx",
+      "source_location": "L19",
+      "weight": 1.0
+    },
+    {
+      "source": "web_src_templates_test",
+      "target": "web_src_templates_test_shapeless",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "web/src/Templates.test.tsx",
+      "source_location": "L43",
       "weight": 1.0
     },
     {
@@ -76913,6 +77889,18 @@
       "weight": 0.8
     },
     {
+      "source": "server_app_main_list_templates",
+      "target": "server_app_models_template",
+      "relation": "uses",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "context": "generic_arg",
+      "source_file": "server/app/main.py",
+      "source_location": "L3075",
+      "weight": 0.8
+    },
+    {
       "source": "server_app_main_approve_agent_step",
       "target": "server_app_models_agentapproval",
       "relation": "uses",
@@ -77318,6 +78306,18 @@
       "context": "return_type",
       "source_file": "server/app/main.py",
       "source_location": "L983",
+      "weight": 0.8
+    },
+    {
+      "source": "server_app_main_promote_template",
+      "target": "server_app_models_template",
+      "relation": "uses",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "context": "return_type",
+      "source_file": "server/app/main.py",
+      "source_location": "L3032",
       "weight": 0.8
     },
     {
@@ -78574,5 +79574,5 @@
       "source_file": "verification/p0/REPORT.md"
     }
   ],
-  "built_at_commit": "3e3cc2bdd6cb162ea3c765da51e1b4bb29767ccd"
+  "built_at_commit": "feffe0321fc4cbf107dc2355cf88b00bb8d1fcf1"
 }

@@ -1,6 +1,67 @@
 # DAH - Handoff
 
+## Next action
+
+**P7-SHELL-005 is DONE**: templates have a surface as well as a core. The web
+suite is 50 tests (was 39: +7 in the new `Templates.test.tsx`, +3 in
+`CaseWorkspace.test.tsx` for the promote panel, +1 in `api.test.ts` for the
+empty 204), `npm run build` passes - `tsc -b` runs first, so a type error the
+jsdom tests cannot see fails it - and the desktop bundle builds from the same
+source. The server side is untouched and stays at 358.
+
+### What is unbuilt, in priority order
+
+- **The rest of the web-shell gap** - P7 item 2, now four surfaces closed
+  (EVALUATE, the agent, case management, templates). Still no UI: cross-case
+  memory, EDA (`/eda`), the evidence graph (`/evidence-graph`), case history,
+  `/schema-version` and `/updates/latest`. Each is a panel over an existing
+  contract; none needs a new endpoint.
+- **LEARN mode** - a guided Why -> What -> How -> Validate walk. Mostly a
+  sequencing layer over the workflow stages that already exist (P3-FLOW-004).
+- **Multi-agent workflows** - only after EVALUATE, which is the audit layer an
+  agent's own output has to survive.
+- **Deferred, not dropped:** signing (DEC-006, the slot is in `release.yml`),
+  cloud sync, team collaboration, warehouse connectors, enterprise governance.
+
+### If the next step is a release
+
+Tag `v<x.y.z>` where x.y.z matches server/pyproject.toml. The published build is
+arm64 and unsigned, flagged pre-release (DEC-006). Nine tasks have landed since
+v0.1.0, so `0.2.0` is the honest next label when a release is wanted.
+
+Nothing is unblocked-but-undone.
+
+---
+
 ## What was completed
+- P7-SHELL-005 PASSED: templates in the web shell. The four template
+  endpoints - promote a case, list them, start a case from one, retire one -
+  were tested in the core and reached nowhere in the shell, so the shape of an
+  investigation worked out once was never offered to the next one. Two
+  surfaces now: the workspace carries **Save as a template** (the name is
+  optional and defaults to the case's question, because the common gesture
+  needs no second prompt), and the case-list screen carries a **Templates**
+  section below the list - templates are not case children and outlive the
+  case they came from, so they belong on the front door, not inside a case.
+  Each row shows the name, the question and dataset label it seeds, and a
+  **shape summary**: how many proposals it carries and how many findings, with
+  each finding's validation verdict counted. A template promoted from a case
+  with nothing to carry - or before shapes existed - *says so* ("a
+  question-only skeleton") rather than showing zeroes that would imply an empty
+  investigation. **Start a case from this** posts to the from-template endpoint
+  and opens the seeded case; **Retire** is one click, because a template carries
+  no data of its own and the core's contract is that cases created from it keep
+  working without it (`_template_of` answers None and the case degrades to
+  normal derivation), so nothing is lost the way a case deletion loses things.
+  The wiring surfaced a bug older than this task, and it was in the client the
+  whole shell shares: `request` parsed every successful body as JSON, and the
+  core answers 204 with an empty body for every DELETE the shell makes. The
+  write had already landed when the response arrived, so the client threw
+  "Unexpected end of JSON input" and the row reported a success as "The action
+  failed". The case delete P7-SHELL-004 shipped was broken exactly this way -
+  its test mocked the client, so the real path never ran. Two lines fix it:
+  an empty body answers nothing.
+
 - P7-SHELL-004 PASSED: case management from the shell. The three everyday
   operations on the front door - rename, duplicate, delete - answered only
   through the API, and the list rendered a row whose only affordance was

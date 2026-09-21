@@ -3,7 +3,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { ApiError, getCase } from './api'
+import { ApiError, deleteCase, getCase } from './api'
 import { messageOf } from './CaseList'
 
 // The desktop bundle talks to an absolute URL and the browser bundle to /api;
@@ -93,6 +93,18 @@ describe('api client', () => {
     expect(error.status).toBe(502)
     expect(error.message).toBe('Bad Gateway')
     expect(error.requestId).toBeUndefined()
+  })
+
+  it('returns nothing for an empty body instead of failing the parse', async () => {
+    // The DELETEs the shell makes - a case, a dataset, a template - answer 204
+    // with no body. The write has already landed when the response arrives, so
+    // parsing it would throw a second error inside the handler and report a
+    // success as a failure. Nothing is the honest return for no body.
+    globalThis.fetch = vi.fn().mockReturnValue(
+      Promise.resolve(new Response(null, { status: 204 })),
+    )
+
+    await expect(deleteCase('c1')).resolves.toBeUndefined()
   })
 
   it('surfaces the id in the message a user reads', () => {

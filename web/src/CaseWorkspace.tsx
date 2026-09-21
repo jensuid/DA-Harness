@@ -37,6 +37,7 @@ import {
   validateFinding,
 } from './api'
 import { messageOf } from './CaseList'
+import { PromoteTemplate } from './Templates'
 
 // One case as the loop the core walks: attach and profile data, propose the
 // computation that would answer the question, run it, read what it shows,
@@ -160,6 +161,7 @@ export function CaseWorkspace({ caseId, onBack }: { caseId: string; onBack: () =
         onChanged={() => void load()}
       />
       <Chat caseId={caseId} turns={turns} onTurn={(turn) => setTurns((prior) => [...prior, turn])} />
+      <PromoteTemplate caseId={caseId} question={caseRow?.question ?? ''} />
     </section>
   )
 }

@@ -7,6 +7,7 @@ import {
   listCases,
   updateCase,
 } from './api'
+import { Templates } from './Templates'
 
 // The list is the front door: find a case again, or start a new one. The search
 // box is the API's q parameter - a literal substring over question and dataset.
@@ -69,6 +70,10 @@ export function CaseList({
           </li>
         ))}
       </ul>
+      {/* Templates are not case children and outlive the case they came from,
+          so they live on the front door beside the list rather than inside a
+          workspace (P7-SHELL-005). */}
+      <Templates onOpen={onOpen} />
     </section>
   )
 }

@@ -1,6 +1,6 @@
 # DAH - Current State
 
- - **Phase:** P5 Production Grade - COMPLETE. P6 Post-Launch Evolution - COMPLETE: all 5 entry-checklist items. P7 Product Modes is IN PROGRESS (1 of 4, with three web surfaces delivered): EVALUATE mode is DONE in the core and in the shell, the agent has a surface, and a case can now be renamed, duplicated and deleted from the list. The web-shell gap is item 2 and is partly closed; templates, cross-case memory, EDA, the evidence graph and case history still have endpoints and no UI. P4 Production Candidate was COMPLETE (all 5 checklist items: P4 Production Candidate was COMPLETE (all 5 checklist items:
+ - **Phase:** P5 Production Grade - COMPLETE. P6 Post-Launch Evolution - COMPLETE: all 5 entry-checklist items. P7 Product Modes is IN PROGRESS (1 of 4, with four web surfaces delivered): EVALUATE mode is DONE in the core and in the shell, the agent has a surface, a case can be renamed, duplicated and deleted from the list, and templates are reachable from the shell. The web-shell gap is item 2 and is partly closed; cross-case memory, EDA, the evidence graph and case history still have endpoints and no UI. P4 Production Candidate was COMPLETE (all 5 checklist items: P4 Production Candidate was COMPLETE (all 5 checklist items:
   P4-VERIFY-001, P4-RELIABILITY-002, P4-UX-003 + P4-UX-004, P4-VALID-005,
   P4-PERF-006, P4-CI-007). P3 V1 is COMPLETE: all 10 entry-checklist items,
   231 server tests, and a P3 gate of its own. P5 Production Grade is IN
@@ -22,7 +22,28 @@ a versioned, forward-only migration path for the store, so a database from
 any past release opens, upgrades and keeps its rows (P6-MIGRATE-004);
 and an update check that tells an installed app a newer build exists - or
 says honestly that it could not tell (P6-UPDATE-005)**
-- **Active task:** P7-SHELL-004 DONE - case management in the shell. The three
+- **Active task:** P7-SHELL-005 DONE - templates in the web shell. The four
+  template endpoints (promote, list, start a case, retire) answered only
+  through the API. A workspace now carries a **Save as a template** panel -
+  the name is optional and defaults to the case's question - and the case-list
+  screen carries a **Templates** section below the list, because templates are
+  not case children and outlive the case they came from. Each row shows the
+  name, the question and dataset label it seeds, and a shape summary (how many
+  proposals, how many findings and their validation verdicts); a shapeless
+  template says so rather than showing zeroes. **Start a case from this**
+  creates and opens the seeded case, and **Retire** removes the template in one
+  click - it carries no data of its own, and the core degrades a case that
+  loses its template to normal derivation, so nothing is lost the way it is
+  when a case is deleted.
+  Wiring the DELETE surfaced a bug older than this task: the shared client
+  helper parsed every successful body as JSON, and the core answers 204 with an
+  empty body for each of the shell's DELETEs, so the write landed and the
+  client then threw "Unexpected end of JSON input" and reported a success as a
+  failure. The case delete P7-SHELL-004 shipped was broken this way - its test
+  mocked the client, so the path never ran for real. The helper now returns
+  nothing for an empty body.
+  Before it: P7-SHELL-004 (case management), P7-SHELL-003 (the agent surface),
+  P7-SHELL-002 (EVALUATE's surface), P7-EVAL-001 (EVALUATE's core), P6 CLOSED. The three
   everyday operations on the front door answered only through the API; the list
   rendered a row whose only affordance was opening it. Each row now keeps
   opening the case as its primary action and gains **Rename** (inline, with
@@ -39,16 +60,17 @@ says honestly that it could not tell (P6-UPDATE-005)**
   documented minimum but is no longer enforced by CI, and a green run no longer
   proves the exact Intel triple a local build produces. Restoring that needs a
   self-hosted Intel runner.
-- **Test status:** server 358 passed (336 + 22 evaluate); web 39 passed
-  (CaseList 10, CaseCreation 3, CaseWorkspace 21, api 5 - the list gained the
-  case-management actions); desktop shell 22 Rust tests
+- **Test status:** server 358 passed (336 + 22 evaluate); web 50 passed
+  (CaseList 10, CaseCreation 3, CaseWorkspace 24, Templates 8, api 6 - the
+  workspace gained the promote panel, the list screen gained the templates
+  section, and the client learned to answer an empty 204); desktop shell 22 Rust tests
   (`cd desktop/src-tauri && cargo test [--features e2e]`, 19 unit + 3 e2e);
   P2, P3 and P4 gates PASS (P4: all 18 journey steps, all 10 exit criteria);
   first release v0.1.0 published from tag and checksum-verified.
-- **Next task:** the rest of the web-shell gap (P7 item 2). EVALUATE, the agent
-  and case management have surfaces; these still do not: templates
-  (`/templates`, `/from-template`, `/cases/{id}/template`), cross-case memory,
-  EDA (`/eda`), the evidence graph (`/evidence-graph`), and case history. Each
+- **Next task:** the rest of the web-shell gap (P7 item 2). EVALUATE, the agent,
+  case management and templates have surfaces; these still do not: cross-case
+  memory, EDA (`/eda`), the evidence graph (`/evidence-graph`), and case
+  history. Each
   is a panel over an existing contract - no new endpoints. After item 2:
   **LEARN** mode, a guided Why -> What -> How -> Validate walk (mostly
   sequencing over P3-FLOW-004), then multi-agent workflows, which only make
@@ -142,6 +164,7 @@ says honestly that it could not tell (P6-UPDATE-005)**
 | P7-SHELL-002 EVALUATE in the web shell | DONE |
 | P7-SHELL-003 the agent in the web shell | DONE |
 | P7-SHELL-004 rename, duplicate, delete a case | DONE |
+| P7-SHELL-005 templates in the web shell | DONE |
 
 ## P6 progress
 

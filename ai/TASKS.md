@@ -113,230 +113,175 @@ the gate comes first because a phase is done when a gate says so.
 | P7-SHELL-002 | UX (EVALUATE in the web shell) | DONE | +6 tests in CaseWorkspace.test.tsx; web build PASS |
 | P7-SHELL-003 | UX (the agent in the web shell) | DONE | +7 tests; web build PASS |
 | P7-SHELL-004 | UX (rename, duplicate, delete a case) | DONE | +5 tests; web build PASS |
+| P7-SHELL-005 | UX (templates in the web shell) | DONE | +11 tests; web build PASS |
 
 Contracts for the rolling window (the two most recent). Older blocks are in
 `ai/TASKS-ARCHIVE.md`.
-### P7-EVAL-001 contract
+### P7-SHELL-005 contract
+
 ```
-TASK ID: P7-EVAL-001
+TASK ID: P7-SHELL-005
 MILESTONE: P7 Product Modes
-CAPABILITY: EVALUATE mode
-GOAL: Audit existing analytical work. A user submits work someone already did -
-      a SQL query and the claim it was used to support - and DAH answers the
-      nine questions the specification names, each against the data rather than
-      against the claim's own confidence.
+CAPABILITY: UX (the web-shell gap)
+GOAL: A finished investigation becomes a reusable template and a template
+      becomes a new case, both from the shell. Today the four template
+      endpoints answer only through the API, so the shape of a case that was
+      worked out once is never offered to the next one.
 
-CONTEXT: the master specification defines three product modes. ANALYZE is the
-         one that exists and it is finished through P6. EVALUATE is the second:
-         "audit existing analytical work", over inputs that can include SQL,
-         Python, a notebook, a dashboard, a spreadsheet, a report or
-         AI-generated analysis, judged on Question / Data / Quality / Method /
-         Calculation / Evidence / Claim / Visualization / Limitations.
-         Most of the machinery already exists and is validated - read-only
-         execution with a row cap, deep profiling, rerun determinism, the
-         evidence graph, the honesty budgets that bound what a claim may quote.
-         What does not exist is the frame: today every one of those primitives
-         serves the user's *own* analysis. EVALUATE turns them on work that
-         came from elsewhere, and that turn is the whole task.
+CONTEXT: P6-TEMPLATE-003 made a template carry the analytical shape of the case
+         it came from - its plan and which engine produced it, the proposals it
+         offered, and its findings' statements with the verdicts validation gave
+         them - and made a case started from a template offer that shape as
+         proposals a human accepts. Four endpoints serve it and all are tested
+         in the core; none has a surface. Templates are not case children and
+         outlive the case they came from, so they do not belong inside a case
+         workspace - they belong on the front door beside the case list.
 
-INPUTS: a case with at least one attached, profiled dataset; a submitted
-        artifact - its code (SQL or Python), the kind, and the claim the code
-        was offered as evidence for.
-RELEVANT FILES: server/app/evaluator.py (NEW), server/app/main.py,
-                server/app/models.py, server/app/db.py,
-                server/tests/test_evaluator.py (NEW)
+INPUTS: the case list screen (where templates are listed and started); a case
+        workspace (where one is promoted); an optional name for a promotion.
+RELEVANT FILES: web/src/api.ts, web/src/Templates.tsx (NEW), web/src/CaseList.tsx,
+                web/src/CaseWorkspace.tsx, web/src/index.css,
+                web/src/Templates.test.tsx (NEW), web/src/CaseWorkspace.test.tsx,
+                web/src/api.test.ts
 REQUIRED CHANGE:
-  - server/app/evaluator.py: a pure module, the way evidence.py and workflow.py
-    are pure. `evaluate` takes the artifact, the dataset's profile and the
-    run it produced, and returns one finding per spec axis. Nothing is computed
-    that the data does not contain; nothing is asserted the run does not show.
-  - the nine axes, each a named check with a verdict and a sentence:
-    * Question - the claim is stated and is answerable from this dataset.
-    * Data - every column the code reads exists in the profile, and the
-      profile's own caveats (nulls, duplicates) are surfaced as limitations.
-    * Quality - the profile's missing-value and duplicate-row counts reach the
-      verdict, so a claim over a column that is 40% null is a *finding*, not a
-      pass.
-    * Method - the code is read-only (the existing gate), bounded by the row
-      cap, and deterministic: an artifact whose result depends on unordered
-      output is flagged, because a rerun could disagree without anything
-      changing.
-    * Calculation - the code runs, and it reproduces: the artifact is executed
-      twice and the two results must agree, the same standard a finding's
-      validation holds (P4-VALID-005).
-    * Evidence - the claim's magnitudes all appear in the result the code
-      actually produced, checked against the same honesty budget a draft is
-      checked against (P3-AI-012): a claim quoting a number the run does not
-      contain is the single most common way an analysis lies.
-    * Claim - the claim is specific enough to be wrong: it names a magnitude or
-      a direction, not only a topic. "Revenue declined in north" is auditable;
-      "revenue was analysed" is not, and the verdict says so.
-    * Visualization - whether the artifact's result is chartable, and if a
-      chart exists, whether its axes match the result's own columns. Not a
-      requirement that one exist - an honest "no chart, and none needed" is a
-      valid verdict.
-    * Limitations - the accumulated caveats, stated as sentences rather than
-      as an error code.
-  - POST /cases/{id}/datasets/{id}/evaluate accepts the artifact and the claim,
-    executes the code through the *existing* run endpoints' engine (never a
-    second code path), and returns the evaluation. It writes the artifact as a
-    run and the evaluation beside it, so an audit is itself inspectable and
-    reproducible - the standard every other artifact in DAH is held to.
-  - GET .../evaluations lists them, newest first, the same as runs and plans.
-  - the endpoint refuses an artifact whose code is not read-only, exactly as
-    the run endpoints do, and refuses a claim that is empty; both are 400s with
-    a message, never a 500.
-NON-GOALS: evaluating a notebook, a dashboard, a spreadsheet or a report as a
-           whole file (this task takes the code and the claim, which is the
-           common core of all of them; whole-file ingestion is a later task),
-           an LLM judgement of the claim (deterministic by default, as every
-           other assistant slice is - the LLM may later rephrase, never
-           decide), a score or a grade (a verdict per axis with a sentence is
-           the honest output; a number would imply a precision the axes do not
-           have), evaluating an artifact against a dataset it never ran
-           against, fixing the artifact.
-CONSTRAINTS: the code executes under the same read-only gate, row cap and
-             (for Python) hard sandbox as any other run - EVALUATE earns no
-             privilege, and untrusted code is the *premise* of the mode; the
-             honesty budgets from P3-AI-011..014 are reused unchanged; an
-             evaluation never mutates the case, the dataset or any run, only
-             appends its own row; nothing the analyst submitted is logged (the
-             log holds method/path/status/duration, as P5-OBSERVE-002 pins);
-             deterministic by default with `source` recorded; no new runtime
-             dependency; the suite, the P2/P3/P4 gates, the web and desktop
-             suites stay green.
+  - web/src/api.ts: `Template`, `TemplateShape`, `TemplateProposal` and
+    `TemplateFindingSummary` types matching the core's models, and four
+    functions - `promoteCaseToTemplate(caseId, name?)` for the POST, a GET
+    `listTemplates`, `createCaseFromTemplate(templateId, {question?, dataset?})`
+    for the POST that seeds a case, and `deleteTemplate(templateId)` for the
+    DELETE. A DELETE answers 204 and an empty body, so the shared request
+    helper returns nothing for an empty body rather than trying to parse one -
+    without that, every DELETE the shell makes fails at the parse after
+    succeeding at the write.
+  - web/src/Templates.tsx (NEW): a section for the front door. Each template
+    row shows its name, the question and the dataset label it seeds, and a
+    shape summary - how many proposals it carries and how many findings, with
+    each finding's validation verdict - so a template says what kind of
+    investigation it is, not only what it asked. A template with no shape says
+    so instead of showing zeroes that imply an empty case. Each row has two
+    actions: **Start a case from this**, which posts to the from-template
+    endpoint and opens the seeded case, and **Retire**, which removes the
+    template. A template carries no data of its own - no datasets, runs or
+    findings travel with it - and the core's contract is that cases already
+    created from a template are unaffected when it goes, degrading to normal
+    derivation, so retiring needs no second confirmation the way deleting a
+    case does.
+  - web/src/CaseList.tsx: the templates section renders below the case list on
+    the same screen, because templates are the other thing a user comes to the
+    front door for.
+  - web/src/CaseWorkspace.tsx: a **Save as a template** panel. The name is
+    optional - the core defaults it to the case's question, because the common
+    gesture needs no second prompt - and a promotion reports success as a
+    sentence and leaves the workspace usable on failure.
+  - Every write posts to its endpoint and nothing else; the list reloads after
+    a write rather than mutating its own copy; a failure degrades to the
+    core's own sentence.
+NON-GOALS: editing a template (a template is a snapshot; changing one would
+           make it disagree with the case it was captured from - the honest
+           edit is to fix the case and promote again), a template gallery or
+           sharing (single user, local-first), promoting from the case list
+           (promotion belongs to the workspace that shows what would be
+           captured), cross-case memory, EDA, the evidence graph and case
+           history (read-only views, their own tasks).
+CONSTRAINTS: each action calls its endpoint and nothing else; `tsc -b` passes;
+             no new dependency; the existing list, workspace and client tests
+             stay green; the desktop bundle builds from the same source.
 ACCEPTANCE CRITERIA:
-- [x] a clean artifact over a clean dataset passes all nine axes
-- [x] an artifact reading a column the dataset lacks is flagged on Data, not
-      silently passed
-- [x] a claim quoting a magnitude absent from the result is flagged on
-      Evidence with the value it should have been
-- [x] a claim too vague to be wrong ("revenue was analysed") is flagged on
-      Claim
-- [x] a non-deterministic artifact (unordered output treated as a ranking) is
-      flagged on Method
-- [x] an artifact over a mostly-null column reports the null share as a
-      Quality limitation, not a pass
-- [x] an artifact that does not reproduce is flagged on Calculation
-- [x] a non-read-only artifact is refused with 400 before anything executes
-- [x] an evaluation is persisted, listed and inspectable; it never mutates
-      another artifact
-- [x] every verdict carries a sentence a reader can act on, not only a code
-- [x] the full server suite, the P2/P3/P4 gates, the web suite and the desktop
-      tests stay green
-TESTS: server/tests/test_evaluator.py - the clean baseline; each axis's failure
-       case (unknown column, invented magnitude, vague claim, unordered
-       ranking, null-heavy column, non-reproducing artifact, non-read-only
-      refusal); the persistence and listing round trip; the no-mutation
-       invariant; 404s including a cross-case dataset.
-VERIFICATION: server suite + verification/p2/verify_p2.py +
-              verification/p3/verify_p3.py + verification/p4/verify_p4.py PASS;
-              cd desktop/src-tauri && cargo test PASS.
-STATE UPDATE: mark P7-EVAL-001 done on pass; ROADMAP item 1 flips to DONE.
+- [x] a case can be saved as a template from its workspace, with an optional name
+- [x] a promotion without a name is named for the case's question
+- [x] the template list shows a template's name, question, dataset and shape
+- [x] a shapeless template is shown as such, not as an empty case
+- [x] a case started from a template is created and opened
+- [x] a template can be retired, and cases created from it are unaffected
+- [x] a failed write shows the core's message and leaves the screen usable
+- [x] `tsc -b` and the web suite stay green
+TESTS: web/src/Templates.test.tsx - the list and its shape summary, the
+       shapeless template, starting a case, retiring, and a failure rendered as
+       a sentence; web/src/CaseWorkspace.test.tsx - the promotion, named and
+       unnamed; web/src/api.test.ts - an empty 204 body parses to nothing.
+VERIFICATION: cd web && npm test PASS; cd web && npm run build PASS; cd web &&
+              npm run build:desktop PASS. The server suite and the three gates
+              are untouched by this change and stay green.
+STATE UPDATE: mark P7-SHELL-005 done on pass; ROADMAP item 2 records templates
+              as delivered.
 ```
 
 
 ```
-TASK: P7-EVAL-001 - audit existing analytical work against nine axes
-ID: P7-EVAL-001
-PRIORITY: high
+TASK: P7-SHELL-005 - templates in the web shell
+ID: P7-SHELL-005
+PRIORITY: medium
 STATUS: DONE
-SUMMARY: EVALUATE mode - the spec's second product mode. Until now every
-         primitive DAH has served the analyst's *own* work: read-only
-         execution, deep profiling, rerun validation, the evidence graph, the
-         honesty budgets. This task turns those primitives on work that came
-         from elsewhere. A user submits an artifact - its code (SQL or Python)
-         and the claim that code was offered to support - and DAH answers the
-         nine questions the specification names, each against the data rather
-         than against the claim's own confidence.
+SUMMARY: The four template endpoints answered only through the API, so the
+         shape of an investigation worked out once was never offered to the
+         next one from the shell. A finished case becomes a template from its
+         workspace, and a template becomes a new case from the front door.
 
-Three pieces:
+Two surfaces:
 
-- **`server/app/evaluator.py` (new)** - a pure module, the way evidence.py and
-  workflow.py are pure. `evaluate()` returns one finding per axis - question,
-  data, quality, method, calculation, evidence, claim, visualization,
-  limitations - each a verdict (pass / concern / fail, deliberately not a
-  score: a single number would imply a precision nine heterogenous axes do not
-  have) and a sentence a reader can act on. The Evidence axis reuses the
-  drafter's honesty budget unchanged (`_allowed_numbers`, `_numbers_in`), so a
-  claim quoting a magnitude the run does not contain is caught by the same
-  standard a draft is judged by.
-- **`POST /cases/{id}/datasets/{id}/evaluate`** - executes the artifact through
-  the *existing* run engine, never a second code path, so the read-only gate,
-  the row cap and the hard sandbox are the ones every other run answers to.
-  EVALUATE earns no privilege, and untrusted code is the premise of the mode.
-  The artifact is stored as a run and the evaluation beside it, so an audit is
-  itself inspectable and reproducible. `GET .../evaluations` lists them newest
-  first.
-- **`server/app/db.py`** - the `evaluations` table, migration 8, so an audit is
-  a first-class artifact rather than a transient response.
+- **web/src/Templates.tsx (NEW)** sits on the case-list screen, because
+  templates are not case children and outlive the case they came from - they
+  are the other thing a user comes to the front door for. Each row shows the
+  name, the question and the dataset label it seeds, and a **shape summary**:
+  how many proposals it carries and how many findings, with each finding's
+  validation verdict counted. A name alone cannot say whether a template is a
+  finished method or a question-only skeleton, so a shapeless template *says
+  so* - "A question-only skeleton - no shape was captured" - rather than
+  showing zeroes that would imply an empty investigation. Each row has
+  **Start a case from this**, which posts to the from-template endpoint and
+  opens the seeded case, and **Retire**. Retiring is one click, deliberately:
+  a template carries no data of its own, and the core's contract is that cases
+  created from it are unaffected when it goes - `_template_of` answers None and
+  the case degrades to normal derivation - so unlike deleting a case, nothing
+  is lost.
+- **CaseWorkspace** gains a **Save as a template** panel. The name is optional
+  - the core defaults it to the case's question, because the common gesture
+  needs no second prompt - and a promotion reports the saved name as a
+  sentence, so a user learns where to find it.
 
-Four judgement calls the contract left open, each written into the code:
+One real bug surfaced while wiring the DELETE, and it was not in this task's
+endpoints: the shared `request` helper parsed every successful body as JSON,
+and the core answers 204 with an empty body for all three of the shell's
+DELETEs (a case, a dataset, now a template). The write had already landed when
+the response arrived, so the client threw "Unexpected end of JSON input" and
+the row reported a success as "The action failed". The helper now returns
+nothing for an empty body. The case-delete that P7-SHELL-004 shipped was
+broken in exactly this way - its tests mocked the client, so the path never
+ran for real - and it is fixed by the same two lines.
 
-- **A non-read-only artifact is a 400 before anything executes**, exactly as the
-  run endpoints refuse one. A mutation is not an artifact to audit - it is a
-  request the store must never honour, and it is refused before the engine is
-  asked to do anything. But an artifact that *is* read-only and still fails at
-  run time is a **Calculation finding, not a 400**: the work is not the user's
-  to fix, it came from elsewhere, and "this does not run" is the answer an
-  auditor exists to give.
-- **An unknown column is a Data fail, never a silent pass.** The first version
-  of the check intersected the code's identifiers with the profile's columns,
-  which drops every name the dataset lacks - the axis passed on exactly the
-  case it exists to catch. The fix reuses the generator's own notion of a
-  column read (`_sql_identifiers`, `_python_read_columns`, `_SQL_KEYWORDS`),
-  so an invented name is *reported* rather than filtered away.
-- **A chart is not required.** The contract's baseline is that a clean artifact
-  passes all nine axes, and "no chart, and none needed" is a valid verdict,
-  because a table's numbers are checkable without one. What *is* a fail is a
-  chart whose axes are not the result's own columns - a check the previous
-  shape (a bare `has_chart` boolean) could not make, because a boolean cannot
-  be wrong.
-- **A single-row result is deterministic without an ORDER BY**, because one row
-  has no row order to disagree about; the Method axis flags only an unordered
-  *multi-row* result, whose order a rerun may present differently.
-
-NON-GOALS held: no whole-file ingestion of notebooks, dashboards or
-             spreadsheets (this task takes the code and the claim, which is the
-             common core of all of them), no LLM judgement of the claim
-             (deterministic by default, as every assistant slice is; an LLM may
-             later rephrase a sentence, never decide one), no score or grade,
-             no evaluating an artifact against a dataset it never ran against,
-             no fixing the artifact.
-CONSTRAINTS held: the code executes under the same read-only gate, row cap and
-             hard sandbox as any other run; the honesty budgets from
-             P3-AI-011..014 are reused unchanged; an evaluation appends its own
-             row and mutates nothing else (pinned by a test that counts runs,
-             findings and evaluations around one); nothing the analyst
-             submitted is logged (the log holds method/path/status/duration, as
-             P5-OBSERVE-002 pins); deterministic, `source` recorded; no new
-             runtime dependency; the suite, the gates and the web and desktop
-             suites stayed green.
-ACCEPTANCE CRITERIA: all 11 - see the checked boxes above.
-TESTS: 22 in server/tests/test_evaluator.py - the clean baseline across all nine
-       axes, each axis's failure case (unknown column, invented magnitude, vague
-       claim, unordered ranking, null-heavy column, non-reproducing artifact,
-       artifact that does not run), the read-only refusal with nothing written,
-       the empty-code / empty-claim / bad-kind 400s, both the SQL and the Python
-       artifact paths, persistence and newest-first listing, the no-mutation
-       invariant, 404s including a cross-case dataset, the unprofiled dataset,
-       and the pure module's chart branches - which the endpoint cannot reach,
-       because a chart cannot exist for the run the request itself creates.
-VERIFICATION: server suite 358 passed (was 336, +22); P2, P3 and P4 gates all
-              PASS (each re-ran the suite at 358); web 21 passed; desktop 22
-              Rust tests. All green locally; CI will run it on push.
-LESSON: three of the eleven criteria were satisfied by code that had not been
-        written yet, and the missing half was the interesting half. The Data
-        axis "passed" an unknown column because it asked "which of the code's
-        names are in the profile?" instead of "which are NOT?"; the
-        Visualization axis could never pass at all, because it treated the
-        absence of a chart as a defect the contract explicitly calls a valid
-        verdict; and the read-only refusal had been softened into a Calculation
-        finding, which is kinder but is not what the contract asks. Each was
-        found the same way - reading the acceptance criteria as assertions and
-        asking what code would make each one true. The general shape: a check
-        that filters its inputs before testing them is testing the survivors,
-        and a check that cannot fail cannot pass either.
+NON-GOALS held: no editing a template (a template is a snapshot; changing one
+             would make it disagree with the case it was captured from, and
+             the honest edit is to fix the case and promote again), no gallery
+             or sharing (single user, local-first), no promoting from the list
+             (promotion belongs to the workspace that shows what would be
+             captured), and the remaining shell surfaces (cross-case memory,
+             EDA, the evidence graph, case history) stay unowned.
+CONSTRAINTS held: every write posts to its endpoint and nothing else, and the
+             template list reloads after a write rather than mutating its own
+             copy; `tsc -b` passes; no new dependency; the desktop bundle
+             builds from the same source.
+ACCEPTANCE CRITERIA: all 8 - see the checked boxes above.
+TESTS: 11 added (web suite 39 -> 50) - 7 in the new web/src/Templates.test.tsx
+       (the shape summary, the shapeless template, the empty list, starting a
+       case, retiring, a failed start rendered as a sentence, a failed load),
+       3 in web/src/CaseWorkspace.test.tsx (the unnamed promotion naming it for
+       the question, a chosen name, a failed promotion leaving the panel
+       usable), and 1 in web/src/api.test.ts (an empty 204 body parses to
+       nothing).
+VERIFICATION: cd web && npm test - 50 passed; cd web && npm run build PASS
+              (tsc -b + vite build); cd web && npm run build:desktop PASS. The
+              server suite and the three gates are untouched by this change
+              and stay green.
+LESSON: three of the eleven tests failed on the first run for reasons that
+        were the fixtures' fault, and each taught the same thing - a test
+        suite is only as honest as the DOM it asserts against. The template
+        row renders the question and the dataset label as one sentence, so an
+        exact `getByText('sales.csv')` could not find it; the list screen now
+        loads templates beside the cases, so a test that mocked only the case
+        calls saw a second alert from an unresolved spy; and the WHATWG
+        Response constructor refuses a body with a 204, so the client's own
+        fixture had to build one without. Each was the test describing a DOM
+        the component did not produce, and the component was right.
 ```
 
 ### P7-SHELL-004 contract

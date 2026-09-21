@@ -2798,3 +2798,226 @@ LESSON: the suite had no spy-reset between tests, so the module-level mocks
         Both are the same shape: state that outlives the action that produced
         it, read as though it were fresh.
 ```
+
+### P7-EVAL-001 contract
+```
+TASK ID: P7-EVAL-001
+MILESTONE: P7 Product Modes
+CAPABILITY: EVALUATE mode
+GOAL: Audit existing analytical work. A user submits work someone already did -
+      a SQL query and the claim it was used to support - and DAH answers the
+      nine questions the specification names, each against the data rather than
+      against the claim's own confidence.
+
+CONTEXT: the master specification defines three product modes. ANALYZE is the
+         one that exists and it is finished through P6. EVALUATE is the second:
+         "audit existing analytical work", over inputs that can include SQL,
+         Python, a notebook, a dashboard, a spreadsheet, a report or
+         AI-generated analysis, judged on Question / Data / Quality / Method /
+         Calculation / Evidence / Claim / Visualization / Limitations.
+         Most of the machinery already exists and is validated - read-only
+         execution with a row cap, deep profiling, rerun determinism, the
+         evidence graph, the honesty budgets that bound what a claim may quote.
+         What does not exist is the frame: today every one of those primitives
+         serves the user's *own* analysis. EVALUATE turns them on work that
+         came from elsewhere, and that turn is the whole task.
+
+INPUTS: a case with at least one attached, profiled dataset; a submitted
+        artifact - its code (SQL or Python), the kind, and the claim the code
+        was offered as evidence for.
+RELEVANT FILES: server/app/evaluator.py (NEW), server/app/main.py,
+                server/app/models.py, server/app/db.py,
+                server/tests/test_evaluator.py (NEW)
+REQUIRED CHANGE:
+  - server/app/evaluator.py: a pure module, the way evidence.py and workflow.py
+    are pure. `evaluate` takes the artifact, the dataset's profile and the
+    run it produced, and returns one finding per spec axis. Nothing is computed
+    that the data does not contain; nothing is asserted the run does not show.
+  - the nine axes, each a named check with a verdict and a sentence:
+    * Question - the claim is stated and is answerable from this dataset.
+    * Data - every column the code reads exists in the profile, and the
+      profile's own caveats (nulls, duplicates) are surfaced as limitations.
+    * Quality - the profile's missing-value and duplicate-row counts reach the
+      verdict, so a claim over a column that is 40% null is a *finding*, not a
+      pass.
+    * Method - the code is read-only (the existing gate), bounded by the row
+      cap, and deterministic: an artifact whose result depends on unordered
+      output is flagged, because a rerun could disagree without anything
+      changing.
+    * Calculation - the code runs, and it reproduces: the artifact is executed
+      twice and the two results must agree, the same standard a finding's
+      validation holds (P4-VALID-005).
+    * Evidence - the claim's magnitudes all appear in the result the code
+      actually produced, checked against the same honesty budget a draft is
+      checked against (P3-AI-012): a claim quoting a number the run does not
+      contain is the single most common way an analysis lies.
+    * Claim - the claim is specific enough to be wrong: it names a magnitude or
+      a direction, not only a topic. "Revenue declined in north" is auditable;
+      "revenue was analysed" is not, and the verdict says so.
+    * Visualization - whether the artifact's result is chartable, and if a
+      chart exists, whether its axes match the result's own columns. Not a
+      requirement that one exist - an honest "no chart, and none needed" is a
+      valid verdict.
+    * Limitations - the accumulated caveats, stated as sentences rather than
+      as an error code.
+  - POST /cases/{id}/datasets/{id}/evaluate accepts the artifact and the claim,
+    executes the code through the *existing* run endpoints' engine (never a
+    second code path), and returns the evaluation. It writes the artifact as a
+    run and the evaluation beside it, so an audit is itself inspectable and
+    reproducible - the standard every other artifact in DAH is held to.
+  - GET .../evaluations lists them, newest first, the same as runs and plans.
+  - the endpoint refuses an artifact whose code is not read-only, exactly as
+    the run endpoints do, and refuses a claim that is empty; both are 400s with
+    a message, never a 500.
+NON-GOALS: evaluating a notebook, a dashboard, a spreadsheet or a report as a
+           whole file (this task takes the code and the claim, which is the
+           common core of all of them; whole-file ingestion is a later task),
+           an LLM judgement of the claim (deterministic by default, as every
+           other assistant slice is - the LLM may later rephrase, never
+           decide), a score or a grade (a verdict per axis with a sentence is
+           the honest output; a number would imply a precision the axes do not
+           have), evaluating an artifact against a dataset it never ran
+           against, fixing the artifact.
+CONSTRAINTS: the code executes under the same read-only gate, row cap and
+             (for Python) hard sandbox as any other run - EVALUATE earns no
+             privilege, and untrusted code is the *premise* of the mode; the
+             honesty budgets from P3-AI-011..014 are reused unchanged; an
+             evaluation never mutates the case, the dataset or any run, only
+             appends its own row; nothing the analyst submitted is logged (the
+             log holds method/path/status/duration, as P5-OBSERVE-002 pins);
+             deterministic by default with `source` recorded; no new runtime
+             dependency; the suite, the P2/P3/P4 gates, the web and desktop
+             suites stay green.
+ACCEPTANCE CRITERIA:
+- [x] a clean artifact over a clean dataset passes all nine axes
+- [x] an artifact reading a column the dataset lacks is flagged on Data, not
+      silently passed
+- [x] a claim quoting a magnitude absent from the result is flagged on
+      Evidence with the value it should have been
+- [x] a claim too vague to be wrong ("revenue was analysed") is flagged on
+      Claim
+- [x] a non-deterministic artifact (unordered output treated as a ranking) is
+      flagged on Method
+- [x] an artifact over a mostly-null column reports the null share as a
+      Quality limitation, not a pass
+- [x] an artifact that does not reproduce is flagged on Calculation
+- [x] a non-read-only artifact is refused with 400 before anything executes
+- [x] an evaluation is persisted, listed and inspectable; it never mutates
+      another artifact
+- [x] every verdict carries a sentence a reader can act on, not only a code
+- [x] the full server suite, the P2/P3/P4 gates, the web suite and the desktop
+      tests stay green
+TESTS: server/tests/test_evaluator.py - the clean baseline; each axis's failure
+       case (unknown column, invented magnitude, vague claim, unordered
+       ranking, null-heavy column, non-reproducing artifact, non-read-only
+      refusal); the persistence and listing round trip; the no-mutation
+       invariant; 404s including a cross-case dataset.
+VERIFICATION: server suite + verification/p2/verify_p2.py +
+              verification/p3/verify_p3.py + verification/p4/verify_p4.py PASS;
+              cd desktop/src-tauri && cargo test PASS.
+STATE UPDATE: mark P7-EVAL-001 done on pass; ROADMAP item 1 flips to DONE.
+```
+
+
+```
+TASK: P7-EVAL-001 - audit existing analytical work against nine axes
+ID: P7-EVAL-001
+PRIORITY: high
+STATUS: DONE
+SUMMARY: EVALUATE mode - the spec's second product mode. Until now every
+         primitive DAH has served the analyst's *own* work: read-only
+         execution, deep profiling, rerun validation, the evidence graph, the
+         honesty budgets. This task turns those primitives on work that came
+         from elsewhere. A user submits an artifact - its code (SQL or Python)
+         and the claim that code was offered to support - and DAH answers the
+         nine questions the specification names, each against the data rather
+         than against the claim's own confidence.
+
+Three pieces:
+
+- **`server/app/evaluator.py` (new)** - a pure module, the way evidence.py and
+  workflow.py are pure. `evaluate()` returns one finding per axis - question,
+  data, quality, method, calculation, evidence, claim, visualization,
+  limitations - each a verdict (pass / concern / fail, deliberately not a
+  score: a single number would imply a precision nine heterogenous axes do not
+  have) and a sentence a reader can act on. The Evidence axis reuses the
+  drafter's honesty budget unchanged (`_allowed_numbers`, `_numbers_in`), so a
+  claim quoting a magnitude the run does not contain is caught by the same
+  standard a draft is judged by.
+- **`POST /cases/{id}/datasets/{id}/evaluate`** - executes the artifact through
+  the *existing* run engine, never a second code path, so the read-only gate,
+  the row cap and the hard sandbox are the ones every other run answers to.
+  EVALUATE earns no privilege, and untrusted code is the premise of the mode.
+  The artifact is stored as a run and the evaluation beside it, so an audit is
+  itself inspectable and reproducible. `GET .../evaluations` lists them newest
+  first.
+- **`server/app/db.py`** - the `evaluations` table, migration 8, so an audit is
+  a first-class artifact rather than a transient response.
+
+Four judgement calls the contract left open, each written into the code:
+
+- **A non-read-only artifact is a 400 before anything executes**, exactly as the
+  run endpoints refuse one. A mutation is not an artifact to audit - it is a
+  request the store must never honour, and it is refused before the engine is
+  asked to do anything. But an artifact that *is* read-only and still fails at
+  run time is a **Calculation finding, not a 400**: the work is not the user's
+  to fix, it came from elsewhere, and "this does not run" is the answer an
+  auditor exists to give.
+- **An unknown column is a Data fail, never a silent pass.** The first version
+  of the check intersected the code's identifiers with the profile's columns,
+  which drops every name the dataset lacks - the axis passed on exactly the
+  case it exists to catch. The fix reuses the generator's own notion of a
+  column read (`_sql_identifiers`, `_python_read_columns`, `_SQL_KEYWORDS`),
+  so an invented name is *reported* rather than filtered away.
+- **A chart is not required.** The contract's baseline is that a clean artifact
+  passes all nine axes, and "no chart, and none needed" is a valid verdict,
+  because a table's numbers are checkable without one. What *is* a fail is a
+  chart whose axes are not the result's own columns - a check the previous
+  shape (a bare `has_chart` boolean) could not make, because a boolean cannot
+  be wrong.
+- **A single-row result is deterministic without an ORDER BY**, because one row
+  has no row order to disagree about; the Method axis flags only an unordered
+  *multi-row* result, whose order a rerun may present differently.
+
+NON-GOALS held: no whole-file ingestion of notebooks, dashboards or
+             spreadsheets (this task takes the code and the claim, which is the
+             common core of all of them), no LLM judgement of the claim
+             (deterministic by default, as every assistant slice is; an LLM may
+             later rephrase a sentence, never decide one), no score or grade,
+             no evaluating an artifact against a dataset it never ran against,
+             no fixing the artifact.
+CONSTRAINTS held: the code executes under the same read-only gate, row cap and
+             hard sandbox as any other run; the honesty budgets from
+             P3-AI-011..014 are reused unchanged; an evaluation appends its own
+             row and mutates nothing else (pinned by a test that counts runs,
+             findings and evaluations around one); nothing the analyst
+             submitted is logged (the log holds method/path/status/duration, as
+             P5-OBSERVE-002 pins); deterministic, `source` recorded; no new
+             runtime dependency; the suite, the gates and the web and desktop
+             suites stayed green.
+ACCEPTANCE CRITERIA: all 11 - see the checked boxes above.
+TESTS: 22 in server/tests/test_evaluator.py - the clean baseline across all nine
+       axes, each axis's failure case (unknown column, invented magnitude, vague
+       claim, unordered ranking, null-heavy column, non-reproducing artifact,
+       artifact that does not run), the read-only refusal with nothing written,
+       the empty-code / empty-claim / bad-kind 400s, both the SQL and the Python
+       artifact paths, persistence and newest-first listing, the no-mutation
+       invariant, 404s including a cross-case dataset, the unprofiled dataset,
+       and the pure module's chart branches - which the endpoint cannot reach,
+       because a chart cannot exist for the run the request itself creates.
+VERIFICATION: server suite 358 passed (was 336, +22); P2, P3 and P4 gates all
+              PASS (each re-ran the suite at 358); web 21 passed; desktop 22
+              Rust tests. All green locally; CI will run it on push.
+LESSON: three of the eleven criteria were satisfied by code that had not been
+        written yet, and the missing half was the interesting half. The Data
+        axis "passed" an unknown column because it asked "which of the code's
+        names are in the profile?" instead of "which are NOT?"; the
+        Visualization axis could never pass at all, because it treated the
+        absence of a chart as a defect the contract explicitly calls a valid
+        verdict; and the read-only refusal had been softened into a Calculation
+        finding, which is kinder but is not what the contract asks. Each was
+        found the same way - reading the acceptance criteria as assertions and
+        asking what code would make each one true. The general shape: a check
+        that filters its inputs before testing them is testing the survivors,
+        and a check that cannot fail cannot pass either.
+```

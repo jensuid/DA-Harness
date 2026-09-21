@@ -224,6 +224,13 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     }
     throw new ApiError(res.status, message || `request failed: ${res.status}`, requestId)
   }
+  // A 204 (and any other empty body) has nothing to parse: the DELETEs the
+  // shell makes - a case, a dataset, a template - answer 204 and succeed, and
+  // parsing an empty body would throw a second error inside the handler after
+  // the write had already landed. Nothing is the honest return for no body.
+  if (res.status === 204 || (await res.clone().text()) === '') {
+    return undefined as T
+  }
   return (await res.json()) as T
 }
 
@@ -273,6 +280,82 @@ export function duplicateCase(caseId: string): Promise<Case> {
 // together. The caller asks twice.
 export function deleteCase(caseId: string): Promise<void> {
   return request<void>(`/cases/${caseId}`, { method: 'DELETE' })
+}
+
+// --- templates: the shape of a finished case (P6-TEMPLATE-003 / P7-SHELL-005) -
+
+// A template is a skeleton plus what the case it came from learned. The
+// proposals travel with the columns they read, because the schema they were
+// written against does not - a later case may have to refuse one.
+export interface TemplateProposal {
+  kind: string
+  code: string
+  explanation: string
+  columns_used: string[]
+}
+
+export interface TemplateFindingSummary {
+  statement: string
+  validation_status: string
+}
+
+export interface TemplateShape {
+  plan: Record<string, unknown> | null
+  plan_source: string | null
+  proposals: TemplateProposal[]
+  findings: TemplateFindingSummary[]
+}
+
+// A template outlives the case it came from, so `shape` is nullable: a case
+// with nothing to carry promotes the question-only skeleton, and a template
+// promoted before shapes existed has none.
+export interface Template {
+  id: string
+  name: string
+  question: string
+  dataset: string
+  shape: TemplateShape | null
+  created_at: string
+}
+
+// The name is optional - the core defaults it to the case's question - so the
+// common "save this as a template" gesture needs no second prompt. An empty
+// name is sent as an omission rather than a blank string, because a blank
+// string is the one shape the core refuses with a 400.
+export function promoteCaseToTemplate(
+  caseId: string,
+  name = '',
+): Promise<Template> {
+  const trimmed = name.trim()
+  return request<Template>(`/cases/${caseId}/template`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(trimmed ? { name: trimmed } : {}),
+  })
+}
+
+export function listTemplates(): Promise<Template[]> {
+  return request<Template[]>('/templates')
+}
+
+// Only the skeleton is copied: no data, runs or findings. Either field may be
+// overridden inline, and the seeded case records which template it came from.
+export function createCaseFromTemplate(
+  templateId: string,
+  overrides: { question?: string; dataset?: string } = {},
+): Promise<Case> {
+  return request<Case>('/cases/from-template', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ template_id: templateId, ...overrides }),
+  })
+}
+
+// A template carries no data of its own, and the core's contract is that cases
+// created from it keep working without it - they degrade to normal derivation
+// - so retiring a template loses nothing the way deleting a case does.
+export function deleteTemplate(templateId: string): Promise<void> {
+  return request<void>(`/templates/${templateId}`, { method: 'DELETE' })
 }
 
 export function getProgress(id: string): Promise<CaseProgress> {

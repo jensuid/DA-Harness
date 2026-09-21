@@ -14,6 +14,7 @@ vi.mock('./api', async (importOriginal) => {
     updateCase: vi.fn(),
     duplicateCase: vi.fn(),
     deleteCase: vi.fn(),
+    listTemplates: vi.fn(),
   }
 })
 
@@ -25,6 +26,9 @@ const cases = [
 describe('CaseList', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    // The list screen loads templates beside the cases now; an unresolved spy
+    // would throw inside the section and put a second alert on the page.
+    vi.mocked(api.listTemplates).mockResolvedValue([])
   })
 
   it('lists cases from the core', async () => {
@@ -70,6 +74,7 @@ describe('CaseList', () => {
 
   it('renders a failure as text rather than crashing', async () => {
     vi.mocked(api.listCases).mockRejectedValue(new api.ApiError(500, 'Internal Server Error'))
+    vi.mocked(api.listTemplates).mockResolvedValue([])
     render(<CaseList onOpen={() => {}} onCreate={() => {}} />)
     await waitFor(() =>
       expect(screen.getByRole('alert')).toHaveTextContent(/internal server error/i),

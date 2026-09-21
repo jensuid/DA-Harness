@@ -29,6 +29,7 @@ vi.mock('./api', async (importOriginal) => {
     proposeAgentStep: vi.fn(),
     approveAgentStep: vi.fn(),
     rejectAgentStep: vi.fn(),
+    promoteCaseToTemplate: vi.fn(),
   }
 })
 
@@ -610,6 +611,82 @@ describe('CaseWorkspace', () => {
     const alert = await screen.findByRole('alert')
     expect(alert).toHaveTextContent(/not this case's pending step/i)
     expect(alert.textContent).not.toContain('[object Object]')
+  })
+
+  it('saves the case as a template, named for the question when no name is given', async () => {
+    mockEmptyCase()
+    vi.mocked(api.promoteCaseToTemplate).mockResolvedValue({
+      id: 't1',
+      name: 'Why did revenue decline?',
+      question: 'Why did revenue decline?',
+      dataset: 'sales.csv',
+      shape: null,
+      created_at: '',
+    })
+
+    const user = userEvent.setup()
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} />)
+    await waitFor(() =>
+      expect(screen.getByText('Why did revenue decline?')).toBeInTheDocument(),
+    )
+
+    // No name typed: the core defaults it to the case's question.
+    await user.click(screen.getByRole('button', { name: /save as a template/i }))
+    await waitFor(() =>
+      expect(api.promoteCaseToTemplate).toHaveBeenCalledWith('c1', ''),
+    )
+    expect(await screen.findByText(/saved as/i)).toHaveTextContent(
+      'Why did revenue decline?',
+    )
+  })
+
+  it('sends the chosen name when the case is promoted', async () => {
+    mockEmptyCase()
+    vi.mocked(api.promoteCaseToTemplate).mockResolvedValue({
+      id: 't2',
+      name: 'Revenue decline playbook',
+      question: 'Why did revenue decline?',
+      dataset: 'sales.csv',
+      shape: null,
+      created_at: '',
+    })
+
+    const user = userEvent.setup()
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} />)
+    await waitFor(() =>
+      expect(screen.getByText('Why did revenue decline?')).toBeInTheDocument(),
+    )
+
+    await user.type(screen.getByLabelText(/template name/i), 'Revenue decline playbook')
+    await user.click(screen.getByRole('button', { name: /save as a template/i }))
+
+    await waitFor(() =>
+      expect(api.promoteCaseToTemplate).toHaveBeenCalledWith(
+        'c1',
+        'Revenue decline playbook',
+      ),
+    )
+    expect(await screen.findByText('Revenue decline playbook')).toBeInTheDocument()
+  })
+
+  it('shows the core refusal when a promotion fails', async () => {
+    mockEmptyCase()
+    vi.mocked(api.promoteCaseToTemplate).mockRejectedValue(
+      new api.ApiError(400, 'name must not be empty'),
+    )
+
+    const user = userEvent.setup()
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} />)
+    await waitFor(() =>
+      expect(screen.getByText('Why did revenue decline?')).toBeInTheDocument(),
+    )
+
+    await user.click(screen.getByRole('button', { name: /save as a template/i }))
+
+    const alert = await screen.findByRole('alert')
+    expect(alert).toHaveTextContent(/name must not be empty/i)
+    // The panel is still ready for a corrected attempt.
+    expect(screen.getByRole('button', { name: /save as a template/i })).toBeEnabled()
   })
 
   it('states why the agent stopped when nothing is pending', async () => {
