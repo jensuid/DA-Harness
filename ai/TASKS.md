@@ -123,10 +123,148 @@ the gate comes first because a phase is done when a gate says so.
 | P7-AGENT-001 | Multi-agent workflows (roles, core) | DONE | +13 tests; P2/P3/P4 gates PASS |
 | P7-SHELL-011 | UX (the multi-agent surface) | DONE | +5 web tests; web build PASS |
 | P7-E2E-001 | Verification (real-server e2e) | DONE | 25 steps over real HTTP; 3 runs green |
+| P7-WALK-001 | Verification (manual shell walkthrough) | DONE | walked the shipped shell by hand; 1 bug fixed, 380 tests + e2e green |
 
 
 Contracts for the rolling window (the two most recent). Older blocks are in
 `ai/TASKS-ARCHIVE.md`.
+
+### P7-WALK-001 contract
+
+```
+TASK ID: P7-WALK-001
+MILESTONE: P7 Product Modes
+CAPABILITY: Verification (the shipped product, used by hand)
+GOAL: P7-E2E-001 proved the contracts over real HTTP, but it drives the
+      endpoints, not the shell an analyst actually sits in front of. This task
+      is the complement: a human-shaped walkthrough of the shipped web shell,
+      one real action at a time - create a case, attach a file, approve the
+      agent's plan, run its SQL, interpret, draft and accept a finding,
+      validate it, let the reviewer audit it, render the chart, ask the case
+      a question, promote a template and start a case from it - reading what
+      the UI actually renders at each step rather than what the contract
+      promises.
+CONTEXT: every automated artifact in the repo drives either the core through
+         TestClient or the shell through jsdom. Neither notices when a panel
+         that renders beautifully in a test never shows the analyst the number
+         behind it, and neither can approve the wrong panel's button.
+INPUTS: a real uvicorn server on :8123 against an isolated data dir
+        (DAH_DATA_DIR/DAH_DB_PATH under /tmp), the LLM env vars emptied so the
+        deterministic engines answer, a real headless Chrome driven over the
+        DevTools protocol with genuine keyboard input (Input.insertText), and
+        the same fixture CSV the e2e uses - one null revenue and one duplicate
+        row, so the profiler and the honesty budgets have something to say.
+RELEVANT FILES: server/app/main.py (the verdict-summary fix),
+                server/tests/test_multi_agent.py (the regression assertions),
+                ai/HANDOFF.md, ai/TASKS.md, ai/CURRENT_STATE.md
+REQUIRED CHANGE:
+  - One bug fixed: the reviewer's settled-step summary counted verdicts over a
+    SET of verdict strings (`{axis.verdict for axis in axes}`), so a nine-axis
+    audit could never report more than one pass or one concern - it read
+    "9 axes, 1 pass, 1 concern, 0 fail" for an audit that was 7 pass / 2
+    concern / 0 fail. The counts are now summed per axis.
+  - Two tests strengthened: the clean-audit and failing-audit cases now assert
+    the pass/concern/fail tallies against the evaluation the endpoint
+    recorded, so a summary that collapses verdicts to a set cannot pass again.
+  - No new feature; no contract changed.
+NON-GOALS: fixing every gap the walkthrough surfaced - the findings below are
+           recorded for prioritising, not silently expanded into. Only the
+           one-line correctness bug and its test landed here.
+CONSTRAINTS: green only - 380 server tests pass and all 25 real-server e2e
+             steps pass with the fix in place; nothing committed while red.
+ACCEPTANCE CRITERIA:
+- [x] the whole product is driven through the shipped shell, not the API: case
+      creation, file attach, the plan, the SQL run, interpretation, the drafted
+      finding accepted, validation, the reviewer's audit, the chart, a cited
+      chat answer, a template promoted and a case started from it
+- [x] each step's rendered text was read from the DOM and checked against what
+      the case actually holds, not against what the contract says
+- [x] the reviewer's audit verdict summary is correct per axis, with a
+      regression test that derives its expectation from the recorded evaluation
+- [x] 380 server tests pass; all 25 real-server e2e steps pass
+TESTS: test_multi_agent.py - the two audit tests now assert the tallies; the
+       suite is 380. The e2e's own step now prints "9 axes, 7 pass, 2 concern,
+       0 fail" instead of the collapsed "1 pass, 1 concern".
+VERIFICATION: `server/.venv/bin/python -m pytest` -> 380 passed;
+              `server/.venv/bin/python verification/e2e/verify_e2e.py` ->
+              ALL STEPS PASS, the audit step reading 7 pass / 2 concern.
+STATE UPDATE: TASKS/CURRENT_STATE gain the walkthrough and its findings; the
+              release remains the next roadmap step.
+```
+
+TASK: P7-WALK-001 - the shipped shell, used by hand
+ID: P7-WALK-001
+PRIORITY: medium
+STATUS: DONE
+SUMMARY: The automated verification in this repo drives either the core
+         through TestClient or the shell through jsdom. Both are fast and both
+         are blind to the thing a walkthrough catches: a panel that renders
+         fine in a test while never showing the analyst the number behind it.
+         This task walked the shipped web shell one real action at a time -
+         case created by keyboard, file attached, the agent's plan approved,
+         its SQL run, interpreted, the draft accepted as a finding, validated,
+         the reviewer's audit approved, the chart rendered, the case asked a
+         question, a template promoted and a second case started from it -
+         reading the rendered DOM at every step.
+
+The loop works end to end, and the honesty budgets show up where they should:
+the profiler counts the duplicate, validation answers `partially_supported`
+because the null revenue trips the missing-data check while reproducibility
+itself passes, and the LEARN panel closes with "the trust loop ran, not that
+the answer is right".
+
+ONE BUG FIXED: the reviewer's settled-step summary built a SET of verdict
+strings and summed membership over it, so a nine-axis audit reported at most
+one pass and one concern - "9 axes, 1 pass, 1 concern, 0 fail" for an audit
+that was 7 pass / 2 concern / 0 fail. Every audit the reviewer has ever
+recorded in the shell understated its own pass count. The two audit tests in
+test_multi_agent.py now derive their tallies from the recorded evaluation, so
+the shape of the bug - counting over distinct verdicts instead of axes - can-
+not pass again.
+
+FINDINGS NOT FIXED (recorded, in priority order):
+- **Evaluations do not travel with an exported case.** `app/exporter.py` has
+  no reference to the evaluations table, so a package carries the audit's own
+  run (the code) but not its nine-axis verdicts. The reviewer's whole purpose
+  is an audit trail that survives the analyst leaving; a restored case has
+  every finding and none of its audits. exporter + importer + models + tests.
+- **A stale agent step can be approved after its write happened out of band.**
+  The draft panel's "Accept as a finding" and the agent's pending "accept"
+  step are two paths to one endpoint. Accepting out of band does not retire
+  the agent's step, so approving it later records the finding a second time -
+  this walkthrough produced a duplicate finding, and the chat then cited the
+  unvalidated duplicate as "the latest finding". Either retire a pending step
+  whose precondition is already met, or make the accept idempotent.
+- **Three core numbers are not rendered in the shell.** The plan's sub-questions
+  and hypotheses, a run's result rows, and the profile's per-column null count
+  are all persisted and all absent from the workspace - the analyst approves
+  "Plan the analysis from the profile" having never seen the plan, and reads
+  "sql over sales.csv - 2 rows" without the rows. Each is a panel over an
+  existing contract; none needs a new endpoint. (The profile's duplicate IS
+  shown; the null is not.)
+- **A draft's grounds run together with its count.** "row_count ranges 2..32
+  row(s)" is the range `2..3` butted against "2 row(s)" with no separator.
+- **Two near-identical inputs sit side by side.** "What would you like to
+  know?" (generate code) and "How many datasets does this case have?" (chat)
+  are adjacent single-line boxes; this walkthrough typed a chat question into
+  the code generator on the first attempt.
+
+NON-GOALS held: no contract changed, no new feature; the findings above are
+             for prioritising.
+CONSTRAINTS held: nothing committed while red.
+ACCEPTANCE CRITERIA: all 4 - see the checked boxes above.
+TESTS: test_multi_agent.py, 12 tests (2 strengthened); suite 380.
+VERIFICATION: 380 passed in 152s; the real-server e2e's audit step now reads
+              "9 axes, 7 pass, 2 concern, 0 fail" and all 25 steps PASS.
+LESSON: a set where a list was needed is the smallest possible bug and the
+        hardest to see - the summary is grammatical either way, and "1 pass"
+        reads as a number rather than as a collapse. The tests asserted "9
+        axes" and "0 fail", which were both still true, so the suite was green
+        while the count was wrong. A tally asserted against the recorded
+        evaluation is the only kind of assertion that catches it. The wider
+        lesson: this repo's verification drives contracts, and contracts do
+        not render - three panels pass their tests while showing the analyst
+        nothing, and only a hand on the shell finds that.
 
 ### P7-E2E-001 contract
 

@@ -2872,12 +2872,11 @@ async def _apply_agent_step(db, case_id: str, step: dict) -> str:
             db,
         )
         axes = evaluation.findings
-        verdicts = {axis.verdict for axis in axes}
         failed = [axis for axis in axes if axis.verdict == "fail"]
         summary = (
             f"audited finding {body.get('finding_id', '?')}: "
-            f"{len(axes)} axes, {sum(v == 'pass' for v in verdicts)} pass, "
-            f"{sum(v == 'concern' for v in verdicts)} concern, "
+            f"{len(axes)} axes, {sum(a.verdict == 'pass' for a in axes)} pass, "
+            f"{sum(a.verdict == 'concern' for a in axes)} concern, "
             f"{len(failed)} fail"
         )
         if failed:

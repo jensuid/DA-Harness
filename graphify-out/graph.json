@@ -1918,7 +1918,7 @@
       "file_type": "code",
       "norm_label": "list_chat()",
       "source_file": "server/app/main.py",
-      "source_location": "L2896"
+      "source_location": "L2895"
     },
     {
       "id": "server_app_generator_configured_llm",
@@ -2794,7 +2794,7 @@
       "file_type": "code",
       "norm_label": "get_plan()",
       "source_file": "server/app/main.py",
-      "source_location": "L3066"
+      "source_location": "L3065"
     },
     {
       "id": "server_app_main_list_plans",
@@ -2806,7 +2806,7 @@
       "file_type": "code",
       "norm_label": "list_plans()",
       "source_file": "server/app/main.py",
-      "source_location": "L3092"
+      "source_location": "L3091"
     },
     {
       "id": "server_tests_test_case_history_history",
@@ -3718,7 +3718,7 @@
       "file_type": "code",
       "norm_label": "create_case_from_template()",
       "source_file": "server/app/main.py",
-      "source_location": "L3286"
+      "source_location": "L3285"
     },
     {
       "id": "server_app_main_duplicate_case",
@@ -3742,7 +3742,7 @@
       "file_type": "code",
       "norm_label": "export_case_package()",
       "source_file": "server/app/main.py",
-      "source_location": "L3119"
+      "source_location": "L3118"
     },
     {
       "id": "server_app_main_get_case",
@@ -3766,7 +3766,7 @@
       "file_type": "code",
       "norm_label": "get_case_history()",
       "source_file": "server/app/main.py",
-      "source_location": "L3184"
+      "source_location": "L3183"
     },
     {
       "id": "server_app_main_get_case_learn_walk",
@@ -3778,7 +3778,7 @@
       "file_type": "code",
       "norm_label": "get_case_learn_walk()",
       "source_file": "server/app/main.py",
-      "source_location": "L3164"
+      "source_location": "L3163"
     },
     {
       "id": "server_app_main_get_case_progress",
@@ -3838,7 +3838,7 @@
       "file_type": "code",
       "norm_label": "import_case_package()",
       "source_file": "server/app/main.py",
-      "source_location": "L3137"
+      "source_location": "L3136"
     },
     {
       "id": "server_app_main_insert_case",
@@ -6214,7 +6214,7 @@
       "file_type": "code",
       "norm_label": "test_a_case_with_no_findings_states_what_the_reviewer_waits_for()",
       "source_file": "server/tests/test_multi_agent.py",
-      "source_location": "L187"
+      "source_location": "L194"
     },
     {
       "id": "server_tests_test_multi_agent_test_a_failing_audit_is_recorded_without_touching_the_finding",
@@ -6226,7 +6226,7 @@
       "file_type": "code",
       "norm_label": "test_a_failing_audit_is_recorded_without_touching_the_finding()",
       "source_file": "server/tests/test_multi_agent.py",
-      "source_location": "L245"
+      "source_location": "L252"
     },
     {
       "id": "server_tests_test_multi_agent_test_an_audited_finding_is_not_re_audited",
@@ -6238,7 +6238,7 @@
       "file_type": "code",
       "norm_label": "test_an_audited_finding_is_not_re_audited()",
       "source_file": "server/tests/test_multi_agent.py",
-      "source_location": "L170"
+      "source_location": "L177"
     },
     {
       "id": "server_tests_test_multi_agent_test_an_unknown_role_is_refused_with_the_roles_that_exist",
@@ -6250,7 +6250,7 @@
       "file_type": "code",
       "norm_label": "test_an_unknown_role_is_refused_with_the_roles_that_exist()",
       "source_file": "server/tests/test_multi_agent.py",
-      "source_location": "L232"
+      "source_location": "L239"
     },
     {
       "id": "server_tests_test_multi_agent_test_approving_the_reviewer_records_an_evaluation",
@@ -6274,7 +6274,7 @@
       "file_type": "code",
       "norm_label": "test_one_role_approval_cannot_authorise_another()",
       "source_file": "server/tests/test_multi_agent.py",
-      "source_location": "L205"
+      "source_location": "L212"
     },
     {
       "id": "server_tests_test_multi_agent_test_reading_a_role_proposes_nothing",
@@ -6286,7 +6286,7 @@
       "file_type": "code",
       "norm_label": "test_reading_a_role_proposes_nothing()",
       "source_file": "server/tests/test_multi_agent.py",
-      "source_location": "L301"
+      "source_location": "L319"
     },
     {
       "id": "server_tests_test_multi_agent_test_the_export_round_trip_carries_the_role",
@@ -6298,7 +6298,7 @@
       "file_type": "code",
       "norm_label": "test_the_export_round_trip_carries_the_role()",
       "source_file": "server/tests/test_multi_agent.py",
-      "source_location": "L286"
+      "source_location": "L304"
     },
     {
       "id": "server_tests_test_multi_agent_test_the_legacy_paths_are_the_analyst_role",
@@ -6334,7 +6334,7 @@
       "file_type": "code",
       "norm_label": "test_the_reviewer_rejects_without_writing()",
       "source_file": "server/tests/test_multi_agent.py",
-      "source_location": "L265"
+      "source_location": "L283"
     },
     {
       "id": "server_tests_test_multi_agent_test_two_roles_hold_independent_pending_steps",
@@ -6598,7 +6598,7 @@
       "file_type": "code",
       "norm_label": "generate_code()",
       "source_file": "server/app/main.py",
-      "source_location": "L2923"
+      "source_location": "L2922"
     },
     {
       "id": "server_app_main_template_of",
@@ -8614,7 +8614,7 @@
       "file_type": "code",
       "norm_label": "create_plan()",
       "source_file": "server/app/main.py",
-      "source_location": "L2986"
+      "source_location": "L2985"
     },
     {
       "id": "server_app_main_create_python_run",
@@ -12238,7 +12238,7 @@
       "file_type": "code",
       "norm_label": "list_templates()",
       "source_file": "server/app/main.py",
-      "source_location": "L3251"
+      "source_location": "L3250"
     },
     {
       "id": "server_app_main_profile_of",
@@ -12262,7 +12262,7 @@
       "file_type": "code",
       "norm_label": "promote_template()",
       "source_file": "server/app/main.py",
-      "source_location": "L3204"
+      "source_location": "L3203"
     },
     {
       "id": "server_app_main_shape_of",
@@ -12274,7 +12274,7 @@
       "file_type": "code",
       "norm_label": "_shape_of()",
       "source_file": "server/app/main.py",
-      "source_location": "L3270"
+      "source_location": "L3269"
     },
     {
       "id": "server_tests_test_evaluator_audit",
@@ -12634,7 +12634,7 @@
       "file_type": "code",
       "norm_label": "delete_template()",
       "source_file": "server/app/main.py",
-      "source_location": "L3317"
+      "source_location": "L3316"
     },
     {
       "id": "server_tests_test_dataset_delete_case_with_datasets",
@@ -15027,7 +15027,7 @@
       "source_location": "L2297"
     },
     {
-      "id": "server_app_main_rationale_2897",
+      "id": "server_app_main_rationale_2896",
       "label": "The case's conversation, oldest first, so a reopened case resumes.",
       "_origin": "ast",
       "community": 101,
@@ -15035,7 +15035,7 @@
       "file_type": "rationale",
       "norm_label": "the case's conversation, oldest first, so a reopened case resumes.",
       "source_file": "server/app/main.py",
-      "source_location": "L2897"
+      "source_location": "L2896"
     },
     {
       "id": "server_app_models_rationale_517",
@@ -15808,7 +15808,7 @@
       "source_location": "L79"
     },
     {
-      "id": "server_app_main_rationale_3067",
+      "id": "server_app_main_rationale_3066",
       "label": "Retrieve the latest plan for a case's dataset.",
       "_origin": "ast",
       "community": 117,
@@ -15816,7 +15816,7 @@
       "file_type": "rationale",
       "norm_label": "retrieve the latest plan for a case's dataset.",
       "source_file": "server/app/main.py",
-      "source_location": "L3067"
+      "source_location": "L3066"
     },
     {
       "id": "server_app_models_rationale_271",
@@ -15830,7 +15830,7 @@
       "source_location": "L271"
     },
     {
-      "id": "server_app_main_rationale_3095",
+      "id": "server_app_main_rationale_3094",
       "label": "Every plan recorded for a case's dataset, newest first.",
       "_origin": "ast",
       "community": 118,
@@ -15838,7 +15838,7 @@
       "file_type": "rationale",
       "norm_label": "every plan recorded for a case's dataset, newest first.",
       "source_file": "server/app/main.py",
-      "source_location": "L3095"
+      "source_location": "L3094"
     },
     {
       "id": "server_app_models_rationale_282",
@@ -16842,7 +16842,7 @@
       "source_location": "L303"
     },
     {
-      "id": "server_app_main_rationale_3120",
+      "id": "server_app_main_rationale_3119",
       "label": "Export a case as one self-contained JSON package. The package carries the\u2026",
       "_origin": "ast",
       "community": 22,
@@ -16850,10 +16850,10 @@
       "file_type": "rationale",
       "norm_label": "export a case as one self-contained json package. the package carries the...",
       "source_file": "server/app/main.py",
-      "source_location": "L3120"
+      "source_location": "L3119"
     },
     {
-      "id": "server_app_main_rationale_3138",
+      "id": "server_app_main_rationale_3137",
       "label": "Reconstruct a case from an exported package. The inverse of export: entities\u2026",
       "_origin": "ast",
       "community": 22,
@@ -16861,10 +16861,10 @@
       "file_type": "rationale",
       "norm_label": "reconstruct a case from an exported package. the inverse of export: entities...",
       "source_file": "server/app/main.py",
-      "source_location": "L3138"
+      "source_location": "L3137"
     },
     {
-      "id": "server_app_main_rationale_3165",
+      "id": "server_app_main_rationale_3164",
       "label": "The case as the LEARN ladder: why, what, how, validate (P7-LEARN-001). Read-\u2026",
       "_origin": "ast",
       "community": 22,
@@ -16872,10 +16872,10 @@
       "file_type": "rationale",
       "norm_label": "the case as the learn ladder: why, what, how, validate (p7-learn-001). read-...",
       "source_file": "server/app/main.py",
-      "source_location": "L3165"
+      "source_location": "L3164"
     },
     {
-      "id": "server_app_main_rationale_3185",
+      "id": "server_app_main_rationale_3184",
       "label": "Everything that happened in a case, in order (P3-CASE-007). A read-side\u2026",
       "_origin": "ast",
       "community": 22,
@@ -16883,10 +16883,10 @@
       "file_type": "rationale",
       "norm_label": "everything that happened in a case, in order (p3-case-007). a read-side...",
       "source_file": "server/app/main.py",
-      "source_location": "L3185"
+      "source_location": "L3184"
     },
     {
-      "id": "server_app_main_rationale_3290",
+      "id": "server_app_main_rationale_3289",
       "label": "Start a new case from a saved template (P3-CASE-007, P6-TEMPLATE-003). The\u2026",
       "_origin": "ast",
       "community": 22,
@@ -16894,7 +16894,7 @@
       "file_type": "rationale",
       "norm_label": "start a new case from a saved template (p3-case-007, p6-template-003). the...",
       "source_file": "server/app/main.py",
-      "source_location": "L3290"
+      "source_location": "L3289"
     },
     {
       "id": "server_app_main_rationale_332",
@@ -18646,7 +18646,7 @@
       "source_location": "L1"
     },
     {
-      "id": "server_tests_test_multi_agent_rationale_206",
+      "id": "server_tests_test_multi_agent_rationale_213",
       "label": "A 409 names the role's own pending step - one role's write is never authorised\u2026",
       "_origin": "ast",
       "community": 33,
@@ -18654,10 +18654,10 @@
       "file_type": "rationale",
       "norm_label": "a 409 names the role's own pending step - one role's write is never authorised...",
       "source_file": "server/tests/test_multi_agent.py",
-      "source_location": "L206"
+      "source_location": "L213"
     },
     {
-      "id": "server_tests_test_multi_agent_rationale_246",
+      "id": "server_tests_test_multi_agent_rationale_253",
       "label": "Two honest notions stay distinct: the finding's own validation status is about\u2026",
       "_origin": "ast",
       "community": 33,
@@ -18665,10 +18665,10 @@
       "file_type": "rationale",
       "norm_label": "two honest notions stay distinct: the finding's own validation status is about...",
       "source_file": "server/tests/test_multi_agent.py",
-      "source_location": "L246"
+      "source_location": "L253"
     },
     {
-      "id": "server_tests_test_multi_agent_rationale_302",
+      "id": "server_tests_test_multi_agent_rationale_320",
       "label": "A GET never proposes, for any role - a page refresh commits nothing.",
       "_origin": "ast",
       "community": 33,
@@ -18676,7 +18676,7 @@
       "file_type": "rationale",
       "norm_label": "a get never proposes, for any role - a page refresh commits nothing.",
       "source_file": "server/tests/test_multi_agent.py",
-      "source_location": "L302"
+      "source_location": "L320"
     },
     {
       "id": "server_tests_test_multi_agent_rationale_56",
@@ -19147,7 +19147,7 @@
       "source_location": "L2498"
     },
     {
-      "id": "server_app_main_rationale_2929",
+      "id": "server_app_main_rationale_2928",
       "label": "Propose the read-only computation that would answer a question. The dataset's\u2026",
       "_origin": "ast",
       "community": 38,
@@ -19155,7 +19155,7 @@
       "file_type": "rationale",
       "norm_label": "propose the read-only computation that would answer a question. the dataset's...",
       "source_file": "server/app/main.py",
-      "source_location": "L2929"
+      "source_location": "L2928"
     },
     {
       "id": "server_app_agent",
@@ -20456,7 +20456,7 @@
       "source_location": "L2798"
     },
     {
-      "id": "server_app_main_rationale_2991",
+      "id": "server_app_main_rationale_2990",
       "label": "Plan an analysis from the case question and the dataset profile. The plan is\u2026",
       "_origin": "ast",
       "community": 48,
@@ -20464,7 +20464,7 @@
       "file_type": "rationale",
       "norm_label": "plan an analysis from the case question and the dataset profile. the plan is...",
       "source_file": "server/app/main.py",
-      "source_location": "L2991"
+      "source_location": "L2990"
     },
     {
       "id": "server_app_main_rationale_875",
@@ -23404,7 +23404,7 @@
       "source_location": "L2370"
     },
     {
-      "id": "server_app_main_rationale_3209",
+      "id": "server_app_main_rationale_3208",
       "label": "Promote a case into a reusable template (P3-CASE-007, P6-TEMPLATE-003). The\u2026",
       "_origin": "ast",
       "community": 78,
@@ -23412,10 +23412,10 @@
       "file_type": "rationale",
       "norm_label": "promote a case into a reusable template (p3-case-007, p6-template-003). the...",
       "source_file": "server/app/main.py",
-      "source_location": "L3209"
+      "source_location": "L3208"
     },
     {
-      "id": "server_app_main_rationale_3252",
+      "id": "server_app_main_rationale_3251",
       "label": "List every saved template, newest first (P3-CASE-007).",
       "_origin": "ast",
       "community": 78,
@@ -23423,10 +23423,10 @@
       "file_type": "rationale",
       "norm_label": "list every saved template, newest first (p3-case-007).",
       "source_file": "server/app/main.py",
-      "source_location": "L3252"
+      "source_location": "L3251"
     },
     {
-      "id": "server_app_main_rationale_3271",
+      "id": "server_app_main_rationale_3270",
       "label": "Rebuild a stored shape, or None when the template carries none. A corrupt shape\u2026",
       "_origin": "ast",
       "community": 78,
@@ -23434,7 +23434,7 @@
       "file_type": "rationale",
       "norm_label": "rebuild a stored shape, or none when the template carries none. a corrupt shape...",
       "source_file": "server/app/main.py",
-      "source_location": "L3271"
+      "source_location": "L3270"
     },
     {
       "id": "server_app_models_rationale_307",
@@ -23888,7 +23888,7 @@
       "source_location": "L1"
     },
     {
-      "id": "server_app_main_rationale_3318",
+      "id": "server_app_main_rationale_3317",
       "label": "Remove a template. Cases created from it are unaffected (P3-CASE-007).",
       "_origin": "ast",
       "community": 80,
@@ -23896,7 +23896,7 @@
       "file_type": "rationale",
       "norm_label": "remove a template. cases created from it are unaffected (p3-case-007).",
       "source_file": "server/app/main.py",
-      "source_location": "L3318"
+      "source_location": "L3317"
     },
     {
       "id": "server_app_main_rationale_673",
@@ -29938,7 +29938,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/app/main.py",
-      "source_location": "L3307",
+      "source_location": "L3306",
       "weight": 1.0
     },
     {
@@ -30082,7 +30082,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/app/main.py",
-      "source_location": "L2999",
+      "source_location": "L2998",
       "weight": 1.0
     },
     {
@@ -30094,7 +30094,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/app/main.py",
-      "source_location": "L3030",
+      "source_location": "L3029",
       "weight": 1.0
     },
     {
@@ -30106,7 +30106,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/app/main.py",
-      "source_location": "L3037",
+      "source_location": "L3036",
       "weight": 1.0
     },
     {
@@ -30118,7 +30118,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/app/main.py",
-      "source_location": "L3044",
+      "source_location": "L3043",
       "weight": 1.0
     },
     {
@@ -30406,7 +30406,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/app/main.py",
-      "source_location": "L3126",
+      "source_location": "L3125",
       "weight": 1.0
     },
     {
@@ -30430,7 +30430,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/app/main.py",
-      "source_location": "L2943",
+      "source_location": "L2942",
       "weight": 1.0
     },
     {
@@ -30442,7 +30442,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/app/main.py",
-      "source_location": "L2963",
+      "source_location": "L2962",
       "weight": 1.0
     },
     {
@@ -30454,7 +30454,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/app/main.py",
-      "source_location": "L2970",
+      "source_location": "L2969",
       "weight": 1.0
     },
     {
@@ -30502,7 +30502,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/app/main.py",
-      "source_location": "L3193",
+      "source_location": "L3192",
       "weight": 1.0
     },
     {
@@ -30514,7 +30514,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/app/main.py",
-      "source_location": "L3196",
+      "source_location": "L3195",
       "weight": 1.0
     },
     {
@@ -30526,7 +30526,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/app/main.py",
-      "source_location": "L3174",
+      "source_location": "L3173",
       "weight": 1.0
     },
     {
@@ -30538,7 +30538,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/app/main.py",
-      "source_location": "L3177",
+      "source_location": "L3176",
       "weight": 1.0
     },
     {
@@ -30790,7 +30790,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/app/main.py",
-      "source_location": "L3068",
+      "source_location": "L3067",
       "weight": 1.0
     },
     {
@@ -30802,7 +30802,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/app/main.py",
-      "source_location": "L3077",
+      "source_location": "L3076",
       "weight": 1.0
     },
     {
@@ -30922,7 +30922,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/app/main.py",
-      "source_location": "L3147",
+      "source_location": "L3146",
       "weight": 1.0
     },
     {
@@ -30934,7 +30934,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/app/main.py",
-      "source_location": "L3150",
+      "source_location": "L3149",
       "weight": 1.0
     },
     {
@@ -31042,7 +31042,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/app/main.py",
-      "source_location": "L2898",
+      "source_location": "L2897",
       "weight": 1.0
     },
     {
@@ -31054,7 +31054,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/app/main.py",
-      "source_location": "L2905",
+      "source_location": "L2904",
       "weight": 1.0
     },
     {
@@ -31162,7 +31162,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/app/main.py",
-      "source_location": "L3096",
+      "source_location": "L3095",
       "weight": 1.0
     },
     {
@@ -31174,7 +31174,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/app/main.py",
-      "source_location": "L3103",
+      "source_location": "L3102",
       "weight": 1.0
     },
     {
@@ -31222,7 +31222,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/app/main.py",
-      "source_location": "L3258",
+      "source_location": "L3257",
       "weight": 1.0
     },
     {
@@ -31234,7 +31234,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/app/main.py",
-      "source_location": "L3263",
+      "source_location": "L3262",
       "weight": 1.0
     },
     {
@@ -31282,7 +31282,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/app/main.py",
-      "source_location": "L3231",
+      "source_location": "L3230",
       "weight": 1.0
     },
     {
@@ -31294,7 +31294,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/app/main.py",
-      "source_location": "L3232",
+      "source_location": "L3231",
       "weight": 1.0
     },
     {
@@ -31678,7 +31678,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/app/main.py",
-      "source_location": "L3279",
+      "source_location": "L3278",
       "weight": 1.0
     },
     {
@@ -31690,7 +31690,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/app/main.py",
-      "source_location": "L3279",
+      "source_location": "L3278",
       "weight": 1.0
     },
     {
@@ -41314,7 +41314,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/tests/test_multi_agent.py",
-      "source_location": "L188",
+      "source_location": "L195",
       "weight": 1.0
     },
     {
@@ -41326,7 +41326,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/tests/test_multi_agent.py",
-      "source_location": "L197",
+      "source_location": "L204",
       "weight": 1.0
     },
     {
@@ -41338,7 +41338,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/tests/test_multi_agent.py",
-      "source_location": "L249",
+      "source_location": "L256",
       "weight": 1.0
     },
     {
@@ -41350,7 +41350,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/tests/test_multi_agent.py",
-      "source_location": "L251",
+      "source_location": "L258",
       "weight": 1.0
     },
     {
@@ -41362,7 +41362,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/tests/test_multi_agent.py",
-      "source_location": "L253",
+      "source_location": "L260",
       "weight": 1.0
     },
     {
@@ -41374,7 +41374,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/tests/test_multi_agent.py",
-      "source_location": "L254",
+      "source_location": "L261",
       "weight": 1.0
     },
     {
@@ -41386,7 +41386,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/tests/test_multi_agent.py",
-      "source_location": "L171",
+      "source_location": "L178",
       "weight": 1.0
     },
     {
@@ -41398,7 +41398,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/tests/test_multi_agent.py",
-      "source_location": "L173",
+      "source_location": "L180",
       "weight": 1.0
     },
     {
@@ -41410,7 +41410,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/tests/test_multi_agent.py",
-      "source_location": "L174",
+      "source_location": "L181",
       "weight": 1.0
     },
     {
@@ -41422,7 +41422,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/tests/test_multi_agent.py",
-      "source_location": "L174",
+      "source_location": "L181",
       "weight": 1.0
     },
     {
@@ -41434,7 +41434,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/tests/test_multi_agent.py",
-      "source_location": "L233",
+      "source_location": "L240",
       "weight": 1.0
     },
     {
@@ -41494,7 +41494,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/tests/test_multi_agent.py",
-      "source_location": "L208",
+      "source_location": "L215",
       "weight": 1.0
     },
     {
@@ -41506,7 +41506,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/tests/test_multi_agent.py",
-      "source_location": "L210",
+      "source_location": "L217",
       "weight": 1.0
     },
     {
@@ -41518,7 +41518,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/tests/test_multi_agent.py",
-      "source_location": "L211",
+      "source_location": "L218",
       "weight": 1.0
     },
     {
@@ -41530,12 +41530,36 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/tests/test_multi_agent.py",
-      "source_location": "L303",
+      "source_location": "L321",
       "weight": 1.0
     },
     {
       "source": "server_tests_test_multi_agent_test_reading_a_role_proposes_nothing",
       "target": "server_tests_test_multi_agent_case_with_a_finding",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "server/tests/test_multi_agent.py",
+      "source_location": "L323",
+      "weight": 1.0
+    },
+    {
+      "source": "server_tests_test_multi_agent_test_reading_a_role_proposes_nothing",
+      "target": "server_tests_test_multi_agent_role",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "server/tests/test_multi_agent.py",
+      "source_location": "L324",
+      "weight": 1.0
+    },
+    {
+      "source": "server_tests_test_multi_agent_test_the_export_round_trip_carries_the_role",
+      "target": "server_tests_test_multi_agent_temp_env",
       "relation": "calls",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -41546,30 +41570,6 @@
       "weight": 1.0
     },
     {
-      "source": "server_tests_test_multi_agent_test_reading_a_role_proposes_nothing",
-      "target": "server_tests_test_multi_agent_role",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "server/tests/test_multi_agent.py",
-      "source_location": "L306",
-      "weight": 1.0
-    },
-    {
-      "source": "server_tests_test_multi_agent_test_the_export_round_trip_carries_the_role",
-      "target": "server_tests_test_multi_agent_temp_env",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "server/tests/test_multi_agent.py",
-      "source_location": "L287",
-      "weight": 1.0
-    },
-    {
       "source": "server_tests_test_multi_agent_test_the_export_round_trip_carries_the_role",
       "target": "server_tests_test_multi_agent_case_with_a_finding",
       "relation": "calls",
@@ -41578,7 +41578,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/tests/test_multi_agent.py",
-      "source_location": "L289",
+      "source_location": "L307",
       "weight": 1.0
     },
     {
@@ -41590,7 +41590,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/tests/test_multi_agent.py",
-      "source_location": "L290",
+      "source_location": "L308",
       "weight": 1.0
     },
     {
@@ -41602,7 +41602,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/tests/test_multi_agent.py",
-      "source_location": "L297",
+      "source_location": "L315",
       "weight": 1.0
     },
     {
@@ -41674,7 +41674,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/tests/test_multi_agent.py",
-      "source_location": "L266",
+      "source_location": "L284",
       "weight": 1.0
     },
     {
@@ -41686,7 +41686,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/tests/test_multi_agent.py",
-      "source_location": "L268",
+      "source_location": "L286",
       "weight": 1.0
     },
     {
@@ -41698,7 +41698,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/tests/test_multi_agent.py",
-      "source_location": "L269",
+      "source_location": "L287",
       "weight": 1.0
     },
     {
@@ -47002,7 +47002,7 @@
       "confidence_score": 1.0,
       "context": "decorator",
       "source_file": "server/app/main.py",
-      "source_location": "L3285",
+      "source_location": "L3284",
       "weight": 1.0
     },
     {
@@ -47062,7 +47062,7 @@
       "confidence_score": 1.0,
       "context": "decorator",
       "source_file": "server/app/main.py",
-      "source_location": "L2981",
+      "source_location": "L2980",
       "weight": 1.0
     },
     {
@@ -47122,7 +47122,7 @@
       "confidence_score": 1.0,
       "context": "decorator",
       "source_file": "server/app/main.py",
-      "source_location": "L3316",
+      "source_location": "L3315",
       "weight": 1.0
     },
     {
@@ -47170,7 +47170,7 @@
       "confidence_score": 1.0,
       "context": "decorator",
       "source_file": "server/app/main.py",
-      "source_location": "L3115",
+      "source_location": "L3114",
       "weight": 1.0
     },
     {
@@ -47182,7 +47182,7 @@
       "confidence_score": 1.0,
       "context": "decorator",
       "source_file": "server/app/main.py",
-      "source_location": "L2918",
+      "source_location": "L2917",
       "weight": 1.0
     },
     {
@@ -47218,7 +47218,7 @@
       "confidence_score": 1.0,
       "context": "decorator",
       "source_file": "server/app/main.py",
-      "source_location": "L3180",
+      "source_location": "L3179",
       "weight": 1.0
     },
     {
@@ -47230,7 +47230,7 @@
       "confidence_score": 1.0,
       "context": "decorator",
       "source_file": "server/app/main.py",
-      "source_location": "L3160",
+      "source_location": "L3159",
       "weight": 1.0
     },
     {
@@ -47326,7 +47326,7 @@
       "confidence_score": 1.0,
       "context": "decorator",
       "source_file": "server/app/main.py",
-      "source_location": "L3062",
+      "source_location": "L3061",
       "weight": 1.0
     },
     {
@@ -47398,7 +47398,7 @@
       "confidence_score": 1.0,
       "context": "decorator",
       "source_file": "server/app/main.py",
-      "source_location": "L3132",
+      "source_location": "L3131",
       "weight": 1.0
     },
     {
@@ -47434,7 +47434,7 @@
       "confidence_score": 1.0,
       "context": "decorator",
       "source_file": "server/app/main.py",
-      "source_location": "L2892",
+      "source_location": "L2891",
       "weight": 1.0
     },
     {
@@ -47494,7 +47494,7 @@
       "confidence_score": 1.0,
       "context": "decorator",
       "source_file": "server/app/main.py",
-      "source_location": "L3088",
+      "source_location": "L3087",
       "weight": 1.0
     },
     {
@@ -47518,7 +47518,7 @@
       "confidence_score": 1.0,
       "context": "decorator",
       "source_file": "server/app/main.py",
-      "source_location": "L3250",
+      "source_location": "L3249",
       "weight": 1.0
     },
     {
@@ -47554,7 +47554,7 @@
       "confidence_score": 1.0,
       "context": "decorator",
       "source_file": "server/app/main.py",
-      "source_location": "L3199",
+      "source_location": "L3198",
       "weight": 1.0
     },
     {
@@ -59265,7 +59265,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/main.py",
-      "source_location": "L2896",
+      "source_location": "L2895",
       "weight": 1.0
     },
     {
@@ -59276,7 +59276,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/main.py",
-      "source_location": "L2923",
+      "source_location": "L2922",
       "weight": 1.0
     },
     {
@@ -59287,7 +59287,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/main.py",
-      "source_location": "L2986",
+      "source_location": "L2985",
       "weight": 1.0
     },
     {
@@ -59309,7 +59309,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/main.py",
-      "source_location": "L3066",
+      "source_location": "L3065",
       "weight": 1.0
     },
     {
@@ -59320,7 +59320,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/main.py",
-      "source_location": "L3092",
+      "source_location": "L3091",
       "weight": 1.0
     },
     {
@@ -59331,7 +59331,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/main.py",
-      "source_location": "L3119",
+      "source_location": "L3118",
       "weight": 1.0
     },
     {
@@ -59342,7 +59342,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/main.py",
-      "source_location": "L3137",
+      "source_location": "L3136",
       "weight": 1.0
     },
     {
@@ -59353,7 +59353,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/main.py",
-      "source_location": "L3164",
+      "source_location": "L3163",
       "weight": 1.0
     },
     {
@@ -59364,7 +59364,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/main.py",
-      "source_location": "L3184",
+      "source_location": "L3183",
       "weight": 1.0
     },
     {
@@ -59375,7 +59375,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/main.py",
-      "source_location": "L3204",
+      "source_location": "L3203",
       "weight": 1.0
     },
     {
@@ -59386,7 +59386,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/main.py",
-      "source_location": "L3251",
+      "source_location": "L3250",
       "weight": 1.0
     },
     {
@@ -59397,7 +59397,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/main.py",
-      "source_location": "L3270",
+      "source_location": "L3269",
       "weight": 1.0
     },
     {
@@ -59408,7 +59408,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/main.py",
-      "source_location": "L3286",
+      "source_location": "L3285",
       "weight": 1.0
     },
     {
@@ -59430,7 +59430,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/main.py",
-      "source_location": "L3317",
+      "source_location": "L3316",
       "weight": 1.0
     },
     {
@@ -65084,7 +65084,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/tests/test_multi_agent.py",
-      "source_location": "L170",
+      "source_location": "L177",
       "weight": 1.0
     },
     {
@@ -65095,7 +65095,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/tests/test_multi_agent.py",
-      "source_location": "L187",
+      "source_location": "L194",
       "weight": 1.0
     },
     {
@@ -65106,7 +65106,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/tests/test_multi_agent.py",
-      "source_location": "L205",
+      "source_location": "L212",
       "weight": 1.0
     },
     {
@@ -65128,7 +65128,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/tests/test_multi_agent.py",
-      "source_location": "L232",
+      "source_location": "L239",
       "weight": 1.0
     },
     {
@@ -65139,7 +65139,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/tests/test_multi_agent.py",
-      "source_location": "L245",
+      "source_location": "L252",
       "weight": 1.0
     },
     {
@@ -65150,7 +65150,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/tests/test_multi_agent.py",
-      "source_location": "L265",
+      "source_location": "L283",
       "weight": 1.0
     },
     {
@@ -65161,7 +65161,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/tests/test_multi_agent.py",
-      "source_location": "L286",
+      "source_location": "L304",
       "weight": 1.0
     },
     {
@@ -65172,7 +65172,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/tests/test_multi_agent.py",
-      "source_location": "L301",
+      "source_location": "L319",
       "weight": 1.0
     },
     {
@@ -72909,36 +72909,36 @@
       "weight": 1.0
     },
     {
-      "source": "server_app_main_rationale_2897",
+      "source": "server_app_main_rationale_2896",
       "target": "server_app_main_list_chat",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/main.py",
-      "source_location": "L2897",
+      "source_location": "L2896",
       "weight": 1.0
     },
     {
-      "source": "server_app_main_rationale_2929",
+      "source": "server_app_main_rationale_2928",
       "target": "server_app_main_generate_code",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/main.py",
-      "source_location": "L2929",
+      "source_location": "L2928",
       "weight": 1.0
     },
     {
-      "source": "server_app_main_rationale_2991",
+      "source": "server_app_main_rationale_2990",
       "target": "server_app_main_create_plan",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/main.py",
-      "source_location": "L2991",
+      "source_location": "L2990",
       "weight": 1.0
     },
     {
@@ -72953,124 +72953,124 @@
       "weight": 1.0
     },
     {
-      "source": "server_app_main_rationale_3067",
+      "source": "server_app_main_rationale_3066",
       "target": "server_app_main_get_plan",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/main.py",
-      "source_location": "L3067",
+      "source_location": "L3066",
       "weight": 1.0
     },
     {
-      "source": "server_app_main_rationale_3095",
+      "source": "server_app_main_rationale_3094",
       "target": "server_app_main_list_plans",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/main.py",
-      "source_location": "L3095",
+      "source_location": "L3094",
       "weight": 1.0
     },
     {
-      "source": "server_app_main_rationale_3120",
+      "source": "server_app_main_rationale_3119",
       "target": "server_app_main_export_case_package",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/main.py",
-      "source_location": "L3120",
+      "source_location": "L3119",
       "weight": 1.0
     },
     {
-      "source": "server_app_main_rationale_3138",
+      "source": "server_app_main_rationale_3137",
       "target": "server_app_main_import_case_package",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/main.py",
-      "source_location": "L3138",
+      "source_location": "L3137",
       "weight": 1.0
     },
     {
-      "source": "server_app_main_rationale_3165",
+      "source": "server_app_main_rationale_3164",
       "target": "server_app_main_get_case_learn_walk",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/main.py",
-      "source_location": "L3165",
+      "source_location": "L3164",
       "weight": 1.0
     },
     {
-      "source": "server_app_main_rationale_3185",
+      "source": "server_app_main_rationale_3184",
       "target": "server_app_main_get_case_history",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/main.py",
-      "source_location": "L3185",
+      "source_location": "L3184",
       "weight": 1.0
     },
     {
-      "source": "server_app_main_rationale_3209",
+      "source": "server_app_main_rationale_3208",
       "target": "server_app_main_promote_template",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/main.py",
-      "source_location": "L3209",
+      "source_location": "L3208",
       "weight": 1.0
     },
     {
-      "source": "server_app_main_rationale_3252",
+      "source": "server_app_main_rationale_3251",
       "target": "server_app_main_list_templates",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/main.py",
-      "source_location": "L3252",
+      "source_location": "L3251",
       "weight": 1.0
     },
     {
-      "source": "server_app_main_rationale_3271",
+      "source": "server_app_main_rationale_3270",
       "target": "server_app_main_shape_of",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/main.py",
-      "source_location": "L3271",
+      "source_location": "L3270",
       "weight": 1.0
     },
     {
-      "source": "server_app_main_rationale_3290",
+      "source": "server_app_main_rationale_3289",
       "target": "server_app_main_create_case_from_template",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/main.py",
-      "source_location": "L3290",
+      "source_location": "L3289",
       "weight": 1.0
     },
     {
-      "source": "server_app_main_rationale_3318",
+      "source": "server_app_main_rationale_3317",
       "target": "server_app_main_delete_template",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/app/main.py",
-      "source_location": "L3318",
+      "source_location": "L3317",
       "weight": 1.0
     },
     {
@@ -75923,36 +75923,36 @@
       "weight": 1.0
     },
     {
-      "source": "server_tests_test_multi_agent_rationale_206",
+      "source": "server_tests_test_multi_agent_rationale_213",
       "target": "server_tests_test_multi_agent_test_one_role_approval_cannot_authorise_another",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/tests/test_multi_agent.py",
-      "source_location": "L206",
+      "source_location": "L213",
       "weight": 1.0
     },
     {
-      "source": "server_tests_test_multi_agent_rationale_246",
+      "source": "server_tests_test_multi_agent_rationale_253",
       "target": "server_tests_test_multi_agent_test_a_failing_audit_is_recorded_without_touching_the_finding",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/tests/test_multi_agent.py",
-      "source_location": "L246",
+      "source_location": "L253",
       "weight": 1.0
     },
     {
-      "source": "server_tests_test_multi_agent_rationale_302",
+      "source": "server_tests_test_multi_agent_rationale_320",
       "target": "server_tests_test_multi_agent_test_reading_a_role_proposes_nothing",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/tests/test_multi_agent.py",
-      "source_location": "L302",
+      "source_location": "L320",
       "weight": 1.0
     },
     {
@@ -78669,7 +78669,7 @@
       "confidence_score": 0.85,
       "context": "argument",
       "source_file": "server/tests/test_multi_agent.py",
-      "source_location": "L197",
+      "source_location": "L204",
       "weight": 1.0
     },
     {
@@ -78681,7 +78681,7 @@
       "confidence_score": 0.85,
       "context": "argument",
       "source_file": "server/tests/test_multi_agent.py",
-      "source_location": "L251",
+      "source_location": "L258",
       "weight": 1.0
     },
     {
@@ -78693,7 +78693,7 @@
       "confidence_score": 0.85,
       "context": "argument",
       "source_file": "server/tests/test_multi_agent.py",
-      "source_location": "L173",
+      "source_location": "L180",
       "weight": 1.0
     },
     {
@@ -78705,7 +78705,7 @@
       "confidence_score": 0.85,
       "context": "argument",
       "source_file": "server/tests/test_multi_agent.py",
-      "source_location": "L239",
+      "source_location": "L246",
       "weight": 1.0
     },
     {
@@ -78729,7 +78729,7 @@
       "confidence_score": 0.85,
       "context": "argument",
       "source_file": "server/tests/test_multi_agent.py",
-      "source_location": "L210",
+      "source_location": "L217",
       "weight": 1.0
     },
     {
@@ -78741,7 +78741,7 @@
       "confidence_score": 0.85,
       "context": "argument",
       "source_file": "server/tests/test_multi_agent.py",
-      "source_location": "L305",
+      "source_location": "L323",
       "weight": 1.0
     },
     {
@@ -78753,7 +78753,7 @@
       "confidence_score": 0.85,
       "context": "argument",
       "source_file": "server/tests/test_multi_agent.py",
-      "source_location": "L289",
+      "source_location": "L307",
       "weight": 1.0
     },
     {
@@ -78789,7 +78789,7 @@
       "confidence_score": 0.85,
       "context": "argument",
       "source_file": "server/tests/test_multi_agent.py",
-      "source_location": "L268",
+      "source_location": "L286",
       "weight": 1.0
     },
     {
@@ -82941,7 +82941,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "server/tests/test_multi_agent.py",
-      "source_location": "L189",
+      "source_location": "L196",
       "weight": 1.0
     },
     {
@@ -82953,7 +82953,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "server/tests/test_multi_agent.py",
-      "source_location": "L250",
+      "source_location": "L257",
       "weight": 1.0
     },
     {
@@ -82965,7 +82965,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "server/tests/test_multi_agent.py",
-      "source_location": "L172",
+      "source_location": "L179",
       "weight": 1.0
     },
     {
@@ -82977,7 +82977,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "server/tests/test_multi_agent.py",
-      "source_location": "L234",
+      "source_location": "L241",
       "weight": 1.0
     },
     {
@@ -83001,7 +83001,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "server/tests/test_multi_agent.py",
-      "source_location": "L209",
+      "source_location": "L216",
       "weight": 1.0
     },
     {
@@ -83013,7 +83013,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "server/tests/test_multi_agent.py",
-      "source_location": "L304",
+      "source_location": "L322",
       "weight": 1.0
     },
     {
@@ -83025,7 +83025,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "server/tests/test_multi_agent.py",
-      "source_location": "L288",
+      "source_location": "L306",
       "weight": 1.0
     },
     {
@@ -83061,7 +83061,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "server/tests/test_multi_agent.py",
-      "source_location": "L267",
+      "source_location": "L285",
       "weight": 1.0
     },
     {
@@ -83973,7 +83973,7 @@
       "confidence_score": 0.95,
       "context": "generic_arg",
       "source_file": "server/app/main.py",
-      "source_location": "L2896",
+      "source_location": "L2895",
       "weight": 0.8
     },
     {
@@ -84045,7 +84045,7 @@
       "confidence_score": 0.95,
       "context": "generic_arg",
       "source_file": "server/app/main.py",
-      "source_location": "L3251",
+      "source_location": "L3250",
       "weight": 0.8
     },
     {
@@ -84105,7 +84105,7 @@
       "confidence_score": 0.95,
       "context": "parameter_type",
       "source_file": "server/app/main.py",
-      "source_location": "L3287",
+      "source_location": "L3286",
       "weight": 0.8
     },
     {
@@ -84189,7 +84189,7 @@
       "confidence_score": 0.95,
       "context": "parameter_type",
       "source_file": "server/app/main.py",
-      "source_location": "L2926",
+      "source_location": "L2925",
       "weight": 0.8
     },
     {
@@ -84201,7 +84201,7 @@
       "confidence_score": 0.95,
       "context": "parameter_type",
       "source_file": "server/app/main.py",
-      "source_location": "L3206",
+      "source_location": "L3205",
       "weight": 0.8
     },
     {
@@ -84321,7 +84321,7 @@
       "confidence_score": 0.95,
       "context": "return_type",
       "source_file": "server/app/main.py",
-      "source_location": "L3289",
+      "source_location": "L3288",
       "weight": 0.8
     },
     {
@@ -84393,7 +84393,7 @@
       "confidence_score": 0.95,
       "context": "return_type",
       "source_file": "server/app/main.py",
-      "source_location": "L2928",
+      "source_location": "L2927",
       "weight": 0.8
     },
     {
@@ -84429,7 +84429,7 @@
       "confidence_score": 0.95,
       "context": "return_type",
       "source_file": "server/app/main.py",
-      "source_location": "L3184",
+      "source_location": "L3183",
       "weight": 0.8
     },
     {
@@ -84441,7 +84441,7 @@
       "confidence_score": 0.95,
       "context": "return_type",
       "source_file": "server/app/main.py",
-      "source_location": "L3164",
+      "source_location": "L3163",
       "weight": 0.8
     },
     {
@@ -84525,7 +84525,7 @@
       "confidence_score": 0.95,
       "context": "return_type",
       "source_file": "server/app/main.py",
-      "source_location": "L3137",
+      "source_location": "L3136",
       "weight": 0.8
     },
     {
@@ -84549,7 +84549,7 @@
       "confidence_score": 0.95,
       "context": "return_type",
       "source_file": "server/app/main.py",
-      "source_location": "L3208",
+      "source_location": "L3207",
       "weight": 0.8
     },
     {
@@ -85842,5 +85842,5 @@
       "source_file": "verification/p0/REPORT.md"
     }
   ],
-  "built_at_commit": "2a50079092ddade5961108b5b59087a4f2dbfd44"
+  "built_at_commit": "76e6fe64376db93c30fb136dc5f351f13bb94110"
 }

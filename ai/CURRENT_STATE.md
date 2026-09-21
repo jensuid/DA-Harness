@@ -22,7 +22,34 @@ a versioned, forward-only migration path for the store, so a database from
 any past release opens, upgrades and keeps its rows (P6-MIGRATE-004);
 and an update check that tells an installed app a newer build exists - or
 says honestly that it could not tell (P6-UPDATE-005)**
-- **Active task:** P7-E2E-001 DONE - the whole app against a real server.
+- **Active task:** P7-WALK-001 DONE - the shipped shell, used by hand. The
+  automated artifacts drive contracts: the core through TestClient, the shell
+  through jsdom. Neither renders, so a walkthrough is the only check that a
+  panel shows the analyst the number behind it. This one drove the real shell
+  one keyboard action at a time - case created, file attached, the agent's
+  plan approved, its SQL run, interpreted, the draft accepted, validated, the
+  reviewer's audit approved, the chart rendered, the case asked a question, a
+  template promoted and a case started from it - reading the rendered DOM at
+  every step.
+  The loop closes honestly: validation answers `partially_supported` (the null
+  revenue trips the missing-data check while reproducibility passes) and the
+  LEARN panel says the trust loop ran, not that the answer is right.
+  One bug fixed: the reviewer's settled-step summary summed over a SET of
+  verdict strings, so a nine-axis audit reported at most one pass and one
+  concern ("9 axes, 1 pass, 1 concern, 0 fail" for 7 pass / 2 concern). Every
+  audit the shell has ever shown understated its own pass count. Counted per
+  axis now; the two audit tests derive their tallies from the recorded
+  evaluation.
+  Five findings are recorded, not fixed: evaluations do not travel with an
+  exported case (exporter.py never reads them); a stale agent step can be
+  approved after its write happened out of band, producing a duplicate
+  finding; the plan's contents, a run's result rows and the profile's
+  per-column null count are all persisted and none rendered; a draft's
+  grounds run together with its count ("2..32 row(s)"); and the chat and
+  generate-code inputs are adjacent near-identical single-line boxes.
+  Before it: P7-E2E-001 (real-server e2e), P7-SHELL-011 (the reviewer's
+  surface), P7-AGENT-001 (multi-agent core), P7-SHELL-010 (LEARN's surface),
+  P7-LEARN-001 (LEARN's core), P7-SHELL-009..002, P7-EVAL-001, P6 CLOSED.
   Every verification artifact in the repo drives the app in-process through
   Starlette's TestClient, which is fast and is what caught every regression
   fixed here - but it never binds a port, never parses a real multipart upload
@@ -50,7 +77,7 @@ says honestly that it could not tell (P6-UPDATE-005)**
   documented minimum but is no longer enforced by CI, and a green run no longer
   proves the exact Intel triple a local build produces. Restoring that needs a
   self-hosted Intel runner.
-- **Test status:** server 380 passed (336 + 22 evaluate + 9 learn + 13 multi-agent); web 78 passed
+- **Test status:** server 380 passed (the 2 multi-agent audit tests now assert the verdict tallies) (336 + 22 evaluate + 9 learn + 13 multi-agent); web 78 passed
   (CaseList 10, CaseCreation 3, CaseWorkspace 52, Templates 8, api 6 - the
   workspace gained the reviewer panel, on top of the LEARN panel, the evidence
   graph, EDA, the cited-case buttons, the promote panel, the templates section
@@ -177,6 +204,7 @@ says honestly that it could not tell (P6-UPDATE-005)**
 | P7-AGENT-001 multi-agent workflows (roles, core) | DONE |
 | P7-SHELL-011 the multi-agent surface (the reviewer) | DONE |
 | P7-E2E-001 the whole app against a real server | DONE |
+| P7-WALK-001 the shipped shell, used by hand | DONE |
 
 ## P6 progress
 

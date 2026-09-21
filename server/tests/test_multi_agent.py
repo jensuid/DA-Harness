@@ -162,6 +162,13 @@ def test_approving_the_reviewer_records_an_evaluation(tmp_path) -> None:
     assert settled and settled[0]["status"] == "done"
     assert "audited finding" in settled[0]["note"]
     assert "9 axes" in settled[0]["note"]
+    # The pass and concern counts are per axis, not per distinct verdict: a
+    # summary that collapses the verdicts to a set cannot count past one.
+    expected = {v: sum(a["verdict"] == v for a in evaluations[0]["findings"]) for v in ("pass", "concern", "fail")}
+    assert f"{expected['pass']} pass" in settled[0]["note"], settled[0]["note"]
+    assert f"{expected['concern']} concern" in settled[0]["note"], settled[0]["note"]
+    assert f"{expected['fail']} fail" in settled[0]["note"], settled[0]["note"]
+    assert expected["pass"] + expected["concern"] + expected["fail"] == 9
     # A clean artifact passes every axis, so no axis is named as failed.
     assert "0 fail" in settled[0]["note"]
     assert ": " not in settled[0]["note"].split("0 fail")[1]
@@ -258,6 +265,17 @@ def test_a_failing_audit_is_recorded_without_touching_the_finding(tmp_path) -> N
     settled = next(s for s in after["history"] if s["id"] == step_id)
     assert "1 fail" in settled["note"]
     assert "evidence: " in settled["note"]
+    # A mixed audit still counts every axis: the concern tally is not capped at
+    # one by collapsing the verdicts to a set.
+    dataset_id = client.get(f"/cases/{case_id}/datasets").json()[0]["id"]
+    audit = client.get(
+        f"/cases/{case_id}/datasets/{dataset_id}/evaluations"
+    ).json()[0]
+    counts = {v: sum(a["verdict"] == v for a in audit["findings"]) for v in ("pass", "concern", "fail")}
+    assert counts["pass"] + counts["concern"] + counts["fail"] == 9
+    assert f"{counts['pass']} pass" in settled["note"], settled["note"]
+    assert f"{counts['concern']} concern" in settled["note"], settled["note"]
+    assert f"{counts['fail']} fail" in settled["note"], settled["note"]
     # ...and the finding's own status is untouched, for any role.
     assert findings[0]["validation_status"] == before["validation_status"]
 

@@ -1,6 +1,88 @@
 # DAH - Handoff
 
 ## Next action
+**P7-WALK-001 is DONE**: the shipped shell, used by hand. Every other
+verification artifact in this repo drives a contract - the core through
+Starlette's TestClient, the shell through jsdom - and a contract does not
+render. This one sat in front of the actual product: a real server on :8123
+against an isolated data dir, a real headless Chrome over the DevTools
+protocol with genuine keyboard input, and the journey done the way an analyst
+does it - case created by keyboard, file attached, the agent's plan approved,
+its SQL run, interpreted, the draft accepted as a finding, validated, the
+reviewer's audit approved, the chart rendered, the case asked a question, a
+template promoted and a second case started from it. The rendered DOM was read
+at every step and checked against what the case actually holds.
+
+The loop closes, and the honesty budgets show up where they should: the
+profiler counts the duplicate, validation answers `partially_supported`
+because a null revenue trips the missing-data check while reproducibility
+itself passes, and the LEARN panel ends on "the trust loop ran, not that the
+answer is right".
+
+One bug, found only because a human reads what renders: the reviewer's
+settled-step summary summed over a **set** of verdict strings, so a
+nine-axis audit could never report more than one pass or one concern. Every
+audit the shell has ever shown understated its own pass count -
+"9 axes, 1 pass, 1 concern, 0 fail" for an audit that was 7 pass / 2 concern.
+`server/app/main.py` counts per axis now, and the two audit tests in
+`tests/test_multi_agent.py` derive their tallies from the recorded evaluation
+so the shape of the bug (counting distinct verdicts instead of axes) cannot
+pass again. 380 server tests green; the real-server e2e's audit step now
+prints "9 axes, 7 pass, 2 concern, 0 fail".
+
+### Findings recorded, not fixed (in priority order)
+
+- **Evaluations do not travel with an exported case.** `app/exporter.py` has
+  no reference to the evaluations table, so a package carries the audit's own
+  run (its code) but none of its nine-axis verdicts. A restored case has every
+  finding and none of its audits - the reviewer's whole purpose is an audit
+  trail that outlives the analyst. exporter + importer + models + tests.
+- **A stale agent step can be approved after its write happened out of band.**
+  The draft panel's "Accept as a finding" and the agent's pending "accept"
+  step are two paths to one endpoint; accepting out of band does not retire
+  the step, so approving it later records the finding twice. This walkthrough
+  produced a duplicate finding, and the chat then cited the unvalidated
+  duplicate as "the latest finding".
+- **Three numbers the core computes and the shell never renders:** the plan's
+  sub-questions and hypotheses, a run's result rows, and the profile's
+  per-column null count. The analyst approves "Plan the analysis from the
+  profile" having never seen the plan, and reads "sql over sales.csv - 2
+  rows" without the rows. Each is a panel over an existing contract; none
+  needs a new endpoint. (The duplicate IS shown; the null is not.)
+- **A draft's grounds run together with its count** - "row_count ranges
+  2..32 row(s)" is the range `2..3` butted against "2 row(s)".
+- **The chat and generate-code inputs are adjacent near-identical boxes** -
+  "What would you like to know?" and "How many datasets does this case have?"
+  This walkthrough typed a chat question into the code generator first.
+
+### What is unbuilt, in priority order
+
+- **A release.** Every P7 checklist item that builds something is delivered,
+  and now both verified against a real server *and* walked through the shipped
+  shell. Seventeen tasks have landed since v0.1.0; `0.2.0` is the honest next
+  label. The pipeline publishes per tag, and the update check is already
+  behind the **Check for Updates...** menu item.
+- **The findings above**, in the order listed. The first two are correctness
+  gaps in shipped capability; the third is the distance between "works" and
+  "usable" that this task existed to measure.
+- **The two endpoint-only surfaces, by design.** `/schema-version` answers "is
+  my data safe with this build", a question a support conversation asks rather
+  than a step in an analysis.
+- **Deferred, not dropped:** signing (DEC-006, the slot is in `release.yml`),
+  cloud sync, team collaboration, warehouse connectors, enterprise governance.
+
+### If the next step is a release
+
+Tag `v<x.y.z>` where x.y.z matches server/pyproject.toml. The published build
+is arm64 and unsigned, flagged pre-release (DEC-006). Seventeen tasks have
+landed since v0.1.0, so `0.2.0` is the honest next label when a release is
+wanted.
+
+Nothing is unblocked-but-undone.
+
+---
+
+## Next action
 **P7-E2E-001 is DONE**: the whole app, against a real server. Every other
 verification artifact in this repo drives the app in-process through
 Starlette's TestClient - fast, and what caught every regression fixed here -

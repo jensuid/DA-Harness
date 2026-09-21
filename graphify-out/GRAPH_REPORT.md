@@ -1,7 +1,7 @@
 # Graph Report - DA-Harness  (2026-09-21)
 
 ## Corpus Check
-- 123 files · ~204,788 words
+- 123 files · ~207,371 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 7 file(s) not represented in the graph (top: (none) 2, .icns 1, .ico 1)
 
@@ -11,7 +11,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `2a500790`
+- Built from commit: `76e6fe64`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
