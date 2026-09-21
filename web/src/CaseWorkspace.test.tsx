@@ -33,6 +33,10 @@ vi.mock('./api', async (importOriginal) => {
     proposeAgentStep: vi.fn(),
     approveAgentStep: vi.fn(),
     rejectAgentStep: vi.fn(),
+    getRoleAgentState: vi.fn(),
+    proposeRoleAgentStep: vi.fn(),
+    approveRoleAgentStep: vi.fn(),
+    rejectRoleAgentStep: vi.fn(),
     promoteCaseToTemplate: vi.fn(),
   }
 })
@@ -255,6 +259,7 @@ function mockEmptyCase() {
   vi.mocked(api.profileDataset).mockResolvedValue(profile)
   vi.mocked(api.listEvaluations).mockResolvedValue([])
   vi.mocked(api.getAgentState).mockResolvedValue(agentIdle())
+  vi.mocked(api.getRoleAgentState).mockResolvedValue(agentIdle({ role: 'reviewer' }))
   vi.mocked(api.getEvidenceGraph).mockResolvedValue(evidenceGraph)
   vi.mocked(api.getCaseHistory).mockResolvedValue(caseHistory)
   vi.mocked(api.getLearnWalk).mockResolvedValue(learnWalk)
@@ -264,6 +269,7 @@ function agentStep(overrides: object = {}): api.AgentStep {
   return {
     id: 's1',
     case_id: 'c1',
+    role: 'analyst',
     kind: 'analyze',
     payload: { kind: 'sql', code: 'SELECT 1', variant: 0 },
     source: 'deterministic',
@@ -276,7 +282,7 @@ function agentStep(overrides: object = {}): api.AgentStep {
 }
 
 function agentIdle(state: object = {}): api.AgentState {
-  return { case_id: 'c1', pending: null, history: [], ...state }
+  return { case_id: 'c1', role: 'analyst', pending: null, history: [], ...state }
 }
 
 function finding(axis: string, verdict: string, detail: string) {
@@ -792,6 +798,251 @@ describe('CaseWorkspace', () => {
     expect(alert).toHaveTextContent(/not this case's pending step/i)
     expect(alert.textContent).not.toContain('[object Object]')
   })
+
+  it('shows the reviewer beside the analyst, distinguishable on one page', async () => {
+    // Two agent panels share a workspace. They must not share their wording,
+    // or a reader - and a matcher - cannot tell the analysis loop from the
+    // audit loop (P7-SHELL-011).
+    mockEmptyCase()
+    vi.mocked(api.getRoleAgentState).mockResolvedValue(
+      agentIdle({
+        role: 'reviewer',
+        pending: agentStep({
+          id: 'v1',
+          role: 'reviewer',
+          kind: 'evaluate',
+          payload: {
+            dataset_id: 'd1',
+            run_id: 'r1',
+            finding_id: 'f1',
+            kind: 'sql',
+            code: 'SELECT region, SUM(revenue) FROM sales GROUP BY 1',
+            claim: 'North leads revenue',
+          },
+        }),
+      }),
+    )
+
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+    expect(await screen.findByText(/audit the finding: north leads revenue/i)).toBeInTheDocument()
+    // Each panel names the role it works in, and each carries its own button.
+    expect(screen.getByRole('heading', { name: 'Agent' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Reviewer' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /propose the next step/i })).toBeInTheDocument()
+    // A pending audit makes the reviewer's button a re-derive, the way the
+    // analyst's does - and the wording is its own, so the two panels never
+    // answer one button name between them.
+    expect(
+      screen.getByRole('button', { name: /re-derive the next audit/i }),
+    ).toBeInTheDocument()
+  })
+
+  it('the reviewer proposes an audit and it is idempotent', async () => {
+    mockEmptyCase()
+    vi.mocked(api.proposeRoleAgentStep).mockResolvedValue(
+      agentIdle({
+        role: 'reviewer',
+        pending: agentStep({
+          id: 'v1',
+          role: 'reviewer',
+          kind: 'evaluate',
+          payload: { claim: 'North leads revenue' },
+        }),
+      }),
+    )
+
+    const user = userEvent.setup()
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+    await screen.findByText(/nothing is pending review/i)
+
+    await user.click(screen.getByRole('button', { name: /propose the next audit/i }))
+    await waitFor(() =>
+      expect(api.proposeRoleAgentStep).toHaveBeenCalledWith('c1', 'reviewer'),
+    )
+
+    // A second click is the same contract: the pending step comes back
+    // unchanged, and two calls never yield two audits.
+    await user.click(screen.getByRole('button', { name: /re-derive the next audit/i }))
+    await waitFor(() =>
+      expect(api.proposeRoleAgentStep).toHaveBeenCalledTimes(2),
+    )
+    expect(await screen.findByText(/audit the finding: north leads revenue/i)).toBeInTheDocument()
+    // The analyst's panel was untouched by the reviewer's proposal.
+    expect(api.proposeAgentStep).not.toHaveBeenCalled()
+  })
+
+  it('the reviewer approves an audit and its verdict appears beside the finding', async () => {
+    mockEmptyCase()
+    vi.mocked(api.getRoleAgentState)
+      .mockResolvedValueOnce(
+        agentIdle({
+          role: 'reviewer',
+          pending: agentStep({
+            id: 'v1',
+            role: 'reviewer',
+            kind: 'evaluate',
+            payload: { claim: 'North leads revenue' },
+          }),
+        }),
+      )
+      .mockResolvedValue(
+        agentIdle({
+          role: 'reviewer',
+          history: [
+            agentStep({
+              id: 'v1',
+              role: 'reviewer',
+              kind: 'evaluate',
+              status: 'done',
+              note: 'audited finding f1: 9 axes, 8 pass, 1 concern, 0 fail',
+            }),
+          ],
+        }),
+      )
+    vi.mocked(api.approveRoleAgentStep).mockResolvedValue(
+      agentIdle({
+        role: 'reviewer',
+        history: [
+          agentStep({
+            id: 'v1',
+            role: 'reviewer',
+            kind: 'evaluate',
+            status: 'done',
+            note: 'audited finding f1: 9 axes, 8 pass, 1 concern, 0 fail',
+          }),
+        ],
+      }),
+    )
+    // The write landed through the evaluate endpoint, so the workspace reloads
+    // and the EVALUATE panel shows the audit the reviewer ran.
+    vi.mocked(api.listEvaluations).mockResolvedValue([
+      evaluation({
+        claim: 'North leads revenue',
+        verdicts: cleanFindings(),
+      }),
+    ])
+
+    const user = userEvent.setup()
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+    await user.click(
+      await screen.findByRole('button', { name: /approve and run/i }),
+    )
+
+    await waitFor(() =>
+      expect(api.approveRoleAgentStep).toHaveBeenCalledWith('c1', 'reviewer', 'v1'),
+    )
+    // The analyst's approval was not spent on the reviewer's write.
+    expect(api.approveAgentStep).not.toHaveBeenCalled()
+    expect(
+      await screen.findByText(/audited finding f1: 9 axes, 8 pass, 1 concern, 0 fail/i),
+    ).toBeInTheDocument()
+    // The audit went through the same evaluate endpoint a human audit uses, so
+    // it is a recorded evaluation - readable in the EVALUATE panel beside the
+    // finding it judged, not only in the reviewer's own trail.
+    expect(await screen.findByText('North leads revenue')).toBeInTheDocument()
+    expect(screen.getByText(/every axis passed/)).toBeInTheDocument()
+  })
+
+  it('the reviewer rejects with a reason and writes nothing', async () => {
+    mockEmptyCase()
+    vi.mocked(api.getRoleAgentState)
+      .mockResolvedValueOnce(
+        agentIdle({
+          role: 'reviewer',
+          pending: agentStep({
+            id: 'v1',
+            role: 'reviewer',
+            kind: 'evaluate',
+            payload: { claim: 'North leads revenue' },
+          }),
+        }),
+      )
+      .mockResolvedValue(
+        agentIdle({
+          role: 'reviewer',
+          history: [
+            agentStep({
+              id: 'v1',
+              role: 'reviewer',
+              kind: 'evaluate',
+status: 'rejected',
+              note: 'the claim overstates the run',
+            }),
+          ],
+        }),
+      )
+    vi.mocked(api.rejectRoleAgentStep).mockResolvedValue(
+      agentIdle({
+        role: 'reviewer',
+        history: [
+          agentStep({
+            id: 'v1',
+            role: 'reviewer',
+            kind: 'evaluate',
+status: 'rejected',
+            note: 'the claim overstates the run',
+          }),
+        ],
+      }),
+    )
+
+    const user = userEvent.setup()
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+    await screen.findByText(/audit the finding: north leads revenue/i)
+
+    await user.type(
+      screen.getByLabelText(/reason for rejecting/i),
+      'the claim overstates the run',
+    )
+    await user.click(screen.getByRole('button', { name: /reject/i }))
+
+    await waitFor(() =>
+      expect(api.rejectRoleAgentStep).toHaveBeenCalledWith(
+        'c1',
+        'reviewer',
+        'v1',
+        'the claim overstates the run',
+      ),
+    )
+    expect(api.approveRoleAgentStep).not.toHaveBeenCalled()
+    expect(await screen.findByText(/✗ evaluate/i)).toBeInTheDocument()
+  })
+
+  it('a cross-role approval is a sentence naming the other role, not an object', async () => {
+    // An approval for the reviewer's step sent to the analyst's endpoint is a
+    // 409 whose sentence names the role's own pending step - one role's write
+    // is never authorised by another role's approval.
+    mockEmptyCase()
+    vi.mocked(api.getRoleAgentState).mockResolvedValue(
+      agentIdle({
+        role: 'reviewer',
+        pending: agentStep({
+          id: 'v1',
+          role: 'reviewer',
+          kind: 'evaluate',
+          payload: { claim: 'North leads revenue' },
+        }),
+      }),
+    )
+    vi.mocked(api.approveRoleAgentStep).mockRejectedValue(
+      new api.ApiError(
+        409,
+        "the step id is not this role's pending step (role: reviewer)",
+      ),
+    )
+
+    const user = userEvent.setup()
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+    await user.click(
+      await screen.findByRole('button', { name: /approve and run/i }),
+    )
+
+    const alerts = await screen.findAllByRole('alert')
+    const said = alerts.map((a) => a.textContent).join('\n')
+    expect(said).toMatch(/not this role's pending step \(role: reviewer\)/i)
+    expect(said).not.toContain('[object Object]')
+  })
+
 
   it('shows a cited previous case as a button that opens it', async () => {
     // Recall is only useful if the analyst can go and read what was concluded

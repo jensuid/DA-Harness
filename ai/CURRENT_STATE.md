@@ -1,6 +1,6 @@
 # DAH - Current State
 
- - **Phase:** P5 Production Grade - COMPLETE. P6 Post-Launch Evolution - COMPLETE: all 5 entry-checklist items. P7 Product Modes is IN PROGRESS (1 of 4, with eight web surfaces delivered): EVALUATE mode is DONE in the core and in the shell, the agent has a surface, a case can be renamed, duplicated and deleted from the list, templates are reachable from the shell, a cited previous case is something the analyst can follow, the "what should I look at first" steps are one panel away, a case's evidence graph is a review surface, and its history is one too. The web-shell gap - item 2 - is CLOSED: every capability with an endpoint has a surface. LEARN mode - item 3 - is DONE in the core (P7-LEARN-001) and in the shell (P7-SHELL-010): the guided Why -> What -> How -> Validate walk is a read-side projection over the workflow stages, and a Learn this case panel walks it beside the workflow it explains. The P7 checklist has EVALUATE, LEARN and multi-agent workflows delivered - the last as a core (P7-AGENT-001): a case carries agents in two roles, analyst and reviewer, each with its own pending step and audit trail behind the one approval gate both share. Only the reviewer's shell surface and the release remain. P4 Production Candidate was COMPLETE (all 5 checklist items: P4 Production Candidate was COMPLETE (all 5 checklist items:
+ - **Phase:** P5 Production Grade - COMPLETE. P6 Post-Launch Evolution - COMPLETE: all 5 entry-checklist items. P7 Product Modes is IN PROGRESS (1 of 4, with eight web surfaces delivered): EVALUATE mode is DONE in the core and in the shell, the agent has a surface, a case can be renamed, duplicated and deleted from the list, templates are reachable from the shell, a cited previous case is something the analyst can follow, the "what should I look at first" steps are one panel away, a case's evidence graph is a review surface, and its history is one too. The web-shell gap - item 2 - is CLOSED: every capability with an endpoint has a surface. LEARN mode - item 3 - is DONE in the core (P7-LEARN-001) and in the shell (P7-SHELL-010): the guided Why -> What -> How -> Validate walk is a read-side projection over the workflow stages, and a Learn this case panel walks it beside the workflow it explains. The P7 checklist has EVALUATE, LEARN and multi-agent workflows delivered - the last as a core (P7-AGENT-001): a case carries agents in two roles, analyst and reviewer, each with its own pending step and audit trail behind the one approval gate both share. The reviewer's shell surface is built too (P7-SHELL-011), so every P7 checklist item that builds something is delivered; the release is what remains. P4 Production Candidate was COMPLETE (all 5 checklist items: P4 Production Candidate was COMPLETE (all 5 checklist items:
   P4-VERIFY-001, P4-RELIABILITY-002, P4-UX-003 + P4-UX-004, P4-VALID-005,
   P4-PERF-006, P4-CI-007). P3 V1 is COMPLETE: all 10 entry-checklist items,
   231 server tests, and a P3 gate of its own. P5 Production Grade is IN
@@ -22,25 +22,23 @@ a versioned, forward-only migration path for the store, so a database from
 any past release opens, upgrades and keeps its rows (P6-MIGRATE-004);
 and an update check that tells an installed app a newer build exists - or
 says honestly that it could not tell (P6-UPDATE-005)**
-- **Active task:** P7-AGENT-001 DONE - multi-agent workflows, roles over one case (core).
-  P6-AGENT-002's driver proposes the analysis loop one human-approved step at a time, and
-  nothing examined what it produced. A case now carries a second role whose entire method is
-  EVALUATE: the **reviewer** derives the case's first finding whose (code, claim) has no
-  evaluation and proposes the audit of the run that backs it - the claim is the finding's own
-  statement, the code is the run's own query, and the verdict lands in the evaluations table
-  through the same endpoint a human audit uses. The **analyst** role is the existing decision
-  procedure, unchanged, and the legacy `/agent` family is it. This is orchestration, not
-  autonomy: every role shares the one approval gate, every write still runs through the
-  endpoint that owns it, a GET never proposes, and a role's approval never authorises the
-  other's (a mismatch answers 409 naming that role's own pending step). A failing verdict is
-  recorded beside the finding and never touches its validation_status - rerun support and an
-  audit are two honest notions. `agent_steps` gained a `role` column (migration 9), and the
-  export round trip carries it.
-  Before it: P7-SHELL-010 (LEARN's surface), P7-LEARN-001 (LEARN's core), P7-SHELL-009
-  (case history), P7-SHELL-008 (the evidence graph), P7-SHELL-007 (EDA), P7-SHELL-006
-  (cross-case memory), P7-SHELL-005 (templates), P7-SHELL-004 (case management),
-  P7-SHELL-003 (the agent surface), P7-SHELL-002 (EVALUATE's surface), P7-EVAL-001
-  (EVALUATE's core), P6 CLOSED.
+- **Active task:** P7-SHELL-011 DONE - the reviewer in the web shell.
+  P7-AGENT-001 gave a case two roles behind one approval gate, and nothing in the
+  shell reached the role family, so a second agent's audits were observable only
+  through the API - where the single driver stood before P7-SHELL-003. The
+  reviewer is now a second agent panel beside the analyst's: both load read-only
+  with the workspace, both propose only when the analyst asks, and every write
+  still runs through the endpoint that owns it. `web/src/api.ts` gained the
+  typed client for `/cases/{id}/agents/{role}`; `AgentPanel` is one component
+  with two sets of wording, so the two panels on one page are never ambiguous;
+  the reviewer sits after the findings panel because findings are its input, and
+  `stepSentence` names the finding's own claim for an `evaluate` step.
+  Before it: P7-AGENT-001 (multi-agent core), P7-SHELL-010 (LEARN's surface),
+  P7-LEARN-001 (LEARN's core), P7-SHELL-009 (case history), P7-SHELL-008 (the
+  evidence graph), P7-SHELL-007 (EDA), P7-SHELL-006 (cross-case memory),
+  P7-SHELL-005 (templates), P7-SHELL-004 (case management), P7-SHELL-003 (the
+  agent surface), P7-SHELL-002 (EVALUATE's surface), P7-EVAL-001 (EVALUATE's
+  core), P6 CLOSED.
 
 - **Known issues:** CI's runner is `macos-latest`, not the Ventura/Intel pin
   P5-CI-004 intended - GitHub retired the macos-13 pool, so the label hangs
@@ -48,23 +46,22 @@ says honestly that it could not tell (P6-UPDATE-005)**
   documented minimum but is no longer enforced by CI, and a green run no longer
   proves the exact Intel triple a local build produces. Restoring that needs a
   self-hosted Intel runner.
-- **Test status:** server 380 passed (336 + 22 evaluate + 9 learn + 13 multi-agent); web 73 passed
-  (CaseList 10, CaseCreation 3, CaseWorkspace 47, Templates 8, api 6 - the
-  workspace gained the LEARN panel, on top of the history panel, the evidence
+- **Test status:** server 380 passed (336 + 22 evaluate + 9 learn + 13 multi-agent); web 78 passed
+  (CaseList 10, CaseCreation 3, CaseWorkspace 52, Templates 8, api 6 - the
+  workspace gained the reviewer panel, on top of the LEARN panel, the evidence
   graph, EDA, the cited-case buttons, the promote panel, the templates section
   and the empty-204 fix); desktop shell 22 Rust tests
   (`cd desktop/src-tauri && cargo test [--features e2e]`, 19 unit + 3 e2e);
   P2, P3 and P4 gates PASS (P4: all 18 journey steps, all 10 exit criteria);
   first release v0.1.0 published from tag and checksum-verified.
-- **Next task:** P7-SHELL-011 - the reviewer in the web shell. The multi-agent core is
-  delivered (P7-AGENT-001); nothing in the shell reaches the role endpoints, so a second
-  agent's audits are observable today only through the API, exactly as the single driver was
-  before P7-SHELL-003. A typed client for `/cases/{id}/agents/{role}` and an agent panel per
-  role in the workspace. After it the P7 checklist is complete, and what remains is the
-  release itself (fifteen tasks have landed since v0.1.0, so `0.2.0` is the honest next
-  label when one is wanted).
-  Deferred, not dropped: signing (DEC-006, the slot is in `release.yml`), cloud sync, team
-  collaboration, warehouse connectors, enterprise governance.
+- **Next task:** the release. Every P7 checklist item that builds something is
+  delivered - EVALUATE, the web-shell gap, LEARN and multi-agent workflows, the
+  last in core (P7-AGENT-001) and in the shell (P7-SHELL-011). Fifteen tasks have
+  landed since v0.1.0, so `0.2.0` is the honest next label: tag `v0.2.0`, which
+  must match server/pyproject.toml, and the pipeline builds, smokes and publishes
+  an unsigned .app as a flagged pre-release with its checksum.
+  Deferred, not dropped: signing (DEC-006, the slot is in `release.yml`), cloud
+  sync, team collaboration, warehouse connectors, enterprise governance.
 
 - **Blockers:** none.
 
@@ -173,6 +170,7 @@ says honestly that it could not tell (P6-UPDATE-005)**
 | P7-LEARN-001 LEARN mode, the guided walk (core) | DONE |
 | P7-SHELL-010 LEARN mode in the web shell | DONE |
 | P7-AGENT-001 multi-agent workflows (roles, core) | DONE |
+| P7-SHELL-011 the multi-agent surface (the reviewer) | DONE |
 
 ## P6 progress
 

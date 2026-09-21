@@ -150,6 +150,7 @@ export interface Evaluation {
 export interface AgentStep {
   id: string
   case_id: string
+  role: string
   kind: string
   payload: Record<string, unknown>
   source: string
@@ -161,6 +162,7 @@ export interface AgentStep {
 
 export interface AgentState {
   case_id: string
+  role: string
   pending: AgentStep | null
   history: AgentStep[]
 }
@@ -700,6 +702,66 @@ export function rejectAgentStep(
   reason = '',
 ): Promise<AgentState> {
   return request<AgentState>(`/cases/${caseId}/agent/reject`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ step_id: stepId, reason }),
+  })
+}
+
+// --- the agents: roles over one case --------------------------------------
+// P7-AGENT-001. A case can be worked by more than one agent, each with a role
+// of its own: the analyst drives the analysis loop, the reviewer audits what
+// the case claims. They share one approval gate and never talk to each other -
+// each addresses the case, and the case's rows are the shared state.
+
+// The roles the core knows. An unknown role is a 400 naming the ones that
+// exist, so the shell names the roles it uses rather than sending a free
+// string.
+export type AgentRole = 'analyst' | 'reviewer'
+
+// The GET is read-only and never proposes, so two open panels commit nothing
+// on a refresh.
+export function getRoleAgentState(
+  caseId: string,
+  role: AgentRole,
+): Promise<AgentState> {
+  return request<AgentState>(`/cases/${caseId}/agents/${role}`)
+}
+
+// Idempotent: a role's pending step comes back unchanged. Each role derives
+// from the same artifacts independently, so the two panels' proposals are two
+// derivations, not one shared one.
+export function proposeRoleAgentStep(
+  caseId: string,
+  role: AgentRole,
+): Promise<AgentState> {
+  return request<AgentState>(`/cases/${caseId}/agents/${role}`, { method: 'POST' })
+}
+
+// The approval must name THIS role's current pending step. An id from the
+// other role's panel is a 409, because one role's write is never authorised
+// by another role's approval - and the 409's sentence names that role's own
+// pending step, which is the actionable thing. The response carries the next
+// proposal with it.
+export function approveRoleAgentStep(
+  caseId: string,
+  role: AgentRole,
+  stepId: string,
+): Promise<AgentState> {
+  return request<AgentState>(`/cases/${caseId}/agents/${role}/approve`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ step_id: stepId }),
+  })
+}
+
+export function rejectRoleAgentStep(
+  caseId: string,
+  role: AgentRole,
+  stepId: string,
+  reason = '',
+): Promise<AgentState> {
+  return request<AgentState>(`/cases/${caseId}/agents/${role}/reject`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ step_id: stepId, reason }),

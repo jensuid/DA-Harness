@@ -4030,3 +4030,138 @@ LESSON: two of the nine tests failed on the first run for a reason that was
         property is asserted with a mechanism that exists, and the assertion
         is stronger for checking the invariant at every step of a build rather
         than in one contrived state.
+
+
+### P7-SHELL-010 contract
+
+```
+TASK ID: P7-SHELL-010
+MILESTONE: P7 Product Modes
+CAPABILITY: UX (LEARN mode's surface)
+GOAL: A learner can open a case and be walked through the analytical process.
+      P7-LEARN-001 ships `GET /cases/{id}/learn` - the four phases, each with
+      what it teaches, the question a learner answers, and workflow's own
+      action for the stage to do next - and none of it is reachable from the
+      shell, so the mode exists as an endpoint and not as a product.
+
+CONTEXT: the walk is a read-side projection over the artifact counts; the
+         workspace already loads it per case. The endpoint answers 404 for an
+         unknown case, which the workspace's own load reports at the top, and a
+         done walk only ever claims the trust loop closed.
+
+INPUTS: the walk, read read-only.
+RELEVANT FILES: web/src/api.ts, web/src/CaseWorkspace.tsx,
+                web/src/CaseWorkspace.test.tsx
+REQUIRED CHANGE:
+  - web/src/api.ts: `LearnStage`, `LearnStep` and `LearnWalk` matching the
+    core's models, and `getLearnWalk(caseId)` for the GET.
+  - web/src/CaseWorkspace.tsx: a **Learn panel** beside the workflow panel it
+    explains - the workflow says where the case stands, this says why each
+    step of that exists and what a learner should be able to answer before
+    leaving it. It loads with the workspace, read-only. Each phase renders
+    its name, its status, what it is for, the question that tests
+    understanding, and the stages it covers as the actions that close them
+    (with workflow's own hints), so a learner reads what to do and why in one
+    place. The panel names the single phase and action to work on now, the
+    way the workflow panel names the next stage; a completed walk says the
+    loop closed, and says it as the core does - the loop ran, not that the
+    answer is right.
+  - A 404 degrades to muted guidance rather than an alert, for the same
+    reason as every other read-only panel: the workspace loads its own case
+    on mount, so the failure is already reported at the top. Any other
+    failure is the sentence in an alert.
+NON-GOALS: scoring or assessing the learner (the core has no measure of
+           understanding and the shell invents none), writing anything (the
+           panel calls only the GET; the learner's work happens through the
+           endpoints the stages name), a separate route or mode switch (the
+           workspace is one page, and the walk is a sequencing and teaching
+           layer over the panels already below it, not a second app),
+           dataset-specific teaching content (the phases are the process; the
+           specifics come from the profile and plan the learner reads).
+CONSTRAINTS: the panel calls only the read-only GET and writes nothing; `tsc
+             -b` passes; no new dependency; the existing workspace tests stay
+             green; the desktop bundle builds from the same source.
+ACCEPTANCE CRITERIA:
+- [x] the four phases render with their names and statuses
+- [x] each phase shows what it is for, and the question that tests it
+- [x] the stages render as the actions that close them, complete and incomplete
+- [x] the panel names the one phase and action to work on now
+- [x] a completed walk says the loop closed, without claiming the answer is
+      right
+- [x] an unknown case degrades to guidance rather than a duplicate alert
+- [x] the panel writes nothing and reloads with the workspace
+- [x] `tsc -b` and the web suite stay green
+TESTS: web/src/CaseWorkspace.test.tsx - the four phases of a fresh case with
+       the first current and the next action named, the teaching (purpose and
+       prompt per phase), the stage actions with their marks, a mid-walk case
+       whose current phase is What, the completed walk's sentence, and the 404
+       as guidance.
+VERIFICATION: cd web && npm test PASS; cd web && npm run build PASS; cd web &&
+              npm run build:desktop PASS. The server suite and the three gates
+              are untouched by this change and stay green.
+STATE UPDATE: mark P7-SHELL-010 done on pass; ROADMAP item 3 records LEARN
+              mode as delivered in core and shell.
+
+```
+
+TASK: P7-SHELL-010 - LEARN mode in the web shell
+ID: P7-SHELL-010
+PRIORITY: medium
+STATUS: DONE
+SUMMARY: P7-LEARN-001 ships the guided walk - the four phases, each with what
+         it teaches, the question a learner answers, and workflow's own action
+         for the stage to do next - and none of it was reachable from the
+         shell, so LEARN existed as an endpoint and not as a product.
+
+A **Learn this case panel** now sits beside the workflow panel it explains: the
+workflow says where the case stands, this says why each step of that exists and
+what a learner should be able to answer before leaving it. It loads with the
+workspace, read-only. Each phase renders its name and status, what it is for,
+the question that tests understanding, and the stages it covers as the actions
+that close them - with the workflow's own hints - so a learner reads what to do
+and why in one place, and a complete stage is marked while an open one is not.
+
+Two things carried from the core into the shell rather than reinvented:
+
+- **One thing to do next, never two.** The core guarantees at most one current
+  phase; the panel names that phase and its action as a single sentence, the
+  way the workflow panel names the next stage. A completed walk does not offer
+  one, because there is nothing to do.
+- **Graduation is not a claim about the answer.** A finished walk says the loop
+  closed - a finding was validated - and says it as the core does: the trust
+  loop *ran*, not that the answer is right. A learner is not graduated on a
+  stronger claim than the artifacts support.
+
+NON-GOALS held: no scoring or assessment (the core has no measure of
+             understanding and the shell invents none), no writes (the panel
+             calls only the GET; the learner's work happens through the
+             endpoints the stages name), no separate route or mode switch (the
+             workspace is one page, and the walk is a sequencing and teaching
+             layer over the panels already below it, not a second app), no
+             dataset-specific teaching content.
+CONSTRAINTS held: the panel calls only the read-only GET and writes nothing; no
+             new endpoint and no new dependency; `tsc -b` passes; the desktop
+             bundle builds from the same source.
+ACCEPTANCE CRITERIA: all 8 - see the checked boxes above.
+TESTS: 6 added to web/src/CaseWorkspace.test.tsx (web suite 67 -> 73) - the four
+       phases with exactly one current and the next action named, the teaching
+       per phase, the stage actions with their marks, a mid-walk case whose
+       current phase is How, the completed walk's honest sentence, and a 404
+       as guidance rather than an alert.
+VERIFICATION: cd web && npm test - 73 passed; cd web && npm run build PASS
+              (tsc -b + vite build); cd web && npm run build:desktop PASS. The
+              server suite and the three gates are untouched by this change
+              and stay green.
+LESSON: three existing tests broke, and all three for the reason the workspace
+        is one page. The ladder's stage rows are labelled with the workflow's
+        own actions, so "attach a dataset" now names both the data panel's
+        uploader and a stage row - and the uploader's test found two. Fixed by
+        saying which panel the input is in, which is the accessible thing too.
+        The other two were the same trap from the previous task come back: a
+        phrase that spans a <strong> cannot be matched by text, because the
+        matcher reads an element's own text nodes and not its descendants'. The
+        "work on now" sentence is plain text now. And one failure was not a
+        failure of its own test at all - the ambiguous-label test died midway
+        and left a queued mock value behind, so the next test received a
+        dataset id from the case before it. A test that fails can corrupt the
+        one after it, which is why the fix belongs to the first one.

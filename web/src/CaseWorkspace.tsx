@@ -5,6 +5,7 @@ import {
   type ClaimTrace,
   type ConversationTurn,
   type Dataset,
+  type AgentRole,
   type AgentState,
   type AgentStep,
   type DraftFinding,
@@ -26,6 +27,7 @@ import {
   attachDataset,
   draftFinding,
   approveAgentStep,
+  approveRoleAgentStep,
   evaluateDataset,
   getEvidenceGraph,
   getCaseHistory,
@@ -33,6 +35,7 @@ import {
   runEda,
   generateCode,
   getAgentState,
+  getRoleAgentState,
   getCase,
   getProgress,
   interpretRun,
@@ -44,7 +47,9 @@ import {
   postChat,
   profileDataset,
   proposeAgentStep,
+  proposeRoleAgentStep,
   rejectAgentStep,
+  rejectRoleAgentStep,
   runSql,
   validateFinding,
 } from './api'
@@ -77,6 +82,10 @@ export function CaseWorkspace({
   const [turns, setTurns] = useState<ConversationTurn[]>([])
   const [evaluations, setEvaluations] = useState<Evaluation[]>([])
   const [agent, setAgent] = useState<AgentState | null>(null)
+  // The reviewer is a second agent over the same case, with its own
+  // pending step and its own audit trail. Both load read-only: a GET
+  // never proposes, so opening a case commits nothing for either role.
+  const [reviewer, setReviewer] = useState<AgentState | null>(null)
   const [evidence, setEvidence] = useState<EvidenceGraph | null>(null)
   const [evidenceError, setEvidenceError] = useState<string | null>(null)
   const [evidenceEmpty, setEvidenceEmpty] = useState(false)
@@ -152,9 +161,10 @@ export function CaseWorkspace({
         setWalkMissing(err instanceof ApiError && err.status === 404)
         setWalkError(messageOf(err))
       }
-      // The agent's state is read-only here: a GET never proposes, so loading a
-      // page commits nothing.
+      // The agents' states are read-only here: a GET never proposes, so loading
+      // a page commits nothing, no matter how many roles the case is open in.
       setAgent(await getAgentState(caseId))
+      setReviewer(await getRoleAgentState(caseId, 'reviewer'))
       // Profiles are read-only context for the generator; a dataset without
       // one is unprofiled, and the UI says so rather than guessing.
       const profiled = await Promise.all(
@@ -200,6 +210,7 @@ export function CaseWorkspace({
       <LearnPanel walk={walk} error={walkError} missing={walkMissing} />
       <AgentPanel
         caseId={caseId}
+        role="analyst"
         agent={agent}
         onAgent={setAgent}
         onChanged={() => void load()}
@@ -220,6 +231,13 @@ export function CaseWorkspace({
       <FindingsPanel
         caseId={caseId}
         findings={findings}
+        onChanged={() => void load()}
+      />
+      <AgentPanel
+        caseId={caseId}
+        role="reviewer"
+        agent={reviewer}
+        onAgent={setReviewer}
         onChanged={() => void load()}
       />
       <EvidencePanel
@@ -1739,30 +1757,104 @@ const EVENT_KINDS: Record<string, string> = {
   finding_recorded: 'finding recorded',
 }
 
-// The agent: the loop's driver, as a surface (P7-SHELL-003). Every other panel
-// in this workspace is a step; this one is the sequence. It proposes the next
-// step from the case's own artifacts, and the human's yes or no is a button -
-// the write never happens without it, and the write then runs through the
-// endpoint that owns it, so the agent earns no privilege a hand-run case has.
+// The agents, as surfaces: the analyst (P7-SHELL-003) and the reviewer
+// (P7-SHELL-011). Every other panel in this workspace is a step; these are the
+// sequences. Each proposes from the case's own artifacts, and the human's yes
+// or no is a button - the write never happens without it, and the write then
+// runs through the endpoint that owns it, so an agent earns no privilege a
+// hand-run case has.
+//
+// Two panels on one page would be ambiguous if they shared their wording, so
+// each role carries its own: a reader and a matcher can tell the analysis loop
+// from the audit loop at a glance. The roles never talk to each other - each
+// addresses the case, and the case's rows are the shared state.
+const AGENT_COPY: Record<AgentRole, {
+  title: string
+  blurb: string
+  loading: string
+  propose: string
+  repropose: string
+  idle: string
+  stopped: string
+  history: string
+  error: string
+}> = {
+  analyst: {
+    title: 'Agent',
+    blurb:
+      'A plan that executes itself one approved write at a time. It proposes ' +
+      'the next step from what the case already has; nothing is written until ' +
+      'you approve it, and every write goes through the same endpoint a ' +
+      'hand-written call would.',
+    loading: "Loading the agent's state\u2026",
+    propose: 'Propose the next step',
+    repropose: 'Re-derive the next step',
+    idle: 'Nothing is pending. Propose a step, or work the panels below by hand.',
+    stopped: 'The agent stopped:',
+    history: 'What the agent has done',
+    error: 'The agent could not proceed:',
+  },
+  reviewer: {
+    title: 'Reviewer',
+    blurb:
+      "A second agent whose only method is EVALUATE: it takes each finding " +
+      "this case recorded and proposes auditing the run that backs it - the " +
+      "claim is the finding's own statement, the code the run's own query. " +
+      "The verdict is recorded beside the finding and never changes the " +
+      "finding's own validation status, because a rerun and an audit are two " +
+      "different claims.",
+    loading: "Loading the reviewer's state\u2026",
+    propose: 'Propose the next audit',
+    repropose: 'Re-derive the next audit',
+    idle:
+      'Nothing is pending review. Either the case has no findings yet, or ' +
+      'every finding whose run still carries its code has been audited.',
+    stopped: 'The reviewer stopped:',
+    history: 'What the reviewer has done',
+    error: 'The reviewer could not proceed:',
+  },
+}
+
 function AgentPanel({
   caseId,
+  role,
   agent,
   onAgent,
   onChanged,
 }: {
   caseId: string
+  role: AgentRole
   agent: AgentState | null
   onAgent: (state: AgentState) => void
   onChanged: () => void
 }) {
+  const copy = AGENT_COPY[role]
   const [busy, setBusy] = useState(false)
   const [reason, setReason] = useState('')
   const [error, setError] = useState<string | null>(null)
+  // The analyst is the legacy /agent family and the reviewer is the role
+  // family; both answer the same four verbs. The analyst keeps calling the
+  // functions it always did, so nothing about its behaviour changes.
+  const calls =
+    role === 'reviewer'
+      ? {
+          read: () => getRoleAgentState(caseId, role),
+          propose: () => proposeRoleAgentStep(caseId, role),
+          approve: (id: string) => approveRoleAgentStep(caseId, role, id),
+          reject: (id: string, why: string) =>
+            rejectRoleAgentStep(caseId, role, id, why),
+        }
+      : {
+          read: () => getAgentState(caseId),
+          propose: () => proposeAgentStep(caseId),
+          approve: (id: string) => approveAgentStep(caseId, id),
+          reject: (id: string, why: string) => rejectAgentStep(caseId, id, why),
+        }
 
   async function refresh() {
     setError(null)
     try {
-      onAgent(await getAgentState(caseId))
+      onAgent(await calls.read())
     } catch (err) {
       setError(messageOf(err))
     }
@@ -1775,7 +1867,7 @@ function AgentPanel({
     try {
       // Idempotent by contract: a pending step comes back unchanged, so an
       // impatient second click is a no-op rather than a second write.
-      onAgent(await proposeAgentStep(caseId))
+      onAgent(await calls.propose())
     } catch (err) {
       setError(messageOf(err))
     } finally {
@@ -1792,9 +1884,9 @@ function AgentPanel({
       if (approve) {
         // Approving runs the step and the response carries the next proposal,
         // so there is no second call to see what comes next.
-        onAgent(await approveAgentStep(caseId, stepId))
+        onAgent(await calls.approve(stepId))
       } else {
-        onAgent(await rejectAgentStep(caseId, stepId, reason))
+        onAgent(await calls.reject(stepId, reason))
         setReason('')
       }
       // The write changed the case's artifacts, so the whole workspace reloads -
@@ -1816,8 +1908,8 @@ function AgentPanel({
   if (!agent) {
     return (
       <div className="panel">
-        <h2>Agent</h2>
-        <p className="muted">Loading the agent's state…</p>
+        <h2>{copy.title}</h2>
+        <p className="muted">{copy.loading}</p>
       </div>
     )
   }
@@ -1828,13 +1920,8 @@ function AgentPanel({
 
   return (
     <div className="panel">
-      <h2>Agent</h2>
-      <p className="muted">
-        A plan that executes itself one approved write at a time. It proposes
-        the next step from what the case already has; nothing is written until
-        you approve it, and every write goes through the same endpoint a
-        hand-written call would.
-      </p>
+      <h2>{copy.title}</h2>
+      <p className="muted">{copy.blurb}</p>
       <div className="row">
         <button
           type="button"
@@ -1842,10 +1929,12 @@ function AgentPanel({
           disabled={busy}
           className="small"
         >
-          {busy ? 'Working…' : pending ? 'Re-derive the next step' : 'Propose the next step'}
+          {busy ? 'Working…' : pending ? copy.repropose : copy.propose}
         </button>
       </div>
-      {error && <p role="alert">The agent could not proceed: {error}</p>}
+      {error && (
+        <p role="alert">{copy.error} {error}</p>
+      )}
       {pending ? (
         <div className="proposal">
           <p className="muted">
@@ -1881,17 +1970,15 @@ function AgentPanel({
         </div>
       ) : end ? (
         <p className="muted">
-          The agent stopped:{' '}
+          {copy.stopped}{' '}
           {end.note || 'no further step is derivable from the case as it stands'}
         </p>
       ) : (
-        <p className="muted">
-          Nothing is pending. Propose a step, or work the panels below by hand.
-        </p>
+        <p className="muted">{copy.idle}</p>
       )}
       {agent.history.length > 0 && (
         <div className="subpanel">
-          <h3>What the agent has done</h3>
+          <h3>{copy.history}</h3>
           <ul className="items">
             {agent.history
               .slice()
@@ -1930,6 +2017,12 @@ function stepSentence(step: AgentStep): string {
       return `Render a ${str('kind') || 'bar'} chart of ${str('y')} by ${str('x')}`
     case 'validate':
       return 'Validate the finding'
+    case 'evaluate':
+      // The reviewer's only step: the claim is the finding's own statement,
+      // so the human approves an audit of something concrete.
+      return str('claim')
+        ? `Audit the finding: ${str('claim')}`
+        : 'Audit the finding against the nine axes'
     case 'end':
       return step.note || 'stop'
     default:

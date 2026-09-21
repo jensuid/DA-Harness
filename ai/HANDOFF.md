@@ -1,6 +1,49 @@
 # DAH - Handoff
 
 ## Next action
+**P7-SHELL-011 is DONE**: the reviewer is a second agent panel beside the
+analyst's. P7-AGENT-001 gave a case two roles behind one approval gate, and
+nothing in the shell reached the role family, so a second agent's audits were
+observable only through the API - exactly where the single driver stood before
+P7-SHELL-003. Both panels now load read-only with the workspace, both propose
+only when the analyst asks, and every write still runs through the endpoint that
+owns it.
+
+`web/src/api.ts` carries the typed client for the role family and the `role`
+field the core returns on a state and a step. `AgentPanel` is one component with
+two sets of wording chosen by role, so two panels on one page are never
+ambiguous - the reviewer says what the reviewer does, in its own words, and the
+analyst's strings are unchanged. The reviewer sits after the findings panel,
+because findings are its input; `stepSentence` names the finding's own claim for
+an `evaluate` step, so the human approves an audit of something concrete.
+
+The web suite is 78 tests (was 73: +5 in `CaseWorkspace.test.tsx`), `npm run
+build` passes - `tsc -b` runs first - and the desktop bundle builds from the same
+source. The server side is untouched by this change and stays at 380.
+
+### What is unbuilt, in priority order
+
+- **A release.** Every P7 checklist item that builds something is delivered -
+  EVALUATE (core and shell), the web-shell gap (eight surfaces), LEARN (core and
+  shell) and multi-agent workflows (core and shell). Sixteen tasks have landed
+  since v0.1.0; `0.2.0` is the honest next label. The pipeline publishes per tag,
+  and the update check is already behind the **Check for Updates...** menu item.
+- **The two endpoint-only surfaces, by design.** `/schema-version` answers "is my
+  data safe with this build", a question a support conversation asks rather than
+  a step in an analysis.
+- **Deferred, not dropped:** signing (DEC-006, the slot is in `release.yml`), cloud
+  sync, team collaboration, warehouse connectors, enterprise governance.
+
+### If the next step is a release
+
+Tag `v<x.y.z>` where x.y.z matches server/pyproject.toml. The published build is
+arm64 and unsigned, flagged pre-release (DEC-006). Sixteen tasks have landed since
+v0.1.0, so `0.2.0` is the honest next label when a release is wanted.
+
+Nothing is unblocked-but-undone.
+
+---
+
 **P7-AGENT-001 is DONE**: a case can be worked by more than one agent, each with a
 role of its own, and the roles disagree in the case's own audit trail rather than in
 private. P6-AGENT-002's driver proposes the analysis loop one human-approved step at a
@@ -214,6 +257,33 @@ Nothing is unblocked-but-undone.
 ---
 
 ## What was completed
+- P7-SHELL-011 PASSED: the reviewer in the web shell. P7-AGENT-001's role family
+  answered only through the API, so a second agent's audits - the whole point of
+  the role - were as unreadable as the single driver's loop was before
+  P7-SHELL-003. The workspace now carries an agent panel per role: the analyst
+  where it always was, and a reviewer after the findings panel, because findings
+  are what it audits.
+  `web/src/api.ts` gains `getRoleAgentState`, `proposeRoleAgentStep`,
+  `approveRoleAgentStep` and `rejectRoleAgentStep` against
+  `/cases/{id}/agents/{role}`, plus the `role` field on `AgentState` and
+  `AgentStep`. The legacy analyst client functions stay and the analyst panel
+  keeps calling them, so its behaviour - and every existing test - is unchanged.
+  `AgentPanel` parameterises every string it renders, so the two roles never
+  share a phrase a reader or a matcher could confuse: the reviewer's idle state
+  says nothing is pending *review*, its button proposes the next *audit*, and its
+  history is what the reviewer has done.
+  LESSON: the panel's idle paragraph was the last hardcoded string - every other
+  phrase had been parameterised, and it was invisible to the eye because the
+  analyst's wording is correct on the analyst's panel. The reviewer was telling
+  the analyst's lie ("nothing is pending, propose a step") on a case with no
+  findings, which is the reviewer's honest finished state rather than a thing it
+  could act on. The test found it, reading the rendered panel's own text. Two
+  smaller traps of the same family: a recorded audit's summary shares its
+  paragraph with the artifact kind ("sql — every axis passed"), so an exact
+  string match cannot reach the phrase and a regex must; and a step's kind is
+  not its status, so a rejected audit that omitted `kind: 'evaluate'` rendered as
+  a rejected `analyze` and read the reviewer's history as the analyst's.
+
 - P7-AGENT-001 PASSED: multi-agent workflows, roles over one case (core). The single
   driver (P6-AGENT-002) proposes the analysis loop one human-approved step at a time,
   and nothing examined what it produced. A second role joins it whose entire method is
