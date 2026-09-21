@@ -45,7 +45,16 @@ import { PromoteTemplate } from './Templates'
 // panel proposes; the buttons that write state post to the endpoints that own
 // it - the runs endpoint for execution, the findings endpoint for a claim - so
 // the split stays structural rather than becoming a UI flag.
-export function CaseWorkspace({ caseId, onBack }: { caseId: string; onBack: () => void }) {
+export function CaseWorkspace({
+  caseId,
+  onBack,
+  onOpenCase,
+}: {
+  caseId: string
+  onBack: () => void
+  // A prior case cited by an answer is opened as its own workspace (P7-SHELL-006).
+  onOpenCase: (caseId: string) => void
+}) {
   const [caseRow, setCaseRow] = useState<Case | null>(null)
   const [progress, setProgress] = useState<CaseProgress | null>(null)
   const [datasets, setDatasets] = useState<Dataset[]>([])
@@ -160,7 +169,12 @@ export function CaseWorkspace({ caseId, onBack }: { caseId: string; onBack: () =
         evaluations={evaluations}
         onChanged={() => void load()}
       />
-      <Chat caseId={caseId} turns={turns} onTurn={(turn) => setTurns((prior) => [...prior, turn])} />
+      <Chat
+        caseId={caseId}
+        turns={turns}
+        onTurn={(turn) => setTurns((prior) => [...prior, turn])}
+        onOpenCase={onOpenCase}
+      />
       <PromoteTemplate caseId={caseId} question={caseRow?.question ?? ''} />
     </section>
   )
@@ -644,11 +658,53 @@ function Chat({
   caseId,
   turns,
   onTurn,
+  onOpenCase,
 }: {
   caseId: string
   turns: ConversationTurn[]
   onTurn: (turn: ConversationTurn) => void
+  onOpenCase: (caseId: string) => void
 }) {
+  // A previous case cited by an answer is looked up once, however many turns
+  // cite it, and only for `case:` grounds - the other kinds are not
+  // case-scoped. The lookup is a read-only GET and writes nothing.
+  const [priorQuestions, setPriorQuestions] = useState<Record<string, string | null>>({})
+  useEffect(() => {
+    const cited = turns
+      .flatMap((turn) => turn.grounds)
+      .filter((ground) => ground.startsWith('case:'))
+      .map((ground) => ground.slice('case:'.length))
+    const missing = [...new Set(cited)].filter((id) => !(id in priorQuestions))
+    if (missing.length === 0) return
+    let cancelled = false
+    void Promise.all(
+      missing.map((id) =>
+        getCase(id)
+          .then((prior) => [id, prior.question] as const)
+          // A deleted case, or a core that could not answer, is recorded as
+          // absent rather than refetched on every render.
+          .catch(() => [id, null] as const),
+      ),
+    ).then((entries) => {
+      if (cancelled) return
+      setPriorQuestions((prior) => {
+        let changed = false
+        const next = { ...prior }
+        for (const [id, question] of entries) {
+          if (!(id in next)) {
+            next[id] = question
+            changed = true
+          }
+        }
+        // Returning the same object keeps a failed lookup from re-fetching on
+        // every render: the effect's own state change would otherwise loop.
+        return changed ? next : prior
+      })
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [turns, priorQuestions])
   const [message, setMessage] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -695,8 +751,12 @@ function Chat({
             {turn.grounds.length > 0 && (
               <ul className="grounds">
                 {turn.grounds.map((ground) => (
-                  <li key={ground} className="chip">
-                    {ground}
+                  <li key={ground}>
+                    <Ground
+                      ground={ground}
+                      priorQuestions={priorQuestions}
+                      onOpenCase={onOpenCase}
+                    />
                   </li>
                 ))}
               </ul>
@@ -939,6 +999,44 @@ function RecordedAudit({ evaluation }: { evaluation: Evaluation }) {
         {summary.length > 0 ? summary.join(', ') : 'every axis passed'}
       </p>
     </div>
+  )
+}
+
+// One citation. A `case:` ground names a case the analyst can go and read, so
+// it is a button; every other kind is a chip as it always was. The prior case's
+// own question is the label because that is how the analyst recognises it - a
+// uuid would not be.
+function Ground({
+  ground,
+  priorQuestions,
+  onOpenCase,
+}: {
+  ground: string
+  priorQuestions: Record<string, string | null>
+  onOpenCase: (caseId: string) => void
+}) {
+  if (!ground.startsWith('case:')) {
+    return <span className="chip">{ground}</span>
+  }
+  const caseId = ground.slice('case:'.length)
+  if (!(caseId in priorQuestions)) {
+    return <span className="chip">previous case…</span>
+  }
+  const question = priorQuestions[caseId]
+  if (!question) {
+    // The cited case may have been deleted - a citation outlives its source
+    // the way a template does. The answer stays readable; nothing throws.
+    return <span className="chip">a previous case that is no longer available</span>
+  }
+  return (
+    <button
+      type="button"
+      className="chip"
+      onClick={() => onOpenCase(caseId)}
+      aria-label={`Open the previous case: ${question}`}
+    >
+      previous case: {question}
+    </button>
   )
 }
 

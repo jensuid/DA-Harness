@@ -17,7 +17,7 @@ P4 Production Candidate DONE  ✓   (all 6 checklist items; CI runs every
 P5 Production Grade    DONE  ✓   (all deliverables; signing deferred
                               indefinitely by DEC-006 - DAH is single-user)
 P6 Evolution           COMPLETE ✓  (all 5 checklist items)
-P7 Product Modes       IN PROGRESS (1 of 4, four web surfaces)  ← we are here
+P7 Product Modes       IN PROGRESS (1 of 4, five web surfaces)  ← we are here
 ```
 
 North-star progression: prove the loop → make it useful → make it repeatable
@@ -62,9 +62,9 @@ production-grade**.
   because a developer happened to run it.
 - **Active task:** P7 is IN PROGRESS - EVALUATE mode is DONE in the core
   (P7-EVAL-001) and in the shell (P7-SHELL-002 for EVALUATE, P7-SHELL-003 for
-  the agent, P7-SHELL-004 for case management, P7-SHELL-005 for templates);
-  the rest of the web-shell gap is next: cross-case memory, EDA, the evidence
-  graph and case history all have endpoints and no UI. P6 is CLOSED (all 5 items); v0.1.0 published
+  the agent, P7-SHELL-004 for case management, P7-SHELL-005 for templates and
+  P7-SHELL-006 for cross-case memory); the rest of the web-shell gap is next:
+  EDA, the evidence graph and case history all have endpoints and no UI. P6 is CLOSED (all 5 items); v0.1.0 published
   and checksum-verified; signing deferred indefinitely by DEC-006. A `v<x.y.z>` tag
   matching server/pyproject.toml now builds, smokes and publishes a versioned,
   unsigned .app as a flagged pre-release, with its checksum and generated notes
@@ -195,6 +195,6 @@ ordered by what the one user gains first.
 | # | Capability | Why now | Roadmap section |
 |---|-----------|---------|-----------------|
 | 1 | **EVALUATE mode** — **DONE (P7-EVAL-001)**: `POST /cases/{id}/datasets/{id}/evaluate` takes submitted code and the claim it was offered to support, runs the code through the existing run engine under the same read-only gate, row cap and hard sandbox, and answers all nine axes (question, data, quality, method, calculation, evidence, claim, visualization, limitations) with pass / concern / fail verdicts and sentences - never a score. A claim quoting a magnitude the run does not contain fails on Evidence; a column the dataset lacks fails on Data; an unordered ranking is flagged on Method; a non-reproducing artifact fails on Calculation. 22 tests, all three gates green | The one capability DAH uniquely owns and the one no notebook provides. Most of the machinery already exists - read-only execution, deep profiling, rerun validation, the evidence graph and the honesty budgets - so the work is a new *frame* over validated primitives, and it is the frame that separates DAH from a notebook. It also gives the P6 agent's own output something to be audited against, which is why it precedes multi-agent work | Product mode: EVALUATE |
-| 2 | **Close the web-shell gap** — *in progress*: four surfaces delivered - EVALUATE (**P7-SHELL-002**), the agent (**P7-SHELL-003**), case management (**P7-SHELL-004**, rename inline / duplicate / a two-click delete) and templates (**P7-SHELL-005**, promote from the workspace with an optional name, list with a shape summary, start a case, retire). Still un-UI'd: cross-case memory, EDA (`/eda`), the evidence graph (`/evidence-graph`), case history, `/schema-version` and `/updates/latest` | The core can already do all of it and a user can reach none of it. This is the distance between "works" and "usable", and it is the cheapest large win left - no new endpoints, no new contracts, only surfaces over the ones that exist | P7 UX |
+| 2 | **Close the web-shell gap** — *in progress*: five surfaces delivered - EVALUATE (**P7-SHELL-002**), the agent (**P7-SHELL-003**), case management (**P7-SHELL-004**, rename inline / duplicate / a two-click delete), templates (**P7-SHELL-005**, promote from the workspace with an optional name, list with a shape summary, start a case, retire) and cross-case memory (**P7-SHELL-006**, a cited prior case shown as a button that opens it). Still un-UI'd: EDA (`/eda`), the evidence graph (`/evidence-graph`), case history, `/schema-version` and `/updates/latest` | The core can already do all of it and a user can reach none of it. This is the distance between "works" and "usable", and it is the cheapest large win left - no new endpoints, no new contracts, only surfaces over the ones that exist | P7 UX |
 | 3 | **LEARN mode** — a guided Why -> What -> How -> Validate walk over a dataset, using the workflow stages that already exist as the curriculum | A sequencing and presentation layer over P3-FLOW-004 rather than new machinery, which is why it is third rather than first | Product mode: LEARN |
 | 4 | **Multi-agent workflows** — the spec's ladder above the single driver that exists | Only after EVALUATE, which is the audit layer an agent's own output has to survive. Without it, more agents means more unexamined output | P6 Agentic Analysis (continued) |

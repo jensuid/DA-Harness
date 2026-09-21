@@ -16,7 +16,13 @@ export function App() {
   if (view.kind === 'workspace') {
     return (
       <main>
-        <CaseWorkspace caseId={view.caseId} onBack={() => setView({ kind: 'list' })} />
+        <CaseWorkspace
+          caseId={view.caseId}
+          onBack={() => setView({ kind: 'list' })}
+          // A cited prior case opens as its own workspace rather than landing
+          // back on the list (P7-SHELL-006).
+          onOpenCase={(caseId) => setView({ kind: 'workspace', caseId })}
+        />
       </main>
     )
   }

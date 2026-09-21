@@ -156,7 +156,7 @@ describe('CaseWorkspace', () => {
   })
   it('shows the question, the derived stage, the next action and the artifacts', async () => {
     mockEmptyCase()
-    render(<CaseWorkspace caseId="c1" onBack={() => {}} />)
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
     await waitFor(() =>
       expect(screen.getByText('Why did revenue decline?')).toBeInTheDocument(),
     )
@@ -168,7 +168,7 @@ describe('CaseWorkspace', () => {
 
   it('marks the completed stages', async () => {
     mockEmptyCase()
-    render(<CaseWorkspace caseId="c1" onBack={() => {}} />)
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
     await waitFor(() =>
       expect(screen.getByText('Why did revenue decline?')).toBeInTheDocument(),
     )
@@ -178,7 +178,7 @@ describe('CaseWorkspace', () => {
 
   it('reports the profile once the data is attached', async () => {
     mockEmptyCase()
-    render(<CaseWorkspace caseId="c1" onBack={() => {}} />)
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
     expect(await screen.findByText(/3 rows, 3 columns, 0 duplicate/i)).toBeInTheDocument()
   })
 
@@ -198,7 +198,7 @@ describe('CaseWorkspace', () => {
     vi.mocked(api.attachDataset).mockResolvedValue(attached)
 
     const user = userEvent.setup()
-    render(<CaseWorkspace caseId="c1" onBack={() => {}} />)
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
     await screen.findByText(/no data attached yet/i)
 
     const input = screen.getByLabelText(/attach a dataset/i)
@@ -224,7 +224,7 @@ describe('CaseWorkspace', () => {
     })
 
     const user = userEvent.setup()
-    render(<CaseWorkspace caseId="c1" onBack={() => {}} />)
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
     await screen.findByText(/ask for the computation/i)
 
     await user.type(screen.getByLabelText(/question for code generation/i), 'revenue per region')
@@ -252,7 +252,7 @@ describe('CaseWorkspace', () => {
     })
 
     const user = userEvent.setup()
-    render(<CaseWorkspace caseId="c1" onBack={() => {}} />)
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
     const interpret = await screen.findByRole('button', { name: /interpret/i })
     await user.click(interpret)
 
@@ -288,7 +288,7 @@ describe('CaseWorkspace', () => {
     })
 
     const user = userEvent.setup()
-    render(<CaseWorkspace caseId="c1" onBack={() => {}} />)
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
     await user.click(await screen.findByRole('button', { name: /draft a finding/i }))
 
     expect(await screen.findByText('North leads revenue at 325.0.')).toBeInTheDocument()
@@ -319,7 +319,7 @@ describe('CaseWorkspace', () => {
     })
 
     const user = userEvent.setup()
-    render(<CaseWorkspace caseId="c1" onBack={() => {}} />)
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
     await user.click(await screen.findByRole('button', { name: /validate/i }))
 
     expect(await screen.findByText(/verdict: supported/i)).toBeInTheDocument()
@@ -330,7 +330,7 @@ describe('CaseWorkspace', () => {
     mockEmptyCase()
     vi.mocked(api.postChat).mockRejectedValue(new api.ApiError(500, 'Internal Server Error'))
     const user = userEvent.setup()
-    render(<CaseWorkspace caseId="c1" onBack={() => {}} />)
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
     await screen.findByText('Why did revenue decline?')
 
     await user.type(screen.getByLabelText(/ask a question/i), 'anything')
@@ -344,7 +344,7 @@ describe('CaseWorkspace', () => {
     vi.mocked(api.evaluateDataset).mockResolvedValue(evaluation())
 
     const user = userEvent.setup()
-    render(<CaseWorkspace caseId="c1" onBack={() => {}} />)
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
     await screen.findByText(/audit submitted work/i)
     await submitAudit(user)
 
@@ -381,7 +381,7 @@ describe('CaseWorkspace', () => {
     )
 
     const user = userEvent.setup()
-    render(<CaseWorkspace caseId="c1" onBack={() => {}} />)
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
     await screen.findByText(/audit submitted work/i)
     await submitAudit(user)
 
@@ -397,7 +397,7 @@ describe('CaseWorkspace', () => {
     )
 
     const user = userEvent.setup()
-    render(<CaseWorkspace caseId="c1" onBack={() => {}} />)
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
     await screen.findByText(/audit submitted work/i)
     await submitAudit(user)
 
@@ -423,7 +423,7 @@ describe('CaseWorkspace', () => {
       evaluation({ id: 'e1', claim: 'Revenue is higher in north than south' }),
     ])
 
-    render(<CaseWorkspace caseId="c1" onBack={() => {}} />)
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
     const recorded = await screen.findByText(/recorded audits/i)
     const claims = within(recorded.parentElement!)
       .getAllByRole('listitem')
@@ -440,7 +440,7 @@ describe('CaseWorkspace', () => {
     vi.mocked(api.evaluateDataset).mockResolvedValue(evaluation({ artifact_kind: 'python' }))
 
     const user = userEvent.setup()
-    render(<CaseWorkspace caseId="c1" onBack={() => {}} />)
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
     await screen.findByText(/audit submitted work/i)
 
     await user.click(screen.getByLabelText(/python/i))
@@ -466,7 +466,7 @@ describe('CaseWorkspace', () => {
     // No profile yet, so the dataset is not auditable.
     vi.mocked(api.profileDataset).mockRejectedValue(new api.ApiError(404, 'no profile'))
 
-    render(<CaseWorkspace caseId="c1" onBack={() => {}} />)
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
     expect(await screen.findByText(/attach and profile a dataset first/i)).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /audit this work/i })).not.toBeInTheDocument()
   })
@@ -483,7 +483,7 @@ describe('CaseWorkspace', () => {
       }),
     )
 
-    render(<CaseWorkspace caseId="c1" onBack={() => {}} />)
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
     expect(await screen.findByText(/north leads revenue/i)).toBeInTheDocument()
     expect(screen.getByText(/proposed by deterministic/i)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /approve and run/i })).toBeInTheDocument()
@@ -495,7 +495,7 @@ describe('CaseWorkspace', () => {
     vi.mocked(api.proposeAgentStep).mockResolvedValue(proposed)
 
     const user = userEvent.setup()
-    render(<CaseWorkspace caseId="c1" onBack={() => {}} />)
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
     await screen.findByText(/nothing is pending/i)
 
     await user.click(screen.getByRole('button', { name: /propose the next step/i }))
@@ -542,7 +542,7 @@ describe('CaseWorkspace', () => {
     )
 
     const user = userEvent.setup()
-    render(<CaseWorkspace caseId="c1" onBack={() => {}} />)
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
     await user.click(await screen.findByRole('button', { name: /approve and run/i }))
 
     expect(await waitFor(() => expect(api.approveAgentStep).toHaveBeenCalledWith('c1', 's7')))
@@ -580,7 +580,7 @@ describe('CaseWorkspace', () => {
     )
 
     const user = userEvent.setup()
-    render(<CaseWorkspace caseId="c1" onBack={() => {}} />)
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
     await screen.findByRole('button', { name: /reject/i })
 
     await user.type(screen.getByLabelText(/reason for rejecting/i), 'wrong direction')
@@ -605,12 +605,127 @@ describe('CaseWorkspace', () => {
     )
 
     const user = userEvent.setup()
-    render(<CaseWorkspace caseId="c1" onBack={() => {}} />)
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
     await user.click(await screen.findByRole('button', { name: /approve and run/i }))
 
     const alert = await screen.findByRole('alert')
     expect(alert).toHaveTextContent(/not this case's pending step/i)
     expect(alert.textContent).not.toContain('[object Object]')
+  })
+
+  it('shows a cited previous case as a button that opens it', async () => {
+    // Recall is only useful if the analyst can go and read what was concluded
+    // last time (P7-SHELL-006). The core cites the prior case in grounds as
+    // `case:<id>`; the chip carries a uuid and goes nowhere without this.
+    mockEmptyCase()
+    vi.mocked(api.listChat).mockResolvedValue([
+      {
+        id: 'm1',
+        case_id: 'c1',
+        message: 'What did I find before about revenue?',
+        answer:
+          'Before this case, a previous case, "Why did revenue decline?", ' +
+          'which found North leads revenue. It shares revenue with your question.',
+        grounds: ['case:prior', 'finding:f9'],
+        source: 'deterministic',
+        created_at: '',
+      },
+    ])
+    vi.mocked(api.getCase).mockImplementation(async (id: string) => {
+      if (id === 'prior') {
+        return {
+          id, question: 'Why did revenue decline?', dataset: 'sales.csv',
+          created_at: '', updated_at: '',
+        }
+      }
+      return {
+        id: 'c1', question: 'Why did revenue decline?', dataset: 'sales.csv',
+        created_at: '', updated_at: '',
+      }
+    })
+
+    const onOpenCase = vi.fn()
+    const user = userEvent.setup()
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={onOpenCase} />)
+    const button = await screen.findByRole('button', {
+      name: /open the previous case: why did revenue decline/i,
+    })
+    expect(button).toBeInTheDocument()
+
+    await user.click(button)
+    expect(onOpenCase).toHaveBeenCalledWith('prior')
+  })
+
+  it('looks a cited case up once however many turns cite it', async () => {
+    mockEmptyCase()
+    vi.mocked(api.listChat).mockResolvedValue([
+      {
+        id: 'm1', case_id: 'c1', message: 'before?', answer: 'one',
+        grounds: ['case:prior'], source: 'deterministic', created_at: '',
+      },
+      {
+        id: 'm2', case_id: 'c1', message: 'earlier?', answer: 'two',
+        grounds: ['case:prior'], source: 'deterministic', created_at: '',
+      },
+    ])
+    vi.mocked(api.getCase).mockResolvedValue({
+      id: 'prior', question: 'Why did revenue decline?', dataset: 'sales.csv',
+      created_at: '', updated_at: '',
+    })
+
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+    await waitFor(() =>
+      expect(screen.getAllByRole('button', { name: /open the previous case/i })).toHaveLength(2),
+    )
+    // Two citations, one lookup: the question does not change between turns.
+    // (The workspace's own load accounts for the other call.)
+    const lookups = vi.mocked(api.getCase).mock.calls.filter(
+      ([id]) => id === 'prior',
+    )
+    expect(lookups).toHaveLength(1)
+  })
+
+  it('degrades to a chip when a cited case can no longer be read', async () => {
+    // A citation outlives the case it names - the case may have been deleted.
+    // The answer stays readable and nothing throws.
+    mockEmptyCase()
+    vi.mocked(api.listChat).mockResolvedValue([
+      {
+        id: 'm1', case_id: 'c1', message: 'before?', answer: 'North leads revenue.',
+        grounds: ['case:gone'], source: 'deterministic', created_at: '',
+      },
+    ])
+    vi.mocked(api.getCase).mockImplementation(async (id: string) => {
+      if (id === 'gone') {
+        throw new api.ApiError(404, 'case not found')
+      }
+      return {
+        id: 'c1', question: 'Why did revenue decline?', dataset: 'sales.csv',
+        created_at: '', updated_at: '',
+      }
+    })
+
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+    expect(await screen.findByText(/no longer available/i)).toBeInTheDocument()
+    expect(screen.getByText('North leads revenue.')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /open the previous case/i })).not.toBeInTheDocument()
+  })
+
+  it('renders grounds of other kinds as the chips they always were', async () => {
+    mockEmptyCase()
+    vi.mocked(api.listChat).mockResolvedValue([
+      {
+        id: 'm1', case_id: 'c1', message: 'How many in north?',
+        answer: 'north: 325.0, in sales.csv.',
+        grounds: ['column:north', 'dataset:sales.csv'],
+        source: 'deterministic', created_at: '',
+      },
+    ])
+
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+    expect(await screen.findByText(/north: 325\.0/)).toBeInTheDocument()
+    expect(screen.getByText('column:north')).toBeInTheDocument()
+    expect(screen.getByText('dataset:sales.csv')).toBeInTheDocument()
   })
 
   it('saves the case as a template, named for the question when no name is given', async () => {
@@ -625,7 +740,7 @@ describe('CaseWorkspace', () => {
     })
 
     const user = userEvent.setup()
-    render(<CaseWorkspace caseId="c1" onBack={() => {}} />)
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
     await waitFor(() =>
       expect(screen.getByText('Why did revenue decline?')).toBeInTheDocument(),
     )
@@ -652,7 +767,7 @@ describe('CaseWorkspace', () => {
     })
 
     const user = userEvent.setup()
-    render(<CaseWorkspace caseId="c1" onBack={() => {}} />)
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
     await waitFor(() =>
       expect(screen.getByText('Why did revenue decline?')).toBeInTheDocument(),
     )
@@ -676,7 +791,7 @@ describe('CaseWorkspace', () => {
     )
 
     const user = userEvent.setup()
-    render(<CaseWorkspace caseId="c1" onBack={() => {}} />)
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
     await waitFor(() =>
       expect(screen.getByText('Why did revenue decline?')).toBeInTheDocument(),
     )
@@ -704,7 +819,7 @@ describe('CaseWorkspace', () => {
       }),
     )
 
-    render(<CaseWorkspace caseId="c1" onBack={() => {}} />)
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
     // The note rides in both the stopped sentence and the history's last step,
     // so the sentence is the unique thing to assert on.
     expect(

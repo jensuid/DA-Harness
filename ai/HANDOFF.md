@@ -2,6 +2,36 @@
 
 ## Next action
 
+**P7-SHELL-006 is DONE**: a cited previous case is something the analyst can
+follow. The web suite is 54 tests (was 50: +4 in `CaseWorkspace.test.tsx`),
+`npm run build` passes and the desktop bundle builds from the same source. The
+server side is untouched and stays at 358.
+
+### What is unbuilt, in priority order
+
+- **The rest of the web-shell gap** - P7 item 2, now five surfaces closed
+  (EVALUATE, the agent, case management, templates, cross-case memory). Still
+  no UI: EDA (`/eda`), the evidence graph (`/evidence-graph`), case history,
+  `/schema-version` and `/updates/latest`. Each is a panel over an existing
+  contract; none needs a new endpoint.
+- **LEARN mode** - a guided Why -> What -> How -> Validate walk. Mostly a
+  sequencing layer over the workflow stages that already exist (P3-FLOW-004).
+- **Multi-agent workflows** - only after EVALUATE, which is the audit layer an
+  agent's own output has to survive.
+- **Deferred, not dropped:** signing (DEC-006, the slot is in `release.yml`),
+  cloud sync, team collaboration, warehouse connectors, enterprise governance.
+
+### If the next step is a release
+
+Tag `v<x.y.z>` where x.y.z matches server/pyproject.toml. The published build is
+arm64 and unsigned, flagged pre-release (DEC-006). Ten tasks have landed since
+v0.1.0, so `0.2.0` is the honest next label when a release is wanted.
+
+Nothing is unblocked-but-undone.
+
+---
+
+
 **P7-SHELL-005 is DONE**: templates have a surface as well as a core. The web
 suite is 50 tests (was 39: +7 in the new `Templates.test.tsx`, +3 in
 `CaseWorkspace.test.tsx` for the promote panel, +1 in `api.test.ts` for the
@@ -34,6 +64,23 @@ Nothing is unblocked-but-undone.
 ---
 
 ## What was completed
+- P7-SHELL-006 PASSED: cross-case memory, actionable in the shell. P6-MEMORY-001
+  let a chat answer cite what a previous case found - "Before this case, a
+  previous case, \"Why did revenue decline?\", which found North leads
+  revenue" - and the shell rendered the citation behind it as an inert chip
+  carrying a uuid. The one thing recall exists for, going to read what was
+  concluded last time, was a click that did nothing. The Chat panel now
+  resolves each `case:<id>` ground to that prior case's own question and
+  renders it as a **button that opens the case as its own workspace**; the
+  question is the label because a uuid is not how anyone recognises a case.
+  Three behaviours had to be right rather than present: each cited case is
+  looked up **once**, shared across every turn that cites it; a lookup that
+  fails is recorded as absent and degrades to a chip ("a previous case that is
+  no longer available") rather than an error - a citation outlives the case it
+  names, and the same object returned from an all-failed batch keeps the
+  effect from refetching forever; and grounds of other kinds render exactly as
+  the chips they always did.
+
 - P7-SHELL-005 PASSED: templates in the web shell. The four template
   endpoints - promote a case, list them, start a case from one, retire one -
   were tested in the core and reached nowhere in the shell, so the shape of an

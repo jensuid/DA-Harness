@@ -3021,3 +3021,130 @@ LESSON: three of the eleven criteria were satisfied by code that had not been
         that filters its inputs before testing them is testing the survivors,
         and a check that cannot fail cannot pass either.
 ```
+
+### P7-SHELL-004 contract
+
+```
+TASK ID: P7-SHELL-004
+MILESTONE: P7 Product Modes
+CAPABILITY: UX (the web-shell gap)
+GOAL: A case can be renamed, duplicated and deleted from the shell. These are
+      the everyday operations on the front door, and today all three answer
+      only through the API.
+
+CONTEXT: the three endpoints have existed since P2-CASE-010 and are tested in
+         the core, but the case list renders a row per case whose only
+         affordance is opening it. A user who mistyped a question cannot fix
+         it; a finished investigation cannot be copied as a starting point for
+         a variant; and a case that has served its purpose cannot be removed,
+         so the list only ever grows. This is the cheapest slice of the
+         web-shell gap, and it is the one a user meets first.
+
+INPUTS: the case list; for a rename, the edited question and the dataset label.
+RELEVANT FILES: web/src/api.ts, web/src/CaseList.tsx, web/src/CaseList.test.tsx,
+                web/src/index.css
+REQUIRED CHANGE:
+  - web/src/api.ts: `updateCase(caseId, {question?, dataset?})` for the PATCH,
+    `duplicateCase(caseId)` for the POST, `deleteCase(caseId)` for the DELETE.
+    The core's `Case` also carries `template_id`, which the shell's type now
+    admits as optional so a templated case round-trips without the type
+    disagreeing with the payload.
+  - web/src/CaseList.tsx: each row keeps opening the case as its primary
+    affordance and gains three actions - Rename, Duplicate, Delete. Rename is
+    an inline edit of the question and the dataset label with Save and Cancel,
+    so a correction never needs a second screen. Duplicate creates the copy and
+    the list reloads with it. Delete is irreversible - the core removes the
+    case row, every child and the case's on-disk directory - so it asks twice:
+    a first click arms the row and a second, labelled with what will be lost,
+    is the one that removes it. Nothing is deleted by a single click, and the
+    armed state is per row, so confirming one case never endangers another.
+  - Every action reports a failure as the core's own sentence and leaves the
+    list usable, the way the list already does for a failed load.
+NON-GOALS: bulk operations (a single-user tool with a handful of cases does not
+           need selection machinery), undo for a delete (the core's contract is
+           that deletion is final and its data dir goes with it; an undo would
+           be a second store to keep consistent), renaming a dataset label that
+           renames the file on disk (the label is a case property, not a
+           filename), templates (their own task), case history and the evidence
+           graph (read-only views, their own task).
+CONSTRAINTS: each action calls its endpoint and nothing else; the list reloads
+             after a write rather than mutating its own copy, so what it shows
+             is what the core has; `tsc -b` passes; no new dependency; the
+             existing list tests and the workspace stay green; the desktop
+             bundle builds from the same source.
+ACCEPTANCE CRITERIA:
+- [x] a case can be renamed inline, and the list shows the corrected question
+- [x] a duplicate appears in the list after the action
+- [x] a delete needs two clicks, and the second names what it removes
+- [x] an armed delete is per row: confirming one case deletes no other
+- [x] a failed action shows the core's message and leaves the list usable
+- [x] opening a case is still the row's primary affordance
+- [x] `tsc -b` and the web suite stay green
+TESTS: web/src/CaseList.test.tsx - the rename round trip, the duplicate
+       appearing, the two-click delete, the per-row isolation, and a failure
+       rendered as a sentence.
+VERIFICATION: cd web && npm test PASS; cd web && npm run build PASS. The server
+              suite and the three gates are untouched by this change and stay
+              green.
+STATE UPDATE: mark P7-SHELL-004 done on pass; ROADMAP item 2 records case
+              management as delivered.
+```
+
+
+```
+TASK: P7-SHELL-004 - rename, duplicate and delete a case from the shell
+ID: P7-SHELL-004
+PRIORITY: medium
+STATUS: DONE
+SUMMARY: The three everyday operations on the front door answered only through
+         the API. The case list rendered a row per case whose only affordance
+         was opening it: a mistyped question could not be fixed, a finished
+         investigation could not be copied as the start of a variant, and a
+         case that had served its purpose could not be removed, so the list
+         only ever grew. All three are buttons now.
+
+Each row keeps opening the case as its primary affordance and gains Rename,
+Duplicate and Delete:
+
+- **Rename** is inline - the question and the dataset label become inputs on
+  the row itself, with Save and Cancel, so a correction never needs a second
+  screen and a cancelled edit restores what was there.
+- **Duplicate** creates the copy and the list reloads with it.
+- **Delete** asks twice, because the core's deletion is final and takes the
+  case's on-disk directory with it. A first click arms the row; the second is
+  labelled with the case's own question ("Delete "Why did revenue decline?" for
+  good"), because the question is the thing a user would be sorry to lose. The
+  armed state is per row - confirming one case never endangers another, and an
+  armed row offers "Keep it" as an escape.
+
+Every action reports a failure as the core's own sentence and leaves the list
+usable, the way a failed load already did.
+
+NON-GOALS held: no bulk operations (a single-user tool with a handful of cases
+             does not need selection machinery), no undo for a delete (the
+             core's contract is that deletion is final; an undo would be a
+             second store to keep consistent), no file rename behind a dataset
+             label (the label is a case property), no templates, history or
+             evidence-graph surfaces (their own tasks).
+CONSTRAINTS held: each action calls its endpoint and nothing else, and the list
+             reloads after a write rather than mutating its own copy, so what
+             it shows is what the core has; `tsc -b` passes; no new dependency;
+             the existing list and workspace tests stay green; the desktop
+             bundle builds from the same source.
+ACCEPTANCE CRITERIA: all 7 - see the checked boxes above.
+TESTS: 5 added to web/src/CaseList.test.tsx (web suite 34 -> 39) - the rename
+       round trip, the duplicate appearing, the two-click delete whose second
+       click names the case, the per-row isolation of an armed delete, and a
+       failed delete rendered as a sentence with the case still present.
+VERIFICATION: cd web && npm test - 39 passed; cd web && npm run build PASS
+              (tsc -b + vite build); cd web && npm run build:desktop PASS. The
+              server suite and the three gates are untouched and stay green.
+LESSON: the two-click delete and the aria-labels solved each other. The first
+        draft named the buttons "Rename"/"Duplicate"/"Delete" and the tests
+        could not address one case among two; per-row aria-labels naming the
+        question fixed the tests AND are the accessible thing to do - an action
+        button that does not say which case it acts on is ambiguous to a screen
+        reader for exactly the reason it was ambiguous to a test. The same
+        spy-accumulation bug CaseWorkspace hit recurred here, and for the same
+        reason: this file's module-level mocks had no reset between tests.
+```
