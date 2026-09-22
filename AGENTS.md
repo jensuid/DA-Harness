@@ -1,15 +1,53 @@
 ## session resumption
 
-Before starting any work in this repo, read `ai/HANDOFF.md` (entry point: what is
-done, what is in flight, unresolved problems, next action) and `ai/TASKS.md`
-(per-task contracts with acceptance criteria; it holds only the phase summary tables, the still-open carried follow-ups and the rolling window - the two most recent tasks - with everything older in `ai/TASKS-ARCHIVE.md`). `ai/CURRENT_STATE.md` holds phase,
-test counts, and blockers. This is how a fresh session resumes in-flight work
-without re-deriving it; if the user's request is clearly a continuation, do this
-read first, then ask questions only if the handoff leaves the intent ambiguous.
-After finishing a task, update these same files so the next session can resume
-from them.
+Before starting any work in this repo, read `ai/HANDOFF.md` (entry point: what
+is done, what is in flight, unresolved problems, next action) and `ai/TASKS.md`
+(per-task contracts with acceptance criteria; it holds only the phase summary
+tables, the still-open carried follow-ups and the rolling window - the two most
+recent tasks - with everything older in `ai/TASKS-ARCHIVE.md`). This is how a
+fresh session resumes in-flight work without re-deriving it; if the user's
+request is clearly a continuation, do this read first, then ask questions only
+if the handoff leaves the intent ambiguous. After finishing a task, update
+these same files so the next session can resume from them.
+
+Read `ai/CURRENT_STATE.md` (phase, test counts, blockers) and the archives only
+when the task needs them - not as part of the resume. They are large; reading
+them by default is what burns context. `ai/HANDOFF-ARCHIVE.md` and
+`ai/TASKS-ARCHIVE.md` hold the history and the reasoning behind past tasks.
 
 ## task backlog hygiene
+
+## handoff hygiene
+
+`ai/HANDOFF.md` is the first thing a session reads, so it stays small. It
+holds, and only holds:
+
+- one `## Next action` section - the most recently completed task, its
+  measured gates, the lessons worth carrying, and what is next in priority
+  order;
+- a `## Recent completions` index - one line per recent task, pointing at
+  where its contract and reasoning live.
+
+Everything else - every older `## Next action` section and every legacy change
+log - lives in `ai/HANDOFF-ARCHIVE.md`.
+
+**Archival happens in the same commit that completes a task.** When a task's
+`## Next action` is written, the section it replaces moves to
+`ai/HANDOFF-ARCHIVE.md` as part of that same commit, appended under the header,
+verbatim and never edited or summarised. A section is moved, never deleted - it
+is in `ai/HANDOFF.md` or in `ai/HANDOFF-ARCHIVE.md`, always exactly one of the
+two.
+
+The reason is arithmetic: an append-only handoff grows by roughly a thousand
+words per task, and this project has passed forty. Reading all of it at the
+start of every session costs more context than the task itself uses, which is
+how a session runs out before it finishes.
+
+Per-task prose has a ceiling: a Next action or a done-record states what
+changed, what broke and why, and what is next - in roughly 150 words, not
+several hundred. `ai/TASKS.md` already holds the contract and the acceptance
+criteria; the handoff does not restate them at length.
+
 
 `ai/TASKS.md` is the working surface a session actually reads, so it stays
 small. It holds, and only holds:
