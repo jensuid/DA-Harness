@@ -546,8 +546,10 @@ describe('CaseWorkspace', () => {
     vi.mocked(api.validateFinding).mockResolvedValue({
       finding_id: 'f1', run_id: 'r1', status: 'supported',
       checks: [
-        { name: 'reproducibility', passed: true, detail: 'rerun matches stored result' },
-        { name: 'missing_data', passed: true, detail: '0 null value(s)' },
+        { name: 'calculation', dimension: 'calculation', passed: true,
+          detail: 'rerun matches stored result', hard: true },
+        { name: 'data', dimension: 'data', passed: true,
+          detail: 'no missing values were detected', hard: false },
       ],
       validated_at: '',
     })
@@ -558,6 +560,39 @@ describe('CaseWorkspace', () => {
 
     expect(await screen.findByText(/verdict: supported/i)).toBeInTheDocument()
     expect(screen.getByText(/rerun matches stored result/i)).toBeInTheDocument()
+  })
+
+  it('distinguishes a validation concern from a failure', async () => {
+    // A concern is not a failure (P8-VALID-003): the computation reproduced and
+    // the claim is phrased within it, but the analysis carries a limitation.
+    // The two must read differently, so a concern warns and a failure fails.
+    mockEmptyCase()
+    vi.mocked(api.listFindings).mockResolvedValue([
+      { id: 'f1', case_id: 'c1', run_id: 'r1', statement: 'Spend drives signups.',
+        interpretation: null, caveat: null, validation_status: 'not_evaluated',
+        created_at: '' },
+    ])
+    vi.mocked(api.validateFinding).mockResolvedValue({
+      finding_id: 'f1', run_id: 'r1', status: 'partially_supported',
+      checks: [
+        { name: 'calculation', dimension: 'calculation', passed: true,
+          detail: 'rerun matches stored result', hard: true },
+        { name: 'causality', dimension: 'causality', passed: false,
+          detail: 'the finding uses causal language but the evidence is a '
+            + 'comparison; this supports association, not causation',
+          hard: false },
+      ],
+      validated_at: '',
+    })
+
+    const user = userEvent.setup()
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+    await user.click(await screen.findByRole('button', { name: /validate/i }))
+
+    expect(await screen.findByText(/verdict: partially_supported/i)).toBeInTheDocument()
+    // The concern is shown with its dimension, marked as a warning.
+    expect(screen.getByText(/causality —/i)).toBeInTheDocument()
+    expect(screen.getByText(/association, not causation/i)).toBeInTheDocument()
   })
 
   it('renders an assistant failure rather than crashing', async () => {

@@ -846,8 +846,16 @@ function FindingRow({
           <p><strong>Verdict: {verdict.status}</strong></p>
           <ul className="items">
             {verdict.checks.map((check) => (
-              <li key={check.name} className={check.passed ? 'muted' : 'warn'}>
-                {check.passed ? '✓' : '✗'} {check.name} — {check.detail}
+              <li
+                key={check.name}
+                className={check.passed ? 'muted' : check.hard ? 'fail' : 'warn'}
+              >
+                {/* A concern is not a failure: the numbers reproduce and the
+                    claim is phrased within them, but the analysis carries a
+                    stated limitation. The two read differently, so they render
+                    differently (P8-VALID-003). */}
+                {check.passed ? '✓' : check.hard ? '✗' : '⚠'} {check.dimension} —{' '}
+                {check.detail}
               </li>
             ))}
           </ul>

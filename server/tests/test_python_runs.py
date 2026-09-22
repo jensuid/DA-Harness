@@ -255,4 +255,4 @@ def test_evidence_chain_works_for_python_run(tmp_path) -> None:
     assert verdict.status_code == 200, verdict.text
     assert verdict.json()["status"] == "supported"
     checks = {c["name"]: c for c in verdict.json()["checks"]}
-    assert checks["reproducibility"]["passed"] is True
+    assert checks["calculation"]["passed"] is True

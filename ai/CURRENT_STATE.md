@@ -1,5 +1,6 @@
-**Phase:** P8 Analytical Contract - IN PROGRESS (2 of 10 delivered: the case's
-context object, P8-CONTEXT-001). P7 Product Modes is COMPLETE - every checklist
+**Phase:** P8 Analytical Contract - IN PROGRESS (3 of 10 delivered: the case's
+context object, quality beyond missingness, and the PRD's nine validation
+dimensions). P7 Product Modes is COMPLETE - every checklist
 item that builds something shipped, including the manual walkthrough and the
 CORS fix, and the store's schema is at v11. P6, P5, P4, P3, P2, P1 and P0 are
 all COMPLETE (see the phase table below). P8 closes the PRD's Level 1 breadth
@@ -9,34 +10,39 @@ causal-language guard, the analytical golden suite, the orientation spine,
 question refinement, the decision view, and the measurement layer. The full gap
 analysis is `docs/PRD & UX Conformance Evaluation.md`.
 
-- **Active task:** P8-QUALITY-002 DONE - quality detection beyond
-  missingness. A profile stated shape, types and nulls; it now also states what
-  the data *cannot* support. The PRD's AT-08 names seven defect classes and
-  AT-09 requires each to carry an analytical impact; before this, two classes
-  existed as bare counts ("1 null value(s)") and surfaced only at validation,
-  after a finding existed - the UX document (section 15) wants them at the Data
-  stage, before analysis. The two pre-existing classes gained impact sentences;
-  five are new: invalid_types (a column typed `other` that is mostly numeric or
-  temporal but not entirely - the defect that breaks a calculation *silently*,
-  because the SQL still runs and the SUM just yields NULL), inconsistent
-  categories (case/whitespace variants splitting a GROUP BY), date gaps (a hole
-  in an otherwise regular series, so a period-over-period comparison compares
-  non-adjacent windows), extreme_values (a value dwarfing its neighbour -
-  measured against the next value, not a mean, because an outlier inflates the
-  very statistics a z-score would use) and insufficient_coverage (too few rows,
-  or a category so dominant a group-by is about one group). Every detector
-  raises only on measured evidence, never on a heuristic that could fire on
-  clean data, which is how the <= 5% false-positive budget is held; the golden
-  suite that *measures* the 95%/5% thresholds is P8-GOLDEN-005 and is the next
-  thing that turns these into numbers. The list is computed inside the
-  profiler's own pass via bounded queries (top-k for extremes, distinct lists
-  for temporal, one scan for type casts), persisted as schema v11, carried by
-  export and duplicate, and rendered at the Data stage with each issue's
-  observed fact and impact sentence; the validation endpoint's missing-data
-  check now reads that same impact sentence, so the audit and the Data stage
-  cannot say two different things about the same null.
-  Before it: P8-CONTEXT-001 (a case carries purpose, sub-questions, hypotheses),
-  the v0.2.0 release, P7-CSV-002, P7-CORS-001.
+- **Active task:** P8-VALID-003 DONE - validation across the PRD's nine
+  dimensions (AT-17). A finding's verdict used to account for three facts -
+  does it reproduce, is the data null-free, does the run belong to this case -
+  and the PRD names nine. Three correct calculations answering the wrong
+  question were invisible to it: a comparison over groups a filter excluded, a
+  trend read into a single period, and causation claimed from a correlation.
+  `server/app/validation.py` is new: nine pure checks - calculation, data,
+  population, timeframe, method, evidence, assumptions, causality,
+  alternative_explanations - each returning a verdict and a sentence and never
+  raising. A check that cannot decide *passes* with a "skipped -" sentence,
+  because a verdict must not punish a finding for the validator's own
+  blindness; only measured evidence fails. The three checks that existed
+  survive as three of the nine (reproducibility -> calculation, missing_data ->
+  data, evidence_integrity -> evidence, reusing EVALUATE's number-quoting
+  budget rather than reimplementing it). The six new ones read objects the two
+  tasks before this built - the profile's quality list, the case's context, the
+  run's own SQL and result - so nothing new is executed and a validation costs
+  one rerun, not nine. That budget is pinned by a test with a counter on the
+  query engine and was proven to fail when a second execution was injected.
+  The verdict stays three-valued: a hard failure (calculation, evidence,
+  population) yields `insufficient_evidence`, a
+  soft concern is `partially_supported`, and only a clean sweep is `supported`.
+  The shell renders each dimension with its sentence and distinguishes a
+  concern from a failure, because "7 pass, 2 concern" and "supported" are
+  different analyses. The schema stays at v11 - a check is derived, never
+  stored. Two repairs landed with it: the check-key rename broke three older
+  tests and two phase gates asserting the pre-existing names (updated to the
+  dimension keys), and the web suite's 5000ms timeouts under parallel file
+  execution were CPU starvation, not code - `fileParallelism: false` in
+  vitest's config makes the gate deterministic at no wall-clock cost.
+  Before it: P8-QUALITY-002 (quality detection beyond missingness),
+  P8-CONTEXT-001 (a case carries purpose, sub-questions, hypotheses), the
+  v0.2.0 release.
 
 - **Known issues:** CI's billing is suspended: every workflow (Release, and both CI suites) is
   rejected at start with "recent account payments have failed or your spending
@@ -50,43 +56,51 @@ analysis is `docs/PRD & UX Conformance Evaluation.md`.
   documented minimum but is no longer enforced by CI, and a green run no longer
   proves the exact Intel triple a local build produces. Restoring that needs a
   self-hosted Intel runner.
-- **Test status:** server 435 passed (21 for the context object: persistence
-  and reopen, the edit and the malformed-input 400s, the v9->v10 migration, the
-  export round trip, the planner's basis recording and precedence, and three
-  chat tests for the new citation kind) (4 for the shell's CORS; 4 for the
-  stray-trailing-comma recovery - a CSV with a row wider than its header no
-  longer collapses to one column, in the profile *and* in the SQL written
-  from it; all 4 fail on the pre-fix code) (336 + 22 evaluate + 9 learn
-  + 13 multi-agent + 4 cors + 4 csv + 21 context + 26 quality); web 84 passed
-  (2 for the Data-stage quality panel: an issue rendered with its impact, and a
-  clean dataset stating plainly that nothing was detected)
-  (4 for the
-  Context panel: render, save with precedence, remove without saving, a failed
-  save that keeps the edit)
-  (CaseList 10, CaseCreation 3, CaseWorkspace 52, Templates 8, api 6 - the
-  workspace gained the reviewer panel, on top of the LEARN panel, the evidence
-  graph, EDA, the cited-case buttons, the promote panel, the templates section
-  and the empty-204 fix); desktop shell 22 Rust tests
+- **Test status:** server 451 passed (16 for the nine dimensions: one raising
+  test per new dimension - a filtered group-by on population, single-period and
+  gappy-series trend claims on timeframe, an average over an extreme column and
+  a query ignoring the question's column on method, an implicit "missing is
+  zero" on assumptions, causal language from a correlation on causality, an
+  unread categorical on alternatives - the skip-when-undecidable rule, the
+  concern-vs-failure verdict, and the one-execution budget with a counter on
+  the query engine, proven to fail on a injected second execution; plus the 9
+  pre-existing tests renamed to the new dimension keys) (21 for the context
+  object; 26 quality) (4 for the shell's CORS; 4 for the stray-trailing-comma
+  recovery) (336 + 22 evaluate + 9 learn + 13 multi-agent + 4 cors + 4 csv + 21
+  context + 26 quality + 16 validation); web 85 passed (1 for the
+  concern-vs-failure distinction in the findings panel; the suite is now
+  deterministic - `fileParallelism: false`, because the same tests pass in
+  under 2s each in isolation and only breached the 5s timeout when the files
+  ran in parallel and starved each other)
+  (4 for the Context panel)
+  (CaseList 10, CaseCreation 3, CaseWorkspace 53, Templates 8, api 6);
+  desktop shell 22 Rust tests
   (`cd desktop/src-tauri && cargo test [--features e2e]`, 19 unit + 3 e2e);
-  P2, P3 and P4 gates PASS (P4: all 18 journey steps, all 10 exit criteria);
+  P2, P3 and P4 gates PASS (P4: all 18 journey steps, all 10 exit criteria;
+  both gates' validation assertions now read the dimension keys);
   **v0.2.0 released**: tag on `ec819fc`, 409 server tests run green
   on the tag, sidecar + .app + DMG built locally, the packaged core proven on an
-  isolated store (the full loop closes: profile -> plan (reads the context,
-  `context_basis: ['purpose','sub_questions:2','hypotheses:2']`) -> SQL run ->
-  interpret -> draft -> accept -> `partially_supported`, the null revenue
-  tripping missing_data while reproducibility passes), and the zip + sha256
-  published as a pre-release at github.com/jensuid/DA-Harness/releases/tag/v0.2.0.
+  isolated store, and the zip + sha256 published as a pre-release at
+  github.com/jensuid/DA-Harness/releases/tag/v0.2.0.
   first release v0.1.0 published from tag and checksum-verified;
   second release v0.2.0 published (tag `v0.2.0` on `ec819fc`, built and uploaded
   locally because CI would not start - see Known issues)
-- **Next task:** P8-QUALITY-002 - quality detection beyond missingness. The
-  profile finds missing values and duplicate rows today; the PRD's AT-08 wants
-  seven defect classes, each with an *impact* sentence (AT-09) surfaced at the
-  Data stage *before* analysis rather than only at validation. The context
-  object from P8-CONTEXT-001 is in place, so a defect's impact can be phrased
-  against what the case is actually trying to establish. After it:
-  P8-VALID-003 (3 checks to the PRD's 9 validation dimensions - the largest
-  single trust gap), P8-CAUSAL-004, P8-GOLDEN-005.
+- **e2e:** all 25 real-server steps PASS (`verification/e2e/verify_e2e.py`),
+  including the validation step, which now reads the calculation/data
+  dimension keys and prints
+  `status=partially_supported, calculation=rerun matches stored result,
+  data=flagged`.
+
+- **Next task:** P8-CAUSAL-004 - the causal-language guard (AT-18).
+  P8-VALID-003 shipped its weakest deliberate form: the causality check flags
+  causal language in a finding's own statement when the evidence is a
+  correlation, and it is a *check* that says the claim outruns the method, not
+  a policy that refuses it. The full guard needs its own thresholds and the
+  50-case evaluation AT-18 names. After it: P8-GOLDEN-005, the analytical
+  golden suite with reference values (AT-40) and the workflow-completion rate
+  (AT-01) - the suite that *measures* the >= 95% detection rate AT-17 names and
+  the 95%/5% AT-08 names, which this task and its predecessor shipped checks
+  for but could not measure.
   The release is done: **v0.2.0** is tagged on `ec819fc`, 409 server tests pass
   on the tag, and the .app + DMG were built locally and published as a
   flagged pre-release (see below). Note that GitHub Actions is currently

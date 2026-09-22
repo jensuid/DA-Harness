@@ -209,6 +209,14 @@ button.small {
   color: #a03a2a;
 }
 
+/* A validation concern (P8-VALID-003): the computation reproduced and the claim
+   is phrased within it, but the analysis carries a stated limitation. A failure
+   is a different statement, so it reads differently rather than louder. */
+.fail {
+  color: #8a1a1a;
+  font-weight: 600;
+}
+
 .verdict {
   display: inline-block;
   margin: 0.15rem 0.3rem 0.15rem 0;

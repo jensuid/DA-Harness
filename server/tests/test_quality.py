@@ -509,8 +509,8 @@ def test_validation_reads_the_impact_sentence(tmp_path) -> None:
         # sentence changed.
         assert validation["status"] == "partially_supported"
         checks = {c["name"]: c for c in validation["checks"]}
-        assert checks["reproducibility"]["passed"] is True
-        assert "understated" in checks["missing_data"]["detail"]
+        assert checks["calculation"]["passed"] is True
+        assert "understated" in checks["data"]["detail"]
 
 
 def test_the_quality_list_travels_with_an_export(tmp_path) -> None:

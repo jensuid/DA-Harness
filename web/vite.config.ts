@@ -27,5 +27,11 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./src/setup-tests.ts'],
+    // Each test file finishes in well under a second on its own, but running
+    // the files in parallel starves the jsdom environments of CPU on a loaded
+    // machine and the same tests then blow the 5s timeout without ever
+    // touching it - a red suite that says nothing about the code. Serialising
+    // the files costs no wall-clock time and makes the gate deterministic.
+    fileParallelism: false,
   },
 })

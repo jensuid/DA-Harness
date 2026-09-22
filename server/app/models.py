@@ -334,10 +334,29 @@ class PlanSummary(BaseModel):
 
 
 class ValidationCheck(BaseModel):
-    """One check from the validation pass."""
+    """One dimension of a finding's validation (P8-VALID-003, AT-17).
+
+    `name` is kept identical to `dimension` so a client reading the old three
+    checks still finds them; the PRD's nine dimensions are carried by
+    `dimension`. `hard` marks a dimension whose failure blocks `supported`
+    rather than yielding `partially_supported`.
+    """
+
     name: str
+    dimension: str = ""
     passed: bool
     detail: str
+    hard: bool = False
+
+    def __init__(self, **data: Any) -> None:
+        # A caller passing the legacy three fields (name/passed/detail) still
+        # works, and a caller passing the new ones fills `name` from the
+        # dimension so both shapes agree.
+        dimension = data.get("dimension") or data.get("name") or ""
+        data.setdefault("dimension", dimension)
+        data["name"] = data.get("name") or dimension
+        data.setdefault("hard", False)
+        super().__init__(**data)
 
 
 class ValidationResult(BaseModel):

@@ -176,7 +176,7 @@ def test_finding_on_a_join_run_validates(tmp_path) -> None:
 
     assert result.status_code == 200, result.text
     checks = {check["name"]: check for check in result.json()["checks"]}
-    assert checks["reproducibility"]["passed"]
+    assert checks["calculation"]["passed"]
 
 
 def test_duplicate_copies_the_join_run(tmp_path) -> None:

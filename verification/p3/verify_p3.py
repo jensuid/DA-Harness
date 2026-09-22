@@ -316,7 +316,7 @@ def main() -> int:
         repro = [
             check
             for check in validation_body.get("checks", [])
-            if check["name"] == "reproducibility"
+            if check["name"] == "calculation"
         ]
         record(
             "Validate the finding closes the loop",
@@ -325,7 +325,7 @@ def main() -> int:
             and bool(repro)
             and repro[0]["passed"],
             f"status={validation_body.get('status') if validation.status_code == 200 else '-'}"
-            ", reproducibility passed",
+            ", calculation passed",
         )
 
         # 14. The evidence graph covers every artifact, and the claim reaches

@@ -1,4 +1,58 @@
 ## Next action
+**P8-VALID-003 is DONE**: a finding's verdict now accounts for all nine
+dimensions the PRD names (AT-17), not three. Three correct calculations
+answering the wrong question were invisible to the old checks: a comparison
+over groups a filter excluded, a trend read into a single period, causation
+claimed from a correlation. `server/app/validation.py` is new - nine pure
+checks that read objects already on disk and never raise. A check that cannot
+decide *passes* with a "skipped -" sentence, because a verdict must not punish
+a finding for the validator's own blindness; only measured evidence fails. The
+three checks that existed survive as three of the nine (reproducibility ->
+calculation, missing_data -> data, evidence_integrity -> evidence, reusing
+EVALUATE's number-quoting budget rather than reimplementing it). The verdict
+stays three-valued: hard failure -> `insufficient_evidence`, soft concern ->
+`partially_supported`, clean sweep -> `supported`. The run's ownership of the
+case is the one fact the module cannot derive from stored objects, so the
+route folds it in as an evidence override.
+
+**A validation costs one rerun, not nine**, and that is pinned rather than
+assumed: a test with a counter on the query engine asserts exactly one
+execution, and was proven to fail when a second one was injected. The six new
+dimensions read the profile's quality list (P8-QUALITY-002), the case's context
+(P8-CONTEXT-001) and the run's own SQL and result - nothing new is executed, so
+the 4-second budget cannot regress. Unread columns are only "alternatives" if
+they are categorical of 2..CATEGORY_MAX_DISTINCT; an identifier or free text is
+not a competing explanation. The schema stays at v11 - a check is derived,
+never stored. **451 server tests** (16 new), **85 web tests** (1 new, for the
+concern-vs-failure distinction), build green, all 25 real-server e2e steps
+green.
+
+**Two repairs landed with it, and both are worth carrying:**
+- The check-key rename (`reproducibility`/`missing_data`/`evidence_integrity`
+  -> `calculation`/`data`/`evidence`) broke three older server tests and both
+  the P2 and P3 phase gates, which asserted the pre-existing names. Any rename
+  of a contract key must grep the verification scripts too - `verification/`
+  is a consumer of the API, not just `server/tests/` and `web/src/`.
+- The web suite's 5000ms timeouts were **CPU starvation under parallel file
+  execution, not code**. Every CaseWorkspace test passes in under 2s in
+  isolation; run in parallel on a box that was also running a 6-minute server
+  suite, the same tests took 5.5-7.5s and breached the default timeout. The
+  suite is now serial (`fileParallelism: false` in `web/vite.config.ts`):
+  deterministic, no wall-clock cost, and the red signal means code again.
+
+### What is next, in priority order
+
+- **P8-CAUSAL-004** - the causal-language guard (AT-18, 50 cases, 95%
+  thresholds). This task shipped its weakest deliberate form: a *check* that
+  says the claim outruns the method. The full guard is a policy with
+  thresholds and an evaluation corpus.
+- **P8-GOLDEN-005** - the analytical golden suite with reference values
+  (AT-40) and the workflow-completion rate (AT-01). This is what *measures*
+  the >= 95% detection rate AT-17 names and the 95%/5% AT-08 names. Both this
+  task and P8-QUALITY-002 shipped the checks; neither shipped the measurement.
+- **P8-SHELL-006** - the orientation spine (AT-33/34/35).
+
+## Next action
 **P8-QUALITY-002 is DONE**: a profile states what the data *cannot* support,
 before the analyst spends a question on it. AT-08 names seven defect classes
 and AT-09 requires each to carry an analytical impact; before this, two

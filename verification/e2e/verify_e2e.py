@@ -281,11 +281,11 @@ def run_journey(server: Server) -> None:
     # partially_supported rather than supported. The rerun itself reproduced.
     assert validation["status"] in ("supported", "partially_supported"), validation
     checks = {c["name"]: c for c in validation["checks"]}
-    assert checks["reproducibility"]["passed"], validation
+    assert checks["calculation"]["passed"], validation
     note("The finding validates, and the null is flagged", "PASS",
-         f"status={validation['status']}, reproducibility="
-         f"{checks['reproducibility']['detail']}, missing_data="
-         f"{'flagged' if not checks['missing_data']['passed'] else 'clean'}")
+         f"status={validation['status']}, calculation="
+         f"{checks['calculation']['detail']}, data="
+         f"{'flagged' if not checks['data']['passed'] else 'clean'}")
 
     # ---- 10. EVALUATE: the human audits the same artifact ---------------
     evaluation = server.post(

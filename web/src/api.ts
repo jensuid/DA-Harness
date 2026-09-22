@@ -122,11 +122,23 @@ export interface Finding {
   created_at: string
 }
 
+export interface ValidationCheck {
+  /** Legacy name, kept identical to `dimension` so an older client still finds
+   * its check. */
+  name: string
+  /** One of the PRD's nine validation dimensions (AT-17). */
+  dimension: string
+  passed: boolean
+  detail: string
+  /** A hard failure blocks `supported`; a concern yields `partially_supported`. */
+  hard: boolean
+}
+
 export interface ValidationResult {
   finding_id: string
   run_id: string
   status: string
-  checks: { name: string; passed: boolean; detail: string }[]
+  checks: ValidationCheck[]
   validated_at: string
 }
 

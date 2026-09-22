@@ -48,6 +48,7 @@ from app.logging_config import (
     rotated_log_files,
 )
 from app.supervisor import start_parent_watchdog
+from app import validation
 from app.python_exec import run_python
 from app.workflow import STAGES, case_progress
 from app.charts import render_chart, CHART_KINDS, CHART_FORMATS
@@ -1956,10 +1957,12 @@ async def set_validation_status(
 
 
 def _record_repro(checks, reproduced, detail_ok, detail_bad) -> bool:
-    """Append the reproducibility check and report whether it passed."""
+    """Record the single rerun's outcome. The list is a carrier for the detail
+    string the Calculation dimension reads; its check is never returned - the
+    module assembles the nine the client sees."""
     checks.append(
         ValidationCheck(
-            name="reproducibility",
+            name="calculation",
             passed=reproduced,
             detail=detail_ok if reproduced else detail_bad,
         )
@@ -2066,62 +2069,62 @@ async def validate_finding(
 
     checks: list[ValidationCheck] = []
 
-    # 1. Reproducibility: rerun the stored computation - SQL or Python - and
-    # compare it to the stored rows.
+    # The single execution validation performs: rerun the stored computation -
+    # SQL or Python - and compare it to the stored rows. Every other check
+    # reads this outcome rather than running anything, so a validation costs
+    # one execution, not one per dimension.
+    rerun_checks: list[ValidationCheck] = []
     if run_row["kind"] == "python":
-        reproduced = _reproduce_python(run_row, dataset_row, checks)
+        reproduced = _reproduce_python(run_row, dataset_row, rerun_checks)
     else:
-        reproduced = _reproduce_sql(run_row, dataset_ids, by_id, checks)
+        reproduced = _reproduce_sql(run_row, dataset_ids, by_id, rerun_checks)
+    rerun_detail = rerun_checks[0].detail if rerun_checks else "rerun not performed"
 
-    # 2. Denominator: a null-free basis for any aggregate claim.
     profile_row = db.execute(
-        "SELECT stats_json, quality_json FROM profiles WHERE dataset_id = ?",
+        "SELECT stats_json, quality_json, columns_json, rows FROM profiles "
+        "WHERE dataset_id = ?",
         (dataset_row["id"],),
     ).fetchone()
     if profile_row is None:
-        checks.append(
-            ValidationCheck(
-                name="missing_data", passed=True,
-                detail="no profile recorded - skipped",
-            )
-        )
-        null_total = 0
+        profile = None
     else:
-        stats = json.loads(profile_row["stats_json"])
-        null_total = sum(c.get("null_count", 0) for c in stats.values())
-        null_free = null_total == 0
-        # AT-09: the detail is the impact sentence, not the bare count - the
-        # profile already derived what the nulls do to this finding, and the
-        # audit and the Data stage should not say two different things about
-        # the same column.
-        detail = f"{null_total} null value(s) across profiled columns"
-        if not null_free:
-            for issue in json.loads(profile_row["quality_json"] or "[]"):
-                if issue.get("kind") == "missing_values":
-                    detail = issue.get("impact") or detail
-                    break
-        checks.append(
-            ValidationCheck(
-                name="missing_data",
-                passed=null_free,
-                detail=detail,
-            )
-        )
+        profile = {
+            "rows": int(profile_row["rows"]),
+            "columns": json.loads(profile_row["columns_json"]),
+            "stats": json.loads(profile_row["stats_json"]),
+            "quality": json.loads(profile_row["quality_json"] or "[]"),
+        }
 
-    # 3. Evidence integrity: the run still belongs to this case's dataset.
-    owned = run_row["case_id"] == case_id
-    checks.append(
-        ValidationCheck(
-            name="evidence_integrity",
-            passed=owned,
-            detail="run belongs to this case" if owned else "run is foreign to this case",
-        )
+    case_row = db.execute(
+        "SELECT question FROM cases WHERE id = ?", (case_id,)
+    ).fetchone()
+    question = case_row["question"] if case_row else ""
+
+    status, computed = validation.validate_finding(
+        reproduced=reproduced,
+        rerun_detail=rerun_detail,
+        statement=finding.statement,
+        interpretation=finding.interpretation or "",
+        question=question,
+        sql=run_row["sql"] or "",
+        columns=json.loads(run_row["columns_json"] or "[]"),
+        rows=json.loads(run_row["rows_json"] or "[]"),
+        profile=profile,
     )
+    # The run's ownership is the one fact the module cannot derive - it is a
+    # property of the request's route, not of the stored objects - so it is
+    # folded in here as Evidence rather than computed there.
+    owned = run_row["case_id"] == case_id
+    for index, check in enumerate(computed):
+        if check.dimension == validation.DIMENSION_EVIDENCE and not owned:
+            computed[index] = validation.ValidationCheck(
+                validation.DIMENSION_EVIDENCE,
+                False,
+                "run is foreign to this case",
+                hard=True,
+            )
 
-    passed_all = reproduced and owned and null_total == 0
-    status = "supported" if passed_all else "insufficient_evidence"
-    if reproduced and not passed_all:
-        status = "partially_supported"
+    checks = [ValidationCheck(**check.to_dict()) for check in computed]
 
     db.execute(
         "UPDATE findings SET validation_status = ? WHERE id = ?",

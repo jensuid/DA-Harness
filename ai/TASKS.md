@@ -143,7 +143,7 @@ answers.
 | P8-RELEASE | Distribution (the v0.2.0 release) | DONE | tag v0.2.0; 409 server tests green; artifacts built locally and published as pre-release |
 | P8-CONTEXT-001 | Data Layer (the case's context object) | DONE | 21 tests added (409 server, 82 web); schema v10; e2e green |
 | P8-QUALITY-002 | Data Layer (quality beyond missingness) | DONE | 26 tests added (435 server, 84 web); schema v11; e2e green |
-| P8-VALID-003 | Validation (3 checks to 9 dimensions) | OPEN | AT-17 |
+| P8-VALID-003 | Validation (3 checks to 9 dimensions) | DONE | 16 tests added (451 server, 85 web); e2e green; schema v11 |
 | P8-CAUSAL-004 | Validation (the causal-language guard) | OPEN | AT-18 |
 | P8-GOLDEN-005 | Verification (the analytical golden suite) | OPEN | AT-40/AT-01 |
 | P8-SHELL-006 | UX (the orientation spine) | OPEN | AT-33/34/35 |
@@ -151,104 +151,6 @@ answers.
 | P8-DECISION-008 | UX (the decision view) | OPEN | UX 46 |
 | P8-MEASURE-009 | Verification (coverage, perf, a11y, deps) | OPEN | AT-27..30/32/37/38/45/46 |
 | P8-TRACE-010 | Verification (the traceability matrix) | OPEN | AT-48 |
-
-### P8-CONTEXT-001 contract
-
-```
-TASK ID: P8-CONTEXT-001
-MILESTONE: P8 Analytical Contract
-CAPABILITY: Data Layer (the case's context object)
-GOAL: a case carries the analyst's intent, not just a question string. Today a
-      case is `question + dataset`; the PRD (AT-03) requires purpose, primary
-      question, sub-questions and hypotheses to be captured, edited and
-      restored, and the UX architecture (section 13) treats context as a
-      first-class analytical object - business objective, time period,
-      relevant changes, known constraints - that the planner and the assistant
-      reason over. The generated plan already carries sub-questions and
-      hypotheses, but they are the engine's, not the analyst's, they are not
-      editable, and P7-WALK-001 recorded that they are persisted and never
-      rendered. This task is the dependency for P8-REFINE-007 (refinement edits
-      this object), P8-DECISION-008 (the decision view closes over it) and the
-      case overview in P8-SHELL-006.
-CONTEXT: AT-03's threshold is persistence across edit and reopen; AT-10 wants
-         the plan to hold an objective, sub-questions, hypotheses and methods;
-         UX 13 wants context available to the AI. Nothing in the loop currently
-         reads intent - the planner takes `(question, profile)` and the
-         assistant's facts carry no context - so this adds the object and wires
-         the two readers that already exist.
-INPUTS: a case's context: a free-text purpose, a list of sub-questions, a list
-        of hypotheses to test, and a list of known constraints. The primary
-        question stays on the case row (it is already editable and persisted)
-        rather than being duplicated.
-RELEVANT FILES: server/app/db.py (migration 10, the contexts table),
-                server/app/models.py (CaseContext, ContextUpdate),
-                server/app/main.py (GET/PUT /cases/{id}/context, plan wiring),
-                server/app/planner.py (reads context, records a context_basis),
-                server/app/assistant.py (context in facts, one citation kind),
-                server/app/exporter.py (the context section, both directions),
-                web/src/ContextPanel.tsx, web/src/CaseWorkspace.tsx,
-                web/src/api.ts, web/src/CaseWorkspace.test.tsx,
-                server/tests/test_context.py, ai/HANDOFF.md, ai/TASKS.md,
-                ai/CURRENT_STATE.md
-REQUIRED CHANGE:
-  - A `contexts` table, one row per case (case_id PRIMARY KEY), holding purpose
-    and three JSON lists: sub_questions, hypotheses, constraints. Migration 10,
-    guarded so it is a no-op on a store that already has it and resumable after
-    a crashed upgrade - the standard every other migration is held to.
-  - `GET /cases/{case_id}/context` answers the context, defaulting to an empty
-    one for a case that never set it, so the shell's form always has something
-    to render; `PUT /cases/{case_id}/context` replaces it wholesale (idempotent
-    form semantics). A 404 for an unknown case; a 400 for a malformed list -
-    never a silent drop, the discipline AT-20 applies to our own inputs.
-  - The planner accepts an optional context and lets the analyst's intent
-    outrank the derivation: their sub-questions and hypotheses come first, the
-    purpose stands in for a thin objective. The plan records a `context_basis`
-    list naming the fields it actually read, so a reader can tell a plan built
-    from stated intent from one built from a profile alone.
-  - The assistant's facts carry the context, and one deterministic branch
-    answers a question about the case's purpose or its hypotheses citing a
-    `context:` ground - the same shape as the column and dataset branches.
-  - Export carries the context section and import restores it; an older package
-    without one degrades to an empty context rather than erroring.
-NON-GOALS: AI question refinement (P8-REFINE-007 - this object is what that
-           task edits); rendering the plan's own contents (P8-SHELL-006, which
-           is the panel for everything the core computes and the shell does not
-           show); quality detection (P8-QUALITY-002).
-CONSTRAINTS: green only - nothing committed while red, and the schema version
-             climbs to 10 with the migration recorded in the audit trail.
-ACCEPTANCE CRITERIA:
-- [x] entered purpose, sub-questions, hypotheses and constraints persist across
-      a save, close and reopen
-- [x] edited text persists and reopening restores the latest version
-- [x] a plan generated for a case with context records which fields it read in
-      `context_basis`, and the analyst's sub-questions outrank the derived ones
-- [x] 3 sub-questions and 2 hypotheses survive an export -> import round trip
-- [x] a malformed context (non-list, empty item, overlong text) answers 400 and
-      changes nothing
-- [x] a store from v9 opens, upgrades to v10 and keeps every row it had
-TESTS: test_context.py - persistence and reopen, edit, the 400 paths, the
-       migration from v9, the round trip; planner tests for context precedence
-       and basis recording; assistant tests for the new citation kind; web
-       tests for the panel's edit and remove paths.
-VERIFICATION: `cd server && DAH_LLM_API_KEY= DAH_LLM_BASE_URL= DAH_LLM_MODEL=
-              .venv/bin/python -m pytest -q` green;
-              `server/.venv/bin/python verification/e2e/verify_e2e.py` green;
-              `cd web && npm test && npm run build` green.
-STATE UPDATE: TASKS/CURRENT_STATE gain the task and the raised schema version;
-              the store is at v10.
-```
-
-TASK: P8-CONTEXT-001 - the case's context object
-ID: P8-CONTEXT-001
-PRIORITY: high
-STATUS: DONE
-SUMMARY: a case gains structured, editable intent - purpose, sub-questions,
-         hypotheses, known constraints - persisted in a new table (migration
-         10), edited through a GET/PUT pair, read by the planner so a plan is
-         built from stated intent rather than a question string plus a
-         profile, read by the assistant so a question about purpose cites it,
-         and carried by export in both directions. The primary question stays
-         on the case row where it already lives.
 
 ### P8-QUALITY-002 contract
 
@@ -386,6 +288,169 @@ SUMMARY: a profile now states what the data *cannot* support. Seven defect
          exported case and survives a duplicate; the validation endpoint's
          missing-data check now reads the same impact sentence the Data stage
          shows, so the audit and the panel cannot drift apart.
+
+### P8-VALID-003 contract
+
+```
+TASK ID: P8-VALID-003
+MILESTONE: P8 Analytical Contract
+CAPABILITY: Validation (3 checks to the PRD's 9 dimensions)
+GOAL: a finding's verdict accounts for all nine dimensions the PRD names, not
+      three. Today `validate_finding` answers reproducibility, missing data and
+      evidence integrity; the PRD's AT-17 requires Calculation, Data,
+      Population, Timeframe, Method, Evidence, Assumptions, Causality and
+      Alternative explanations. Six are uncomputed, and these are the checks
+      that catch a *correct* calculation answering the *wrong* question - a
+      finding that compares groups a filter excluded, or reads a trend into one
+      period, or claims causation from a correlation. The EVALUATE engine
+      already computes a nine-axis audit of imported work; this task points
+      that machinery at the case's own finding rather than writing a second
+      one, and adds the dimensions EVALUATE does not cover.
+CONTEXT: the gap analysis (`docs/PRD & UX Conformance Evaluation.md`, G1) found
+         the nine-axis audit exists but is aimed at imported artifacts; a
+         finding inside the app gets none of it. The three current checks are
+         the honest core - they are what "supported" means today - so they stay
+         and become three of the nine, rather than being replaced. The six new
+         ones are derived from objects the task's predecessors already built:
+         the profile's quality list (P8-QUALITY-002) feeds Data, Method and
+         Assumptions; the case's context (P8-CONTEXT-001) feeds Population and
+         Timeframe; the run's own SQL and result feed Method and Alternatives.
+INPUTS: a finding, its run (code, columns, rows, kind), the dataset's profile
+        (stats and the quality list), the case's question and context. Nothing
+        new is executed: the run is already stored and the profile already
+        computed, so the six new checks are pure functions of what is on disk -
+        which is also why they cannot regress the 4-second validation budget.
+RELEVANT FILES: server/app/validation.py (new - the nine checks and the
+                verdict assembly), server/app/main.py (validate_finding calls
+                it, keeps the rerun it already performs),
+                server/app/models.py (ValidationCheck gains a dimension,
+                ValidationResult keeps its shape),
+                server/app/evaluator.py (shared: number-quoting and
+                column-read helpers, reused not duplicated),
+                server/app/db.py (no migration - a check is derived, never
+                stored, so the schema stays at v11),
+                web/src/CaseWorkspace.tsx, web/src/api.ts,
+                web/src/CaseWorkspace.test.tsx,
+                server/tests/test_validation.py, ai/HANDOFF.md, ai/TASKS.md,
+                ai/CURRENT_STATE.md
+REQUIRED CHANGE:
+  - `server/app/validation.py` (new): nine checks, one per PRD dimension. Each
+    is a pure function returning (passed, detail) and never raises - a check
+    that cannot decide answers `passed=true` with a sentence saying it was
+    skipped, because a verdict must not punish a finding for the validator's
+    own blindness. The three existing checks move in as Calculation
+    (reproducibility), Data (the profile's missing-data quality issue) and
+    Evidence (the finding's magnitudes all appear in its run's result - the
+    same number-quoting budget EVALUATE uses, reused).
+  - The six new checks, each derived from an object that already exists:
+      * Population - the result's rows are a *subset* the analyst must be told
+        about. A GROUP BY over a filtered table answers a narrower question
+        than the one asked, and a comparison across groups of wildly uneven
+        sizes rests mostly on one of them.
+      * Timeframe - a trend or a "same period last year" claim is checked
+        against the temporal column's actual span and gaps: one period cannot
+        support a trend, and a gap the claim steps over is a comparison of
+        non-adjacent windows.
+      * Method - the computation matches the question's shape. Averages over a
+        column the profile flagged extreme, a COUNT used where a rate is asked,
+        and a comparison that ignores the column the question is about.
+      * Assumptions - the unstated premises a finding rests on, taken from the
+        profile: an implicit "missing is zero", a comparison of unnormalised
+        totals across groups of different sizes.
+      * Causality - the weakest form of AT-18, deliberately: it flags causal
+        language in the finding's own statement when the evidence is a
+        correlation, and leaves the full guard to P8-CAUSAL-004. It is a check
+        that *says* the claim outruns the method, not one that refuses it.
+      * Alternative explanations - the columns the question names that the
+        run never read, plus a categorical variable the profile shows is
+        confounded with the grouping. A finding that does not look at the
+        alternative has not ruled it out.
+  - The verdict assembly stays three-valued - supported /
+    partially_supported / insufficient_evidence - and the rule stays honest: a
+    single failing *hard* check (calculation, evidence, population) blocks
+    `supported`, while a soft concern (method, assumptions, causality,
+    alternatives) yields `partially_supported`, the verdict that says "the
+    numbers reproduce and the claim is phrased within them, but the analysis
+    has a stated limitation". Nothing is failed silently and nothing is
+    promoted silently.
+  - `validate_finding` calls the module and keeps the rerun it already
+    performs - the new checks read the rerun's outcome rather than re-running
+    anything, so validation costs one execution, not nine.
+  - The shell renders each check's dimension and detail; a concern is shown as
+    a concern rather than folded into the pass count, because an analyst who
+    sees "7 pass, 2 concern" reads a different analysis than one who sees
+    "supported".
+NON-GOALS: the full causal-language guard with its own thresholds (P8-CAUSAL-
+           004 - this task ships the *check*, that one ships the policy and
+           the 50-case evaluation); widening the EVALUATE engine's own axes
+           (that audit is of imported work and stays as-is); measuring the
+           >= 95% detection rate AT-17 names (that is the golden suite,
+           P8-GOLDEN-005 - this task ships the checks the suite will measure);
+           storing checks (a validation is recomputed on demand and is
+           deterministic, so it needs no column and no migration).
+CONSTRAINTS: green only. No new SQL execution in the checks - they read the
+             stored run and the stored profile. The API's response shape stays
+             backwards-compatible: `checks` gains entries and each entry gains
+             a `dimension`, and a client reading the old three names still
+             finds them. The schema stays at v11.
+ACCEPTANCE CRITERIA:
+- [x] all nine PRD dimensions have a check, and every finding's validation
+      answer carries all nine
+- [x] the three pre-existing behaviours are preserved verbatim: a clean
+      finding is `supported`, a null in the profile is `partially_supported`,
+      a drifted result is `insufficient_evidence`
+- [x] a check that cannot decide answers `passed=true` with a skip sentence,
+      never a fail and never a 500
+- [x] a finding quoting a magnitude absent from its run fails Evidence, and a
+      finding claiming causation from a correlation is flagged on Causality
+- [x] validation costs one execution of the finding's code, not one per check
+- [x] the shell shows each dimension with its verdict, distinguishing a
+      concern from a failure
+TESTS: test_validation.py - the three preserved behaviours, one raising test
+       per new dimension (a fixture per defect), the skip-when-undecidable
+       rule, and the one-execution budget (a counter on the run engine).
+VERIFICATION: `cd server && DAH_LLM_API_KEY= DAH_LLM_BASE_URL= DAH_LLM_MODEL=
+              .venv/bin/python -m pytest -q` green;
+              `server/.venv/bin/python verification/e2e/verify_e2e.py` green;
+              `cd web && npm test && npm run build` green.
+STATE UPDATE: TASKS/CURRENT_STATE gain the task; the schema stays at v11.
+```
+
+TASK: P8-VALID-003 - validation across the PRD's nine dimensions
+ID: P8-VALID-003
+PRIORITY: high
+STATUS: DONE
+SUMMARY: a finding's verdict now accounts for all nine dimensions the PRD names
+         (AT-17) rather than three. `server/app/validation.py` is new: nine
+         pure checks - calculation, data, population, timeframe, method,
+         evidence, assumptions, causality, alternative_explanations - each
+         returning a verdict and a sentence, and never raising; a check that
+         cannot decide passes with a "skipped -" sentence rather than punishing
+         a finding for the validator's own blindness. The three checks that
+         existed survive as three of the nine: reproducibility became
+         calculation, missing_data became data (it reads the quality issue's
+         impact sentence, so the audit and the Data stage say the same thing
+         about the same null) and evidence_integrity became evidence (the
+         number-quoting budget EVALUATE already used, reused rather than
+         reimplemented). Six are new and are derived from objects the task's
+         predecessors built - the profile's quality list, the case's context,
+         the run's own SQL and result - so nothing new is executed: a
+         validation costs one rerun, not nine, and that is pinned by a test
+         with a counter on the query engine, proven to fail when a second
+         execution is injected. The verdict stays three-valued and stays
+         honest: a hard failure (calculation, evidence, population) yields
+         `insufficient_evidence`, a soft concern yields `partially_supported`,
+         and only a clean sweep is `supported`. The run's ownership of the case
+         is the one fact the module cannot derive from stored objects, so it is
+         folded in by the route as an evidence override. The shell renders each
+         dimension with its sentence and distinguishes a concern from a
+         failure, because an analyst reading "7 pass, 2 concern" reads a
+         different analysis from one reading "supported". The schema stays at
+         v11 - a check is derived, never stored. Also fixed along the way: the
+         check key rename broke three older tests and two phase gates that
+         asserted the pre-existing names, and the web suite's 5000ms timeouts
+         under parallel file execution were load, not code - `fileParallelism:
+         false` makes the gate deterministic without costing wall-clock time.
 
 Contracts for the rolling window (the two most recent). Older blocks are in
 `ai/TASKS-ARCHIVE.md`.

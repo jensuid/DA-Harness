@@ -181,11 +181,11 @@ def main() -> int:
             validation.status_code == 200
             and validation.json().get("status") == "partially_supported"
             and any(
-                check["name"] == "missing_data" and not check["passed"]
+                check["name"] == "data" and not check["passed"]
                 for check in validation.json().get("checks", [])
             ),
             f"status={validation.json().get('status') if validation.status_code == 200 else '-'}"
-            ", missing_data check fired",
+            ", data check fired",
         )
 
         # 11. Case management
