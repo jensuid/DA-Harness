@@ -10,6 +10,95 @@ main {
   padding: 0 1rem;
 }
 
+/* The workspace widens to the three-zone model (UX 8); every other screen
+   stays single-column narrow. */
+main.wide {
+  max-width: 90rem;
+}
+
+/* Where am I / what am I doing / what can help me. The panels are the ones the
+   workspace always rendered; the grid arranges them rather than replacing them,
+   so a panel's own contract is unchanged. */
+.workspace {
+  display: grid;
+  grid-template-columns: 15rem minmax(0, 1fr) 16rem;
+  gap: 0 1.25rem;
+  align-items: start;
+  margin-top: 0.5rem;
+}
+
+.zone {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+}
+
+/* Panels carry their own vertical margins; inside a zone the gap does that
+   job, so the margins come out rather than doubling. */
+.zone .panel {
+  margin: 0;
+}
+
+/* UX 5: "the workflow indicator should remain visible". The rail stays in the
+   viewport while the work zone scrolls, so orientation does not depend on
+   which panel the analyst is reading. */
+.workflow-rail {
+  position: sticky;
+  top: 1rem;
+}
+
+.stage.attention {
+  color: #8a6a1a;
+}
+
+.stage.current {
+  color: #1a4a7a;
+  font-weight: 700;
+}
+
+/* The case overview's labelled rows (UX 45): a label, then the fact, one per
+   line, so a reader scans seven facts rather than seven sentences. */
+ul.overview {
+  list-style: none;
+  padding: 0;
+  margin: 0.5rem 0 0;
+}
+
+ul.overview li {
+  margin: 0.25rem 0;
+  font-size: 0.9rem;
+}
+
+ul.overview li {
+  font-weight: 400;
+}
+
+/* The objective and the question are the two facts an analyst scans for, so
+   they carry the weight; the counts below them read as a list, not headings. */
+ul.overview li:first-child,
+ul.overview li:nth-child(2) {
+  font-weight: 600;
+}
+
+.column-nulls {
+  margin-top: 0.25rem;
+  font-size: 0.85rem;
+}
+
+.column-nulls li {
+  margin: 0.1rem 0;
+}
+
+@media (max-width: 64rem) {
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+  .workflow-rail {
+    position: static;
+  }
+}
+
 h1 {
   font-size: 1.5rem;
 }

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import {
   type Case,
+  type CaseContext,
   type CaseProgress,
   type ClaimTrace,
   type ConversationTurn,
@@ -18,10 +19,12 @@ import {
   type CaseHistory,
   type LearnWalk,
   type Finding,
+  type Plan,
   type GeneratedCode,
   type Interpretation,
   type Profile,
   type QualityIssue,
+  type Run,
   type RunSummary,
   type ValidationResult,
   acceptFinding,
@@ -30,15 +33,18 @@ import {
   approveAgentStep,
   approveRoleAgentStep,
   evaluateDataset,
+  getContext,
   getEvidenceGraph,
   getCaseHistory,
   getLearnWalk,
+  getPlan,
   runEda,
   generateCode,
   getAgentState,
   getRoleAgentState,
   getCase,
   getProgress,
+  getRun,
   interpretRun,
   listChat,
   listDatasets,
@@ -76,6 +82,10 @@ export function CaseWorkspace({
   onOpenCase: (caseId: string) => void
 }) {
   const [caseRow, setCaseRow] = useState<Case | null>(null)
+  // The case's stated intent. The overview's OBJECTIVE reads its purpose, and
+  // a case that never stated one falls back to the question it was created
+  // with - so the overview always answers "what is this case for".
+  const [context, setContext] = useState<CaseContext | null>(null)
   const [progress, setProgress] = useState<CaseProgress | null>(null)
   const [datasets, setDatasets] = useState<Dataset[]>([])
   const [profiles, setProfiles] = useState<Record<string, Profile>>({})
@@ -112,6 +122,15 @@ export function CaseWorkspace({
       ])
       setCaseRow(c)
       setProgress(p)
+      // The context is read-only here: the ContextPanel owns editing it, and
+      // this copy is only the overview's objective. A case that has none is
+      // not an error, so a failure degrades to the question rather than
+      // failing the workspace.
+      try {
+        setContext(await getContext(caseId))
+      } catch {
+        setContext(null)
+      }
       setDatasets(ds)
       setRuns(rs)
       setFindings(fs)
@@ -200,6 +219,17 @@ export function CaseWorkspace({
     )
   }
 
+  // The quality issues the profiler found, across every profiled dataset. The
+  // rail's warning mark and the overview's open-issue count both read this -
+  // a stage's warning is a measured defect (P8-QUALITY-002), never a guess.
+  const qualityIssues = datasets.flatMap((d) => profiles[d.id]?.quality ?? [])
+  // A finding recorded but never validated: the loop's last step is still
+  // waiting, and the overview counts it as an open issue rather than as a
+  // result.
+  const pendingFindings = findings.filter(
+    (f) => f.validation_status === 'not_evaluated',
+  ).length
+
   return (
     <section>
       <button type="button" onClick={onBack} className="link">
@@ -208,65 +238,92 @@ export function CaseWorkspace({
       <h1>{caseRow?.question ?? '…'}</h1>
       {error && <p role="alert">Something went wrong: {error}</p>}
 
-      <Workflow progress={progress} />
-      <ContextPanel caseId={caseId} onChanged={() => void load()} />
-      <LearnPanel walk={walk} error={walkError} missing={walkMissing} />
-      <AgentPanel
-        caseId={caseId}
-        role="analyst"
-        agent={agent}
-        onAgent={setAgent}
-        onChanged={() => void load()}
-      />
-      <DataPanel
-        caseId={caseId}
-        datasets={datasets}
-        profiles={profiles}
-        onChanged={() => void load()}
-      />
-      <EdaPanel caseId={caseId} datasets={datasets} profiles={profiles} />
-      <RunsPanel
-        caseId={caseId}
-        runs={runs}
-        datasets={datasets}
-        onChanged={() => void load()}
-      />
-      <FindingsPanel
-        caseId={caseId}
-        findings={findings}
-        onChanged={() => void load()}
-      />
-      <AgentPanel
-        caseId={caseId}
-        role="reviewer"
-        agent={reviewer}
-        onAgent={setReviewer}
-        onChanged={() => void load()}
-      />
-      <EvidencePanel
-        evidence={evidence}
-        error={evidenceError}
-        empty={evidenceEmpty}
-      />
-      <HistoryPanel
-        history={history}
-        error={historyError}
-        missing={historyMissing}
-      />
-      <EvaluatePanel
-        caseId={caseId}
-        datasets={datasets}
-        profiles={profiles}
-        evaluations={evaluations}
-        onChanged={() => void load()}
-      />
-      <Chat
-        caseId={caseId}
-        turns={turns}
-        onTurn={(turn) => setTurns((prior) => [...prior, turn])}
-        onOpenCase={onOpenCase}
-      />
-      <PromoteTemplate caseId={caseId} question={caseRow?.question ?? ''} />
+      {/* UX 8: three zones - where am I, what am I doing, what can help me.
+          Every panel here already existed with its own contract; the layout
+          arranges them rather than replacing them. The rail stays visible in
+          the left zone while the work scrolls (UX 5: "the workflow indicator
+          should remain visible"), so orientation does not depend on the panel
+          the analyst happens to be reading. */}
+      <div className="workspace">
+        <section className="zone orientation" aria-label="orientation">
+          <WorkflowRail
+            progress={progress}
+            qualityWarning={qualityIssues.length > 0}
+          />
+          <CaseOverview
+            question={caseRow?.question ?? ''}
+            purpose={context?.purpose ?? ''}
+            progress={progress}
+            datasets={datasets.length}
+            findings={findings.length}
+            openIssues={qualityIssues.length + pendingFindings}
+            pendingValidation={pendingFindings}
+          />
+          <LearnPanel walk={walk} error={walkError} missing={walkMissing} />
+          <HistoryPanel
+            history={history}
+            error={historyError}
+            missing={historyMissing}
+          />
+          <PromoteTemplate caseId={caseId} question={caseRow?.question ?? ''} />
+        </section>
+        <section className="zone work" aria-label="work">
+          <DataPanel
+            caseId={caseId}
+            datasets={datasets}
+            profiles={profiles}
+            onChanged={() => void load()}
+          />
+          <PlanPanel caseId={caseId} datasets={datasets} />
+          <EdaPanel caseId={caseId} datasets={datasets} profiles={profiles} />
+          <RunsPanel
+            caseId={caseId}
+            runs={runs}
+            datasets={datasets}
+            onChanged={() => void load()}
+          />
+          <FindingsPanel
+            caseId={caseId}
+            findings={findings}
+            onChanged={() => void load()}
+          />
+          <EvaluatePanel
+            caseId={caseId}
+            datasets={datasets}
+            profiles={profiles}
+            evaluations={evaluations}
+            onChanged={() => void load()}
+          />
+          <EvidencePanel
+            evidence={evidence}
+            error={evidenceError}
+            empty={evidenceEmpty}
+          />
+        </section>
+        <section className="zone intelligence" aria-label="intelligence">
+          <ContextPanel caseId={caseId} onChanged={() => void load()} />
+          <AgentPanel
+            caseId={caseId}
+            role="analyst"
+            agent={agent}
+            onAgent={setAgent}
+            onChanged={() => void load()}
+          />
+          <AgentPanel
+            caseId={caseId}
+            role="reviewer"
+            agent={reviewer}
+            onAgent={setReviewer}
+            onChanged={() => void load()}
+          />
+          <Chat
+            caseId={caseId}
+            turns={turns}
+            onTurn={(turn) => setTurns((prior) => [...prior, turn])}
+            onOpenCase={onOpenCase}
+          />
+        </section>
+      </div>
     </section>
   )
 }
@@ -368,10 +425,30 @@ const PHASE_TITLES: Record<string, string> = {
   validate: 'Validate',
 }
 
-function Workflow({ progress }: { progress: CaseProgress | null }) {
+// The orientation spine (UX 5/7, AT-33): a persistent rail that answers
+// "where am I in this loop and what is next" from the artifact counts the core
+// derives, so the rail cannot disagree with the core's own stage. The four
+// marks are the UX document's status vocabulary:
+//
+//   ✓  complete      - the stage has an artifact behind it
+//   ⚠  attention     - complete, but a measured defect degrades it (a
+//                      data-quality issue the profiler found, P8-QUALITY-002)
+//   ●  current       - the core's derived stage: the first one with nothing
+//                      behind it, which is where the next action lands
+//   ○  not started
+//
+// The warning is data rather than a guess: it reads the same quality issues the
+// Data panel renders, so the mark and the panel can never disagree.
+function WorkflowRail({
+  progress,
+  qualityWarning,
+}: {
+  progress: CaseProgress | null
+  qualityWarning: boolean
+}) {
   if (!progress) return <p>Loading workflow…</p>
   return (
-    <div className="panel">
+    <div className="panel workflow-rail">
       <h2>Where this case stands</h2>
       {/* One text node: the sentence stays readable in the DOM and in a screen
           reader, and a test can assert on it without reaching across elements. */}
@@ -391,15 +468,105 @@ function Workflow({ progress }: { progress: CaseProgress | null }) {
         <p>Every stage has an artifact behind it.</p>
       )}
       <ul className="stages">
-        {progress.stages.map((stage) => (
-          <li
-            key={stage.name}
-            className={stage.completed ? 'stage done' : 'stage'}
-            aria-label={`stage ${stage.name}: ${stage.completed ? 'complete' : 'pending'}`}
-          >
-            {stage.completed ? '✓' : '○'} {stage.name}
-          </li>
-        ))}
+        {progress.stages.map((stage) => {
+          const status = stageStatus(stage.name, progress, qualityWarning)
+          return (
+            <li
+              key={stage.name}
+              className={`stage ${status}`}
+              aria-label={`stage ${stage.name}: ${status}`}
+            >
+              {STAGE_MARKS[status]} {stage.name}
+            </li>
+          )
+        })}
+      </ul>
+    </div>
+  )
+}
+
+// One stage's status, derived the same way the core derives the stage itself:
+// a stage is complete when `progress.completed` names it, current when it is
+// the first stage that does not, and not started otherwise. The warning is the
+// only judgement here, and it is a measured one - the data stage's artifact
+// exists but the profiler found something in it.
+function stageStatus(
+  name: string,
+  progress: CaseProgress,
+  qualityWarning: boolean,
+): 'complete' | 'attention' | 'current' | 'pending' {
+  if (progress.completed.includes(name)) {
+    // A stage reached but degraded warns rather than passing silently; every
+    // other completed stage is clean.
+    if (name === 'data' && qualityWarning) return 'attention'
+    return 'complete'
+  }
+  // The core's stage is the first incomplete one, so this is where the loop is.
+  if (name === progress.stage) return 'current'
+  return 'pending'
+}
+
+const STAGE_MARKS: Record<string, string> = {
+  complete: '✓',
+  attention: '⚠',
+  current: '●',
+  pending: '○',
+}
+
+// The case's control center (UX 45, AT-33): the seven things an analyst needs
+// to answer "what is this case, and where does it stand" without scrolling
+// through panels. Every number is an artifact count the core already computed,
+// so the overview is a reading of the case rather than a second opinion about
+// it - and it cannot drift from the rail beside it.
+function CaseOverview({
+  question,
+  purpose,
+  progress,
+  datasets,
+  findings,
+  openIssues,
+  pendingValidation,
+}: {
+  question: string
+  purpose: string
+  progress: CaseProgress | null
+  datasets: number
+  findings: number
+  openIssues: number
+  pendingValidation: number
+}) {
+  // The analyst's stated purpose outranks the question when both exist; a case
+  // that never stated one is described by the question it was created with, so
+  // the objective is never blank.
+  const objective = purpose.trim() || question
+  const total = progress ? progress.stages.length : 0
+  const done = progress ? progress.completed.length : 0
+  const validated = progress ? progress.counts['validated_findings'] ?? 0 : 0
+
+  return (
+    <div className="panel case-overview">
+      <h2>Case overview</h2>
+      {/* One text node per fact: the label and its value stay in the same
+          element, so each sentence reads whole in the DOM and in a screen
+          reader, and nothing has to reach across elements to match one. */}
+      <ul className="overview">
+        <li>Objective: {objective}</li>
+        <li>Question: {question}</li>
+        <li>
+          Status: {done} / {total} stages complete
+          {progress?.loop_closed && ' — the trust loop has closed'}
+        </li>
+        <li>Key findings: {findings}</li>
+        <li>Open issues: {openIssues}</li>
+        <li>Data sources: {datasets}</li>
+        <li>
+          Validation: {validated} finding{validated === 1 ? '' : 's'} validated
+          {pendingValidation > 0
+            ? `, ${pendingValidation} pending`
+            : findings > 0
+              ? ''
+              : ' — none recorded yet'}
+        </li>
       </ul>
     </div>
   )
@@ -492,6 +659,7 @@ function DataPanel({
                   <span className="muted"> — profiling…</span>
                 )}
                 {profile && <QualityList quality={profile.quality} />}
+                {profile && <ColumnNulls profile={profile} />}
               </li>
             )
           })}
@@ -589,6 +757,163 @@ function GeneratePanel({
   )
 }
 
+// The plan's own contents (UX 17, AT-33's "current task"): the planner
+// persists sub-questions, hypotheses and steps, and rendering them is what
+// tells the analyst what to run next - the plan is the loop's to-do list, and
+// until it was rendered here it was written but never read back.
+//
+// Read-only: generating a plan is a POST the Data stage owns, and this panel
+// only reads the latest one. A dataset without a plan yet says so plainly,
+// because a missing plan is guidance ("generate one") rather than a failure.
+function PlanPanel({
+  caseId,
+  datasets,
+}: {
+  caseId: string
+  datasets: Dataset[]
+}) {
+  const [plan, setPlan] = useState<Plan | null>(null)
+  const [missing, setMissing] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (datasets.length === 0) {
+      setPlan(null)
+      setMissing(false)
+      setError(null)
+      return
+    }
+    let cancelled = false
+    setError(null)
+    // The plan belongs to a dataset; the first attached one is the one the
+    // workspace generates code against, so its plan is the one the analyst is
+    // working from.
+    getPlan(caseId, datasets[0].id)
+      .then((result) => {
+        if (cancelled) return
+        setPlan(result)
+        setMissing(false)
+      })
+      .catch((err) => {
+        if (cancelled) return
+        setPlan(null)
+        // A 404 is a case that has not planned yet; anything else is a real
+        // failure the panel reports rather than hiding behind the empty state.
+        setMissing(err instanceof ApiError && err.status === 404)
+        setError(messageOf(err))
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [caseId, datasets])
+
+  if (datasets.length === 0) {
+    return (
+      <div className="panel">
+        <h2>Plan</h2>
+        <p className="muted">Attach a dataset before planning the analysis.</p>
+      </div>
+    )
+  }
+
+  if (!plan) {
+    return (
+      <div className="panel">
+        <h2>Plan</h2>
+        {missing ? (
+          <p className="muted">
+            No plan for {datasets[0].filename} yet - generate one to get
+            sub-questions, hypotheses and the steps that answer them.
+          </p>
+        ) : error ? (
+          <p role="alert">The plan could not be read: {error}</p>
+        ) : (
+          <p className="muted">Loading the plan…</p>
+        )}
+      </div>
+    )
+  }
+
+  const body = plan.plan
+  return (
+    <div className="panel">
+      <h2>Plan</h2>
+      <p className="muted">
+        planned by {plan.source} for {datasets[0].filename}
+        {body.context_basis.length > 0 &&
+          ` — read from ${body.context_basis.join(', ')}`}
+      </p>
+      <h3>Objective</h3>
+      <p>Objective: {body.objective}</p>
+      <h3>Sub-questions</h3>
+      <ol className="items">
+        {body.sub_questions.map((item, i) => (
+          <li key={i}>{item}</li>
+        ))}
+      </ol>
+      <h3>Hypotheses</h3>
+      <ul className="items">
+        {body.hypotheses.map((hypothesis, i) => (
+          <li key={i} className="run">
+            <p><strong>{hypothesis.statement}</strong></p>
+            <p className="muted">why: {hypothesis.rationale}</p>
+            <p className="muted">how to check: {hypothesis.check}</p>
+          </li>
+        ))}
+      </ul>
+      <h3>Steps</h3>
+      <ol className="items">
+        {body.analysis_steps.map((step, i) => (
+          <li key={i}>
+            <strong>{step.action}</strong>
+            <span className="muted"> — {step.detail}</span>
+          </li>
+        ))}
+      </ol>
+      <h3>Data requirements</h3>
+      <ul className="items">
+        {body.data_requirements.map((requirement, i) => (
+          <li key={i} className="muted">
+            {requirement.requirement}: {requirement.detail}
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+// The profile's per-column null counts, as the profiler measured them. A
+// column's null percentage is what the missing-data check and the planner both
+// read, and rendering it at the Data stage means the analyst sees the hole
+// before spending a question on it (UX 15).
+function ColumnNulls({ profile }: { profile: Profile }) {
+  const stats = (profile.stats ?? {}) as Record<string, {
+    null_count?: number
+    null_percentage?: number
+  }>
+  const rows = profile.columns
+    .map((column) => ({ column, stat: stats[column] }))
+    .filter((entry): entry is { column: string; stat: { null_count: number; null_percentage: number } } =>
+      entry.stat !== undefined &&
+      typeof entry.stat.null_count === 'number' &&
+      typeof entry.stat.null_percentage === 'number',
+    )
+  if (rows.length === 0) return null
+  return (
+    <ul className="items column-nulls">
+      {rows.map(({ column, stat }) => (
+        <li
+          key={column}
+          className={stat.null_count > 0 ? 'warn' : 'muted'}
+          aria-label={`${column}: ${stat.null_count} null (${stat.null_percentage}%)`}
+        >
+          {column}: {stat.null_count} null{stat.null_count === 1 ? '' : 's'} ({stat.null_percentage}%)
+        </li>
+      ))}
+    </ul>
+  )
+}
+
 function RunsPanel({
   caseId,
   runs,
@@ -640,8 +965,27 @@ function RunRow({
 }) {
   const [reading, setReading] = useState<Interpretation | null>(null)
   const [draft, setDraft] = useState<DraftFinding | null>(null)
+  // A run's own rows, reopened on demand: the summary says a run exists, the
+  // rows are what a finding rests on, and AT-34 asks a reader to trace a claim
+  // back to them without leaving the workspace.
+  const [rows, setRows] = useState<Run | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  async function showRows() {
+    if (busy) return
+    setBusy(true)
+    setError(null)
+    try {
+      setRows(await getRun(caseId, run.id))
+      setReading(null)
+      setDraft(null)
+    } catch (err) {
+      setError(messageOf(err))
+    } finally {
+      setBusy(false)
+    }
+  }
 
   async function read() {
     setBusy(true)
@@ -683,6 +1027,15 @@ function RunRow({
         <button type="button" onClick={draftIt} disabled={busy} className="small">
           {busy ? 'Working…' : 'Draft a finding'}
         </button>
+        <button
+          type="button"
+          onClick={() => (rows ? setRows(null) : void showRows())}
+          disabled={busy}
+          className="small"
+          aria-expanded={rows !== null}
+        >
+          {busy ? 'Working…' : rows ? 'Hide the rows' : 'Show the rows'}
+        </button>
       </div>
       {error && <p role="alert">The assistant failed: {error}</p>}
       {reading && (
@@ -717,6 +1070,49 @@ function RunRow({
             onChanged()
           }}
         />
+      )}
+      {rows && <RunRowsTable run={rows} />}
+    </div>
+  )
+}
+
+// A run's result, as the table it always was on the wire: the core persisted
+// the columns and the rows, so the finding a run supports can be checked
+// against the numbers it quotes without re-running anything. The query that
+// produced them sits above the table, because a claim is judged by what it
+// computed and not only by what came back.
+function RunRowsTable({ run }: { run: Run }) {
+  const query = run.sql ?? run.code
+  return (
+    <div className="proposal" data-testid="run-rows">
+      {query && <pre>{query}</pre>}
+      {run.rows.length === 0 ? (
+        <p className="muted">The run produced no rows.</p>
+      ) : (
+        <table className="eda">
+          <thead>
+            <tr>
+              {run.columns.map((column) => (
+                <th key={column}>{column}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {run.rows.map((row, i) => (
+              <tr key={i}>
+                {row.map((value, j) => (
+                  <td key={j}>{formatValue(value)}</td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+      {run.truncated && (
+        <p className="muted">
+          The result was capped at the row limit; the stored count is{' '}
+          {run.row_count}.
+        </p>
       )}
     </div>
   )

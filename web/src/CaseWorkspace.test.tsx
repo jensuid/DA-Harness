@@ -13,7 +13,9 @@ vi.mock('./api', async (importOriginal) => {
     putContext: vi.fn(),
     getProgress: vi.fn(),
     listDatasets: vi.fn(),
+    getPlan: vi.fn(),
     listRuns: vi.fn(),
+    getRun: vi.fn(),
     listFindings: vi.fn(),
     listChat: vi.fn(),
     profileDataset: vi.fn(),
@@ -66,9 +68,9 @@ const profile = {
   rows: 3,
   columns: ['order_id', 'revenue', 'region'],
   stats: {
-    order_id: { type: 'other' },
-    revenue: { type: 'numeric' },
-    region: { type: 'other' },
+    order_id: { type: 'other', null_count: 0, null_percentage: 0 },
+    revenue: { type: 'numeric', null_count: 1, null_percentage: 33.33 },
+    region: { type: 'other', null_count: 0, null_percentage: 0 },
   },
   duplicate_rows: 0,
   quality: [],
@@ -352,6 +354,15 @@ describe('CaseWorkspace', () => {
     // per test - otherwise a "not called" assertion answers for every test that
     // ran before it.
     vi.clearAllMocks()
+    // The plan panel reads the latest plan on mount. A case without one answers
+    // 404, so that is the default; a test that wants a plan overrides it. The
+    // rows are read only on demand, so their default is the same refusal.
+    vi.mocked(api.getPlan).mockRejectedValue(
+      new api.ApiError(404, 'plan not found'),
+    )
+    vi.mocked(api.getRun).mockRejectedValue(
+      new api.ApiError(404, 'run not found'),
+    )
   })
   it('shows the question, the derived stage, the next action and the artifacts', async () => {
     mockEmptyCase()
@@ -373,7 +384,7 @@ describe('CaseWorkspace', () => {
       expect(screen.getByRole('heading', { name: 'Why did revenue decline?' })).toBeInTheDocument(),
     )
     expect(screen.getByLabelText('stage question: complete')).toBeInTheDocument()
-    expect(screen.getByLabelText('stage analyze: pending')).toBeInTheDocument()
+    expect(screen.getByLabelText('stage analyze: current')).toBeInTheDocument()
   })
 
   it('reports the profile once the data is attached', async () => {
@@ -1796,6 +1807,228 @@ expect(timeline.getByText(/case created/)).toBeInTheDocument()
       await screen.findByText(/the agent stopped: the budget is exhausted/i),
     ).toBeInTheDocument()
   })
+  describe('the orientation spine', () => {
+    it('answers AT-33 from the workspace alone: case, stage, task, next action, status', async () => {
+      mockEmptyCase()
+      render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+      await waitFor(() =>
+        expect(screen.getByRole('heading', { name: 'Why did revenue decline?' })).toBeInTheDocument(),
+      )
+
+      // The case itself.
+      expect(screen.getByText(/objective: why did revenue decline\?/i)).toBeInTheDocument()
+      expect(screen.getByText(/question: why did revenue decline\?/i)).toBeInTheDocument()
+      // The stage the loop is on, and the task that closes it.
+      expect(screen.getByText(/stage: analyze/i)).toBeInTheDocument()
+      expect(screen.getByText('Run an analysis')).toBeInTheDocument()
+      // The analysis status, as artifact counts rather than adjectives.
+      expect(screen.getByText(/status: 4 \/ 5 stages complete/i)).toBeInTheDocument()
+      expect(screen.getByText(/key findings: 0/i)).toBeInTheDocument()
+      expect(screen.getByText(/data sources: 1/i)).toBeInTheDocument()
+      expect(screen.getByText(/validation: 0 findings? validated/i)).toBeInTheDocument()
+    })
+
+    it('reads the stated purpose as the objective when the case has one', async () => {
+      mockEmptyCase()
+      vi.mocked(api.getContext).mockResolvedValue({
+        ...emptyContext(),
+        purpose: 'Understand the Q2 revenue decline.',
+      })
+      render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+      expect(await screen.findByText(/objective: understand the q2 revenue decline\./i)).toBeInTheDocument()
+      // The question stays beside it: the purpose is why, the question is what.
+      expect(screen.getByText(/question: why did revenue decline\?/i)).toBeInTheDocument()
+    })
+
+    it('counts the open issues: quality defects plus findings awaiting validation', async () => {
+      mockEmptyCase()
+      vi.mocked(api.profileDataset).mockResolvedValue({
+        ...profile,
+        quality: [
+          { kind: 'invalid_types', column: 'revenue', severity: 'high',
+            observed: '2 of 3 revenue values are text', impact: 'Sums of revenue are null.' },
+        ],
+      })
+      vi.mocked(api.listFindings).mockResolvedValue([
+        { id: 'f1', case_id: 'c1', run_id: 'r1', statement: 'North leads.',
+          interpretation: null, caveat: null, validation_status: 'not_evaluated', created_at: '' },
+      ])
+      vi.mocked(api.getProgress).mockResolvedValue({
+        ...progress,
+        counts: { ...progress.counts, findings: 1, validated_findings: 0 },
+      })
+
+      render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+      expect(await screen.findByText(/open issues: 2/i)).toBeInTheDocument()
+      expect(screen.getByText(/validation: 0 findings validated, 1 pending/i)).toBeInTheDocument()
+    })
+
+    it('keeps the rail, the work and the assistant in the three zones', async () => {
+      mockEmptyCase()
+      render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+      await waitFor(() =>
+        expect(screen.getByRole('region', { name: /orientation/i })).toBeInTheDocument(),
+      )
+      const orientation = screen.getByRole('region', { name: /orientation/i })
+      const work = screen.getByRole('region', { name: /^work$/i })
+      const intelligence = screen.getByRole('region', { name: /intelligence/i })
+
+      // The rail is what makes the stage visible without scrolling (UX 5).
+      expect(within(orientation).getByText(/where this case stands/i)).toBeInTheDocument()
+      expect(within(orientation).getByText(/case overview/i)).toBeInTheDocument()
+      // The work zone holds the surfaces that produce artifacts.
+      expect(within(work).getByRole('heading', { name: 'Data' })).toBeInTheDocument()
+      expect(within(work).getByRole('heading', { name: 'Runs' })).toBeInTheDocument()
+      expect(within(work).getByRole('heading', { name: 'Findings' })).toBeInTheDocument()
+      // The intelligence zone holds the assistants - and only them.
+      expect(within(intelligence).getByRole('heading', { name: /ask this case/i })).toBeInTheDocument()
+      expect(within(intelligence).getByRole('heading', { name: 'Agent' })).toBeInTheDocument()
+      expect(within(intelligence).queryByRole('heading', { name: 'Runs' })).not.toBeInTheDocument()
+    })
+
+    it('marks the data stage with a warning when the profiler found a defect', async () => {
+      mockEmptyCase()
+      vi.mocked(api.profileDataset).mockResolvedValue({
+        ...profile,
+        quality: [
+          { kind: 'invalid_types', column: 'revenue', severity: 'high',
+            observed: '2 of 3 revenue values are text', impact: 'Sums of revenue are null.' },
+        ],
+      })
+
+      render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+      expect(await screen.findByLabelText('stage data: attention')).toBeInTheDocument()
+      // A clean stage stays clean beside it.
+      expect(screen.getByLabelText('stage profile: complete')).toBeInTheDocument()
+    })
+
+    it('marks every stage the loop has finished and the one it is on', async () => {
+      mockEmptyCase()
+      render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+      await waitFor(() => expect(screen.getByLabelText('stage question: complete')).toBeInTheDocument())
+      expect(screen.getByLabelText('stage data: complete')).toBeInTheDocument()
+      expect(screen.getByLabelText('stage profile: complete')).toBeInTheDocument()
+      expect(screen.getByLabelText('stage plan: complete')).toBeInTheDocument()
+      expect(screen.getByLabelText('stage analyze: current')).toBeInTheDocument()
+    })
+
+    it('renders each column null count the profiler measured at the Data stage', async () => {
+      mockEmptyCase()
+      render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+      const dataPanel = await screen.findByRole('heading', { name: 'Data' }).then((h) => h.parentElement!)
+      expect(within(dataPanel).getByText('revenue: 1 null (33.33%)')).toBeInTheDocument()
+      expect(within(dataPanel).getByText('order_id: 0 nulls (0%)')).toBeInTheDocument()
+    })
+
+    it('renders the plan the planner persisted: sub-questions, hypotheses and steps', async () => {
+      mockEmptyCase()
+      vi.mocked(api.getPlan).mockResolvedValue({
+        id: 'p1', case_id: 'c1', dataset_id: 'd1',
+        question: 'Why did revenue decline?',
+        plan: {
+          objective: 'Explain the Q2 revenue decline.',
+          primary_question: 'Why did revenue decline?',
+          sub_questions: ['How does revenue differ across region?'],
+          hypotheses: [
+            { statement: 'One region drives the decline',
+              rationale: 'revenue varies by region',
+              check: 'Group revenue by region and rank the groups' },
+          ],
+          data_requirements: [{ requirement: 'completeness', detail: 'revenue: 33.33% null' }],
+          analysis_steps: [{ action: 'grouped comparison', detail: 'Aggregate revenue per region' }],
+          context_basis: ['purpose'],
+        },
+        source: 'deterministic',
+        created_at: '',
+      })
+
+      render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+      expect(await screen.findByText(/objective: explain the q2 revenue decline\./i)).toBeInTheDocument()
+      expect(screen.getByText('How does revenue differ across region?')).toBeInTheDocument()
+      expect(screen.getByText('One region drives the decline')).toBeInTheDocument()
+      expect(screen.getByText(/how to check: group revenue by region/i)).toBeInTheDocument()
+      expect(screen.getByText(/grouped comparison/i)).toBeInTheDocument()
+      expect(screen.getByText(/completeness: revenue: 33.33% null/i)).toBeInTheDocument()
+      expect(screen.getByText(/planned by deterministic/i)).toBeInTheDocument()
+    })
+
+    it('says plainly when no plan exists yet, rather than failing', async () => {
+      mockEmptyCase()
+      render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+      expect(await screen.findByText(/no plan for sales\.csv yet/i)).toBeInTheDocument()
+    })
+
+    it('shows a run\'s result rows and the query that produced them', async () => {
+      mockEmptyCase()
+      vi.mocked(api.listRuns).mockResolvedValue([runFixture()])
+      vi.mocked(api.getRun).mockResolvedValue({
+        id: 'r1', case_id: 'c1', dataset_id: 'd1', kind: 'sql',
+        sql: 'SELECT region, SUM(revenue) AS total FROM sales GROUP BY region',
+        code: null, dataset_ids: ['d1'],
+        columns: ['region', 'total'], rows: [['north', 120], ['south', 80]],
+        row_count: 2, truncated: false, executed_at: '',
+      })
+
+      const user = userEvent.setup()
+      render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+      await user.click(await screen.findByRole('button', { name: /show the rows/i }))
+
+      const table = await screen.findByTestId('run-rows')
+      expect(within(table).getByText('region')).toBeInTheDocument()
+      expect(within(table).getByText('total')).toBeInTheDocument()
+      expect(within(table).getByText('north')).toBeInTheDocument()
+      expect(within(table).getByText('120')).toBeInTheDocument()
+      expect(within(table).getByText('south')).toBeInTheDocument()
+      expect(within(table).getByText('80')).toBeInTheDocument()
+      expect(within(table).getByText(/sum\(revenue\) as total/i)).toBeInTheDocument()
+      expect(api.getRun).toHaveBeenCalledWith('c1', 'r1')
+    })
+
+    it('hides the rows again when the analyst closes them', async () => {
+      mockEmptyCase()
+      vi.mocked(api.listRuns).mockResolvedValue([runFixture()])
+      vi.mocked(api.getRun).mockResolvedValue({
+        id: 'r1', case_id: 'c1', dataset_id: 'd1', kind: 'sql', sql: null, code: 'print(1)',
+        dataset_ids: ['d1'], columns: ['a'], rows: [[1]], row_count: 1,
+        truncated: false, executed_at: '',
+      })
+
+      const user = userEvent.setup()
+      render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+      await user.click(await screen.findByRole('button', { name: /show the rows/i }))
+      const table = await screen.findByTestId('run-rows')
+      expect(within(table).getByRole('columnheader', { name: 'a' })).toBeInTheDocument()
+
+      await user.click(screen.getByRole('button', { name: /hide the rows/i }))
+      await waitFor(() => expect(screen.queryByTestId('run-rows')).not.toBeInTheDocument())
+    })
+
+    it('states the row cap when a stored result was truncated', async () => {
+      mockEmptyCase()
+      vi.mocked(api.listRuns).mockResolvedValue([{ ...runFixture(), truncated: true }])
+      vi.mocked(api.getRun).mockResolvedValue({
+        id: 'r1', case_id: 'c1', dataset_id: 'd1', kind: 'sql', sql: 'SELECT * FROM sales',
+        code: null, dataset_ids: ['d1'], columns: ['region'], rows: [['north']],
+        row_count: 500, truncated: true, executed_at: '',
+      })
+
+      const user = userEvent.setup()
+      render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+      await user.click(await screen.findByRole('button', { name: /show the rows/i }))
+      expect(await screen.findByText(/stored count is 500/i)).toBeInTheDocument()
+    })
+
+    it('reports a failed read of the rows rather than hiding it', async () => {
+      mockEmptyCase()
+      vi.mocked(api.listRuns).mockResolvedValue([runFixture()])
+      vi.mocked(api.getRun).mockRejectedValue(new api.ApiError(500, 'internal error'))
+
+      const user = userEvent.setup()
+      render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+      await user.click(await screen.findByRole('button', { name: /show the rows/i }))
+      expect(await screen.findByText(/the assistant failed: internal error/i)).toBeInTheDocument()
+    })
+  })
 })
 
   describe('the context panel', () => {
@@ -1898,4 +2131,7 @@ expect(timeline.getByText(/case created/)).toBeInTheDocument()
       // The text the analyst typed is still there, so the retry costs nothing.
       expect(screen.getByLabelText('Purpose')).toHaveValue('a stated purpose')
     })
+  
+
   })
+

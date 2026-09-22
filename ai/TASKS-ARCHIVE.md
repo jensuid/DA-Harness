@@ -8,6 +8,166 @@ rolling window (the two most recent tasks); everything else is here.
 
 ---
 
+### P8-CAUSAL-004 contract
+
+```
+TASK ID: P8-CAUSAL-004
+MILESTONE: P8 Analytical Contract
+CAPABILITY: Validation (the causal-language guard)
+GOAL: an unsupported causal claim is not just commented on, it is *guarded*.
+      P8-VALID-003 shipped AT-18's weakest form on purpose: a 14-phrase
+      substring match over the finding's statement that raises a soft concern
+      and yields `partially_supported`. That names the gap; it never refuses
+      anything, and the concern can be read as a footnote rather than a
+      verdict. AT-18's actual thresholds are a measurement contract - across
+      50 cases, >= 95% of unsupported causal claims are flagged, >= 95%
+      distinguish association from causation, and **0** cases convert an
+      unsupported association into a validated causal finding. The last clause
+      is the one the current check does not hold: a finding that says "spend
+      drives signups" over six correlating rows can still be accepted and
+      reported as `supported` once the other eight dimensions are clean,
+      because causality is a soft concern. This task makes the guard a
+      gate on the verdict and ships the 50-case corpus that measures it.
+CONTEXT: the gap analysis (G5) said EVALUATE's claim axis flags causal
+         language; it does not - that axis tests *specificity* (a direction or
+         a magnitude), never causation, so there is no existing machinery to
+         reuse. The only causal detector is `check_causality` itself. The
+         verdict vocabulary P8-VALID-003 formalised is what this guard acts on,
+         and the context object P8-CONTEXT-001 built is what distinguishes a
+         claim the case *can* support from one it cannot: a finding that
+         asserts causation over an observational comparison is unsupported,
+         while one over a documented intervention (a launch date, an A/B test,
+         a change recorded in the case's constraints) is a different claim.
+         Measuring is the other half of AT-18 - the corpus is the artefact the
+         threshold is computed over, and it is deliberately data rather than
+         assertions so P8-GOLDEN-005 can fold it into the golden suite.
+INPUTS: the finding's statement and interpretation, the case's context
+        (purpose, hypotheses, constraints - the last is where an intervention
+        is recorded), the run's SQL, and the profile. Nothing is executed and
+        nothing is stored: the guard is a pure function of objects already on
+        disk, same rule as every other check.
+RELEVANT FILES: server/app/causality.py (new - the detector, the hedging and
+                intervention logic, the corpus and the measurement),
+                server/app/validation.py (check_causality calls it; the
+                verdict rule changes from a concern to a gate),
+                server/app/main.py (validate_finding passes the context),
+                server/tests/test_causality.py (new - the corpus as data, the
+                measurement over it, the intervention and hedging paths),
+                server/tests/test_validation.py (the verdict's new behaviour),
+                web/src/CaseWorkspace.tsx (a guarded finding renders as a
+                refusal with the sentence to fix, not a warning),
+                ai/HANDOFF.md, ai/TASKS.md, ai/CURRENT_STATE.md
+REQUIRED CHANGE:
+  - `server/app/causality.py` (new):
+      * A detector wider than the substring list: causal verbs and connectives
+        ("drives", "causes", "leads to", "results in", "because of", "due to",
+        "so", "therefore", "thus", "hence", "is why", "the reason", "brings
+        about", "generates"), matched as word boundaries on normalised text so
+        "causes" does not fire inside "because".
+      * Hedging: a modal or qualifier immediately before the causal phrase
+        ("may drive", "could lead to", "might affect", "appears to influence",
+        "seems to cause") is an *associative* claim wearing causal words - the
+        hedge is the author stating the limitation themselves, so it does not
+        trip the guard. An unhedged phrase does.
+      * Negation: "does not drive", "no evidence that X causes Y" asserts the
+        absence of causation, which is the guard's own conclusion; it must not
+        be flagged as a violation.
+      * An intervention basis: the case's context records a change - a launch
+        date, an experiment, an A/B test, a policy change in the constraints or
+        the hypotheses - and the SQL compares across it (a before/after window
+        over a temporal column, or a control comparison). A causal claim over
+        an intervention is supported, and the guard says which intervention it
+        read rather than refusing everything causal by default. Without a
+        recorded intervention, an observational comparison supports
+        association only.
+      * A 50-case corpus as data - 25 unsupported causal claims, 15
+        associative claims that must not be flagged, 10 hedged or negated
+        claims - each with its expected verdict, drawn from the phrasings a
+        finding actually carries rather than synthetic one-liners. The
+        measurement computes the three AT-18 numbers from the corpus.
+  - `check_causality` becomes a gate rather than a comment: an unsupported
+    causal claim is a hard failure for the verdict, so the status is
+    `insufficient_evidence` (the claim outruns the evidence, which is what
+    that verdict means) rather than `partially_supported`. The three hard
+    dimensions become four. A hedged or associative statement stays clean, and
+    an intervention-backed claim passes with its basis named.
+  - `validate_finding` passes the case's context to the causality check, so
+    the intervention basis is read from the object the analyst already edits
+    rather than from a new field.
+  - The shell renders a guarded finding as a refusal with the sentence the
+    analyst must change, not as a yellow warning beside a green verdict; the
+    verdict is the message.
+NON-GOALS: the golden suite's other measurements (P8-GOLDEN-005 - this ships
+           the causal corpus, that one ships the workflow-completion rate and
+           the analytical reference values, and may fold this corpus in);
+           detecting confounding or deriving a causal graph (the guard is
+           about language and method shape, not about estimating effects);
+           causal discovery over the data itself; refusing the write - the
+           finding is still stored, it is the *verdict* that refuses.
+CONSTRAINTS: green only. The guard is deterministic and offline - no LLM call,
+             no new scan, no new schema. The corpus lives in the repository and
+             the measurement runs in the suite, so AT-18's threshold is
+             asserted on every run rather than quoted.
+ACCEPTANCE CRITERIA:
+- [x] an unhedged causal claim over an observational comparison yields
+      `insufficient_evidence`, not `supported`
+- [x] a hedged ("may drive", "could lead to") or negated ("does not cause")
+      claim is not flagged, and the corpus's false-positive rate shows it
+- [x] a causal claim over an intervention recorded in the case's context is
+      supported, and the detail names the intervention it read
+- [x] the 50-case corpus is data in the repository, and the measurement over
+      it reports >= 95% detection, >= 95% association/causation
+      discrimination and 0 conversions, asserted in the suite
+- [x] the guard costs no execution and no schema change
+- [x] the shell shows a guarded finding as a refusal naming the sentence to
+      fix, not a warning beside a pass
+TESTS: test_causality.py - the corpus as data with its measurement (the three
+       AT-18 numbers computed, not hardcoded), one test per detector path
+       (hedging, negation, intervention, word-boundary matching), the verdict's
+       new gate behaviour through validate_finding; test_validation.py's
+       causality tests updated to the new verdict; web test for the refusal's
+       rendering.
+VERIFICATION: `cd server && DAH_LLM_API_KEY= DAH_LLM_BASE_URL= DAH_LLM_MODEL=
+              .venv/bin/python -m pytest -q` green;
+              `server/.venv/bin/python verification/e2e/verify_e2e.py` green;
+              `cd web && npm test && npm run build` green.
+STATE UPDATE: TASKS/CURRENT_STATE gain the task; the schema stays at v11 and
+              the hard dimensions become four.
+```
+
+TASK: P8-CAUSAL-004 - the causal-language guard
+ID: P8-CAUSAL-004
+PRIORITY: high
+STATUS: DONE
+SUMMARY: an unsupported causal claim is guarded, not merely commented on. Until
+         this task the causality check raised a *soft concern* - a finding that
+         said "spend drives signups" over six correlating rows could still be
+         reported `supported` once the other eight dimensions were clean, and
+         AT-18's zero-conversion clause was not held. New
+         `server/app/causality.py` makes three judgements: an unhedged causal
+         verb over an observational comparison is unsupported and gates the
+         verdict (`insufficient_evidence`, causality now the fourth hard
+         dimension); a hedge ("may drive") or a negation ("does not cause") is
+         the author stating the limitation themselves and passes; and an
+         intervention the case's context records *and the SQL compares across*
+         earns causation, naming the intervention it read. The branch that
+         matters most: an intervention the case merely mentions but the query
+         never compares across still fails - mentioning is not using. The
+         corpus is 50 cases held as data (20 unsupported, 12 associative, 8
+         hedged, 10 intervention-backed), and the measurement computes AT-18's
+         three numbers over it on every run: 100% detection, 100%
+         discrimination, 0 conversions. Two detector bugs the corpus found
+         rather than assumed: normalisation strips the slash so "a/b test"
+         arrived as "a b test" and the intervention pattern missed it, and the
+         negation window had to widen from 3 to 5 words to read "no evidence
+         that ... caused". The guard costs no execution and no schema. The
+         shell renders a guarded finding as a refusal naming the sentence to
+         fix. One limitation recorded in the module rather than papered over: a
+         causal word used as a noun ("the causes column") fires, because
+         word-boundary matching cannot tell a noun from a verb.
+
+
+
 ### P8-QUALITY-002 contract
 
 ```

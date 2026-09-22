@@ -1,7 +1,7 @@
-**Phase:** P8 Analytical Contract - IN PROGRESS (5 of 10 delivered: the case's
+**Phase:** P8 Analytical Contract - IN PROGRESS (6 of 10 delivered: the case's
 context object, quality beyond missingness, the PRD's nine validation
-dimensions, the causal guard, and the analytical golden suite that measures
-them). P7 Product Modes is COMPLETE - every checklist
+dimensions, the causal guard, the analytical golden suite that measures them,
+and the orientation spine that presents them). P7 Product Modes is COMPLETE - every checklist
 item that builds something shipped, including the manual walkthrough and the
 CORS fix, and the store's schema is at v11. P6, P5, P4, P3, P2, P1 and P0 are
 all COMPLETE (see the phase table below). P8 closes the PRD's Level 1 breadth
@@ -11,39 +11,36 @@ causal-language guard, the analytical golden suite, the orientation spine,
 question refinement, the decision view, and the measurement layer. The full gap
 analysis is `docs/PRD & UX Conformance Evaluation.md`.
 
-- **Active task:** P8-GOLDEN-005 DONE - the analytical golden suite. The trust
-  machinery P8 built was unmeasured; AT-40 and AT-01 are now numbers. Three
-  fixtures (sales, spend, tickets) carry 21 reference calculations covering all
-  ten of AT-40's shapes, and every golden value is derived two ways before the
-  engine is asked - by hand from the fixture, and by an independent Python path
-  over the parsed CSV (with `statistics` for the moments and ROUND_HALF_UP
-  where SQL rounds), never by DuckDB. A disagreement between the two fails the
-  suite, because the fixture is wrong, not the engine. Only then does a real
-  server answer the same question over HTTP: 21/21 match within a stated
-  tolerance, 100%, against AT-40's threshold of 100%. The same 21 scripted
-  journeys answer AT-01, because the query a run makes *is* the reference
-  query - create, attach, profile, plan, run, interpret, draft, accept,
-  validate, reopen - and 21/21 complete the loop over 3 datasets, against
-  thresholds of 95%, 20 runs and 3 datasets. Both numbers are asserted in
-  test_golden.py (the only slow test in the suite, marked `slow` and
-  deselectable) rather than only in a report, and a deliberately wrong
-  expectation is caught by the audit, so the measurement is known to fail when
-  it should. Offline by construction: the runner fails the `plan` stage unless
-  the planner answers `source: "deterministic"`, so a completion rate above
-  zero is itself proof no LLM was called. An `insufficient_evidence` verdict
-  still counts as a complete run, because a finding the evidence does not
-  support is a finished analysis.
-  Two bugs the suite surfaced, each fixed with its own tests. Grouping by a
-  date column handed a raw `datetime.date` to `json.dumps` and answered a 500
-  for a valid query - the profile already described a date as an ISO string,
-  and the run path now agrees (Decimals and bytes by the same rule). And the
-  runner's own health check raced the stdout pump thread for the server's
-  announcement, blocking forever on a `readline()` with no timeout; it now
-  reads the pump's captured history.
-  Before it: P8-CAUSAL-004 (the causal guard), P8-VALID-003 (nine validation
-  dimensions), P8-QUALITY-002, P8-CONTEXT-001, the v0.2.0 release.
-  Before it: P8-VALID-003 (nine validation dimensions), P8-QUALITY-002
-  (quality beyond missingness), P8-CONTEXT-001, the v0.2.0 release.
+- **Active task:** P8-SHELL-006 DONE - the orientation spine. The shell answers
+  AT-33's seven questions as a layout rather than as a sentence. The persistent
+  rail carries UX 7's four marks - `✓` complete, `⚠` requires attention, `●`
+  the current stage, `○` not started - derived the same way the core derives
+  the stage, from `progress.completed` and `progress.stage`, so the rail cannot
+  disagree with the core. The one judgement is the warning, and it is measured:
+  the data stage's `⚠` is the profiler's own quality defect (P8-QUALITY-002),
+  never a guess. Beside the rail sits the case overview (UX 45) - objective,
+  question, "N / M stages complete", key findings, open issues, data sources,
+  validation counts - each an artifact count the core already computed, with
+  the objective reading the context's purpose and the question as the
+  fallback. The workspace splits into three landmark zones (orientation / work
+  / intelligence), a rearrangement of panels that already existed: no panel was
+  rewritten, and the tests that pinned them were not edited to fit the layout -
+  only the assertion that a stage the loop is on was "pending" now reads
+  "current", the rail's own sharper vocabulary.
+  The three render gaps the walkthrough found are closed over endpoints that
+  already existed: a run's result rows and the query that produced them reopen
+  on demand (with the truncation notice when the stored result was capped); the
+  plan's own contents - sub-questions, hypotheses with their rationale and
+  check, steps, data requirements, the basis it was planned from - render
+  instead of being written and never read back; and every column's measured
+  null count shows at the Data stage. The two adjacent near-identical input
+  boxes are separated by the zones themselves. Two new client functions
+  (`getRun`, `getPlan`) read endpoints the core already served; no server code
+  changed. One limitation recorded rather than papered over: the overview's
+  labels are unstyled text, because splitting a label into its own element
+  breaks the text matching a test and a screen reader both read.
+  Before it: P8-GOLDEN-005 (the golden suite), P8-CAUSAL-004 (the causal
+  guard), P8-VALID-003, P8-QUALITY-002, P8-CONTEXT-001, the v0.2.0 release.
 
 - **Known issues:** CI's billing is suspended: every workflow (Release, and both CI suites) is
   rejected at start with "recent account payments have failed or your spending
@@ -57,27 +54,34 @@ analysis is `docs/PRD & UX Conformance Evaluation.md`.
   documented minimum but is no longer enforced by CI, and a green run no longer
   proves the exact Intel triple a local build produces. Restoring that needs a
   self-hosted Intel runner.
-- **Test status:** server 477 passed (6 for this suite: the ten shapes' coverage, the suite's own size floor, the two-way fixture audit, the deliberately-wrong expectation the audit catches, the comparator's tolerance, and the one slow measurement over a real server; +3 in test_analysis.py for the date/timestamp/numeric serialisation the suite surfaced) (16 causality: the corpus's three
-  AT-18 thresholds computed and asserted, one test per detector path - hedging,
-  negation, intervention-used-vs-mentioned, word boundaries - the verdict's new
-  gate through validate_finding, and a hedged finding that can still be
-  `supported`; the 16 pre-existing validation tests gained the new `context`
-  argument, and the concern-vs-failure test was rephrased to a non-causal
-  concern, since a causal phrase now reaches `insufficient_evidence`)
-  (16 quality; 21 context; 4 cors; 4 csv)
-  (336 + 22 evaluate + 9 learn + 13 multi-agent + 4 cors + 4 csv + 21 context
-  + 26 quality + 16 validation + 16 causality + 6 golden); web 86 passed (1 for the
-  guard's refusal rendering: a guarded finding shows "the verdict refuses this
-  finding" with the sentence to fix, distinguishable at a glance from a soft
-  concern); desktop shell 22 Rust tests; P2, P3 and P4 gates PASS;
+- **Test status:** server 477 passed (unchanged - P8-SHELL-006 touched only
+  the shell); web 99 passed (13 for this task: AT-33's seven questions asserted
+  from the rendered workspace, the purpose-as-objective path, the open-issue
+  count over quality defects plus findings awaiting validation, the three zones
+  as landmarks with the assistants on one side and the work on another, the
+  four marks over completed / current / attention stages, the per-column null
+  counts, the plan's full body, the no-plan-yet degradation, the run's rows
+  with its query, the hide path, the truncation notice, and a failed read
+  reported rather than hidden).
+  Before it, the server suite's own additions this phase: 6 golden (the ten
+  shapes' coverage, the suite's own size floor, the two-way fixture audit, the
+  deliberately-wrong expectation the audit catches, the comparator's tolerance,
+  and the one slow measurement over a real server; +3 in test_analysis.py for
+  the date/timestamp/numeric serialisation the suite surfaced), 16 causality
+  (the corpus's three AT-18 thresholds computed and asserted, one test per
+  detector path - hedging, negation, intervention-used-vs-mentioned, word
+  boundaries - the verdict's new gate through validate_finding, and a hedged
+  finding that can still be `supported`), 16 validation, 26 quality, 21
+  context. Desktop shell 22 Rust tests; P2, P3 and P4 gates PASS;
   **v0.2.0 released** (tag `v0.2.0` on `ec819fc`).
 - **e2e:** all 25 real-server steps PASS.
 
-- **Next task:** P8-SHELL-006 - the orientation spine (AT-33/34/35): the shell
-  tells an analyst where they are in the workflow and what the next action is,
-  the surface the golden suite's loop measurement proves exists end to end.
-  After it: P8-REFINE-007 (question refinement, AT-04, which edits the context
-  object P8-CONTEXT-001 built) and P8-DECISION-008 (the decision view).
+- **Next task:** P8-REFINE-007 - question refinement (AT-04): AI proposes a
+  refinement, the original question is preserved verbatim and shown beside it,
+  and accept / edit / keep-original are the only three paths - zero silent
+  overwrites is a Level 0 requirement. It edits the context object
+  P8-CONTEXT-001 built. After it: P8-DECISION-008 (the decision view, UX 46,
+  the loop's exit) and P8-MEASURE-009 (the measurement layer).
   The release is done: **v0.2.0** is tagged on `ec819fc`. GitHub Actions is
   still refusing to start any job with "recent account payments have failed";
   that is an account billing problem (Settings > Billing & plans), not a code

@@ -15,7 +15,9 @@ export function App() {
 
   if (view.kind === 'workspace') {
     return (
-      <main>
+      // The workspace spreads to three zones (UX 8); the list and the creation
+      // form stay single-column narrow.
+      <main className="wide">
         <CaseWorkspace
           caseId={view.caseId}
           onBack={() => setView({ kind: 'list' })}

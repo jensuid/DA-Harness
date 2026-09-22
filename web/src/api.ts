@@ -47,6 +47,46 @@ export interface WorkflowStage {
   completed: boolean
 }
 
+// A run reopened with its result rows (P8-SHELL-006): the summary tells you a
+// run exists, the full run is what a finding actually rests on. The rows are
+// JSON the core serialised, so a cell may be a number, a string or null.
+export interface Run {
+  id: string
+  case_id: string
+  dataset_id: string
+  kind: string
+  sql: string | null
+  code: string | null
+  dataset_ids: string[] | null
+  columns: string[]
+  rows: unknown[][]
+  row_count: number
+  truncated: boolean
+  executed_at: string
+}
+
+// The plan's body, as the planner persisted it. Every entry references columns
+// the profile actually has, so the plan is actionable rather than generic.
+export interface PlanBody {
+  objective: string
+  primary_question: string
+  sub_questions: string[]
+  hypotheses: { statement: string; rationale: string; check: string }[]
+  data_requirements: { requirement: string; detail: string }[]
+  analysis_steps: { action: string; detail: string }[]
+  context_basis: string[]
+}
+
+export interface Plan {
+  id: string
+  case_id: string
+  dataset_id: string
+  question: string
+  plan: PlanBody
+  source: string
+  created_at: string
+}
+
 export interface CaseProgress {
   stage: string
   completed: string[]
@@ -429,6 +469,12 @@ export function listRuns(id: string): Promise<RunSummary[]> {
   return request<RunSummary[]>(`/cases/${id}/runs`)
 }
 
+// A run's own rows, reopened (P8-SHELL-006): the result a finding rests on is
+// readable without re-running it.
+export function getRun(caseId: string, runId: string): Promise<Run> {
+  return request<Run>(`/cases/${caseId}/runs/${runId}`)
+}
+
 export function postChat(id: string, message: string): Promise<ConversationTurn> {
   return request<ConversationTurn>(`/cases/${id}/chat`, {
     method: 'POST',
@@ -472,6 +518,12 @@ export function runSql(
 
 // The three assistant slices. Each returns a proposal and writes nothing
 // except interpret, which persists a reading of an already-persisted result.
+// The latest plan for a dataset (P8-SHELL-006): the loop's plan stage is a
+// persisted artifact, and rendering it is what tells the analyst what to run.
+export function getPlan(caseId: string, datasetId: string): Promise<Plan> {
+  return request<Plan>(`/cases/${caseId}/datasets/${datasetId}/plan`)
+}
+
 export function generateCode(
   caseId: string,
   datasetId: string,
