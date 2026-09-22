@@ -145,175 +145,12 @@ answers.
 | P8-QUALITY-002 | Data Layer (quality beyond missingness) | DONE | 26 tests added (435 server, 84 web); schema v11; e2e green |
 | P8-VALID-003 | Validation (3 checks to 9 dimensions) | DONE | 16 tests added (451 server, 85 web); e2e green; schema v11 |
 | P8-CAUSAL-004 | Validation (the causal-language guard) | DONE | 16 tests added (468 server, 86 web); 50-case corpus measures 100% on AT-18's three thresholds; e2e green; schema v11 |
-| P8-GOLDEN-005 | Verification (the analytical golden suite) | OPEN | AT-40/AT-01 |
+| P8-GOLDEN-005 | Verification (the analytical golden suite) | DONE | 21 reference calculations match at 100% (AT-40); 21/21 scripted runs complete the loop at 100% over 3 datasets (AT-01); 477 server, 86 web; e2e green |
 | P8-SHELL-006 | UX (the orientation spine) | OPEN | AT-33/34/35 |
 | P8-REFINE-007 | AI (question refinement) | OPEN | AT-04 |
 | P8-DECISION-008 | UX (the decision view) | OPEN | UX 46 |
 | P8-MEASURE-009 | Verification (coverage, perf, a11y, deps) | OPEN | AT-27..30/32/37/38/45/46 |
 | P8-TRACE-010 | Verification (the traceability matrix) | OPEN | AT-48 |
-
-### P8-VALID-003 contract
-
-```
-TASK ID: P8-VALID-003
-MILESTONE: P8 Analytical Contract
-CAPABILITY: Validation (3 checks to the PRD's 9 dimensions)
-GOAL: a finding's verdict accounts for all nine dimensions the PRD names, not
-      three. Today `validate_finding` answers reproducibility, missing data and
-      evidence integrity; the PRD's AT-17 requires Calculation, Data,
-      Population, Timeframe, Method, Evidence, Assumptions, Causality and
-      Alternative explanations. Six are uncomputed, and these are the checks
-      that catch a *correct* calculation answering the *wrong* question - a
-      finding that compares groups a filter excluded, or reads a trend into one
-      period, or claims causation from a correlation. The EVALUATE engine
-      already computes a nine-axis audit of imported work; this task points
-      that machinery at the case's own finding rather than writing a second
-      one, and adds the dimensions EVALUATE does not cover.
-CONTEXT: the gap analysis (`docs/PRD & UX Conformance Evaluation.md`, G1) found
-         the nine-axis audit exists but is aimed at imported artifacts; a
-         finding inside the app gets none of it. The three current checks are
-         the honest core - they are what "supported" means today - so they stay
-         and become three of the nine, rather than being replaced. The six new
-         ones are derived from objects the task's predecessors already built:
-         the profile's quality list (P8-QUALITY-002) feeds Data, Method and
-         Assumptions; the case's context (P8-CONTEXT-001) feeds Population and
-         Timeframe; the run's own SQL and result feed Method and Alternatives.
-INPUTS: a finding, its run (code, columns, rows, kind), the dataset's profile
-        (stats and the quality list), the case's question and context. Nothing
-        new is executed: the run is already stored and the profile already
-        computed, so the six new checks are pure functions of what is on disk -
-        which is also why they cannot regress the 4-second validation budget.
-RELEVANT FILES: server/app/validation.py (new - the nine checks and the
-                verdict assembly), server/app/main.py (validate_finding calls
-                it, keeps the rerun it already performs),
-                server/app/models.py (ValidationCheck gains a dimension,
-                ValidationResult keeps its shape),
-                server/app/evaluator.py (shared: number-quoting and
-                column-read helpers, reused not duplicated),
-                server/app/db.py (no migration - a check is derived, never
-                stored, so the schema stays at v11),
-                web/src/CaseWorkspace.tsx, web/src/api.ts,
-                web/src/CaseWorkspace.test.tsx,
-                server/tests/test_validation.py, ai/HANDOFF.md, ai/TASKS.md,
-                ai/CURRENT_STATE.md
-REQUIRED CHANGE:
-  - `server/app/validation.py` (new): nine checks, one per PRD dimension. Each
-    is a pure function returning (passed, detail) and never raises - a check
-    that cannot decide answers `passed=true` with a sentence saying it was
-    skipped, because a verdict must not punish a finding for the validator's
-    own blindness. The three existing checks move in as Calculation
-    (reproducibility), Data (the profile's missing-data quality issue) and
-    Evidence (the finding's magnitudes all appear in its run's result - the
-    same number-quoting budget EVALUATE uses, reused).
-  - The six new checks, each derived from an object that already exists:
-      * Population - the result's rows are a *subset* the analyst must be told
-        about. A GROUP BY over a filtered table answers a narrower question
-        than the one asked, and a comparison across groups of wildly uneven
-        sizes rests mostly on one of them.
-      * Timeframe - a trend or a "same period last year" claim is checked
-        against the temporal column's actual span and gaps: one period cannot
-        support a trend, and a gap the claim steps over is a comparison of
-        non-adjacent windows.
-      * Method - the computation matches the question's shape. Averages over a
-        column the profile flagged extreme, a COUNT used where a rate is asked,
-        and a comparison that ignores the column the question is about.
-      * Assumptions - the unstated premises a finding rests on, taken from the
-        profile: an implicit "missing is zero", a comparison of unnormalised
-        totals across groups of different sizes.
-      * Causality - the weakest form of AT-18, deliberately: it flags causal
-        language in the finding's own statement when the evidence is a
-        correlation, and leaves the full guard to P8-CAUSAL-004. It is a check
-        that *says* the claim outruns the method, not one that refuses it.
-      * Alternative explanations - the columns the question names that the
-        run never read, plus a categorical variable the profile shows is
-        confounded with the grouping. A finding that does not look at the
-        alternative has not ruled it out.
-  - The verdict assembly stays three-valued - supported /
-    partially_supported / insufficient_evidence - and the rule stays honest: a
-    single failing *hard* check (calculation, evidence, population) blocks
-    `supported`, while a soft concern (method, assumptions, causality,
-    alternatives) yields `partially_supported`, the verdict that says "the
-    numbers reproduce and the claim is phrased within them, but the analysis
-    has a stated limitation". Nothing is failed silently and nothing is
-    promoted silently.
-  - `validate_finding` calls the module and keeps the rerun it already
-    performs - the new checks read the rerun's outcome rather than re-running
-    anything, so validation costs one execution, not nine.
-  - The shell renders each check's dimension and detail; a concern is shown as
-    a concern rather than folded into the pass count, because an analyst who
-    sees "7 pass, 2 concern" reads a different analysis than one who sees
-    "supported".
-NON-GOALS: the full causal-language guard with its own thresholds (P8-CAUSAL-
-           004 - this task ships the *check*, that one ships the policy and
-           the 50-case evaluation); widening the EVALUATE engine's own axes
-           (that audit is of imported work and stays as-is); measuring the
-           >= 95% detection rate AT-17 names (that is the golden suite,
-           P8-GOLDEN-005 - this task ships the checks the suite will measure);
-           storing checks (a validation is recomputed on demand and is
-           deterministic, so it needs no column and no migration).
-CONSTRAINTS: green only. No new SQL execution in the checks - they read the
-             stored run and the stored profile. The API's response shape stays
-             backwards-compatible: `checks` gains entries and each entry gains
-             a `dimension`, and a client reading the old three names still
-             finds them. The schema stays at v11.
-ACCEPTANCE CRITERIA:
-- [x] all nine PRD dimensions have a check, and every finding's validation
-      answer carries all nine
-- [x] the three pre-existing behaviours are preserved verbatim: a clean
-      finding is `supported`, a null in the profile is `partially_supported`,
-      a drifted result is `insufficient_evidence`
-- [x] a check that cannot decide answers `passed=true` with a skip sentence,
-      never a fail and never a 500
-- [x] a finding quoting a magnitude absent from its run fails Evidence, and a
-      finding claiming causation from a correlation is flagged on Causality
-- [x] validation costs one execution of the finding's code, not one per check
-- [x] the shell shows each dimension with its verdict, distinguishing a
-      concern from a failure
-TESTS: test_validation.py - the three preserved behaviours, one raising test
-       per new dimension (a fixture per defect), the skip-when-undecidable
-       rule, and the one-execution budget (a counter on the run engine).
-VERIFICATION: `cd server && DAH_LLM_API_KEY= DAH_LLM_BASE_URL= DAH_LLM_MODEL=
-              .venv/bin/python -m pytest -q` green;
-              `server/.venv/bin/python verification/e2e/verify_e2e.py` green;
-              `cd web && npm test && npm run build` green.
-STATE UPDATE: TASKS/CURRENT_STATE gain the task; the schema stays at v11.
-```
-
-TASK: P8-VALID-003 - validation across the PRD's nine dimensions
-ID: P8-VALID-003
-PRIORITY: high
-STATUS: DONE
-SUMMARY: a finding's verdict now accounts for all nine dimensions the PRD names
-         (AT-17) rather than three. `server/app/validation.py` is new: nine
-         pure checks - calculation, data, population, timeframe, method,
-         evidence, assumptions, causality, alternative_explanations - each
-         returning a verdict and a sentence, and never raising; a check that
-         cannot decide passes with a "skipped -" sentence rather than punishing
-         a finding for the validator's own blindness. The three checks that
-         existed survive as three of the nine: reproducibility became
-         calculation, missing_data became data (it reads the quality issue's
-         impact sentence, so the audit and the Data stage say the same thing
-         about the same null) and evidence_integrity became evidence (the
-         number-quoting budget EVALUATE already used, reused rather than
-         reimplemented). Six are new and are derived from objects the task's
-         predecessors built - the profile's quality list, the case's context,
-         the run's own SQL and result - so nothing new is executed: a
-         validation costs one rerun, not nine, and that is pinned by a test
-         with a counter on the query engine, proven to fail when a second
-         execution is injected. The verdict stays three-valued and stays
-         honest: a hard failure (calculation, evidence, population) yields
-         `insufficient_evidence`, a soft concern yields `partially_supported`,
-         and only a clean sweep is `supported`. The run's ownership of the case
-         is the one fact the module cannot derive from stored objects, so it is
-         folded in by the route as an evidence override. The shell renders each
-         dimension with its sentence and distinguishes a concern from a
-         failure, because an analyst reading "7 pass, 2 concern" reads a
-         different analysis from one reading "supported". The schema stays at
-         v11 - a check is derived, never stored. Also fixed along the way: the
-         check key rename broke three older tests and two phase gates that
-         asserted the pre-existing names, and the web suite's 5000ms timeouts
-         under parallel file execution were load, not code - `fileParallelism:
-         false` makes the gate deterministic without costing wall-clock time.
 
 ### P8-CAUSAL-004 contract
 
@@ -472,6 +309,136 @@ SUMMARY: an unsupported causal claim is guarded, not merely commented on. Until
          fix. One limitation recorded in the module rather than papered over: a
          causal word used as a noun ("the causes column") fires, because
          word-boundary matching cannot tell a noun from a verb.
+
+
+### P8-GOLDEN-005 contract
+
+```
+TASK ID: P8-GOLDEN-005
+MILESTONE: P8 Analytical Contract
+CAPABILITY: Verification (the analytical golden suite)
+GOAL: the trust machinery P8 built is unmeasured. AT-40 names ten analytical
+      shapes a product like this must compute correctly - aggregation,
+      filtering, joins, missingness, duplicates, dates, percentages,
+      segmentation, statistical calculations, validation - and requires 100% of
+      deterministic reference calculations to match expected results. AT-01
+      requires >= 95% of scripted workflow attempts to complete the full loop
+      over >= 20 runs and >= 3 datasets. Today neither number exists: the
+      detectors and the nine dimensions are pinned by per-feature tests, but a
+      test that asserts its own fixture cannot tell you the product computes a
+      percentile correctly against data it did not write. This task ships the
+      golden datasets as fixtures with hand-computed reference values, and a
+      suite that runs the real workflow over them and reports the two numbers.
+CONTEXT: the phase's own rule is that convenience is sacrificed before
+         analytical trust, and the three tasks before this built the objects a
+         measurement would cover - quality detection (P8-QUALITY-002), the nine
+         validation dimensions (P8-VALID-003) and the causal guard with its
+         50-case corpus (P8-CAUSAL-004). That corpus is the model for this one:
+         data plus a measurement, not a wall of assertions. The golden values
+         are computed by hand and by an independent path (Python's statistics
+         module over the same fixture), never by running the query and
+         recording what came back - which would make the suite tautological.
+INPUTS: three or more deterministic CSV fixtures, each covering a subset of
+        AT-40's ten shapes, each with: the reference SQL or Python the analyst
+        would run, and the expected rows computed independently. The workflow
+        measurement drives the loop over them - create, question, attach,
+        profile, plan, run, interpret, draft, accept, validate, reopen.
+RELEVANT FILES: verification/golden/datasets/*.csv (new fixtures),
+                verification/golden/reference.py (new - the hand-computed
+                expectations and the independent-path recomputation),
+                verification/golden/verify_golden.py (new - the runner: the
+                reference-calculation check and the workflow-completion
+                measurement, writing verification/golden/REPORT.md),
+                server/tests/test_golden.py (new - asserts the runner's two
+                numbers in the suite, so a regression fails a test rather
+                than a report nobody reads),
+                ai/HANDOFF.md, ai/TASKS.md, ai/CURRENT_STATE.md
+REQUIRED CHANGE:
+  - Deterministic fixtures, at least three, each exercising several of AT-40's
+    shapes: a sales dataset with missingness, duplicates, dates and
+    segmentation; a spend/signups dataset for joins and correlation; a tickets
+    dataset for percentages and statistical calculations. Small enough to hold
+    a reference value in the head, real enough that the shapes are not
+    synthetic one-rows.
+  - Reference values computed two ways: by hand from the fixture's own numbers,
+    and independently in the suite by a second path (Python over the parsed
+    CSV, not the engine's own SQL), so the golden value is not the engine
+    agreeing with itself. Where the two paths disagree the fixture is wrong,
+    not the engine.
+  - A runner that, per dataset and shape: attaches the fixture to a real server
+    on an isolated store, runs the reference query over HTTP, and compares the
+    result to the golden value within a stated tolerance. Floats compare to a
+    tolerance; exact types (counts, category labels) compare exactly.
+  - The workflow-completion measurement: a scripted run over each dataset
+    walking the whole loop AT-01 names, counting a run complete when every
+    stage produced its artifact and the case reopens with it. >= 20 scripted
+    runs, >= 3 datasets, reported as a rate.
+  - Both numbers asserted in the test suite, not only written to a report.
+NON-GOALS: the traceability matrix (P8-TRACE-010); coverage/perf/a11y
+           measurement (P8-MEASURE-009); new core capability - every shape the
+           suite measures is computed by code that already exists, and a
+           failure in the suite is a finding about an existing calculation, not
+           a reason to build one; LLM-judged quality.
+CONSTRAINTS: green only. Deterministic and offline - no LLM calls (the planner
+             falls back to deterministic with the LLM vars empty, which the
+             e2e already relies on). The suite runs against a real server with
+             an isolated data dir, the pattern verify_e2e.py established, so it
+             exercises the HTTP surface a user actually touches. Reference
+             values are never derived from the engine's own output.
+ACCEPTANCE CRITERIA:
+- [x] at least 3 fixtures exist, covering all 10 of AT-40's shapes between them
+- [x] every reference calculation matches its golden value, 100%, within a
+      stated tolerance, and each golden value is independently recomputed
+- [x] no golden value is derived from the engine's own output
+- [x] >= 20 scripted workflow runs across >= 3 datasets complete, and the
+      measured completion rate is >= 95%
+- [x] the two numbers are asserted in the test suite, so a regression fails a
+      test
+- [x] the suite is deterministic and offline, no LLM call
+TESTS: test_golden.py - the fixtures' shapes are all covered, the runner's two
+       measurements meet their thresholds, and at least one fixture carries a
+       deliberately-wrong reference value that the runner catches (proving the
+       measurement can fail, per the repo's proven-to-fail discipline).
+VERIFICATION: `cd server && DAH_LLM_API_KEY= DAH_LLM_BASE_URL= DAH_LLM_MODEL=
+              .venv/bin/python -m pytest -q` green;
+              `server/.venv/bin/python verification/e2e/verify_e2e.py` green;
+              `cd web && npm test && npm run build` green.
+STATE UPDATE: TASKS/CURRENT_STATE gain the task; the schema stays at v11.
+```
+
+TASK: P8-GOLDEN-005 - the analytical golden suite
+ID: P8-GOLDEN-005
+PRIORITY: high
+STATUS: DONE
+SUMMARY: the trust machinery P8 built is now measured, and the two numbers the
+         PRD names exist. Three fixtures (sales, spend, tickets) carry 21
+         reference calculations covering all ten of AT-40's shapes, and each
+         golden value is computed twice before the engine is ever asked: by
+         hand from the fixture's own numbers, and again by an independent
+         implementation (plain Python and `statistics` over the parsed CSV -
+         never DuckDB). Where the two disagree the fixture is wrong, and the
+         suite fails before a single query runs. Only then does the runner ask
+         a real server the same question over HTTP and compare: 21/21 match,
+         100%, against a threshold of 100%. The same 21 journeys answer
+         AT-01's workflow rate, because the query a scripted run makes *is* the
+         reference query - create, attach, profile, plan, run, interpret,
+         draft, accept, validate, reopen - and 21/21 complete the loop over 3
+         datasets, against thresholds of 95%, 20 runs and 3 datasets. A verdict
+         of `insufficient_evidence` still counts as a complete run: a finding
+         the evidence does not support is a finished analysis, not a failed
+         one. Both numbers are asserted in test_golden.py rather than only in a
+         report, and the proven-to-fail discipline holds - a deliberately wrong
+         expectation (average resolution time claimed as 25.0h against a true
+         19.83h) is caught by the audit. The suite is offline by construction:
+         the runner fails the `plan` stage unless the planner answers
+         `source: "deterministic"`, so a completion rate above zero is itself
+         proof no LLM was called. Two real bugs the suite surfaced on the way,
+         both fixed with their own tests: grouping by a date column handed a
+         raw `datetime.date` to `json.dumps` and answered a 500 for a valid
+         query (the profile already described one as an ISO string; the run
+         path now agrees), and the runner's own health check raced the stdout
+         pump thread for the server's announcement and blocked forever on a
+         `readline()` with no timeout.
 
 Contracts for the rolling window (the two most recent). Older blocks are in
 `ai/TASKS-ARCHIVE.md`.

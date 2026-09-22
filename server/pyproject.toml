@@ -37,3 +37,9 @@ packages = ["app"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+markers = [
+    # The golden suite's measurement over a real server: 21 scripted
+    # journeys, ~1 minute. Deselect with `-m "not slow"` for a fast pass;
+    # the two numbers it measures are the point of P8-GOLDEN-005.
+    "slow: the golden measurement against a real server",
+]

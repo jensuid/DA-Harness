@@ -1,6 +1,7 @@
-**Phase:** P8 Analytical Contract - IN PROGRESS (4 of 10 delivered: the case's
-context object, quality beyond missingness, and the PRD's nine validation
-dimensions). P7 Product Modes is COMPLETE - every checklist
+**Phase:** P8 Analytical Contract - IN PROGRESS (5 of 10 delivered: the case's
+context object, quality beyond missingness, the PRD's nine validation
+dimensions, the causal guard, and the analytical golden suite that measures
+them). P7 Product Modes is COMPLETE - every checklist
 item that builds something shipped, including the manual walkthrough and the
 CORS fix, and the store's schema is at v11. P6, P5, P4, P3, P2, P1 and P0 are
 all COMPLETE (see the phase table below). P8 closes the PRD's Level 1 breadth
@@ -10,28 +11,37 @@ causal-language guard, the analytical golden suite, the orientation spine,
 question refinement, the decision view, and the measurement layer. The full gap
 analysis is `docs/PRD & UX Conformance Evaluation.md`.
 
-- **Active task:** P8-CAUSAL-004 DONE - the causal-language guard. Until this
-  task the causality check raised a soft concern: a finding that said "spend
-  drives signups" over six correlating rows could still be reported `supported`
-  once the other eight dimensions were clean, and AT-18's zero-conversion
-  clause ("0 cases convert an unsupported association into a validated causal
-  finding") was not held. New `server/app/causality.py` makes the guard a gate:
-  causality is now the fourth hard dimension, so an unsupported causal claim
-  yields `insufficient_evidence`. Three judgements: an unhedged causal verb
-  over an observational comparison is unsupported; a hedge ("may drive") or a
-  negation ("does not cause") is the author naming the limit and passes; an
-  intervention the case's context records *and the SQL compares across* earns
-  causation, naming the intervention it read. The branch that matters: an
-  intervention merely mentioned but never compared across still fails, because
-  mentioning is not using. The 50-case corpus lives in the repository as data
-  and the measurement computes AT-18's three numbers on every run - 100%
-  detection, 100% discrimination, 0 conversions, against thresholds of 95%,
-  95% and 0. The corpus found two bugs the eyeball missed: normalisation strips
-  the slash so "a/b test" arrived as "a b test" and the intervention pattern
-  missed it, and the negation window needed 5 words, not 3, to read "no
-  evidence that ... caused". One limitation is recorded in the module rather
-  than hidden: a causal word used as a noun ("the causes column") fires,
-  because word-boundary matching cannot tell a noun from a verb.
+- **Active task:** P8-GOLDEN-005 DONE - the analytical golden suite. The trust
+  machinery P8 built was unmeasured; AT-40 and AT-01 are now numbers. Three
+  fixtures (sales, spend, tickets) carry 21 reference calculations covering all
+  ten of AT-40's shapes, and every golden value is derived two ways before the
+  engine is asked - by hand from the fixture, and by an independent Python path
+  over the parsed CSV (with `statistics` for the moments and ROUND_HALF_UP
+  where SQL rounds), never by DuckDB. A disagreement between the two fails the
+  suite, because the fixture is wrong, not the engine. Only then does a real
+  server answer the same question over HTTP: 21/21 match within a stated
+  tolerance, 100%, against AT-40's threshold of 100%. The same 21 scripted
+  journeys answer AT-01, because the query a run makes *is* the reference
+  query - create, attach, profile, plan, run, interpret, draft, accept,
+  validate, reopen - and 21/21 complete the loop over 3 datasets, against
+  thresholds of 95%, 20 runs and 3 datasets. Both numbers are asserted in
+  test_golden.py (the only slow test in the suite, marked `slow` and
+  deselectable) rather than only in a report, and a deliberately wrong
+  expectation is caught by the audit, so the measurement is known to fail when
+  it should. Offline by construction: the runner fails the `plan` stage unless
+  the planner answers `source: "deterministic"`, so a completion rate above
+  zero is itself proof no LLM was called. An `insufficient_evidence` verdict
+  still counts as a complete run, because a finding the evidence does not
+  support is a finished analysis.
+  Two bugs the suite surfaced, each fixed with its own tests. Grouping by a
+  date column handed a raw `datetime.date` to `json.dumps` and answered a 500
+  for a valid query - the profile already described a date as an ISO string,
+  and the run path now agrees (Decimals and bytes by the same rule). And the
+  runner's own health check raced the stdout pump thread for the server's
+  announcement, blocking forever on a `readline()` with no timeout; it now
+  reads the pump's captured history.
+  Before it: P8-CAUSAL-004 (the causal guard), P8-VALID-003 (nine validation
+  dimensions), P8-QUALITY-002, P8-CONTEXT-001, the v0.2.0 release.
   Before it: P8-VALID-003 (nine validation dimensions), P8-QUALITY-002
   (quality beyond missingness), P8-CONTEXT-001, the v0.2.0 release.
 
@@ -47,7 +57,7 @@ analysis is `docs/PRD & UX Conformance Evaluation.md`.
   documented minimum but is no longer enforced by CI, and a green run no longer
   proves the exact Intel triple a local build produces. Restoring that needs a
   self-hosted Intel runner.
-- **Test status:** server 468 passed (16 for the guard: the corpus's three
+- **Test status:** server 477 passed (6 for this suite: the ten shapes' coverage, the suite's own size floor, the two-way fixture audit, the deliberately-wrong expectation the audit catches, the comparator's tolerance, and the one slow measurement over a real server; +3 in test_analysis.py for the date/timestamp/numeric serialisation the suite surfaced) (16 causality: the corpus's three
   AT-18 thresholds computed and asserted, one test per detector path - hedging,
   negation, intervention-used-vs-mentioned, word boundaries - the verdict's new
   gate through validate_finding, and a hedged finding that can still be
@@ -56,21 +66,18 @@ analysis is `docs/PRD & UX Conformance Evaluation.md`.
   concern, since a causal phrase now reaches `insufficient_evidence`)
   (16 quality; 21 context; 4 cors; 4 csv)
   (336 + 22 evaluate + 9 learn + 13 multi-agent + 4 cors + 4 csv + 21 context
-  + 26 quality + 16 validation + 16 causality); web 86 passed (1 for the
+  + 26 quality + 16 validation + 16 causality + 6 golden); web 86 passed (1 for the
   guard's refusal rendering: a guarded finding shows "the verdict refuses this
   finding" with the sentence to fix, distinguishable at a glance from a soft
   concern); desktop shell 22 Rust tests; P2, P3 and P4 gates PASS;
   **v0.2.0 released** (tag `v0.2.0` on `ec819fc`).
 - **e2e:** all 25 real-server steps PASS.
 
-- **Next task:** P8-GOLDEN-005 - the analytical golden suite with reference
-  values (AT-40) and the workflow-completion rate (AT-01). This is what turns
-  the trust machinery into measured numbers: the causal corpus from
-  P8-CAUSAL-004 can fold into it, and it measures the 95% detection rate AT-17
-  names and the 95%/5% AT-08 names, which the two tasks before it shipped
-  checks for but could not measure. After it: P8-SHELL-006 (the orientation
-  spine, AT-33/34/35) and P8-REFINE-007 (question refinement, AT-04, which
-  edits the context object P8-CONTEXT-001 built).
+- **Next task:** P8-SHELL-006 - the orientation spine (AT-33/34/35): the shell
+  tells an analyst where they are in the workflow and what the next action is,
+  the surface the golden suite's loop measurement proves exists end to end.
+  After it: P8-REFINE-007 (question refinement, AT-04, which edits the context
+  object P8-CONTEXT-001 built) and P8-DECISION-008 (the decision view).
   The release is done: **v0.2.0** is tagged on `ec819fc`. GitHub Actions is
   still refusing to start any job with "recent account payments have failed";
   that is an account billing problem (Settings > Billing & plans), not a code
@@ -215,6 +222,12 @@ analysis is `docs/PRD & UX Conformance Evaluation.md`.
 
 - P3 verification: `server/.venv/bin/python verification/p3/verify_p3.py`
   (in-process, ~3-4 min; the last step re-runs the suite)
+- The analytical golden suite: `server/.venv/bin/python
+  verification/golden/verify_golden.py` (starts a real server on a free port
+  with an isolated data dir and the LLM vars empty; measures AT-40's
+  reference-match rate and AT-01's workflow-completion rate over 21 scripted
+  runs and 3 datasets, writing verification/golden/REPORT.md; exit 0 only when
+  both thresholds hold; ~60s cold)
 - End-to-end against a REAL server: `server/.venv/bin/python
   verification/e2e/verify_e2e.py` (starts uvicorn on a free port with an
   isolated data dir, drives the whole journey over HTTP - the case built

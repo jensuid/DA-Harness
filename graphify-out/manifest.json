@@ -42,9 +42,9 @@
     "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
   },
   "server/app/analysis.py": {
-    "mtime": 1790031869.0874028,
-    "seen": 1790035028.329095,
-    "ast_hash": "2002be4f5a862367feb36566ede34ff2",
+    "mtime": 1790067456.4724426,
+    "seen": 1790077359.361399,
+    "ast_hash": "e552d96a903fe3153dc975f139277914",
     "semantic_hash": ""
   },
   "server/app/db.py": {
@@ -66,9 +66,9 @@
     "semantic_hash": ""
   },
   "server/pyproject.toml": {
-    "mtime": 1790027656.7408009,
-    "seen": 1790029933.788429,
-    "ast_hash": "ef706f1ba8917f696b0a2b50078590cd",
+    "mtime": 1790075793.569376,
+    "seen": 1790077359.361569,
+    "ast_hash": "333c4013c5bd2151af3be75716445700",
     "semantic_hash": ""
   },
   "server/tests/__init__.py": {
@@ -78,9 +78,9 @@
     "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
   },
   "server/tests/test_analysis.py": {
-    "mtime": 1790019338.959273,
-    "seen": 1790026859.659404,
-    "ast_hash": "27c1714f8c97ce5a02cde6d342d0f89a",
+    "mtime": 1790068281.3309076,
+    "seen": 1790077359.361585,
+    "ast_hash": "611b602895b6cd2f6bd1b2fed2fbed5b",
     "semantic_hash": ""
   },
   "server/tests/test_cases.py": {
@@ -168,9 +168,9 @@
     "semantic_hash": ""
   },
   "ai/CURRENT_STATE.md": {
-    "mtime": 1790062724.4389412,
-    "seen": 1790062747.388915,
-    "ast_hash": "161e7a8397cabb9977ef379e805ea426",
+    "mtime": 1790077037.4071488,
+    "seen": 1790077359.362134,
+    "ast_hash": "cd42127b20866066161a7107fd1c4106",
     "semantic_hash": ""
   },
   "ai/DECISIONS.md": {
@@ -180,15 +180,15 @@
     "semantic_hash": ""
   },
   "ai/HANDOFF.md": {
-    "mtime": 1790062671.5177925,
-    "seen": 1790062747.388931,
-    "ast_hash": "3eb2e3151f6cea5bef08de16b1605ba5",
+    "mtime": 1790076746.0047054,
+    "seen": 1790077359.362143,
+    "ast_hash": "823338f8e84c54de2beed8f2f8e47847",
     "semantic_hash": ""
   },
   "ai/TASKS.md": {
-    "mtime": 1790062566.5663342,
-    "seen": 1790062747.388982,
-    "ast_hash": "2fd1a191b4fa5b09e80429384cb32f31",
+    "mtime": 1790076593.8810172,
+    "seen": 1790077359.3621519,
+    "ast_hash": "63304e2b9a5ca802b9fb72c7230fa62d",
     "semantic_hash": ""
   },
   "verification/p0/REPORT.md": {
@@ -684,9 +684,9 @@
     "semantic_hash": ""
   },
   "ai/TASKS-ARCHIVE.md": {
-    "mtime": 1790062566.5654795,
-    "seen": 1790062747.388976,
-    "ast_hash": "3f98855ec7860c9f97333a8e3a1ce852",
+    "mtime": 1790076593.8795016,
+    "seen": 1790077359.3621492,
+    "ast_hash": "ef29eaa7b06a6dc4c0211c6fc99ab24e",
     "semantic_hash": ""
   },
   "desktop/src-tauri/src/updates.rs": {
@@ -756,9 +756,9 @@
     "semantic_hash": ""
   },
   "verification/e2e/REPORT.md": {
-    "mtime": 1790062224.002905,
-    "seen": 1790062747.389048,
-    "ast_hash": "1993ec164426b13b2678670dedc282af",
+    "mtime": 1790076254.8664997,
+    "seen": 1790077359.362188,
+    "ast_hash": "4f44b6d177861bc220f9a801a312bf98",
     "semantic_hash": ""
   },
   "server/tests/test_cors.py": {
@@ -834,9 +834,33 @@
     "semantic_hash": ""
   },
   "ai/HANDOFF-ARCHIVE.md": {
-    "mtime": 1790055596.6142032,
-    "seen": 1790062747.388926,
-    "ast_hash": "1dbf807945ec347bcd954dea314d24a9",
+    "mtime": 1790076746.0041676,
+    "seen": 1790077359.36214,
+    "ast_hash": "2257b9cf361c747242e89a53f1361e44",
+    "semantic_hash": ""
+  },
+  "server/tests/test_golden.py": {
+    "mtime": 1790075887.1408286,
+    "seen": 1790077359.361703,
+    "ast_hash": "52e46143fc30e81e7030e46e9ac000b3",
+    "semantic_hash": ""
+  },
+  "verification/golden/reference.py": {
+    "mtime": 1790069537.5642245,
+    "seen": 1790077359.3619862,
+    "ast_hash": "629be7ea9fcc3c5c75a9d919d980a90f",
+    "semantic_hash": ""
+  },
+  "verification/golden/verify_golden.py": {
+    "mtime": 1790075397.0617373,
+    "seen": 1790077359.362027,
+    "ast_hash": "080c8b6bba8df55247a5e938865e2164",
+    "semantic_hash": ""
+  },
+  "verification/golden/REPORT.md": {
+    "mtime": 1790074054.3369403,
+    "seen": 1790077359.3621912,
+    "ast_hash": "2e02cd95360894b05331dc6c3dc31b91",
     "semantic_hash": ""
   }
 }

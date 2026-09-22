@@ -2247,3 +2247,31 @@ Releasing: tag `v<x.y.z>` where x.y.z matches server/pyproject.toml. The
 published build is arm64 and unsigned, flagged pre-release (DEC-006).
 
 Nothing is unblocked-but-undone.
+
+## Next action
+**P8-CAUSAL-004 is DONE**: the causality check stopped commenting and started
+guarding. An unsupported causal claim now gates the verdict - causality is the
+fourth hard dimension, so "spend drives signups" over a correlation reaches
+`insufficient_evidence`, not `supported`. New `server/app/causality.py` makes
+three judgements: unhedged causal language over an observational comparison is
+unsupported; a hedge ("may drive") or negation ("does not cause") is the author
+naming the limit and passes; an intervention the context records *and the SQL
+compares across* earns causation. The branch AT-18 turns on: an intervention
+merely mentioned but never compared across still fails - mentioning is not
+using.
+
+**The 50-case corpus is data, and the measurement runs in the suite**: 100%
+detection, 100% discrimination, 0 conversions against AT-18's 95%/95%/0. The
+corpus found two real bugs the eyeball missed - normalisation strips the slash
+("a/b test" arrives as "a b test"), and the negation window needed 5 words, not
+3.
+
+**Gates:** 468 server, 86 web, build green, 25/25 e2e.
+
+### What is next, in priority order
+
+- **P8-GOLDEN-005** - the analytical golden suite (AT-40/AT-01). This is what
+  *measures* the workflow-completion rate; the causal corpus above can fold
+  into it.
+- **P8-SHELL-006** - the orientation spine (AT-33/34/35).
+- **P8-REFINE-007** - question refinement (AT-04), editing the context object.

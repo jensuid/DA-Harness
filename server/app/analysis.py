@@ -4,7 +4,9 @@ Analytical queries only. This module never writes Analysis Case state; that stay
 in db.py on SQLite (DEC-001).
 """
 
+import datetime
 import re
+from decimal import Decimal
 
 import duckdb
 
@@ -337,6 +339,29 @@ def _bind_datasets(sql: str, paths: list[str]) -> tuple[str, list]:
     return "".join(parts), params
 
 
+def _json_safe(value):
+    """A DuckDB cell as JSON can carry, so a run's rows always serialise.
+
+    A DATE or TIMESTAMP column is a perfectly ordinary thing to group by, and
+    the profile already describes one as an ISO string; the run path has to
+    agree, or `json.dumps` on the persisted rows - and every API that answers
+    them - answers a 500 for a valid query. Decimals and blobs are the same
+    problem in a different costume. Everything else (including the None a null
+    binds to) is already JSON-native and passes through untouched, so a numeric
+    stays a numeric and a label stays a label.
+    """
+    if isinstance(value, (datetime.date, datetime.datetime)):
+        return value.isoformat()
+    if isinstance(value, Decimal):
+        # A DECIMAL column becomes a JSON number, the shape every other
+        # numeric already has, so a comparison stays numeric rather than
+        # turning into a string the validation budget cannot rank.
+        return float(value)
+    if isinstance(value, (bytes, bytearray)):
+        return value.decode("utf-8", errors="replace")
+    return value
+
+
 def _execute_read_only(sql: str, params: list, limit: int) -> dict:
     """Run an already-bound read-only query and cap its result."""
     connection = duckdb.connect()
@@ -352,7 +377,7 @@ def _execute_read_only(sql: str, params: list, limit: int) -> dict:
         rows = rows[:limit]
     return {
         "columns": columns,
-        "rows": [list(row) for row in rows],
+        "rows": [[_json_safe(cell) for cell in row] for row in rows],
         "row_count": len(rows),
         "truncated": truncated,
     }

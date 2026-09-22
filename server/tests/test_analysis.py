@@ -147,3 +147,69 @@ def test_an_empty_context_behaves_like_none_at_all() -> None:
     # A case that saved an empty form is planned from the profile alone.
     assert plan_analysis("q", PROFILE, {"purpose": "", "sub_questions": [],
                                         "hypotheses": []})["context_basis"] == []
+
+
+# --- P8-GOLDEN-005: a run's rows must survive serialisation ----------------
+# Grouping by a date column is ordinary analysis, and the profile already
+# describes one as an ISO string; the run path used to hand a raw
+# datetime.date to json.dumps and answer a 500 for a valid query.
+DATE_CSV = (
+    "day,amount\n"
+    "2024-06-01,10.0\n"
+    "2024-06-01,20.0\n"
+    "2024-06-02,5.0\n"
+)
+
+
+def test_a_date_column_serialises_as_an_iso_string(tmp_path) -> None:
+    import json
+
+    from app.analysis import run_query
+
+    csv_path = tmp_path / "days.csv"
+    csv_path.write_text(DATE_CSV, encoding="utf-8")
+
+    result = run_query(
+        str(csv_path),
+        "SELECT day, SUM(amount) AS total FROM read_csv_auto(?) "
+        "GROUP BY day ORDER BY day",
+    )
+
+    assert result["columns"] == ["day", "total"]
+    assert result["rows"] == [["2024-06-01", 30.0], ["2024-06-02", 5.0]]
+    # The persisted shape is what the API answers, so this is the failure a
+    # user would have seen.
+    json.dumps(result["rows"])
+
+
+def test_a_timestamp_column_serialises_as_an_iso_string(tmp_path) -> None:
+    import json
+
+    from app.analysis import run_query
+
+    csv_path = tmp_path / "events.csv"
+    csv_path.write_text("ts,kind\n2024-06-01 09:30:00,a\n2024-06-01 10:00:00,b\n",
+                        encoding="utf-8")
+
+    result = run_query(str(csv_path), "SELECT ts FROM read_csv_auto(?) ORDER BY ts")
+
+    assert result["rows"] == [["2024-06-01T09:30:00"], ["2024-06-01T10:00:00"]]
+    json.dumps(result["rows"])
+
+
+def test_a_numeric_stays_a_numeric_and_a_null_stays_a_null(tmp_path) -> None:
+    # Normalisation must not launder a count into a string or a null into a
+    # zero: the validation budget compares these values.
+    from app.analysis import run_query
+
+    csv_path = tmp_path / "mix.csv"
+    csv_path.write_text("n,s\n1,1.5\n2,\n", encoding="utf-8")
+
+    result = run_query(
+        str(csv_path),
+        "SELECT COUNT(*) AS rows, COUNT(s) AS present, AVG(s) AS mean "
+        "FROM read_csv_auto(?)",
+    )
+    assert result["rows"] == [[2, 1, 1.5]]
+    assert isinstance(result["rows"][0][0], int)
+    assert result["rows"][0][1] is None or result["rows"][0][1] == 1

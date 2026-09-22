@@ -5209,3 +5209,166 @@ LESSON: a set where a list was needed is the smallest possible bug and the
         lesson: this repo's verification drives contracts, and contracts do
         not render - three panels pass their tests while showing the analyst
         nothing, and only a hand on the shell finds that.
+
+### P8-VALID-003 contract
+
+```
+TASK ID: P8-VALID-003
+MILESTONE: P8 Analytical Contract
+CAPABILITY: Validation (3 checks to the PRD's 9 dimensions)
+GOAL: a finding's verdict accounts for all nine dimensions the PRD names, not
+      three. Today `validate_finding` answers reproducibility, missing data and
+      evidence integrity; the PRD's AT-17 requires Calculation, Data,
+      Population, Timeframe, Method, Evidence, Assumptions, Causality and
+      Alternative explanations. Six are uncomputed, and these are the checks
+      that catch a *correct* calculation answering the *wrong* question - a
+      finding that compares groups a filter excluded, or reads a trend into one
+      period, or claims causation from a correlation. The EVALUATE engine
+      already computes a nine-axis audit of imported work; this task points
+      that machinery at the case's own finding rather than writing a second
+      one, and adds the dimensions EVALUATE does not cover.
+CONTEXT: the gap analysis (`docs/PRD & UX Conformance Evaluation.md`, G1) found
+         the nine-axis audit exists but is aimed at imported artifacts; a
+         finding inside the app gets none of it. The three current checks are
+         the honest core - they are what "supported" means today - so they stay
+         and become three of the nine, rather than being replaced. The six new
+         ones are derived from objects the task's predecessors already built:
+         the profile's quality list (P8-QUALITY-002) feeds Data, Method and
+         Assumptions; the case's context (P8-CONTEXT-001) feeds Population and
+         Timeframe; the run's own SQL and result feed Method and Alternatives.
+INPUTS: a finding, its run (code, columns, rows, kind), the dataset's profile
+        (stats and the quality list), the case's question and context. Nothing
+        new is executed: the run is already stored and the profile already
+        computed, so the six new checks are pure functions of what is on disk -
+        which is also why they cannot regress the 4-second validation budget.
+RELEVANT FILES: server/app/validation.py (new - the nine checks and the
+                verdict assembly), server/app/main.py (validate_finding calls
+                it, keeps the rerun it already performs),
+                server/app/models.py (ValidationCheck gains a dimension,
+                ValidationResult keeps its shape),
+                server/app/evaluator.py (shared: number-quoting and
+                column-read helpers, reused not duplicated),
+                server/app/db.py (no migration - a check is derived, never
+                stored, so the schema stays at v11),
+                web/src/CaseWorkspace.tsx, web/src/api.ts,
+                web/src/CaseWorkspace.test.tsx,
+                server/tests/test_validation.py, ai/HANDOFF.md, ai/TASKS.md,
+                ai/CURRENT_STATE.md
+REQUIRED CHANGE:
+  - `server/app/validation.py` (new): nine checks, one per PRD dimension. Each
+    is a pure function returning (passed, detail) and never raises - a check
+    that cannot decide answers `passed=true` with a sentence saying it was
+    skipped, because a verdict must not punish a finding for the validator's
+    own blindness. The three existing checks move in as Calculation
+    (reproducibility), Data (the profile's missing-data quality issue) and
+    Evidence (the finding's magnitudes all appear in its run's result - the
+    same number-quoting budget EVALUATE uses, reused).
+  - The six new checks, each derived from an object that already exists:
+      * Population - the result's rows are a *subset* the analyst must be told
+        about. A GROUP BY over a filtered table answers a narrower question
+        than the one asked, and a comparison across groups of wildly uneven
+        sizes rests mostly on one of them.
+      * Timeframe - a trend or a "same period last year" claim is checked
+        against the temporal column's actual span and gaps: one period cannot
+        support a trend, and a gap the claim steps over is a comparison of
+        non-adjacent windows.
+      * Method - the computation matches the question's shape. Averages over a
+        column the profile flagged extreme, a COUNT used where a rate is asked,
+        and a comparison that ignores the column the question is about.
+      * Assumptions - the unstated premises a finding rests on, taken from the
+        profile: an implicit "missing is zero", a comparison of unnormalised
+        totals across groups of different sizes.
+      * Causality - the weakest form of AT-18, deliberately: it flags causal
+        language in the finding's own statement when the evidence is a
+        correlation, and leaves the full guard to P8-CAUSAL-004. It is a check
+        that *says* the claim outruns the method, not one that refuses it.
+      * Alternative explanations - the columns the question names that the
+        run never read, plus a categorical variable the profile shows is
+        confounded with the grouping. A finding that does not look at the
+        alternative has not ruled it out.
+  - The verdict assembly stays three-valued - supported /
+    partially_supported / insufficient_evidence - and the rule stays honest: a
+    single failing *hard* check (calculation, evidence, population) blocks
+    `supported`, while a soft concern (method, assumptions, causality,
+    alternatives) yields `partially_supported`, the verdict that says "the
+    numbers reproduce and the claim is phrased within them, but the analysis
+    has a stated limitation". Nothing is failed silently and nothing is
+    promoted silently.
+  - `validate_finding` calls the module and keeps the rerun it already
+    performs - the new checks read the rerun's outcome rather than re-running
+    anything, so validation costs one execution, not nine.
+  - The shell renders each check's dimension and detail; a concern is shown as
+    a concern rather than folded into the pass count, because an analyst who
+    sees "7 pass, 2 concern" reads a different analysis than one who sees
+    "supported".
+NON-GOALS: the full causal-language guard with its own thresholds (P8-CAUSAL-
+           004 - this task ships the *check*, that one ships the policy and
+           the 50-case evaluation); widening the EVALUATE engine's own axes
+           (that audit is of imported work and stays as-is); measuring the
+           >= 95% detection rate AT-17 names (that is the golden suite,
+           P8-GOLDEN-005 - this task ships the checks the suite will measure);
+           storing checks (a validation is recomputed on demand and is
+           deterministic, so it needs no column and no migration).
+CONSTRAINTS: green only. No new SQL execution in the checks - they read the
+             stored run and the stored profile. The API's response shape stays
+             backwards-compatible: `checks` gains entries and each entry gains
+             a `dimension`, and a client reading the old three names still
+             finds them. The schema stays at v11.
+ACCEPTANCE CRITERIA:
+- [x] all nine PRD dimensions have a check, and every finding's validation
+      answer carries all nine
+- [x] the three pre-existing behaviours are preserved verbatim: a clean
+      finding is `supported`, a null in the profile is `partially_supported`,
+      a drifted result is `insufficient_evidence`
+- [x] a check that cannot decide answers `passed=true` with a skip sentence,
+      never a fail and never a 500
+- [x] a finding quoting a magnitude absent from its run fails Evidence, and a
+      finding claiming causation from a correlation is flagged on Causality
+- [x] validation costs one execution of the finding's code, not one per check
+- [x] the shell shows each dimension with its verdict, distinguishing a
+      concern from a failure
+TESTS: test_validation.py - the three preserved behaviours, one raising test
+       per new dimension (a fixture per defect), the skip-when-undecidable
+       rule, and the one-execution budget (a counter on the run engine).
+VERIFICATION: `cd server && DAH_LLM_API_KEY= DAH_LLM_BASE_URL= DAH_LLM_MODEL=
+              .venv/bin/python -m pytest -q` green;
+              `server/.venv/bin/python verification/e2e/verify_e2e.py` green;
+              `cd web && npm test && npm run build` green.
+STATE UPDATE: TASKS/CURRENT_STATE gain the task; the schema stays at v11.
+```
+
+TASK: P8-VALID-003 - validation across the PRD's nine dimensions
+ID: P8-VALID-003
+PRIORITY: high
+STATUS: DONE
+SUMMARY: a finding's verdict now accounts for all nine dimensions the PRD names
+         (AT-17) rather than three. `server/app/validation.py` is new: nine
+         pure checks - calculation, data, population, timeframe, method,
+         evidence, assumptions, causality, alternative_explanations - each
+         returning a verdict and a sentence, and never raising; a check that
+         cannot decide passes with a "skipped -" sentence rather than punishing
+         a finding for the validator's own blindness. The three checks that
+         existed survive as three of the nine: reproducibility became
+         calculation, missing_data became data (it reads the quality issue's
+         impact sentence, so the audit and the Data stage say the same thing
+         about the same null) and evidence_integrity became evidence (the
+         number-quoting budget EVALUATE already used, reused rather than
+         reimplemented). Six are new and are derived from objects the task's
+         predecessors built - the profile's quality list, the case's context,
+         the run's own SQL and result - so nothing new is executed: a
+         validation costs one rerun, not nine, and that is pinned by a test
+         with a counter on the query engine, proven to fail when a second
+         execution is injected. The verdict stays three-valued and stays
+         honest: a hard failure (calculation, evidence, population) yields
+         `insufficient_evidence`, a soft concern yields `partially_supported`,
+         and only a clean sweep is `supported`. The run's ownership of the case
+         is the one fact the module cannot derive from stored objects, so it is
+         folded in by the route as an evidence override. The shell renders each
+         dimension with its sentence and distinguishes a concern from a
+         failure, because an analyst reading "7 pass, 2 concern" reads a
+         different analysis from one reading "supported". The schema stays at
+         v11 - a check is derived, never stored. Also fixed along the way: the
+         check key rename broke three older tests and two phase gates that
+         asserted the pre-existing names, and the web suite's 5000ms timeouts
+         under parallel file execution were load, not code - `fileParallelism:
+         false` makes the gate deterministic without costing wall-clock time.
