@@ -54,15 +54,15 @@
     "semantic_hash": ""
   },
   "server/app/main.py": {
-    "mtime": 1790032209.8399653,
-    "seen": 1790035028.3291829,
-    "ast_hash": "e5e506a7675950caca18c2673382b046",
+    "mtime": 1790048500.3007061,
+    "seen": 1790048817.5983,
+    "ast_hash": "b1a44c520de049e428cc1a50a43ec123",
     "semantic_hash": ""
   },
   "server/app/models.py": {
-    "mtime": 1790031960.2014334,
-    "seen": 1790035028.3291929,
-    "ast_hash": "8b136734065108a9da014b211f4a402d",
+    "mtime": 1790043519.9431474,
+    "seen": 1790048817.598306,
+    "ast_hash": "af4dcb512d5203e71697ad30455e15c0",
     "semantic_hash": ""
   },
   "server/pyproject.toml": {
@@ -126,9 +126,9 @@
     "semantic_hash": ""
   },
   "web/src/api.ts": {
-    "mtime": 1790032270.7257385,
-    "seen": 1790035028.3295639,
-    "ast_hash": "2853ee381cbf84243e82011a7977a1aa",
+    "mtime": 1790043676.1933167,
+    "seen": 1790048817.598506,
+    "ast_hash": "e65f7e871237722c889d1117e012b8db",
     "semantic_hash": ""
   },
   "web/src/main.tsx": {
@@ -156,9 +156,9 @@
     "semantic_hash": "e9fa96b929c23d18085d14ee0d79cdea"
   },
   "web/vite.config.ts": {
-    "mtime": 1789801793.5912516,
-    "seen": 1789804396.010592,
-    "ast_hash": "59e2266f5adfb64793efefeddcf58e50",
+    "mtime": 1790047249.6894152,
+    "seen": 1790048817.598519,
+    "ast_hash": "677c80ce74f423136a9aa37163cd699b",
     "semantic_hash": ""
   },
   "AGENTS.md": {
@@ -168,9 +168,9 @@
     "semantic_hash": ""
   },
   "ai/CURRENT_STATE.md": {
-    "mtime": 1790034914.4592028,
-    "seen": 1790035028.3296168,
-    "ast_hash": "32ec9c310d6cbadf614b025f40e62b30",
+    "mtime": 1790048763.0515141,
+    "seen": 1790048817.5985322,
+    "ast_hash": "d4464727ef9b33017be02a6b1a4ca8d2",
     "semantic_hash": ""
   },
   "ai/DECISIONS.md": {
@@ -180,15 +180,15 @@
     "semantic_hash": ""
   },
   "ai/HANDOFF.md": {
-    "mtime": 1790034934.790638,
-    "seen": 1790035028.329628,
-    "ast_hash": "9497e3cc493a59ceb778a9ee60029d94",
+    "mtime": 1790048776.2621138,
+    "seen": 1790048817.598537,
+    "ast_hash": "f067065c7aa0a7e8b39e7bed6bcd6680",
     "semantic_hash": ""
   },
   "ai/TASKS.md": {
-    "mtime": 1790034868.7622612,
-    "seen": 1790035028.329643,
-    "ast_hash": "50ff0b64ad8eb1ae6bba143cac3bd860",
+    "mtime": 1790048633.9238248,
+    "seen": 1790048817.5985448,
+    "ast_hash": "c146794092bd8ea798047ad51225f063",
     "semantic_hash": ""
   },
   "verification/p0/REPORT.md": {
@@ -228,9 +228,9 @@
     "semantic_hash": ""
   },
   "server/tests/test_validation.py": {
-    "mtime": 1789821148.8051817,
-    "seen": 1789822161.2487738,
-    "ast_hash": "bd34e170ad14610069751c5ead1daf4a",
+    "mtime": 1790048318.7260187,
+    "seen": 1790048817.5984519,
+    "ast_hash": "8a622b0a849cd24318ea570403a35daa",
     "semantic_hash": ""
   },
   "verification/p1/verify_p1.py": {
@@ -252,9 +252,9 @@
     "semantic_hash": ""
   },
   "server/tests/test_python_runs.py": {
-    "mtime": 1789807811.168504,
-    "seen": 1789808267.668779,
-    "ast_hash": "ea0682da4daaba59261d6d1b1b0373b3",
+    "mtime": 1790046365.51106,
+    "seen": 1790048817.598439,
+    "ast_hash": "92cf5655f4b5db1b31e8454964adfe38",
     "semantic_hash": ""
   },
   "server/app/charts.py": {
@@ -300,9 +300,9 @@
     "semantic_hash": ""
   },
   "verification/p2/verify_p2.py": {
-    "mtime": 1789803988.0386398,
-    "seen": 1789804396.0105338,
-    "ast_hash": "64c5374784398cf1dc736f319a4ac579",
+    "mtime": 1790046454.4976115,
+    "seen": 1790048817.5984662,
+    "ast_hash": "7a04485c531c0d300cce67ef55216a96",
     "semantic_hash": ""
   },
   "verification/p2/REPORT.md": {
@@ -336,9 +336,9 @@
     "semantic_hash": ""
   },
   "server/tests/test_multi_dataset_runs.py": {
-    "mtime": 1789782037.6319256,
-    "seen": 1789782572.1373,
-    "ast_hash": "89f4ca532201bb7c3214d95f3a073ad5",
+    "mtime": 1790046365.528558,
+    "seen": 1790048817.598428,
+    "ast_hash": "d2df3cb6ad3f8102f8c6323a536b5427",
     "semantic_hash": ""
   },
   "server/app/workflow.py": {
@@ -540,9 +540,9 @@
     "semantic_hash": ""
   },
   "verification/p3/verify_p3.py": {
-    "mtime": 1789815212.7232227,
-    "seen": 1789815854.441908,
-    "ast_hash": "6e84e12fda00d68945396580e4cb9f26",
+    "mtime": 1790046454.521602,
+    "seen": 1790048817.598468,
+    "ast_hash": "949aedccf97c9ee3f905698cd4ab3eb1",
     "semantic_hash": ""
   },
   "verification/p3/REPORT.md": {
@@ -576,15 +576,15 @@
     "semantic_hash": ""
   },
   "web/src/CaseWorkspace.test.tsx": {
-    "mtime": 1790032888.6120956,
-    "seen": 1790035028.329532,
-    "ast_hash": "b1cfc6109eed074d25e3f2a7d511911d",
+    "mtime": 1790044317.0567675,
+    "seen": 1790048817.598489,
+    "ast_hash": "1a87ebcdfa8cda8c720068f095d5b413",
     "semantic_hash": ""
   },
   "web/src/CaseWorkspace.tsx": {
-    "mtime": 1790032372.6173706,
-    "seen": 1790035028.329537,
-    "ast_hash": "c1479e56c6ee95bf5f333f762a406890",
+    "mtime": 1790043562.2806952,
+    "seen": 1790048817.598492,
+    "ast_hash": "79f7cd64460a6f91f9c3cfc7513e9f6e",
     "semantic_hash": ""
   },
   "server/tests/test_large_datasets.py": {
@@ -684,9 +684,9 @@
     "semantic_hash": ""
   },
   "ai/TASKS-ARCHIVE.md": {
-    "mtime": 1790034824.003984,
-    "seen": 1790035028.329638,
-    "ast_hash": "6a4dc20663ef55f2e22a823e55f1234e",
+    "mtime": 1790048633.922121,
+    "seen": 1790048817.5985432,
+    "ast_hash": "9a2cef8c1cc06d7d9091d3e8883188d8",
     "semantic_hash": ""
   },
   "desktop/src-tauri/src/updates.rs": {
@@ -750,15 +750,15 @@
     "semantic_hash": ""
   },
   "verification/e2e/verify_e2e.py": {
-    "mtime": 1789975208.822199,
-    "seen": 1789976306.182189,
-    "ast_hash": "5fc8a52c9d80788d3cc4c65f3a2ad355",
+    "mtime": 1790046425.02779,
+    "seen": 1790048817.598457,
+    "ast_hash": "22bc626d2c1650718426d18ebf243977",
     "semantic_hash": ""
   },
   "verification/e2e/REPORT.md": {
-    "mtime": 1790034141.5505564,
-    "seen": 1790035028.329709,
-    "ast_hash": "015deef927e728e0734c44276b685413",
+    "mtime": 1790047826.521629,
+    "seen": 1790048817.5985768,
+    "ast_hash": "ee2e63162fc5a354d0f3058d9729ed92",
     "semantic_hash": ""
   },
   "server/tests/test_cors.py": {
@@ -810,9 +810,15 @@
     "semantic_hash": ""
   },
   "server/tests/test_quality.py": {
-    "mtime": 1790034401.0721102,
-    "seen": 1790035028.329437,
-    "ast_hash": "826c5759a7ae074c0614b0735eb2fce2",
+    "mtime": 1790046365.5470095,
+    "seen": 1790048817.598441,
+    "ast_hash": "1078cd88efee203cbc2db3fe8bdfa0cb",
+    "semantic_hash": ""
+  },
+  "server/app/validation.py": {
+    "mtime": 1790043264.8137712,
+    "seen": 1790048817.598327,
+    "ast_hash": "3c56c00b21e24dd2224931d60aa2e598",
     "semantic_hash": ""
   }
 }

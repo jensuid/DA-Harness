@@ -2100,6 +2100,19 @@ async def validate_finding(
     ).fetchone()
     question = case_row["question"] if case_row else ""
 
+    # The causal-language guard reads the case's context for a documented
+    # intervention: a change the analyst recorded is what separates a causal
+    # claim the method can support from one it cannot (P8-CAUSAL-004). An unset
+    # context is an empty one, which is the honest input to a guard that then
+    # has no intervention to read.
+    stored_context = _context_of(db, case_id)
+    context = {
+        "purpose": stored_context.purpose,
+        "sub_questions": stored_context.sub_questions,
+        "hypotheses": stored_context.hypotheses,
+        "constraints": stored_context.constraints,
+    }
+
     status, computed = validation.validate_finding(
         reproduced=reproduced,
         rerun_detail=rerun_detail,
@@ -2107,6 +2120,7 @@ async def validate_finding(
         interpretation=finding.interpretation or "",
         question=question,
         sql=run_row["sql"] or "",
+        context=context,
         columns=json.loads(run_row["columns_json"] or "[]"),
         rows=json.loads(run_row["rows_json"] or "[]"),
         profile=profile,

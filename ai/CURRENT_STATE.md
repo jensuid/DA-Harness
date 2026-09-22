@@ -1,4 +1,4 @@
-**Phase:** P8 Analytical Contract - IN PROGRESS (3 of 10 delivered: the case's
+**Phase:** P8 Analytical Contract - IN PROGRESS (4 of 10 delivered: the case's
 context object, quality beyond missingness, and the PRD's nine validation
 dimensions). P7 Product Modes is COMPLETE - every checklist
 item that builds something shipped, including the manual walkthrough and the
@@ -10,39 +10,30 @@ causal-language guard, the analytical golden suite, the orientation spine,
 question refinement, the decision view, and the measurement layer. The full gap
 analysis is `docs/PRD & UX Conformance Evaluation.md`.
 
-- **Active task:** P8-VALID-003 DONE - validation across the PRD's nine
-  dimensions (AT-17). A finding's verdict used to account for three facts -
-  does it reproduce, is the data null-free, does the run belong to this case -
-  and the PRD names nine. Three correct calculations answering the wrong
-  question were invisible to it: a comparison over groups a filter excluded, a
-  trend read into a single period, and causation claimed from a correlation.
-  `server/app/validation.py` is new: nine pure checks - calculation, data,
-  population, timeframe, method, evidence, assumptions, causality,
-  alternative_explanations - each returning a verdict and a sentence and never
-  raising. A check that cannot decide *passes* with a "skipped -" sentence,
-  because a verdict must not punish a finding for the validator's own
-  blindness; only measured evidence fails. The three checks that existed
-  survive as three of the nine (reproducibility -> calculation, missing_data ->
-  data, evidence_integrity -> evidence, reusing EVALUATE's number-quoting
-  budget rather than reimplementing it). The six new ones read objects the two
-  tasks before this built - the profile's quality list, the case's context, the
-  run's own SQL and result - so nothing new is executed and a validation costs
-  one rerun, not nine. That budget is pinned by a test with a counter on the
-  query engine and was proven to fail when a second execution was injected.
-  The verdict stays three-valued: a hard failure (calculation, evidence,
-  population) yields `insufficient_evidence`, a
-  soft concern is `partially_supported`, and only a clean sweep is `supported`.
-  The shell renders each dimension with its sentence and distinguishes a
-  concern from a failure, because "7 pass, 2 concern" and "supported" are
-  different analyses. The schema stays at v11 - a check is derived, never
-  stored. Two repairs landed with it: the check-key rename broke three older
-  tests and two phase gates asserting the pre-existing names (updated to the
-  dimension keys), and the web suite's 5000ms timeouts under parallel file
-  execution were CPU starvation, not code - `fileParallelism: false` in
-  vitest's config makes the gate deterministic at no wall-clock cost.
-  Before it: P8-QUALITY-002 (quality detection beyond missingness),
-  P8-CONTEXT-001 (a case carries purpose, sub-questions, hypotheses), the
-  v0.2.0 release.
+- **Active task:** P8-CAUSAL-004 DONE - the causal-language guard. Until this
+  task the causality check raised a soft concern: a finding that said "spend
+  drives signups" over six correlating rows could still be reported `supported`
+  once the other eight dimensions were clean, and AT-18's zero-conversion
+  clause ("0 cases convert an unsupported association into a validated causal
+  finding") was not held. New `server/app/causality.py` makes the guard a gate:
+  causality is now the fourth hard dimension, so an unsupported causal claim
+  yields `insufficient_evidence`. Three judgements: an unhedged causal verb
+  over an observational comparison is unsupported; a hedge ("may drive") or a
+  negation ("does not cause") is the author naming the limit and passes; an
+  intervention the case's context records *and the SQL compares across* earns
+  causation, naming the intervention it read. The branch that matters: an
+  intervention merely mentioned but never compared across still fails, because
+  mentioning is not using. The 50-case corpus lives in the repository as data
+  and the measurement computes AT-18's three numbers on every run - 100%
+  detection, 100% discrimination, 0 conversions, against thresholds of 95%,
+  95% and 0. The corpus found two bugs the eyeball missed: normalisation strips
+  the slash so "a/b test" arrived as "a b test" and the intervention pattern
+  missed it, and the negation window needed 5 words, not 3, to read "no
+  evidence that ... caused". One limitation is recorded in the module rather
+  than hidden: a causal word used as a noun ("the causes column") fires,
+  because word-boundary matching cannot tell a noun from a verb.
+  Before it: P8-VALID-003 (nine validation dimensions), P8-QUALITY-002
+  (quality beyond missingness), P8-CONTEXT-001, the v0.2.0 release.
 
 - **Known issues:** CI's billing is suspended: every workflow (Release, and both CI suites) is
   rejected at start with "recent account payments have failed or your spending
@@ -56,60 +47,34 @@ analysis is `docs/PRD & UX Conformance Evaluation.md`.
   documented minimum but is no longer enforced by CI, and a green run no longer
   proves the exact Intel triple a local build produces. Restoring that needs a
   self-hosted Intel runner.
-- **Test status:** server 451 passed (16 for the nine dimensions: one raising
-  test per new dimension - a filtered group-by on population, single-period and
-  gappy-series trend claims on timeframe, an average over an extreme column and
-  a query ignoring the question's column on method, an implicit "missing is
-  zero" on assumptions, causal language from a correlation on causality, an
-  unread categorical on alternatives - the skip-when-undecidable rule, the
-  concern-vs-failure verdict, and the one-execution budget with a counter on
-  the query engine, proven to fail on a injected second execution; plus the 9
-  pre-existing tests renamed to the new dimension keys) (21 for the context
-  object; 26 quality) (4 for the shell's CORS; 4 for the stray-trailing-comma
-  recovery) (336 + 22 evaluate + 9 learn + 13 multi-agent + 4 cors + 4 csv + 21
-  context + 26 quality + 16 validation); web 85 passed (1 for the
-  concern-vs-failure distinction in the findings panel; the suite is now
-  deterministic - `fileParallelism: false`, because the same tests pass in
-  under 2s each in isolation and only breached the 5s timeout when the files
-  ran in parallel and starved each other)
-  (4 for the Context panel)
-  (CaseList 10, CaseCreation 3, CaseWorkspace 53, Templates 8, api 6);
-  desktop shell 22 Rust tests
-  (`cd desktop/src-tauri && cargo test [--features e2e]`, 19 unit + 3 e2e);
-  P2, P3 and P4 gates PASS (P4: all 18 journey steps, all 10 exit criteria;
-  both gates' validation assertions now read the dimension keys);
-  **v0.2.0 released**: tag on `ec819fc`, 409 server tests run green
-  on the tag, sidecar + .app + DMG built locally, the packaged core proven on an
-  isolated store, and the zip + sha256 published as a pre-release at
-  github.com/jensuid/DA-Harness/releases/tag/v0.2.0.
-  first release v0.1.0 published from tag and checksum-verified;
-  second release v0.2.0 published (tag `v0.2.0` on `ec819fc`, built and uploaded
-  locally because CI would not start - see Known issues)
-- **e2e:** all 25 real-server steps PASS (`verification/e2e/verify_e2e.py`),
-  including the validation step, which now reads the calculation/data
-  dimension keys and prints
-  `status=partially_supported, calculation=rerun matches stored result,
-  data=flagged`.
+- **Test status:** server 468 passed (16 for the guard: the corpus's three
+  AT-18 thresholds computed and asserted, one test per detector path - hedging,
+  negation, intervention-used-vs-mentioned, word boundaries - the verdict's new
+  gate through validate_finding, and a hedged finding that can still be
+  `supported`; the 16 pre-existing validation tests gained the new `context`
+  argument, and the concern-vs-failure test was rephrased to a non-causal
+  concern, since a causal phrase now reaches `insufficient_evidence`)
+  (16 quality; 21 context; 4 cors; 4 csv)
+  (336 + 22 evaluate + 9 learn + 13 multi-agent + 4 cors + 4 csv + 21 context
+  + 26 quality + 16 validation + 16 causality); web 86 passed (1 for the
+  guard's refusal rendering: a guarded finding shows "the verdict refuses this
+  finding" with the sentence to fix, distinguishable at a glance from a soft
+  concern); desktop shell 22 Rust tests; P2, P3 and P4 gates PASS;
+  **v0.2.0 released** (tag `v0.2.0` on `ec819fc`).
+- **e2e:** all 25 real-server steps PASS.
 
-- **Next task:** P8-CAUSAL-004 - the causal-language guard (AT-18).
-  P8-VALID-003 shipped its weakest deliberate form: the causality check flags
-  causal language in a finding's own statement when the evidence is a
-  correlation, and it is a *check* that says the claim outruns the method, not
-  a policy that refuses it. The full guard needs its own thresholds and the
-  50-case evaluation AT-18 names. After it: P8-GOLDEN-005, the analytical
-  golden suite with reference values (AT-40) and the workflow-completion rate
-  (AT-01) - the suite that *measures* the >= 95% detection rate AT-17 names and
-  the 95%/5% AT-08 names, which this task and its predecessor shipped checks
-  for but could not measure.
-  The release is done: **v0.2.0** is tagged on `ec819fc`, 409 server tests pass
-  on the tag, and the .app + DMG were built locally and published as a
-  flagged pre-release (see below). Note that GitHub Actions is currently
-  refusing to start ANY job - Release and both CI suites - with "recent
-  account payments have failed or your spending limit needs to be increased";
-  that is a billing problem at the account level, not a code or workflow
-  problem, and it is why the release artifacts were built and uploaded by
-  hand. It needs a look at GitHub Billing & plans; until it is fixed, no push
-  is verified by CI, so local gates are the only green signal.
+- **Next task:** P8-GOLDEN-005 - the analytical golden suite with reference
+  values (AT-40) and the workflow-completion rate (AT-01). This is what turns
+  the trust machinery into measured numbers: the causal corpus from
+  P8-CAUSAL-004 can fold into it, and it measures the 95% detection rate AT-17
+  names and the 95%/5% AT-08 names, which the two tasks before it shipped
+  checks for but could not measure. After it: P8-SHELL-006 (the orientation
+  spine, AT-33/34/35) and P8-REFINE-007 (question refinement, AT-04, which
+  edits the context object P8-CONTEXT-001 built).
+  The release is done: **v0.2.0** is tagged on `ec819fc`. GitHub Actions is
+  still refusing to start any job with "recent account payments have failed";
+  that is an account billing problem (Settings > Billing & plans), not a code
+  problem, and until it is fixed no push is verified by CI.
 
 - **Blockers:** none.
 

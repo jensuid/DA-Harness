@@ -562,6 +562,41 @@ describe('CaseWorkspace', () => {
     expect(screen.getByText(/rerun matches stored result/i)).toBeInTheDocument()
   })
 
+  it('renders a guarded finding as a refusal the analyst can act on', async () => {
+    mockEmptyCase()
+    vi.mocked(api.listFindings).mockResolvedValue([
+      { id: 'f1', case_id: 'c1', run_id: 'r1',
+        statement: 'Marketing spend drives signups.',
+        interpretation: null, caveat: null, validation_status: 'not_evaluated',
+        created_at: '' },
+    ])
+    vi.mocked(api.validateFinding).mockResolvedValue({
+      finding_id: 'f1', run_id: 'r1', status: 'insufficient_evidence',
+      checks: [
+        { name: 'calculation', dimension: 'calculation', passed: true,
+          detail: 'rerun matches stored result', hard: true },
+        { name: 'causality', dimension: 'causality', passed: false,
+          detail: "the finding asserts causation ('drives') over an "
+                  + "observational comparison, which supports association, not "
+                  + "causation",
+          hard: true },
+      ],
+      validated_at: '',
+    })
+
+    const user = userEvent.setup()
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+    await user.click(await screen.findByRole('button', { name: /validate/i }))
+
+    // The verdict is the message: a hard dimension failed, and the panel says
+    // the finding is refused rather than passed with a caveat (P8-CAUSAL-004).
+    expect(await screen.findByText(/verdict: insufficient_evidence/i)).toBeInTheDocument()
+    expect(screen.getByText(/refuses this finding/i)).toBeInTheDocument()
+    expect(screen.getByText(/supports association, not causation/i)).toBeInTheDocument()
+    // ...and the refusal is distinguishable from a soft concern at a glance.
+    expect(screen.getByText(/^✗ causality/)).toBeInTheDocument()
+  })
+
   it('distinguishes a validation concern from a failure', async () => {
     // A concern is not a failure (P8-VALID-003): the computation reproduced and
     // the claim is phrased within it, but the analysis carries a limitation.

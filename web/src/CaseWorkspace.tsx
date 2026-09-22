@@ -844,6 +844,17 @@ function FindingRow({
       {verdict && (
         <div className="proposal">
           <p><strong>Verdict: {verdict.status}</strong></p>
+          {/* P8-CAUSAL-004: a guard refusal is the message, not a footnote on a
+              pass. The verdict names the sentence to fix, so a finding that
+              outruns its evidence is read as a refusal the analyst can act on
+              rather than a warning beside a green tick. */}
+          {verdict.status === 'insufficient_evidence' && (
+            <p className="fail">
+              The verdict refuses this finding rather than passing it with a
+              caveat. A dimension the evidence cannot support failed, and its
+              sentence above is what to change.
+            </p>
+          )}
           <ul className="items">
             {verdict.checks.map((check) => (
               <li

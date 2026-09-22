@@ -28,6 +28,7 @@ import json
 from typing import Any
 
 from app.evaluator import _allowed_numbers, _numbers_in
+from app.causality import assess_causality
 from app.quality import CATEGORY_MAX_DISTINCT
 from app.generator import _SQL_KEYWORDS, _sql_identifiers
 
@@ -64,7 +65,8 @@ DIMENSIONS = (
 # comparison of what was asked. The rest are about how the finding reads, which
 # is a concern an analyst can accept with their eyes open.
 HARD_DIMENSIONS = frozenset(
-    {DIMENSION_CALCULATION, DIMENSION_EVIDENCE, DIMENSION_POPULATION}
+    {DIMENSION_CALCULATION, DIMENSION_EVIDENCE, DIMENSION_POPULATION,
+     DIMENSION_CAUSALITY}
 )
 
 # Causal language that correlation cannot support. The weakest form of AT-18:
@@ -490,33 +492,31 @@ def check_assumptions(
     )
 
 
-def check_causality(statement: str, interpretation: str) -> ValidationCheck:
-    """Causal language that the evidence cannot support (AT-18's weakest form).
+def check_causality(
+    statement: str,
+    interpretation: str,
+    context: dict | None,
+    sql: str,
+) -> ValidationCheck:
+    """The causal-language guard (AT-18, in full).
 
-    A correlation is not a cause, and a finding drafted inside DAH has no
-    intervention and no control - so a causal verb in its statement is a claim
-    the method does not earn. This check names the gap; the full guard with its
-    thresholds is P8-CAUSAL-004.
+    A correlation is not a cause, and a finding drafted over an observational
+    comparison cannot claim one. Until P8-CAUSAL-004 this check raised a soft
+    concern and the finding could still be reported `supported` - the gap was
+    named, nothing was refused, and AT-18's zero-conversion clause was not held.
+    The guard is a gate now: an unsupported causal claim makes the verdict
+    `insufficient_evidence`, and the detail names the sentence the analyst must
+    change. See `app.causality` for the three judgements it makes - hedging,
+    negation and a documented intervention - and for the 50-case corpus AT-18's
+    thresholds are measured over.
     """
-    claim = _normalise(statement) + " " + _normalise(interpretation)
-    if not claim.strip():
-        return _skip(DIMENSION_CAUSALITY, "the finding states nothing to read")
-    used = [term for term in _CAUSAL_TERMS if term in claim]
-    if not used:
-        return ValidationCheck(
-            DIMENSION_CAUSALITY,
-            True,
-            "the finding's language is associative rather than causal, which is "
-            "what a comparison can support",
-            hard=False,
-        )
-    return ValidationCheck(
-        DIMENSION_CAUSALITY,
-        False,
-        f"the finding uses causal language ('{used[0]}') but the evidence is a "
-        f"comparison; this supports association, not causation",
-        hard=False,
+    passed, detail, _hard = assess_causality(
+        statement=statement,
+        interpretation=interpretation,
+        context=context,
+        sql=sql,
     )
+    return ValidationCheck(DIMENSION_CAUSALITY, passed, detail, hard=True)
 
 
 def check_alternatives(
@@ -603,6 +603,7 @@ def validate_finding(
     interpretation: str,
     question: str,
     sql: str,
+    context: dict | None,
     columns: list[str],
     rows: list[list[Any]],
     profile: dict | None,
@@ -623,7 +624,7 @@ def validate_finding(
         check_method(sql, statement, question, profile, columns, rows),
         check_evidence(statement, columns, rows),
         check_assumptions(sql, statement, profile, rows),
-        check_causality(statement, interpretation),
+        check_causality(statement, interpretation, context, sql),
         check_alternatives(sql, question, profile, columns, rows),
     ]
     # The order the PRD names them in, whatever order they were built in.

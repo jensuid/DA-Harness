@@ -144,150 +144,13 @@ answers.
 | P8-CONTEXT-001 | Data Layer (the case's context object) | DONE | 21 tests added (409 server, 82 web); schema v10; e2e green |
 | P8-QUALITY-002 | Data Layer (quality beyond missingness) | DONE | 26 tests added (435 server, 84 web); schema v11; e2e green |
 | P8-VALID-003 | Validation (3 checks to 9 dimensions) | DONE | 16 tests added (451 server, 85 web); e2e green; schema v11 |
-| P8-CAUSAL-004 | Validation (the causal-language guard) | OPEN | AT-18 |
+| P8-CAUSAL-004 | Validation (the causal-language guard) | DONE | 16 tests added (468 server, 86 web); 50-case corpus measures 100% on AT-18's three thresholds; e2e green; schema v11 |
 | P8-GOLDEN-005 | Verification (the analytical golden suite) | OPEN | AT-40/AT-01 |
 | P8-SHELL-006 | UX (the orientation spine) | OPEN | AT-33/34/35 |
 | P8-REFINE-007 | AI (question refinement) | OPEN | AT-04 |
 | P8-DECISION-008 | UX (the decision view) | OPEN | UX 46 |
 | P8-MEASURE-009 | Verification (coverage, perf, a11y, deps) | OPEN | AT-27..30/32/37/38/45/46 |
 | P8-TRACE-010 | Verification (the traceability matrix) | OPEN | AT-48 |
-
-### P8-QUALITY-002 contract
-
-```
-TASK ID: P8-QUALITY-002
-MILESTONE: P8 Analytical Contract
-CAPABILITY: Data Layer (quality beyond missingness)
-GOAL: a profile states what the data *cannot* support, before the analyst
-      spends a question on it. The profiler finds missing values and duplicate
-      rows today (2 of the PRD's 7 defect classes, AT-08); it does not detect
-      invalid types, inconsistent categories, date gaps, extreme values or
-      insufficient coverage - and these are the defects that make a *correct*
-      calculation answer the *wrong* question. Each detected issue must carry
-      an impact sentence (AT-09): not "1 null value(s)" but "Revenue contains
-      4.8% missing values; revenue comparisons may be understated." Per the UX
-      architecture (section 15) this belongs at the Data stage, *before*
-      analysis - today it surfaces only at validation, after a finding exists.
-CONTEXT: the profile is deterministic (DEC-001) and is already the object the
-         planner and the generator read, so quality detection belongs in the
-         same pass rather than a second scan. AT-08's thresholds are a >= 95%
-         detection rate and <= 5% false positives on the golden suite, which
-         does not exist yet (P8-GOLDEN-005) - so this task ships the detectors
-         and the tests that pin each one, and the *measurement* against a
-         golden corpus is the later task. The context object (P8-CONTEXT-001)
-         is already in place; an impact phrased against a stated purpose is
-         better than a generic one, but deriving impact from purpose is
-         P8-DECISION-008's territory, so impacts are per-defect-class and
-         column-specific here, not case-specific.
-INPUTS: a profiled dataset's per-column stats (type, null count, distinct
-        count, min/max/avg), its row count and its duplicate count - all
-        already computed by profile_csv. The detectors add no new scan of the
-        file for the classes the existing aggregates already prove; the classes
-        that need more (type violations, category inconsistency, date gaps,
-        extremes) compute from the same stats plus one targeted query each,
-        kept cheap because a profile already costs one scan.
-RELEVANT FILES: server/app/analysis.py (the detectors and the quality list),
-                server/app/db.py (migration 11, the profile's quality column),
-                server/app/models.py (QualityIssue, Profile carries the list),
-                server/app/main.py (persist and return the list; the validate
-                endpoint's missing-data check reads the derived impact),
-                web/src/api.ts, web/src/CaseWorkspace.tsx (the Data-stage
-                panel renders the list with its impact sentences),
-                web/src/CaseWorkspace.test.tsx,
-                server/tests/test_quality.py, ai/HANDOFF.md, ai/TASKS.md,
-                ai/CURRENT_STATE.md
-REQUIRED CHANGE:
-  - Five new defect detectors alongside the two that exist (missing values,
-    duplicate rows):
-      * invalid_types - a column the profiler typed `other` that reads as
-        numeric for most rows but not all, or a date-shaped column holding
-        unparsable values. Reported per column with the count and the failing
-        examples.
-      * inconsistent_categories - a low-cardinality `other` column whose
-        distinct values differ only by case or whitespace ("north" vs "North"),
-        which silently splits a GROUP BY.
-      * date_gaps - a temporal column whose values are not contiguous at the
-        granularity the rest of the series implies, so a "same period last
-        year" comparison looks at different windows.
-      * extreme_values - a numeric column whose max or min is many standard
-        deviations out, which skews every average the generator proposes.
-      * insufficient_coverage - the dataset is too small for the question's
-        implied comparison (a two-row dataset cannot support a trend), or a
-        category column is dominated by one value.
-    Each returns a structured issue: class, column, severity (high/medium/low),
-    an observed sentence and an impact sentence. An issue is only ever raised
-    on evidence the profile itself computed - never on a heuristic that could
-    fire on clean data, which is how the 5% false-positive budget is held.
-  - The profile carries the list: a `quality` key on profile_csv's result and
-    on the stored Profile. Persisted in the profiles table as JSON
-    (migration 11), so a reopened case shows the same warnings without
-    reprofiling.
-  - The Data-stage panel renders each issue's observed and impact sentences
-    inline under the dataset, with the duplicate and null counts it already
-    shows - not behind a tab, because the UX document's rule is that quality
-    is visible *before* analysis. A dataset with no issues says so plainly
-    rather than rendering nothing.
-  - The validation endpoint's missing-data check derives its detail from the
-    same impact sentence when the profile has one, so the finding's audit and
-    the Data stage cannot drift apart.
-NON-GOALS: the 9-dimension validation expansion (P8-VALID-003 - this adds the
-           quality *detection*, that consumes it as one of the nine axes); the
-           causal-language guard (P8-CAUSAL-004); the golden suite that
-           *measures* the 95%/5% budgets (P8-GOLDEN-005 - this ships the
-           detectors it will measure); the orientation spine that places these
-           in a per-stage rail (P8-SHELL-006); LLM-written impacts (the
-           sentences are templated from the profile's own numbers and are
-           deterministic, by DEC-001).
-CONSTRAINTS: green only. The detectors are pure functions of the profile plus
-             at most one bounded query each, deterministic and offline, so a
-             profile costs what it costs today plus the targeted queries. The
-             schema climbs to 11 and a v10 store opens, upgrades and keeps
-             every row.
-ACCEPTANCE CRITERIA:
-- [x] each of the 7 PRD defect classes has a fixture where the detector raises
-      the issue, and the issue carries both an observed and an impact sentence
-- [x] a clean dataset (no nulls, no duplicates, consistent categories, no
-      extremes) raises no issues - the false-positive guard, asserted
-- [x] the quality list persists: profile, close the case, reopen, the list is
-      the same without reprofiling
-- [x] the Data-stage panel renders the impact sentence for a dataset carrying
-      an issue, and states plainly when a dataset is clean
-- [x] a store from v10 opens, upgrades to v11 and keeps every row
-- [x] validation's missing-data detail uses the impact sentence when present
-TESTS: test_quality.py - one raising test per defect class (7), one
-       clean-dataset test, persistence across reopen, the v10->v11 migration;
-       web tests for the panel's rendering of an issue and of a clean dataset.
-VERIFICATION: `cd server && DAH_LLM_API_KEY= DAH_LLM_BASE_URL= DAH_LLM_MODEL=
-              .venv/bin/python -m pytest -q` green;
-              `server/.venv/bin/python verification/e2e/verify_e2e.py` green;
-              `cd web && npm test && npm run build` green.
-STATE UPDATE: TASKS/CURRENT_STATE gain the task and the raised schema version;
-              the store is at v11.
-```
-
-TASK: P8-QUALITY-002 - quality detection beyond missingness
-ID: P8-QUALITY-002
-PRIORITY: high
-STATUS: DONE
-SUMMARY: a profile now states what the data *cannot* support. Seven defect
-         classes (AT-08) each carry an observed fact and an analytical impact
-         sentence (AT-09), computed in the profiler's own pass and shown at the
-         Data stage, before analysis, rather than only after a finding exists.
-         The two classes that existed as bare counts - missing values and
-         duplicate rows - gained impacts; five are new: invalid types (a column
-         typed `other` that is mostly numeric or temporal but not entirely),
-         inconsistent categories (case/whitespace variants that split a GROUP
-         BY), date gaps (a hole in an otherwise regular series), extreme values
-         (a value dwarfing its neighbour, compared against the next value
-         rather than a mean the outlier itself moved) and insufficient coverage
-         (too few rows, or a category so dominant a group-by is about one
-         group). Every detector raises only on evidence the profile measured,
-         never on a guess about what the data should look like, which is what
-         holds the 5% false-positive budget before the golden suite that will
-         measure it exists. The list persists (schema v11), travels with an
-         exported case and survives a duplicate; the validation endpoint's
-         missing-data check now reads the same impact sentence the Data stage
-         shows, so the audit and the panel cannot drift apart.
 
 ### P8-VALID-003 contract
 
@@ -451,6 +314,164 @@ SUMMARY: a finding's verdict now accounts for all nine dimensions the PRD names
          asserted the pre-existing names, and the web suite's 5000ms timeouts
          under parallel file execution were load, not code - `fileParallelism:
          false` makes the gate deterministic without costing wall-clock time.
+
+### P8-CAUSAL-004 contract
+
+```
+TASK ID: P8-CAUSAL-004
+MILESTONE: P8 Analytical Contract
+CAPABILITY: Validation (the causal-language guard)
+GOAL: an unsupported causal claim is not just commented on, it is *guarded*.
+      P8-VALID-003 shipped AT-18's weakest form on purpose: a 14-phrase
+      substring match over the finding's statement that raises a soft concern
+      and yields `partially_supported`. That names the gap; it never refuses
+      anything, and the concern can be read as a footnote rather than a
+      verdict. AT-18's actual thresholds are a measurement contract - across
+      50 cases, >= 95% of unsupported causal claims are flagged, >= 95%
+      distinguish association from causation, and **0** cases convert an
+      unsupported association into a validated causal finding. The last clause
+      is the one the current check does not hold: a finding that says "spend
+      drives signups" over six correlating rows can still be accepted and
+      reported as `supported` once the other eight dimensions are clean,
+      because causality is a soft concern. This task makes the guard a
+      gate on the verdict and ships the 50-case corpus that measures it.
+CONTEXT: the gap analysis (G5) said EVALUATE's claim axis flags causal
+         language; it does not - that axis tests *specificity* (a direction or
+         a magnitude), never causation, so there is no existing machinery to
+         reuse. The only causal detector is `check_causality` itself. The
+         verdict vocabulary P8-VALID-003 formalised is what this guard acts on,
+         and the context object P8-CONTEXT-001 built is what distinguishes a
+         claim the case *can* support from one it cannot: a finding that
+         asserts causation over an observational comparison is unsupported,
+         while one over a documented intervention (a launch date, an A/B test,
+         a change recorded in the case's constraints) is a different claim.
+         Measuring is the other half of AT-18 - the corpus is the artefact the
+         threshold is computed over, and it is deliberately data rather than
+         assertions so P8-GOLDEN-005 can fold it into the golden suite.
+INPUTS: the finding's statement and interpretation, the case's context
+        (purpose, hypotheses, constraints - the last is where an intervention
+        is recorded), the run's SQL, and the profile. Nothing is executed and
+        nothing is stored: the guard is a pure function of objects already on
+        disk, same rule as every other check.
+RELEVANT FILES: server/app/causality.py (new - the detector, the hedging and
+                intervention logic, the corpus and the measurement),
+                server/app/validation.py (check_causality calls it; the
+                verdict rule changes from a concern to a gate),
+                server/app/main.py (validate_finding passes the context),
+                server/tests/test_causality.py (new - the corpus as data, the
+                measurement over it, the intervention and hedging paths),
+                server/tests/test_validation.py (the verdict's new behaviour),
+                web/src/CaseWorkspace.tsx (a guarded finding renders as a
+                refusal with the sentence to fix, not a warning),
+                ai/HANDOFF.md, ai/TASKS.md, ai/CURRENT_STATE.md
+REQUIRED CHANGE:
+  - `server/app/causality.py` (new):
+      * A detector wider than the substring list: causal verbs and connectives
+        ("drives", "causes", "leads to", "results in", "because of", "due to",
+        "so", "therefore", "thus", "hence", "is why", "the reason", "brings
+        about", "generates"), matched as word boundaries on normalised text so
+        "causes" does not fire inside "because".
+      * Hedging: a modal or qualifier immediately before the causal phrase
+        ("may drive", "could lead to", "might affect", "appears to influence",
+        "seems to cause") is an *associative* claim wearing causal words - the
+        hedge is the author stating the limitation themselves, so it does not
+        trip the guard. An unhedged phrase does.
+      * Negation: "does not drive", "no evidence that X causes Y" asserts the
+        absence of causation, which is the guard's own conclusion; it must not
+        be flagged as a violation.
+      * An intervention basis: the case's context records a change - a launch
+        date, an experiment, an A/B test, a policy change in the constraints or
+        the hypotheses - and the SQL compares across it (a before/after window
+        over a temporal column, or a control comparison). A causal claim over
+        an intervention is supported, and the guard says which intervention it
+        read rather than refusing everything causal by default. Without a
+        recorded intervention, an observational comparison supports
+        association only.
+      * A 50-case corpus as data - 25 unsupported causal claims, 15
+        associative claims that must not be flagged, 10 hedged or negated
+        claims - each with its expected verdict, drawn from the phrasings a
+        finding actually carries rather than synthetic one-liners. The
+        measurement computes the three AT-18 numbers from the corpus.
+  - `check_causality` becomes a gate rather than a comment: an unsupported
+    causal claim is a hard failure for the verdict, so the status is
+    `insufficient_evidence` (the claim outruns the evidence, which is what
+    that verdict means) rather than `partially_supported`. The three hard
+    dimensions become four. A hedged or associative statement stays clean, and
+    an intervention-backed claim passes with its basis named.
+  - `validate_finding` passes the case's context to the causality check, so
+    the intervention basis is read from the object the analyst already edits
+    rather than from a new field.
+  - The shell renders a guarded finding as a refusal with the sentence the
+    analyst must change, not as a yellow warning beside a green verdict; the
+    verdict is the message.
+NON-GOALS: the golden suite's other measurements (P8-GOLDEN-005 - this ships
+           the causal corpus, that one ships the workflow-completion rate and
+           the analytical reference values, and may fold this corpus in);
+           detecting confounding or deriving a causal graph (the guard is
+           about language and method shape, not about estimating effects);
+           causal discovery over the data itself; refusing the write - the
+           finding is still stored, it is the *verdict* that refuses.
+CONSTRAINTS: green only. The guard is deterministic and offline - no LLM call,
+             no new scan, no new schema. The corpus lives in the repository and
+             the measurement runs in the suite, so AT-18's threshold is
+             asserted on every run rather than quoted.
+ACCEPTANCE CRITERIA:
+- [x] an unhedged causal claim over an observational comparison yields
+      `insufficient_evidence`, not `supported`
+- [x] a hedged ("may drive", "could lead to") or negated ("does not cause")
+      claim is not flagged, and the corpus's false-positive rate shows it
+- [x] a causal claim over an intervention recorded in the case's context is
+      supported, and the detail names the intervention it read
+- [x] the 50-case corpus is data in the repository, and the measurement over
+      it reports >= 95% detection, >= 95% association/causation
+      discrimination and 0 conversions, asserted in the suite
+- [x] the guard costs no execution and no schema change
+- [x] the shell shows a guarded finding as a refusal naming the sentence to
+      fix, not a warning beside a pass
+TESTS: test_causality.py - the corpus as data with its measurement (the three
+       AT-18 numbers computed, not hardcoded), one test per detector path
+       (hedging, negation, intervention, word-boundary matching), the verdict's
+       new gate behaviour through validate_finding; test_validation.py's
+       causality tests updated to the new verdict; web test for the refusal's
+       rendering.
+VERIFICATION: `cd server && DAH_LLM_API_KEY= DAH_LLM_BASE_URL= DAH_LLM_MODEL=
+              .venv/bin/python -m pytest -q` green;
+              `server/.venv/bin/python verification/e2e/verify_e2e.py` green;
+              `cd web && npm test && npm run build` green.
+STATE UPDATE: TASKS/CURRENT_STATE gain the task; the schema stays at v11 and
+              the hard dimensions become four.
+```
+
+TASK: P8-CAUSAL-004 - the causal-language guard
+ID: P8-CAUSAL-004
+PRIORITY: high
+STATUS: DONE
+SUMMARY: an unsupported causal claim is guarded, not merely commented on. Until
+         this task the causality check raised a *soft concern* - a finding that
+         said "spend drives signups" over six correlating rows could still be
+         reported `supported` once the other eight dimensions were clean, and
+         AT-18's zero-conversion clause was not held. New
+         `server/app/causality.py` makes three judgements: an unhedged causal
+         verb over an observational comparison is unsupported and gates the
+         verdict (`insufficient_evidence`, causality now the fourth hard
+         dimension); a hedge ("may drive") or a negation ("does not cause") is
+         the author stating the limitation themselves and passes; and an
+         intervention the case's context records *and the SQL compares across*
+         earns causation, naming the intervention it read. The branch that
+         matters most: an intervention the case merely mentions but the query
+         never compares across still fails - mentioning is not using. The
+         corpus is 50 cases held as data (20 unsupported, 12 associative, 8
+         hedged, 10 intervention-backed), and the measurement computes AT-18's
+         three numbers over it on every run: 100% detection, 100%
+         discrimination, 0 conversions. Two detector bugs the corpus found
+         rather than assumed: normalisation strips the slash so "a/b test"
+         arrived as "a b test" and the intervention pattern missed it, and the
+         negation window had to widen from 3 to 5 words to read "no evidence
+         that ... caused". The guard costs no execution and no schema. The
+         shell renders a guarded finding as a refusal naming the sentence to
+         fix. One limitation recorded in the module rather than papered over: a
+         causal word used as a noun ("the causes column") fires, because
+         word-boundary matching cannot tell a noun from a verb.
 
 Contracts for the rolling window (the two most recent). Older blocks are in
 `ai/TASKS-ARCHIVE.md`.

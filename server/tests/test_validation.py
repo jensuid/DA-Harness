@@ -319,6 +319,7 @@ def test_every_dimension_is_answered() -> None:
         sql="SELECT region, SUM(revenue) AS total FROM read_csv_auto(?) GROUP BY region",
         columns=["region", "total"],
         rows=[["north", 325.0], ["south", 80.5]],
+        context=None,
         profile={
             "rows": 3,
             "columns": ["order_id", "revenue", "region"],
@@ -349,6 +350,7 @@ def test_a_clean_finding_is_supported() -> None:
         sql="SELECT region, SUM(revenue) AS total FROM read_csv_auto(?) GROUP BY region",
         columns=["region", "total"],
         rows=[["north", 325.0], ["south", 80.5]],
+        context=None,
         profile={
             "rows": 3,
             "columns": ["order_id", "revenue", "region"],
@@ -375,6 +377,7 @@ def test_an_undecidable_check_passes_and_says_it_skipped() -> None:
         sql="",
         columns=[],
         rows=[],
+        context=None,
         profile=None,
     )
     # No query, no profile: every check that needed either skipped rather than
@@ -396,6 +399,7 @@ def test_a_finding_quoting_an_invented_magnitude_fails_evidence() -> None:
         sql="SELECT region, SUM(revenue) AS total FROM read_csv_auto(?) GROUP BY region",
         columns=["region", "total"],
         rows=[["north", 325.0], ["south", 80.5]],
+        context=None,
         profile={
             "rows": 2,
             "columns": ["region", "revenue"],
@@ -423,6 +427,7 @@ def test_causal_language_from_a_correlation_is_flagged() -> None:
         sql="SELECT spend, signups FROM read_csv_auto(?)",
         columns=["spend", "signups"],
         rows=[[100.0, 40.0], [200.0, 85.0]],
+        context=None,
         profile={
             "rows": 2,
             "columns": ["spend", "signups"],
@@ -435,9 +440,12 @@ def test_causal_language_from_a_correlation_is_flagged() -> None:
     )
     causality = _dimension([c.to_dict() for c in checks], "causality")
     assert causality["passed"] is False
+    assert causality["hard"] is True
     assert "association" in causality["detail"]
-    # A concern, not a refusal: the finding stands, labelled.
-    assert status == "partially_supported"
+    # P8-CAUSAL-004: the guard is a gate, not a comment. An unsupported causal
+    # claim does not reach `supported`, and the verdict names the sentence the
+    # analyst must change rather than decorating a pass.
+    assert status == "insufficient_evidence"
 
 
 def test_associative_language_is_not_flagged_as_causal() -> None:
@@ -450,6 +458,7 @@ def test_associative_language_is_not_flagged_as_causal() -> None:
         sql="SELECT spend, signups FROM read_csv_auto(?)",
         columns=["spend", "signups"],
         rows=[[100.0, 40.0], [200.0, 85.0]],
+        context=None,
         profile={
             "rows": 2,
             "columns": ["spend", "signups"],
@@ -477,6 +486,7 @@ def test_a_filtered_group_by_is_flagged_on_population() -> None:
         "WHERE region <> 'south' GROUP BY region",
         columns=["region", "total"],
         rows=[["north", 325.0], ["west", 60.0]],
+        context=None,
         profile={
             "rows": 500,
             "columns": ["order_id", "revenue", "region"],
@@ -505,6 +515,7 @@ def test_a_trend_claim_over_a_single_period_is_flagged_on_timeframe() -> None:
         sql="SELECT quarter, SUM(revenue) AS total FROM read_csv_auto(?) GROUP BY quarter",
         columns=["quarter", "total"],
         rows=[["2024q3", 900.0]],
+        context=None,
         profile={
             "rows": 300,
             "columns": ["quarter", "revenue"],
@@ -530,6 +541,7 @@ def test_a_trend_claim_over_a_gappy_series_is_flagged_on_timeframe() -> None:
         sql="SELECT day, SUM(revenue) AS total FROM read_csv_auto(?) GROUP BY day",
         columns=["day", "total"],
         rows=[["2024-01-01", 300.0], ["2024-01-05", 290.0]],
+        context=None,
         profile={
             "rows": 300,
             "columns": ["day", "revenue"],
@@ -564,6 +576,7 @@ def test_a_non_time_claim_skips_the_timeframe_check() -> None:
         sql="SELECT region, SUM(revenue) AS total FROM read_csv_auto(?) GROUP BY region",
         columns=["region", "total"],
         rows=[["north", 325.0], ["south", 80.5]],
+        context=None,
         profile={
             "rows": 3,
             "columns": ["region", "revenue"],
@@ -591,6 +604,7 @@ def test_an_average_over_an_extreme_column_is_flagged_on_method() -> None:
         sql="SELECT AVG(revenue) AS avg_revenue FROM read_csv_auto(?)",
         columns=["avg_revenue"],
         rows=[[400.0]],
+        context=None,
         profile={
             "rows": 8,
             "columns": ["revenue"],
@@ -626,6 +640,7 @@ def test_a_query_that_ignores_the_questions_column_is_flagged_on_method() -> Non
         sql="SELECT region, COUNT(*) AS n FROM read_csv_auto(?) GROUP BY region",
         columns=["region", "n"],
         rows=[["north", 5], ["south", 3]],
+        context=None,
         profile={
             "rows": 8,
             "columns": ["region", "revenue"],
@@ -653,6 +668,7 @@ def test_a_sum_over_a_column_with_nulls_is_flagged_on_assumptions() -> None:
         sql="SELECT SUM(revenue) AS total FROM read_csv_auto(?)",
         columns=["total"],
         rows=[[900.0]],
+        context=None,
         profile={
             "rows": 8,
             "columns": ["revenue"],
@@ -688,6 +704,7 @@ def test_an_unread_categorical_column_is_flagged_on_alternatives() -> None:
         sql="SELECT region, SUM(revenue) AS total FROM read_csv_auto(?) GROUP BY region",
         columns=["region", "total"],
         rows=[["north", 325.0], ["south", 80.5]],
+        context=None,
         profile={
             "rows": 8,
             "columns": ["region", "revenue", "country"],
@@ -715,6 +732,7 @@ def test_an_unread_identifier_is_not_an_alternative_explanation() -> None:
         sql="SELECT region, SUM(revenue) AS total FROM read_csv_auto(?) GROUP BY region",
         columns=["region", "total"],
         rows=[["north", 325.0], ["south", 80.5]],
+        context=None,
         profile={
             "rows": 8,
             "columns": ["order_id", "region", "revenue"],
@@ -732,16 +750,24 @@ def test_an_unread_identifier_is_not_an_alternative_explanation() -> None:
 
 def test_a_concern_yields_partially_supported_not_failure() -> None:
     """The verdict that says the numbers reproduce and the claim is phrased
-    within them, but the analysis carries a stated limitation."""
-    status, _ = validation.validate_finding(
+    within them, but the analysis carries a stated limitation.
+
+    The statement is deliberately associative: the causal-language guard
+    (P8-CAUSAL-004) is a hard dimension now, so a causal phrase would reach
+    `insufficient_evidence` rather than the soft concern this test exists to
+    pin. The concern here is Method - an average over a column the profile
+    flagged extreme - which is exactly the soft shape the verdict describes.
+    """
+    status, checks = validation.validate_finding(
         reproduced=True,
         rerun_detail="rerun matches stored result",
-        statement="marketing spend drives signups",
+        statement="signups are higher where spend is higher",
         interpretation="",
         question="Do signups follow marketing spend?",
-        sql="SELECT spend, signups FROM read_csv_auto(?)",
-        columns=["spend", "signups"],
+        sql="SELECT spend, AVG(signups) AS a FROM read_csv_auto(?) GROUP BY spend",
+        columns=["spend", "a"],
         rows=[[100.0, 40.0], [200.0, 85.0]],
+        context=None,
         profile={
             "rows": 2,
             "columns": ["spend", "signups"],
@@ -749,10 +775,16 @@ def test_a_concern_yields_partially_supported_not_failure() -> None:
                 "spend": {"type": "numeric", "null_count": 0, "distinct_count": 2},
                 "signups": {"type": "numeric", "null_count": 0, "distinct_count": 2},
             },
-            "quality": [],
+            "quality": [
+                {"kind": "extreme_values", "column": "signups",
+                 "observed": "the largest value is far from the next",
+                 "impact": "averages over signups are skewed"},
+            ],
         },
     )
     assert status == "partially_supported"
+    concerns = [c for c in checks if not c.passed and not c.hard]
+    assert concerns, "the verdict rests on a soft concern, not a hard failure"
 
 
 def test_validation_executes_the_finding_once_not_once_per_check(tmp_path) -> None:

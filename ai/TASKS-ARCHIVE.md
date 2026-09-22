@@ -8,6 +8,144 @@ rolling window (the two most recent tasks); everything else is here.
 
 ---
 
+### P8-QUALITY-002 contract
+
+```
+TASK ID: P8-QUALITY-002
+MILESTONE: P8 Analytical Contract
+CAPABILITY: Data Layer (quality beyond missingness)
+GOAL: a profile states what the data *cannot* support, before the analyst
+      spends a question on it. The profiler finds missing values and duplicate
+      rows today (2 of the PRD's 7 defect classes, AT-08); it does not detect
+      invalid types, inconsistent categories, date gaps, extreme values or
+      insufficient coverage - and these are the defects that make a *correct*
+      calculation answer the *wrong* question. Each detected issue must carry
+      an impact sentence (AT-09): not "1 null value(s)" but "Revenue contains
+      4.8% missing values; revenue comparisons may be understated." Per the UX
+      architecture (section 15) this belongs at the Data stage, *before*
+      analysis - today it surfaces only at validation, after a finding exists.
+CONTEXT: the profile is deterministic (DEC-001) and is already the object the
+         planner and the generator read, so quality detection belongs in the
+         same pass rather than a second scan. AT-08's thresholds are a >= 95%
+         detection rate and <= 5% false positives on the golden suite, which
+         does not exist yet (P8-GOLDEN-005) - so this task ships the detectors
+         and the tests that pin each one, and the *measurement* against a
+         golden corpus is the later task. The context object (P8-CONTEXT-001)
+         is already in place; an impact phrased against a stated purpose is
+         better than a generic one, but deriving impact from purpose is
+         P8-DECISION-008's territory, so impacts are per-defect-class and
+         column-specific here, not case-specific.
+INPUTS: a profiled dataset's per-column stats (type, null count, distinct
+        count, min/max/avg), its row count and its duplicate count - all
+        already computed by profile_csv. The detectors add no new scan of the
+        file for the classes the existing aggregates already prove; the classes
+        that need more (type violations, category inconsistency, date gaps,
+        extremes) compute from the same stats plus one targeted query each,
+        kept cheap because a profile already costs one scan.
+RELEVANT FILES: server/app/analysis.py (the detectors and the quality list),
+                server/app/db.py (migration 11, the profile's quality column),
+                server/app/models.py (QualityIssue, Profile carries the list),
+                server/app/main.py (persist and return the list; the validate
+                endpoint's missing-data check reads the derived impact),
+                web/src/api.ts, web/src/CaseWorkspace.tsx (the Data-stage
+                panel renders the list with its impact sentences),
+                web/src/CaseWorkspace.test.tsx,
+                server/tests/test_quality.py, ai/HANDOFF.md, ai/TASKS.md,
+                ai/CURRENT_STATE.md
+REQUIRED CHANGE:
+  - Five new defect detectors alongside the two that exist (missing values,
+    duplicate rows):
+      * invalid_types - a column the profiler typed `other` that reads as
+        numeric for most rows but not all, or a date-shaped column holding
+        unparsable values. Reported per column with the count and the failing
+        examples.
+      * inconsistent_categories - a low-cardinality `other` column whose
+        distinct values differ only by case or whitespace ("north" vs "North"),
+        which silently splits a GROUP BY.
+      * date_gaps - a temporal column whose values are not contiguous at the
+        granularity the rest of the series implies, so a "same period last
+        year" comparison looks at different windows.
+      * extreme_values - a numeric column whose max or min is many standard
+        deviations out, which skews every average the generator proposes.
+      * insufficient_coverage - the dataset is too small for the question's
+        implied comparison (a two-row dataset cannot support a trend), or a
+        category column is dominated by one value.
+    Each returns a structured issue: class, column, severity (high/medium/low),
+    an observed sentence and an impact sentence. An issue is only ever raised
+    on evidence the profile itself computed - never on a heuristic that could
+    fire on clean data, which is how the 5% false-positive budget is held.
+  - The profile carries the list: a `quality` key on profile_csv's result and
+    on the stored Profile. Persisted in the profiles table as JSON
+    (migration 11), so a reopened case shows the same warnings without
+    reprofiling.
+  - The Data-stage panel renders each issue's observed and impact sentences
+    inline under the dataset, with the duplicate and null counts it already
+    shows - not behind a tab, because the UX document's rule is that quality
+    is visible *before* analysis. A dataset with no issues says so plainly
+    rather than rendering nothing.
+  - The validation endpoint's missing-data check derives its detail from the
+    same impact sentence when the profile has one, so the finding's audit and
+    the Data stage cannot drift apart.
+NON-GOALS: the 9-dimension validation expansion (P8-VALID-003 - this adds the
+           quality *detection*, that consumes it as one of the nine axes); the
+           causal-language guard (P8-CAUSAL-004); the golden suite that
+           *measures* the 95%/5% budgets (P8-GOLDEN-005 - this ships the
+           detectors it will measure); the orientation spine that places these
+           in a per-stage rail (P8-SHELL-006); LLM-written impacts (the
+           sentences are templated from the profile's own numbers and are
+           deterministic, by DEC-001).
+CONSTRAINTS: green only. The detectors are pure functions of the profile plus
+             at most one bounded query each, deterministic and offline, so a
+             profile costs what it costs today plus the targeted queries. The
+             schema climbs to 11 and a v10 store opens, upgrades and keeps
+             every row.
+ACCEPTANCE CRITERIA:
+- [x] each of the 7 PRD defect classes has a fixture where the detector raises
+      the issue, and the issue carries both an observed and an impact sentence
+- [x] a clean dataset (no nulls, no duplicates, consistent categories, no
+      extremes) raises no issues - the false-positive guard, asserted
+- [x] the quality list persists: profile, close the case, reopen, the list is
+      the same without reprofiling
+- [x] the Data-stage panel renders the impact sentence for a dataset carrying
+      an issue, and states plainly when a dataset is clean
+- [x] a store from v10 opens, upgrades to v11 and keeps every row
+- [x] validation's missing-data detail uses the impact sentence when present
+TESTS: test_quality.py - one raising test per defect class (7), one
+       clean-dataset test, persistence across reopen, the v10->v11 migration;
+       web tests for the panel's rendering of an issue and of a clean dataset.
+VERIFICATION: `cd server && DAH_LLM_API_KEY= DAH_LLM_BASE_URL= DAH_LLM_MODEL=
+              .venv/bin/python -m pytest -q` green;
+              `server/.venv/bin/python verification/e2e/verify_e2e.py` green;
+              `cd web && npm test && npm run build` green.
+STATE UPDATE: TASKS/CURRENT_STATE gain the task and the raised schema version;
+              the store is at v11.
+```
+
+TASK: P8-QUALITY-002 - quality detection beyond missingness
+ID: P8-QUALITY-002
+PRIORITY: high
+STATUS: DONE
+SUMMARY: a profile now states what the data *cannot* support. Seven defect
+         classes (AT-08) each carry an observed fact and an analytical impact
+         sentence (AT-09), computed in the profiler's own pass and shown at the
+         Data stage, before analysis, rather than only after a finding exists.
+         The two classes that existed as bare counts - missing values and
+         duplicate rows - gained impacts; five are new: invalid types (a column
+         typed `other` that is mostly numeric or temporal but not entirely),
+         inconsistent categories (case/whitespace variants that split a GROUP
+         BY), date gaps (a hole in an otherwise regular series), extreme values
+         (a value dwarfing its neighbour, compared against the next value
+         rather than a mean the outlier itself moved) and insufficient coverage
+         (too few rows, or a category so dominant a group-by is about one
+         group). Every detector raises only on evidence the profile measured,
+         never on a guess about what the data should look like, which is what
+         holds the 5% false-positive budget before the golden suite that will
+         measure it exists. The list persists (schema v11), travels with an
+         exported case and survives a duplicate; the validation endpoint's
+         missing-data check now reads the same impact sentence the Data stage
+         shows, so the audit and the panel cannot drift apart.
+
+
 ### P8-CONTEXT-001 contract
 
 ```
