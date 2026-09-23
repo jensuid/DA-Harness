@@ -947,3 +947,78 @@ export function rejectRoleAgentStep(
     body: JSON.stringify({ step_id: stepId, reason }),
   })
 }
+
+// --- the loop's exit (P8-DECISION-008 / UX 46) ----------------------------
+
+// The case's decision view: the findings validation stood behind, the
+// uncertainty that survived them (the checks that did not pass, never a
+// score), the claims still open, and the implications the analyst wrote. DAH
+// informs decisions and does not make them, so nothing here recommends
+// anything and no number summarises a finding's trust.
+export interface DecisionCheck {
+  dimension: string
+  detail: string
+  hard: boolean
+}
+
+export interface DecisionFinding {
+  id: string
+  statement: string
+  validation_status: string
+  interpretation: string | null
+  caveat: string | null
+  uncertainty: DecisionCheck[]
+  validated_at: string | null
+}
+
+export interface DecisionOpenItem {
+  id: string
+  statement: string
+  validation_status: string
+  reasons: string[]
+}
+
+export interface DecisionView {
+  case_id: string
+  question: string
+  purpose: string
+  loop_closed: boolean
+  findings: DecisionFinding[]
+  open_items: DecisionOpenItem[]
+  implications: string[]
+  updated_at: string | null
+  counts: Record<string, number>
+}
+
+// Read-only, deterministic, executes nothing: every field is a stored row or a
+// count of stored rows, so opening a case renders a decision without running a
+// query and without moving a verdict.
+export function getDecision(caseId: string): Promise<DecisionView> {
+  return request<DecisionView>(`/cases/${caseId}/decision`)
+}
+
+// The view's only write: the implications, in the analyst's own words. Nothing
+// proposes them and nothing derives them, because a tool that drafts the
+// action to take is a tool making the decision.
+export function putDecision(
+  caseId: string,
+  implications: string[],
+): Promise<DecisionView> {
+  return request<DecisionView>(`/cases/${caseId}/decision`, {
+    method: 'PUT',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ implications }),
+  })
+}
+
+// The case's package, as the decision's export (UX 46/47). The browser saves
+// it rather than rendering it, so this returns the raw response instead of
+// parsed JSON.
+export async function exportCasePackage(caseId: string): Promise<Blob> {
+  const res = await fetch(`${BASE}/cases/${caseId}/export`)
+  if (!res.ok) {
+    const text = await res.text()
+    throw new ApiError(res.status, text || `export failed: ${res.status}`)
+  }
+  return res.blob()
+}

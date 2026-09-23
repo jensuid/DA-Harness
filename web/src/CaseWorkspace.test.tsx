@@ -47,6 +47,9 @@ vi.mock('./api', async (importOriginal) => {
     acceptRefinement: vi.fn(),
     rejectRefinement: vi.fn(),
     editRefinement: vi.fn(),
+    getDecision: vi.fn(),
+    putDecision: vi.fn(),
+    exportCasePackage: vi.fn(),
   }
 })
 
@@ -275,6 +278,7 @@ function mockEmptyCase() {
   vi.mocked(api.getCaseHistory).mockResolvedValue(caseHistory)
   vi.mocked(api.getLearnWalk).mockResolvedValue(learnWalk)
   vi.mocked(api.getRefinement).mockResolvedValue(null)
+  vi.mocked(api.getDecision).mockResolvedValue(emptyDecision())
 }
 
 function emptyContext(): api.CaseContext {
@@ -301,6 +305,28 @@ function agentStep(overrides: object = {}): api.AgentStep {
     created_at: '',
     decided_at: null,
     ...overrides,
+  }
+}
+
+function emptyDecision(): api.DecisionView {
+  return {
+    case_id: 'c1',
+    question: 'Why did revenue decline?',
+    purpose: '',
+    loop_closed: false,
+    findings: [],
+    open_items: [],
+    implications: [],
+    updated_at: null,
+    counts: {
+      findings: 0,
+      key_findings: 0,
+      supported: 0,
+      partially_supported: 0,
+      open_items: 0,
+      open_checks: 0,
+      implications: 0,
+    },
   }
 }
 
@@ -2284,5 +2310,199 @@ expect(timeline.getByText(/case created/)).toBeInTheDocument()
       // ...and not in the intelligence zone beside the assistants.
       const intelligence = screen.getByRole('region', { name: /intelligence/i })
       expect(intelligence).not.toContainElement(panel)
+    })
+  })
+
+  describe('the decision view', () => {
+    // The api spies persist across the file, and this block sits outside the
+    // CaseWorkspace describe - which is also where the plan and run read
+    // rejections come from - so it sets up its own read-only refusals the way
+    // that describe does for its own tests.
+    beforeEach(() => {
+      vi.clearAllMocks()
+      vi.mocked(api.getPlan).mockRejectedValue(
+        new api.ApiError(404, 'plan not found'),
+      )
+      vi.mocked(api.getRun).mockRejectedValue(
+        new api.ApiError(404, 'run not found'),
+      )
+    })
+
+    function decided(overrides: Partial<api.DecisionView> = {}): api.DecisionView {
+      return {
+        ...emptyDecision(),
+        loop_closed: true,
+        findings: [
+          {
+            id: 'f1',
+            statement: 'North revenue is higher than south.',
+            validation_status: 'partially_supported',
+            interpretation: null,
+            caveat: 'One revenue value is missing.',
+            uncertainty: [
+              {
+                dimension: 'data',
+                detail: 'revenue contains 1 missing value, so totals may be understated.',
+                hard: false,
+              },
+            ],
+            validated_at: '2026-09-23T09:00:00+00:00',
+          },
+        ],
+        open_items: [
+          {
+            id: 'f2',
+            statement: 'The price change caused the rise.',
+            validation_status: 'insufficient_evidence',
+            reasons: ['causality: the claim is causal and the method is not'],
+          },
+        ],
+        counts: {
+          findings: 2, key_findings: 1, supported: 0, partially_supported: 1,
+          open_items: 1, open_checks: 1, implications: 0,
+        },
+        ...overrides,
+      }
+    }
+
+    async function openDecision(overrides: Partial<api.DecisionView> = {}) {
+      mockEmptyCase()
+      vi.mocked(api.getDecision).mockResolvedValue(decided(overrides))
+      const user = userEvent.setup()
+      render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+      const heading = await screen.findByRole('heading', { name: /^Decision$/i })
+      const panel = heading.closest('.panel') as HTMLElement
+      return { user, panel }
+    }
+
+    it('lives in the work zone, where the loop exits', async () => {
+      const { panel } = await openDecision()
+      const work = screen.getByRole('region', { name: /work/i })
+      expect(work).toContainElement(panel)
+      const intelligence = screen.getByRole('region', { name: /intelligence/i })
+      expect(intelligence).not.toContainElement(panel)
+    })
+
+    it('opens on the question the case asked', async () => {
+      const { panel } = await openDecision({ purpose: 'Decide whether to chase south.' })
+      expect(within(panel).getByText('Why did revenue decline?')).toBeInTheDocument()
+      expect(within(panel).getByText(/Decide whether to chase south/i)).toBeInTheDocument()
+    })
+
+    it('lists the validated finding with its caveat, not a score', async () => {
+      const { panel } = await openDecision()
+      expect(within(panel).getByText('North revenue is higher than south.')).toBeInTheDocument()
+      expect(within(panel).getByText(/validation: partially_supported/i)).toBeInTheDocument()
+      expect(within(panel).getByText(/caveat: One revenue value is missing/i)).toBeInTheDocument()
+      // No number summarises a finding's trust anywhere in the panel.
+      expect(within(panel).queryByText(/confidence/i)).toBeNull()
+    })
+
+    it('carries the checks that did not pass as the uncertainty', async () => {
+      const { panel } = await openDecision()
+      // The mark, the dimension and the sentence render together under the
+      // heading UX 46 names for them; a soft concern reads as a concern, not
+      // as a failure, and never as a score.
+      const heading = within(panel).getByRole('heading', { name: /uncertainty/i })
+      const uncertainty = heading.parentElement!
+      expect(uncertainty.textContent).toContain(
+        '⚠ data — revenue contains 1 missing value, so totals may be understated.',
+      )
+      expect(uncertainty.textContent).toContain('North revenue is higher than south.')
+    })
+
+    it('names the claims still open and why', async () => {
+      const { panel } = await openDecision()
+      expect(within(panel).getByText('The price change caused the rise.')).toBeInTheDocument()
+      expect(
+        within(panel).getByText(/causality: the claim is causal and the method is not/i),
+      ).toBeInTheDocument()
+    })
+
+    it('says what a closed loop looks like before there is one', async () => {
+      mockEmptyCase()
+      render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+      const heading = await screen.findByRole('heading', { name: /^Decision$/i })
+      const panel = heading.closest('.panel') as HTMLElement
+      expect(
+        within(panel).getByText(/No finding validation has stood behind yet/i),
+      ).toBeInTheDocument()
+    })
+
+    it('reports a decision view that could not be read', async () => {
+      mockEmptyCase()
+      vi.mocked(api.getDecision).mockRejectedValue(new api.ApiError(404, 'no case'))
+      render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+      expect(
+        await screen.findByText(/The decision view could not be read/i),
+      ).toBeInTheDocument()
+    })
+
+    it("writes the analyst's implications and nothing else", async () => {
+      const { user, panel } = await openDecision()
+      vi.mocked(api.putDecision).mockResolvedValue(
+        decided({ implications: ['Review enterprise pricing'] }),
+      )
+
+      await user.click(within(panel).getByRole('button', { name: /add implication/i }))
+      const box = within(panel).getByLabelText('Implication 1')
+      await user.type(box, 'Review enterprise pricing')
+      await user.click(within(panel).getByRole('button', { name: /save implications/i }))
+
+      expect(vi.mocked(api.putDecision)).toHaveBeenCalledWith('c1', [
+        'Review enterprise pricing',
+      ])
+      // The saved view came back from the server, so the panel shows it.
+      expect(await within(panel).findByText('1 saved')).toBeInTheDocument()
+    })
+
+    it('reports a failed save rather than swallowing it', async () => {
+      const { user, panel } = await openDecision()
+      vi.mocked(api.putDecision).mockRejectedValue(
+        new api.ApiError(400, 'implication 1 is longer than 2000 characters'),
+      )
+      await user.click(within(panel).getByRole('button', { name: /add implication/i }))
+      await user.type(within(panel).getByLabelText('Implication 1'), 'A long idea')
+      await user.click(within(panel).getByRole('button', { name: /save implications/i }))
+
+      expect(
+        await within(panel).findByText(/Could not save the implications/i),
+      ).toBeInTheDocument()
+      expect(
+        within(panel).getByText(/implication 1 is longer than 2000 characters/),
+      ).toBeInTheDocument()
+    })
+
+    it('exports the case package from the decision it closes on', async () => {
+      const { user, panel } = await openDecision()
+      vi.mocked(api.exportCasePackage).mockResolvedValue(
+        new Blob(['{}'], { type: 'application/json' }),
+      )
+      const downloads: string[] = []
+      const createObjectURL = vi.fn(() => 'blob:mock')
+      const revokeObjectURL = vi.fn(() => undefined)
+      Object.defineProperty(URL, 'createObjectURL', {
+        value: createObjectURL,
+        configurable: true,
+      })
+      Object.defineProperty(URL, 'revokeObjectURL', {
+        value: revokeObjectURL,
+        configurable: true,
+      })
+      vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (
+        this: HTMLAnchorElement,
+      ) {
+        downloads.push(this.download)
+      })
+
+      await user.click(within(panel).getByRole('button', { name: /export analysis case/i }))
+
+      expect(vi.mocked(api.exportCasePackage)).toHaveBeenCalledWith('c1')
+      expect(downloads).toHaveLength(1)
+      expect(downloads[0]).toMatch(/why-did-revenue-decline.*\.json$/)
+      expect(createObjectURL).toHaveBeenCalledTimes(1)
+      expect(revokeObjectURL).toHaveBeenCalledTimes(1)
+
+      vi.restoreAllMocks()
     })
   })

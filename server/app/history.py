@@ -8,11 +8,13 @@ derives the timeline from each artifact's own timestamp. Nothing is stored, so
 the timeline cannot drift from what is on disk - attach a dataset and an event
 appears; delete the case and it is gone.
 
-Validation has no persisted timestamp of its own (the finding keeps its status,
-not when it was set), so a finding's validation status rides along as the detail
-of its event rather than being invented as a separate timestamped entry.
+Validation's verdict is persisted with its own timestamp (P8-DECISION-008), so
+the act of validating is an event in its own right; the finding's own event
+still carries the status as its detail, which is what a reader scanning the
+timeline for the claim's standing wants.
 """
 
+import json
 from datetime import datetime, timezone
 from typing import Any
 
@@ -31,6 +33,14 @@ EVENT_FINDING_RECORDED = "finding_recorded"
 # propose-then-approve rhythm.
 EVENT_QUESTION_REFINED = "question_refined"
 EVENT_REFINE_DECISION = "refine_decision"
+# The verdict validation computed, now that it has a timestamp of its own
+# (P8-DECISION-008). AT-44 names validation among the minimum auditable events;
+# before this it rode as the detail of the finding's own event, which said
+# *what* the status was without saying the act of validating happened.
+EVENT_FINDING_VALIDATED = "finding_validated"
+# The implications the analyst wrote - the loop's exit, and the one event in
+# the timeline a human authors rather than a tool (P8-DECISION-008).
+EVENT_DECISION_WRITTEN = "decision_written"
 
 
 def _parse(timestamp: str | None) -> datetime | None:
@@ -165,6 +175,51 @@ def build_case_history(db, case_id: str) -> dict[str, Any]:
             add(row["decided_at"], EVENT_REFINE_DECISION, row["id"], label,
                 detail)
 
+    # The verdicts validation computed (P8-DECISION-008). One event per
+    # validated finding, at the moment the validation ran - the timeline's
+    # record that the loop's last step happened, which the finding's own event
+    # (recorded when the claim was drafted, carrying the status as its detail)
+    # cannot say on its own.
+    finding_statements = {
+        row["id"]: row["statement"]
+        for row in db.execute(
+            "SELECT id, statement FROM findings WHERE case_id = ?",
+            (case_id,),
+        ).fetchall()
+    }
+    for row in db.execute(
+        "SELECT finding_id, status, validated_at FROM validations "
+        "WHERE case_id = ? ORDER BY validated_at",
+        (case_id,),
+    ).fetchall():
+        add(
+            row["validated_at"],
+            EVENT_FINDING_VALIDATED,
+            row["finding_id"],
+            finding_statements.get(row["finding_id"], row["finding_id"]),
+            f"validation: {row['status']}",
+        )
+
+    # The implications the analyst wrote (P8-DECISION-008). A decision the case
+    # remembers, at the moment it was written - the loop's exit, and the one
+    # event that records a judgement rather than a computation.
+    decision_row = db.execute(
+        "SELECT implications_json, updated_at FROM decisions WHERE case_id = ?",
+        (case_id,),
+    ).fetchone()
+    if decision_row is not None and decision_row["updated_at"]:
+        try:
+            written = json.loads(decision_row["implications_json"] or "[]")
+        except json.JSONDecodeError:
+            written = []
+        add(
+            decision_row["updated_at"],
+            EVENT_DECISION_WRITTEN,
+            case_id,
+            case["question"],
+            f"{len(written)} implication(s) written",
+        )
+
     events.sort(key=lambda item: (item[0], item[1]))
 
     counts = {
@@ -176,6 +231,12 @@ def build_case_history(db, case_id: str) -> dict[str, Any]:
         "findings": sum(1 for e in events if e[2]["kind"] == EVENT_FINDING_RECORDED),
         "refinements": sum(
             1 for e in events if e[2]["kind"] == EVENT_QUESTION_REFINED
+        ),
+        "validations": sum(
+            1 for e in events if e[2]["kind"] == EVENT_FINDING_VALIDATED
+        ),
+        "decisions": sum(
+            1 for e in events if e[2]["kind"] == EVENT_DECISION_WRITTEN
         ),
     }
     return {

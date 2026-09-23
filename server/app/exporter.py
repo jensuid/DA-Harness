@@ -47,6 +47,11 @@ PACKAGE_VERSION = 1
 # Guard against a package that is too large to handle in one request.
 _MAX_PACKAGE_BYTES = 100 * 1024 * 1024
 
+# The implications a restored decision may carry, bounded as the write endpoint
+# bounds them (app/decision.py), so an imported package cannot smuggle an
+# unbounded list past the only path that accepts one.
+_DECISION_MAX = 12
+
 
 def _read_bytes(path: str) -> str:
     """File contents as base64, or an empty string if the file is gone."""
@@ -283,6 +288,30 @@ def export_case(db, case_id: str) -> dict | None:
         "plans": plans,
         "context": context,
         "agent_steps": agent_steps,
+        # The verdicts validation computed, in full (P8-DECISION-008). A
+        # package used to carry a finding's status and nothing else, so a case
+        # restored elsewhere lost the nine checks behind it - the residual
+        # uncertainty its decision was made on. AT-43's "validation states
+        # preserved" is a property of the package now, not a claim about it.
+        "validations": [
+            {
+                "finding_id": row["finding_id"],
+                "run_id": row["run_id"],
+                "status": row["status"],
+                "checks": json.loads(row["checks_json"] or "[]"),
+                "validated_at": row["validated_at"],
+            }
+            for row in db.execute(
+                "SELECT finding_id, run_id, status, checks_json, validated_at "
+                "FROM validations WHERE case_id = ? ORDER BY validated_at",
+                (case_id,),
+            ).fetchall()
+        ],
+        # The decision the analyst wrote (P8-DECISION-008): the loop's exit,
+        # which is the point of carrying a case anywhere else. Absent from
+        # packages written before this task, which is no decision rather than
+        # an error - the round trip degrades, it does not fail.
+        "decision": _decision_section(db, case_id),
         # The proposed sharpenings and what the analyst did with them
         # (P8-REFINE-007). An accepted refinement replaced the question on the
         # case row; the original lives here, so the round trip keeps it
@@ -308,6 +337,26 @@ def export_case(db, case_id: str) -> dict | None:
                 (case_id,),
             ).fetchall()
         ],
+    }
+
+
+def _decision_section(db, case_id: str) -> dict | None:
+    """The case's decision, or None if the analyst wrote no implications."""
+    row = db.execute(
+        "SELECT implications_json, updated_at FROM decisions WHERE case_id = ?",
+        (case_id,),
+    ).fetchone()
+    if row is None:
+        return None
+    try:
+        implications = json.loads(row["implications_json"] or "[]")
+    except json.JSONDecodeError:
+        implications = []
+    return {
+        "implications": [
+            str(item) for item in implications if isinstance(item, str) and item.strip()
+        ],
+        "updated_at": row["updated_at"],
     }
 
 
@@ -537,6 +586,48 @@ def import_package(db, package: dict, data_dir: Path) -> dict:
                 chart.get("created_at") or now.isoformat(),
             ),
         )
+
+    # The verdicts the package carried (P8-DECISION-008). Finding ids are
+    # remapped exactly as the findings above were, so a restored verdict points
+    # at the restored finding. Absent from older packages, which is the same
+    # degradation every other young section accepts.
+    for verdict in (package.get("validations") or []):
+        if not isinstance(verdict, dict):
+            continue
+        new_finding_id = finding_ids.get(verdict.get("finding_id"))
+        if new_finding_id is None:
+            continue
+        db.execute(
+            "INSERT OR REPLACE INTO validations (finding_id, case_id, run_id, "
+            "status, checks_json, validated_at) VALUES (?, ?, ?, ?, ?, ?)",
+            (
+                new_finding_id,
+                new_case_id,
+                run_ids.get(verdict.get("run_id")),
+                str(verdict.get("status") or "not_evaluated"),
+                json.dumps(verdict.get("checks") or []),
+                verdict.get("validated_at") or now.isoformat(),
+            ),
+        )
+
+    # The decision the analyst wrote (P8-DECISION-008).
+    decision_payload = package.get("decision")
+    if isinstance(decision_payload, dict):
+        implications = [
+            str(item).strip()[:_CONTEXT_TEXT_MAX]
+            for item in (decision_payload.get("implications") or [])
+            if isinstance(item, (str, int, float)) and str(item).strip()
+        ][:_DECISION_MAX]
+        if implications:
+            db.execute(
+                "INSERT OR REPLACE INTO decisions (case_id, implications_json, "
+                "updated_at) VALUES (?, ?, ?)",
+                (
+                    new_case_id,
+                    json.dumps(implications),
+                    decision_payload.get("updated_at") or now.isoformat(),
+                ),
+            )
 
     for plan in package["plans"]:
         db.execute(

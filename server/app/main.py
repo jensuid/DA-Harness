@@ -59,6 +59,7 @@ from app.drafter import create_draft as create_draft_module
 from app.generator import create_code as create_code_module
 from app.assistant import create_answer as create_answer_module, summarize_case
 from app.refine import create_refinement as create_refinement_module
+from app import decision as decision_module
 from app.exporter import export_case, import_package, PACKAGE_FORMAT, PACKAGE_VERSION
 from app.planner import validate_plan as validate_plan_module
 from app.generator import _columns_referenced as _columns_referenced_module
@@ -142,8 +143,9 @@ from app.models import (
     RefinementGround,
     RefinementEdit,
     REFINEMENT_STATUSES,
+    DecisionView,
+    DecisionWrite,
 )
-
 # Give the core's output somewhere to go. Under the desktop shell the core is a
 # child process whose stderr nobody is reading, so a 500's traceback needs a
 # file. Writes under DAH_DATA_DIR/logs, nowhere else, and nothing under pytest
@@ -1052,18 +1054,43 @@ async def duplicate_case(
              run["rows_json"], run["row_count"], run["truncated"], run["executed_at"]),
         )
 
+    finding_ids: dict[str, str] = {}
     for finding in db.execute(
         "SELECT id, run_id, statement, interpretation, caveat, validation_status, created_at "
         "FROM findings WHERE case_id = ? ORDER BY created_at",
         (case_id,),
     ).fetchall():
+        new_finding_id = str(uuid4())
+        finding_ids[finding["id"]] = new_finding_id
         db.execute(
             "INSERT INTO findings (id, case_id, run_id, statement, interpretation, "
             "caveat, validation_status, created_at) "
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-            (str(uuid4()), new_case_id, run_ids.get(finding["run_id"]),
+            (new_finding_id, new_case_id, run_ids.get(finding["run_id"]),
              finding["statement"], finding["interpretation"], finding["caveat"],
              finding["validation_status"], finding["created_at"]),
+        )
+
+    # The verdicts those findings earned travel with the copy
+    # (P8-DECISION-008): a duplicated case is still the investigation that
+    # validated what it validated, and the duplicate's decision view reads the
+    # same nine checks without re-running the computation.
+    for verdict in db.execute(
+        "SELECT finding_id, run_id, status, checks_json, validated_at "
+        "FROM validations WHERE case_id = ? ORDER BY validated_at",
+        (case_id,),
+    ).fetchall():
+        db.execute(
+            "INSERT OR REPLACE INTO validations (finding_id, case_id, run_id, "
+            "status, checks_json, validated_at) VALUES (?, ?, ?, ?, ?, ?)",
+            (
+                finding_ids.get(verdict["finding_id"]),
+                new_case_id,
+                run_ids.get(verdict["run_id"]),
+                verdict["status"],
+                verdict["checks_json"],
+                verdict["validated_at"],
+            ),
         )
 
     for chart in db.execute(
@@ -1176,6 +1203,24 @@ async def duplicate_case(
             ),
         )
 
+    # The implications the analyst wrote travel with the copy
+    # (P8-DECISION-008): a duplicated case keeps the decision its analysis
+    # supported, because the copy is the same investigation in a new place.
+    source_decision = db.execute(
+        "SELECT implications_json, updated_at FROM decisions WHERE case_id = ?",
+        (case_id,),
+    ).fetchone()
+    if source_decision is not None:
+        db.execute(
+            "INSERT OR REPLACE INTO decisions (case_id, implications_json, "
+            "updated_at) VALUES (?, ?, ?)",
+            (
+                new_case_id,
+                source_decision["implications_json"],
+                source_decision["updated_at"],
+            ),
+        )
+
     # A proposed sharpening and its decision travel with the copy
     # (P8-REFINE-007): a duplicated case is still the investigation that asked
     # the question it asked, including the sharpening it accepted.
@@ -1220,6 +1265,11 @@ async def delete_case(case_id: str, db=Depends(get_db)) -> None:
     db.execute("DELETE FROM interpretations WHERE case_id = ?", (case_id,))
     db.execute("DELETE FROM conversations WHERE case_id = ?", (case_id,))
     db.execute("DELETE FROM agent_steps WHERE case_id = ?", (case_id,))
+    # The verdicts and the decision go before the findings they reference
+    # (P8-DECISION-008), in the same child-first order every other deletion
+    # keeps, so a deleted case leaves no decision behind.
+    db.execute("DELETE FROM validations WHERE case_id = ?", (case_id,))
+    db.execute("DELETE FROM decisions WHERE case_id = ?", (case_id,))
     db.execute("DELETE FROM findings WHERE case_id = ?", (case_id,))
     db.execute("DELETE FROM runs WHERE case_id = ?", (case_id,))
     db.execute(
@@ -2471,13 +2521,122 @@ async def validate_finding(
         (status, finding.id),
     )
 
-    return ValidationResult(
+    result = ValidationResult(
         finding_id=finding.id,
         run_id=finding.run_id,
         status=status,
         checks=checks,
         validated_at=datetime.now(timezone.utc),
     )
+    # The verdict is kept rather than computed and discarded (P8-DECISION-008):
+    # the decision view reads the nine checks without re-running a single query,
+    # and a case reopened later still shows what validation found. One row per
+    # finding - the latest verdict, same as the finding's own status - because
+    # the verdict's history is the timeline's job, not the decision's.
+    db.execute(
+        "INSERT OR REPLACE INTO validations (finding_id, case_id, run_id, "
+        "status, checks_json, validated_at) VALUES (?, ?, ?, ?, ?, ?)",
+        (
+            result.finding_id,
+            case_id,
+            result.run_id,
+            result.status,
+            json.dumps([check.model_dump() for check in result.checks]),
+            result.validated_at.isoformat(),
+        ),
+    )
+    return result
+
+
+@app.get(
+    "/cases/{case_id}/findings/{finding_id}/validation",
+    response_model=ValidationResult,
+)
+async def get_validation(
+    case_id: str,
+    finding_id: str,
+    db=Depends(get_db),
+) -> ValidationResult:
+    """The verdict validation computed, as it stood when it ran.
+
+    Read-only: nothing is executed and nothing is proposed. The verdict is
+    persisted at validate time (P8-DECISION-008), so a reopened case answers
+    with the same nine checks a closed tab showed. A finding never validated
+    has no verdict to read, which is a 404 rather than an empty list - the
+    caller is asking for something that does not exist, and the honest answer
+    names the endpoint that creates it.
+    """
+    _require_case(db, case_id)
+    row = db.execute(
+        "SELECT finding_id, run_id, status, checks_json, validated_at "
+        "FROM validations WHERE finding_id = ? AND case_id = ?",
+        (finding_id, case_id),
+    ).fetchone()
+    if row is None:
+        raise HTTPException(
+            status_code=404,
+            detail="no validation recorded yet; POST .../validate computes one",
+        )
+    try:
+        checks = [ValidationCheck(**check) for check in json.loads(row["checks_json"])]
+    except (json.JSONDecodeError, TypeError):
+        checks = []
+    return ValidationResult(
+        finding_id=row["finding_id"],
+        run_id=row["run_id"],
+        status=row["status"],
+        checks=checks,
+        validated_at=row["validated_at"],
+    )
+
+
+@app.get("/cases/{case_id}/decision", response_model=DecisionView)
+async def get_decision(case_id: str, db=Depends(get_db)) -> DecisionView:
+    """The loop's exit: what the case established, and what it did not.
+
+    Read-only, deterministic, and executes nothing - every field is a stored
+    row or a count of stored rows, so reading a decision changes nothing. The
+    view carries the validated findings with the checks they did not pass
+    (never a score), the claims still open, and the implications the analyst
+    wrote. DAH informs decisions; it does not make them.
+    """
+    _require_case(db, case_id)
+    view = decision_module.build_decision(db, case_id)
+    assert view is not None  # _require_case answers the 404
+    return DecisionView(**view)
+
+
+@app.put("/cases/{case_id}/decision", response_model=DecisionView)
+async def write_decision(
+    case_id: str,
+    payload: DecisionWrite,
+    db=Depends(get_db),
+) -> DecisionView:
+    """Write the decision's implications - the view's only write.
+
+    The implications are the analyst's own words: nothing proposes them, and
+    nothing about them is derived, because a tool that drafts the action to
+    take is a tool making the decision. An empty list clears them, which is a
+    decision the analyst is allowed to make; a malformed entry is a 400 naming
+    the first one to fix.
+    """
+    _require_case(db, case_id)
+    try:
+        implications = decision_module.clean_implications(payload.implications)
+    except decision_module.ImplicationError as error:
+        raise HTTPException(status_code=400, detail=str(error))
+    db.execute(
+        "INSERT OR REPLACE INTO decisions (case_id, implications_json, "
+        "updated_at) VALUES (?, ?, ?)",
+        (
+            case_id,
+            json.dumps(implications),
+            datetime.now(timezone.utc).isoformat(),
+        ),
+    )
+    view = decision_module.build_decision(db, case_id)
+    assert view is not None
+    return DecisionView(**view)
 
 
 @app.post(

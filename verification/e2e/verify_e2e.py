@@ -167,6 +167,25 @@ class Server:
             except json.JSONDecodeError:
                 return err.code, {"raw": body.decode(errors="replace")}
 
+    def put(self, path: str, payload: dict) -> tuple[int, dict]:
+        """A PUT - the decision's implications, the only write the view accepts."""
+        req = urllib.request.Request(
+            f"http://127.0.0.1:{self.port}{path}",
+            data=json.dumps(payload).encode(),
+            headers={"content-type": "application/json"},
+            method="PUT",
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=120) as res:
+                body = res.read()
+                return res.status, (json.loads(body) if body else {})
+        except urllib.error.HTTPError as err:
+            body = err.read()
+            try:
+                return err.code, json.loads(body)
+            except json.JSONDecodeError:
+                return err.code, {"raw": body.decode(errors="replace")}
+
     def upload(self, path: str, filename: str, content: str) -> dict:
         boundary = "dah-e2e-boundary"
         body = (
@@ -272,6 +291,21 @@ def run_journey(server: Server) -> None:
     note("A drafted finding is accepted", "PASS",
          f"statement={finding['statement'][:60]}...")
 
+    # ---- 8b. a chart, so the evidence stage is complete ----------------
+    # The workflow's evidence stage needs a chart beside the finding, and the
+    # decision view's loop-closed reads the core's own stage derivation - so
+    # the loop the journey closes is the loop the whole flow walked.
+    # The chart reads the run's own columns, so it is whatever the generated
+    # query produced rather than a guess about its names.
+    chart = server.post(
+        f"/cases/{case_id}/runs/{run['id']}/charts",
+        {"kind": "bar", "x": run["columns"][0], "y": run["columns"][1]},
+    )[1]
+    assert chart["kind"] == "bar", chart
+    assert chart["x"] == run["columns"][0], chart
+    note("A chart closes the evidence stage", "PASS",
+         f"kind={chart['kind']}, y={chart['y']} by {chart['x']}")
+
     # ---- 9. validation reruns the computation ---------------------------
     validation = server.post(
         f"/cases/{case_id}/findings/{finding['id']}/validate"
@@ -371,12 +405,69 @@ def run_journey(server: Server) -> None:
     note("The case answers with citations", "PASS",
          f"source={chat['source']}, {len(chat['grounds'])} ground(s)")
 
-    # ---- 13. export and import round trip -------------------------------
+    # ---- 13. the decision view: the loop's exit -------------------------
+    # The verdict is kept rather than computed and discarded (P8-DECISION-008),
+    # so the decision reads without re-running a single query - and reads the
+    # same checks a second time.
+    decision = server.get(f"/cases/{case_id}/decision")
+    assert decision["loop_closed"] is True, decision
+    assert len(decision["findings"]) == 1, decision
+    key = decision["findings"][0]
+    assert key["statement"] == finding["statement"], key
+    stored = server.get(
+        f"/cases/{case_id}/findings/{finding['id']}/validation"
+    )
+    assert stored["status"] == validation["status"], stored
+    assert [c["dimension"] for c in stored["checks"]] == [
+        c["dimension"] for c in validation["checks"]
+    ], stored
+    # Uncertainty is the checks that did not pass, never a score: the null the
+    # profile counted is carried as a sentence, and nothing in the view numbers
+    # a finding's trust.
+    assert "score" not in json.dumps(decision), decision
+    assert any(
+        "missing" in item["detail"].lower() for item in key["uncertainty"]
+    ), key
+    note("The decision view reads the loop's exit", "PASS",
+         f"loop_closed, {len(decision['findings'])} key finding(s), "
+         f"{decision['counts']['open_checks']} unresolved check(s)")
+
+    # The implications are the view's only write, and they are the analyst's
+    # own: nothing proposes them.
+    implications = [
+        "Review the enterprise pricing change",
+        "Establish a seasonal baseline before attributing the move",
+    ]
+    written = server.put(f"/cases/{case_id}/decision", {"implications": implications})[1]
+    assert written["implications"] == implications, written
+    assert server.get(f"/cases/{case_id}/decision")["implications"] == implications
+    # A malformed entry is a 400 naming the one to fix, and writes nothing.
+    status, body = server.put(
+        f"/cases/{case_id}/decision", {"implications": ["ok", "   "]}
+    )
+    assert status == 400, (status, body)
+    assert "implication 2 is empty" in body["detail"], body
+    assert server.get(f"/cases/{case_id}/decision")["implications"] == implications
+    # The timeline records the decision the analyst wrote (AT-44).
+    kinds = [event["kind"] for event in server.get(
+        f"/cases/{case_id}/history")["events"]]
+    assert "decision_written" in kinds, kinds
+    note("The analyst writes the decision's implications", "PASS",
+         f"{len(implications)} written; a bad entry is a 400 that names it")
+
+    # ---- 14. export and import round trip -------------------------------
     package = server.get(f"/cases/{case_id}/export")
+    assert package["decision"]["implications"] == implications, package
+    assert package["validations"][0]["status"] == validation["status"], package
     imported = server.post("/cases/import", package)[1]
     assert imported["question"] == QUESTION, imported
+    restored = server.get(f"/cases/{imported['id']}/decision")
+    assert restored["implications"] == implications, restored
+    assert restored["findings"][0]["validation_status"] == validation["status"]
+    assert restored["findings"][0]["uncertainty"] == key["uncertainty"]
     note("The case round-trips through export", "PASS",
-         f"restored as {imported['id'][:8]} with fresh ids")
+         f"restored as {imported['id'][:8]} with fresh ids, its verdicts and "
+         f"its decision")
 
 
 def run_agent_case(server: Server) -> None:

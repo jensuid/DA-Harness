@@ -420,6 +420,67 @@ class ValidationResult(BaseModel):
     validated_at: datetime
 
 
+# The loop's exit (P8-DECISION-008, UX 46): the case's decision view. A
+# validated finding used to be the end of the road - the verdict was computed,
+# shown and discarded, and nothing closed over what the loop had established.
+# This is what the analyst acts on: the findings validation stood behind, the
+# uncertainty that survived them, the claims still open, and the implications
+# the analyst wrote. DAH informs decisions and does not make them, so nothing
+# here recommends anything and no number summarises a finding's trust.
+
+class DecisionCheck(BaseModel):
+    """One check a validated finding did not pass.
+
+    The PRD's own rule (UX 44) is that uncertainty is communicated as
+    structured signals with a sentence, not a confidence score; this is that
+    signal, carried verbatim from the verdict validation computed.
+    """
+    dimension: str
+    detail: str
+    hard: bool = False
+
+
+class DecisionFinding(BaseModel):
+    """A finding the case can act on, with what validation left unresolved."""
+    id: str
+    statement: str
+    validation_status: str
+    interpretation: str | None
+    caveat: str | None
+    uncertainty: list[DecisionCheck]
+    validated_at: datetime | None
+
+
+class DecisionOpenItem(BaseModel):
+    """A claim the loop has not closed over.
+
+    Either validation has not run, or it ran and refused - in which case the
+    reasons are the hard dimensions that failed, named rather than scored, so
+    the analyst reads what to fix rather than how badly it scored.
+    """
+    id: str
+    statement: str
+    validation_status: str
+    reasons: list[str]
+
+
+class DecisionWrite(BaseModel):
+    """The implications the analyst writes - the only write the view accepts."""
+    implications: list[str]
+
+
+class DecisionView(BaseModel):
+    case_id: str
+    question: str
+    purpose: str
+    loop_closed: bool
+    findings: list[DecisionFinding]
+    open_items: list[DecisionOpenItem]
+    implications: list[str]
+    updated_at: datetime | None
+    counts: dict[str, int]
+
+
 class TemplateProposal(BaseModel):
     """One code proposal captured from a finished case.
 

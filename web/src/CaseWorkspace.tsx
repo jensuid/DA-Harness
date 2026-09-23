@@ -64,6 +64,7 @@ import { ApiError } from './api'
 import { messageOf } from './CaseList'
 import { ContextPanel } from './ContextPanel'
 import { RefinePanel } from './RefinePanel'
+import { DecisionPanel } from './DecisionPanel'
 import { PromoteTemplate } from './Templates'
 
 // One case as the loop the core walks: attach and profile data, propose the
@@ -244,7 +245,8 @@ export function CaseWorkspace({
           arranges them rather than replacing them. The rail stays visible in
           the left zone while the work scrolls (UX 5: "the workflow indicator
           should remain visible"), so orientation does not depend on the panel
-          the analyst happens to be reading. */}
+          the analyst happens to be reading. The work zone ends on the decision
+          (UX 46), which is the loop's exit rather than another step in it. */}
       <div className="workspace">
         <section className="zone orientation" aria-label="orientation">
           <WorkflowRail
@@ -304,6 +306,12 @@ export function CaseWorkspace({
             evidence={evidence}
             error={evidenceError}
             empty={evidenceEmpty}
+          />
+          {/* UX 46: the loop's exit, last in the work zone - after the evidence
+              graph, because a decision is what the evidence is for. */}
+          <DecisionPanel
+            caseId={caseId}
+            onChanged={() => void load()}
           />
         </section>
         <section className="zone intelligence" aria-label="intelligence">

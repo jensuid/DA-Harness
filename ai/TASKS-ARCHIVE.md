@@ -5661,3 +5661,153 @@ SUMMARY: the trust machinery P8 built is now measured, and the two numbers the
          path now agrees), and the runner's own health check raced the stdout
          pump thread for the server's announcement and blocked forever on a
          `readline()` with no timeout.
+
+### P8-SHELL-006 contract
+
+```
+TASK ID: P8-SHELL-006
+MILESTONE: P8 Analytical Contract
+CAPABILITY: UX (the orientation spine)
+GOAL: AT-33 asks whether a user can understand "current case, current stage,
+      current task, next useful action, analysis status" - and until this task
+      the shell answered those with one text sentence and thirteen panels in a
+      fixed vertical column. The UX document's own orientation machinery was
+      absent: no persistent rail with per-stage status (UX 7), no three-zone
+      workspace (UX 8), no case overview (UX 45). This task is the only one in
+      the phase that restructures a working surface, and it is deliberately a
+      rearrangement: every panel it places already existed and already had a
+      contract, so the layout changes and the assertions do not have to.
+CONTEXT: the five tasks before it built the objects the spine presents -
+         context, quality defects, nine validation dimensions, the causal
+         guard, and the golden suite that measures them. Rendering them is now
+         possible and is now the gap: the walkthrough (P7-WALK-001) recorded
+         that a run's result rows, the plan's contents and the per-column null
+         counts were all computed by the core and never shown back, and that
+         the chat and generate-code inputs were adjacent near-identical boxes.
+INPUTS: the case, the derived progress (stage, completed stages, next action,
+        artifact counts), the profiles with their quality issues and per-column
+        stats, the findings with their validation statuses, the context's
+        purpose, and the plan and run rows the endpoints already served. No new
+        endpoint and no new schema: every number on the new surfaces is an
+        artifact count or a stored row the core already computed.
+RELEVANT FILES: web/src/CaseWorkspace.tsx (the rail, the overview, the plan
+                panel, the run's rows, the per-column nulls, the zones),
+                web/src/api.ts (getRun and getPlan, over endpoints that
+                already existed), web/src/index.css (the three-zone grid, the
+                sticky rail, the marks), web/src/App.tsx (the wide main),
+                web/src/CaseWorkspace.test.tsx (+13 tests), ai/HANDOFF.md,
+                ai/TASKS.md, ai/CURRENT_STATE.md
+REQUIRED CHANGE:
+  - The persistent workflow rail (UX 5/7) with the document's four marks:
+    `✓` complete, `⚠` requires attention, `●` the current stage, `○` not
+    started. The marks are derived the way the core derives the stage itself -
+    from `progress.completed` and `progress.stage` - so the rail cannot
+    disagree with the core. The one judgement is the warning, and it is
+    measured: the data stage's `⚠` is the profiler's own quality issue
+    (P8-QUALITY-002), never a guess. The rail is sticky, so the workflow
+    indicator stays visible while the work zone scrolls.
+  - The three-zone layout (UX 8): left = orientation (the rail, the case
+    overview, the LEARN walk, the history, the template action), center = work
+    (data, the plan, EDA, runs, findings, EVALUATE, the evidence graph),
+    right = intelligence (the context, the analyst agent, the reviewer, the
+    chat). The zones are real landmarks - `<section>` with an aria-label each -
+    so "where am I / what am I doing / what can help me" is the DOM as well as
+    the design. On a narrow screen the grid collapses to one column and the
+    rail stops being sticky.
+  - The case overview (UX 45, AT-33): objective, question, status as "N / M
+    stages complete", key findings, open issues (the profiler's defects plus
+    findings still awaiting validation), data sources, and the validation
+    counts. The objective reads the context's purpose and falls back to the
+    question, so a case that never stated intent is still described.
+  - The three render gaps: a run's result rows and the query that produced
+    them, reopened on demand over the endpoint that already served them; the
+    plan's own contents - objective, sub-questions, hypotheses with their
+    rationale and check, steps, data requirements, and the basis it was
+    planned from; and each column's measured null count at the Data stage.
+  - The two adjacent input boxes are separated by the zones themselves:
+    generate-code sits in the work zone, ask-this-case in the intelligence
+    zone.
+NON-GOALS: the decision view (P8-DECISION-008 - this is orientation, not the
+           loop's exit); question refinement (P8-REFINE-007); measurement
+           (P8-MEASURE-009 - AT-33's own 8/10 threshold is a usability study,
+           not something a unit suite asserts; what this task delivers is the
+           surface the study would be run against, and the suite asserts the
+           seven questions are answerable from it); any new core capability -
+           every endpoint the new surfaces read already existed, and a failure
+           in one of them is a finding about an existing contract.
+CONSTRAINTS: green only. No new endpoint, no schema change, no new dependency
+             (DEC-001). Deterministic: nothing new is executed and no LLM is
+             involved. The rearrangement must not weaken an existing panel's
+             contract - each panel keeps its own heading and its own asserted
+             content, and the tests that pinned them were not edited to fit
+             the new layout.
+ACCEPTANCE CRITERIA:
+- [x] the rail renders the four marks and its current stage agrees with the
+      core's derived stage, asserted against the progress the core answers
+- [x] a measured data-quality defect marks the data stage `⚠`, and a clean
+      stage beside it stays `✓`
+- [x] AT-33's seven questions are answerable from the rendered workspace
+      alone - case, stage, task, next action and analysis status all assert on
+      rendered text
+- [x] the three zones are distinguishable landmarks, and the assistants live
+      only in the intelligence zone
+- [x] a run's result rows and its query render on demand, including the
+      truncation notice when the stored result was capped
+- [x] the plan's contents render, and a case without a plan is guidance
+      rather than an error
+- [x] every column's measured null count renders at the Data stage
+- [x] the layout is responsive: narrow screens collapse to one column and the
+      rail stops being sticky
+TESTS: CaseWorkspace.test.tsx - the seven AT-33 questions asserted from the
+       rendered workspace, the purpose-as-objective path, the open-issue count
+       over quality defects plus pending validation, the three zones as
+       landmarks with the assistants on one side and the work on another, the
+       four marks over completed/current/attention stages, the per-column null
+       counts, the plan's full body, the no-plan-yet degradation, the run's
+       rows with its query, the hide path, the truncation notice, and a failed
+       read reported rather than hidden.
+VERIFICATION: `cd server && DAH_LLM_API_KEY= DAH_LLM_BASE_URL= DAH_LLM_MODEL=
+              .venv/bin/python -m pytest -q` green (477);
+              `server/.venv/bin/python verification/e2e/verify_e2e.py` green
+              (25/25); `cd web && npm test && npm run build` green (99, build
+              ok).
+STATE UPDATE: TASKS/CURRENT_STATE gain the task; the schema stays at v11 and
+              the server suite is unchanged - this task touched only the
+              shell.
+```
+
+TASK: P8-SHELL-006 - the orientation spine
+ID: P8-SHELL-006
+PRIORITY: high
+STATUS: DONE
+SUMMARY: the shell now answers "where am I, what am I doing, what can help me"
+         as a layout rather than as a sentence. The persistent rail carries the
+         UX document's four marks - `✓` complete, `⚠` requires attention, `●`
+         the current stage, `○` not started - derived the same way the core
+         derives the stage, from `progress.completed` and `progress.stage`, so
+         the rail cannot disagree with the core. The one judgement is the
+         warning, and it is measured: the data stage's `⚠` is the profiler's
+         own quality defect from P8-QUALITY-002, never a guess. Beside it sits
+         the case overview (UX 45) - objective, question, status as "N / M
+         stages complete", key findings, open issues, data sources, validation
+         counts - every one of them an artifact count the core already
+         computed, and the objective reading the context's purpose with the
+         question as the fallback. The workspace splits into three landmark
+         zones (orientation / work / intelligence), which is a rearrangement of
+         panels that already existed: no panel was rewritten and the tests that
+         pinned them were not edited to fit the new layout - only the one that
+         asserted a stage the loop is on was "pending" now reads "current", the
+         rail's own sharper vocabulary. The three render gaps the walkthrough
+         found are closed over endpoints that already existed: a run's result
+         rows and the query that produced them reopen on demand (with the
+         truncation notice when the stored result was capped), the plan's own
+         contents - sub-questions, hypotheses with their rationale and check,
+         steps, data requirements, the basis it was planned from - render
+         instead of being written and never read back, and every column's
+         measured null count shows at the Data stage. The two adjacent
+         near-identical input boxes are separated by the zones themselves. One
+         limitation worth naming rather than papering over: the overview's
+         labels are unstyled text, because splitting a label into its own
+         element breaks the text matching a test and a screen reader both read
+         - the sentence stays whole, and the first two rows carry the weight
+         instead.

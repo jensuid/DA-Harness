@@ -184,6 +184,24 @@ CREATE TABLE IF NOT EXISTS refinements (
     FOREIGN KEY (case_id) REFERENCES cases(id)
 );
 
+CREATE TABLE IF NOT EXISTS validations (
+    finding_id TEXT PRIMARY KEY,
+    case_id TEXT NOT NULL,
+    run_id TEXT NOT NULL,
+    status TEXT NOT NULL,
+    checks_json TEXT NOT NULL,
+    validated_at TEXT NOT NULL,
+    FOREIGN KEY (case_id) REFERENCES cases(id),
+    FOREIGN KEY (finding_id) REFERENCES findings(id)
+);
+
+CREATE TABLE IF NOT EXISTS decisions (
+    case_id TEXT PRIMARY KEY,
+    implications_json TEXT NOT NULL DEFAULT '[]',
+    updated_at TEXT NOT NULL,
+    FOREIGN KEY (case_id) REFERENCES cases(id)
+);
+
 CREATE TABLE IF NOT EXISTS schema_migrations (
     version INTEGER PRIMARY KEY,
     name TEXT NOT NULL,
@@ -227,7 +245,7 @@ def _ensure_column(conn, table: str, column: str, definition: str) -> None:
 # opening one above it is refused (see _check_version) rather than silently
 # treated as current, because a downgrade against an unknown schema is how a
 # store is corrupted quietly.
-LATEST_SCHEMA_VERSION = 12
+LATEST_SCHEMA_VERSION = 13
 
 
 class Migration:
@@ -346,6 +364,34 @@ def _m_refinements_table(conn: sqlite3.Connection) -> None:
     )
 
 
+def _m_decisions_table(conn: sqlite3.Connection) -> None:
+    # The loop's exit keeps what it concluded (P8-DECISION-008, UX 46). Two
+    # tables, because two different things are being kept. `validations` stores
+    # the verdict validation computed - all nine checks, not only the status
+    # that used to be all that survived - so a decision can be read without
+    # re-running a single query, and a reopened case still shows what
+    # validation found. `decisions` stores the implications the analyst wrote,
+    # which are the only thing in the view a human authors.
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS validations ("
+        "finding_id TEXT PRIMARY KEY, "
+        "case_id TEXT NOT NULL, "
+        "run_id TEXT NOT NULL, "
+        "status TEXT NOT NULL, "
+        "checks_json TEXT NOT NULL, "
+        "validated_at TEXT NOT NULL, "
+        "FOREIGN KEY (case_id) REFERENCES cases(id), "
+        "FOREIGN KEY (finding_id) REFERENCES findings(id))"
+    )
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS decisions ("
+        "case_id TEXT PRIMARY KEY, "
+        "implications_json TEXT NOT NULL DEFAULT '[]', "
+        "updated_at TEXT NOT NULL, "
+        "FOREIGN KEY (case_id) REFERENCES cases(id))"
+    )
+
+
 def _m_agent_steps_role(conn: sqlite3.Connection) -> None:
     # Multi-agent workflows: a step belongs to a role (P7-AGENT-001). Every
     # step recorded before the column existed is the analyst role - the one
@@ -370,6 +416,7 @@ MIGRATIONS: tuple[Migration, ...] = (
     Migration(10, "contexts: a case carries purpose, sub-questions, hypotheses", _m_contexts_table),
     Migration(11, "profiles gain the quality issues they detected", _m_profiles_quality_json),
     Migration(12, "refinements: a proposed question sharpening and its decision", _m_refinements_table),
+    Migration(13, "decisions: the verdicts validation computed and the implications the analyst wrote", _m_decisions_table),
 )
 
 

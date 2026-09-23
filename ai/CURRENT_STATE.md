@@ -1,9 +1,10 @@
-**Phase:** P8 Analytical Contract - IN PROGRESS (7 of 10 delivered: the case's
+**Phase:** P8 Analytical Contract - IN PROGRESS (8 of 10 delivered: the case's
 context object, quality beyond missingness, the PRD's nine validation
 dimensions, the causal guard, the analytical golden suite that measures them,
-the orientation spine that presents them, and question refinement). P7 Product Modes is COMPLETE - every checklist
+the orientation spine that presents them, question refinement, and the decision
+view that closes the loop). P7 Product Modes is COMPLETE - every checklist
 item that builds something shipped, including the manual walkthrough and the
-CORS fix, and the store's schema is at v12. P6, P5, P4, P3, P2, P1 and P0 are
+CORS fix, and the store's schema is at v13. P6, P5, P4, P3, P2, P1 and P0 are
 all COMPLETE (see the phase table below). P8 closes the PRD's Level 1 breadth
 gaps and makes "done" measurable: quality detection beyond missingness (2 of 7
 defect classes today), validation from 3 checks to the PRD's 9 dimensions, the
@@ -48,16 +49,23 @@ analysis is `docs/PRD & UX Conformance Evaluation.md`.
   documented minimum but is no longer enforced by CI, and a green run no longer
   proves the exact Intel triple a local build produces. Restoring that needs a
   self-hosted Intel runner.
-- **Test status:** server 518 passed (41 for this task: the engine's
-  additions and its four decline paths, its determinism, the gate's nine
-  rejection paths, the five endpoints and their error contracts, the history's
-  two events, the export round trip, the duplicate, the delete, the schema
-  upgrade, and the measurement over a real server); web 106 passed (7 for this
-  task: the transformation shown with both halves, accept moving the question
-  while the original stays visible, keep original writing nothing, the edit
-  pre-filled from the proposal, a failed decision reported, the decline said
-  rather than shown as an empty panel, and the panel in the orientation zone).
-  Before it, the server suite's own additions this phase: 6 golden (the ten
+- **Test status:** server 548 passed (30 for this task: the view's assembly -
+  guidance before a finding, a supported finding with no uncertainty, a
+  partially supported one carrying its failing checks verbatim from the
+  verdict, a refused one as an open item naming the hard dimension that failed,
+  the purpose, oldest-first ordering, loop-closed agreeing with /progress, the
+  verdict readable without re-validating, reading changing nothing across
+  repeated reads, the duplicate, the delete, the implications' write contract
+  and its three 400 shapes, the two new timeline events, the export's two new
+  sections and their round trip, an older package degrading rather than
+  failing, the AT-43 measurement over two findings, and the v12 -> v13
+  upgrade); web 116 passed (10 for this task: the panel in the work zone, the
+  question and purpose, a validated finding with its caveat and no score
+  anywhere in the panel, the failing checks as the uncertainty, the open claims
+  and their reasons, the guidance before a closed loop, a failed read
+  reported, the implications written and confirmed saved, a failed save
+  reported with the server's own sentence, and the export downloaded as a
+  named file). Before it, the server suite's own additions this phase: 6 golden (the ten
   shapes' coverage, the suite's own size floor, the two-way fixture audit, the
   deliberately-wrong expectation the audit catches, the comparator's tolerance,
   and the one slow measurement over a real server; +3 in test_analysis.py for
@@ -68,13 +76,15 @@ analysis is `docs/PRD & UX Conformance Evaluation.md`.
   finding that can still be `supported`), 16 validation, 26 quality, 21
   context. Desktop shell 22 Rust tests; P2, P3 and P4 gates PASS;
   **v0.2.0 released** (tag `v0.2.0` on `ec819fc`).
-- **e2e:** all 25 real-server steps PASS.
+- **e2e:** all 28 real-server steps PASS (the journey now closes the loop with
+  a chart, reads the decision view, writes the implications, and asserts the
+  export carries the verdicts and the decision through the round trip).
 
-- **Next task:** P8-DECISION-008 - the decision view (UX 46, AT-43): the
-  loop's exit, reading the validated findings and their residual uncertainty -
-  the failing checks, not a score - with the implications the analyst writes,
-  and the export carrying it. After it: P8-MEASURE-009 (the measurement layer)
-  and P8-TRACE-010 (the traceability matrix).
+- **Next task:** P8-MEASURE-009 - the measurement layer (AT-27..30/32/37/38/
+  45/46): coverage, perf, a11y, deps and the data-size envelope. Mechanical now
+  that two measured suites exist to borrow the pattern from - the golden suite
+  and the AT-04 refinement runner. After it: P8-TRACE-010 (the traceability
+  matrix), last because it traces what 1-9 delivered.
   The release is done: **v0.2.0** is tagged on `ec819fc`. GitHub Actions is
   still refusing to start any job with "recent account payments have failed";
   that is an account billing problem (Settings > Billing & plans), not a code
@@ -141,6 +151,16 @@ analysis is `docs/PRD & UX Conformance Evaluation.md`.
   the no; `POST .../refine/{proposal}/edit {question}` makes the analyst's own
   wording the case's. Accept and edit are the only paths that move the
   question; the original rides on the proposal row and survives both.
+- Read the case's decision (UX 46, AT-43): `GET /cases/{id}/decision`
+  (read-only, deterministic, executes nothing - the validated findings with
+  their residual uncertainty, the claims still open, and the analyst's
+  implications). Write the implications - the view's only write: `PUT
+  /cases/{id}/decision` with `{"implications": [...]}`; a malformed entry is a
+  400 naming the first one to fix, an empty list clears them.
+- Read the verdict validation computed: `GET /cases/{id}/findings/{fid}/validation`
+  (read-only; 404 when the finding was never validated). The verdict is
+  persisted by `POST .../validate`, so a reopened case shows the same nine
+  checks without re-validating.
 - Search cases: `GET /cases?q=<term>` (case-insensitive substring over question and dataset; blank lists all)
 - Case timeline: `GET /cases/{id}/history` (one event per artifact, chronological)
 - Walk a case as the LEARN ladder: `GET /cases/{id}/learn` (read-only; the four
@@ -245,8 +265,9 @@ analysis is `docs/PRD & UX Conformance Evaluation.md`.
 - End-to-end against a REAL server: `server/.venv/bin/python
   verification/e2e/verify_e2e.py` (starts uvicorn on a free port with an
   isolated data dir, drives the whole journey over HTTP - the case built
-  by hand, the reviewer's audit, an agent-driven second case, the export
-  round trip; ~3s, deterministic and offline, 25 asserted steps)
+  by hand, the reviewer's audit, an agent-driven second case, the decision
+  view and its implications, the export round trip; ~3s, deterministic and
+  offline, 28 asserted steps)
 
 ## How to run (web)
 

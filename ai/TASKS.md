@@ -148,7 +148,7 @@ answers.
 | P8-GOLDEN-005 | Verification (the analytical golden suite) | DONE | 21 reference calculations match at 100% (AT-40); 21/21 scripted runs complete the loop at 100% over 3 datasets (AT-01); 477 server, 86 web; e2e green |
 | P8-SHELL-006 | UX (the orientation spine) | DONE | 13 tests added (477 server, 99 web); AT-33's seven questions answerable from the rendered workspace; e2e green |
 | P8-REFINE-007 | AI (question refinement) | DONE | 41 tests added (518 server, 106 web); schema v12; AT-04's four thresholds measured over 50 cases at 100%/100%/0/0; e2e green |
-| P8-DECISION-008 | UX (the decision view) | OPEN | UX 46 |
+| P8-DECISION-008 | UX (the decision view) | DONE | 30 tests added (548 server, 116 web); schema v13; 28/28 e2e; the verdict persists, the export carries it |
 | P8-MEASURE-009 | Verification (coverage, perf, a11y, deps) | OPEN | AT-27..30/32/37/38/45/46 |
 | P8-TRACE-010 | Verification (the traceability matrix) | OPEN | AT-48 |
 
@@ -328,155 +328,166 @@ SUMMARY: AT-04's four numbers now exist, and the question is the one place in
          answers for every test before it (its own beforeEach clear, the same
          discipline the CaseWorkspace describe already had).
 
-### P8-SHELL-006 contract
+### P8-DECISION-008 contract
 
 ```
-TASK ID: P8-SHELL-006
+TASK ID: P8-DECISION-008
 MILESTONE: P8 Analytical Contract
-CAPABILITY: UX (the orientation spine)
-GOAL: AT-33 asks whether a user can understand "current case, current stage,
-      current task, next useful action, analysis status" - and until this task
-      the shell answered those with one text sentence and thirteen panels in a
-      fixed vertical column. The UX document's own orientation machinery was
-      absent: no persistent rail with per-stage status (UX 7), no three-zone
-      workspace (UX 8), no case overview (UX 45). This task is the only one in
-      the phase that restructures a working surface, and it is deliberately a
-      rearrangement: every panel it places already existed and already had a
-      contract, so the layout changes and the assertions do not have to.
-CONTEXT: the five tasks before it built the objects the spine presents -
-         context, quality defects, nine validation dimensions, the causal
-         guard, and the golden suite that measures them. Rendering them is now
-         possible and is now the gap: the walkthrough (P7-WALK-001) recorded
-         that a run's result rows, the plan's contents and the per-column null
-         counts were all computed by the core and never shown back, and that
-         the chat and generate-code inputs were adjacent near-identical boxes.
-INPUTS: the case, the derived progress (stage, completed stages, next action,
-        artifact counts), the profiles with their quality issues and per-column
-        stats, the findings with their validation statuses, the context's
-        purpose, and the plan and run rows the endpoints already served. No new
-        endpoint and no new schema: every number on the new surfaces is an
-        artifact count or a stored row the core already computed.
-RELEVANT FILES: web/src/CaseWorkspace.tsx (the rail, the overview, the plan
-                panel, the run's rows, the per-column nulls, the zones),
-                web/src/api.ts (getRun and getPlan, over endpoints that
-                already existed), web/src/index.css (the three-zone grid, the
-                sticky rail, the marks), web/src/App.tsx (the wide main),
-                web/src/CaseWorkspace.test.tsx (+13 tests), ai/HANDOFF.md,
-                ai/TASKS.md, ai/CURRENT_STATE.md
+CAPABILITY: UX (the decision view)
+GOAL: UX 46 and AT-43: the loop's exit. A validated finding used to be the end
+      of the road - the verdict was computed, shown and discarded, and nothing
+      in the product closed over what the loop had established. The PRD's own
+      flow (UX 48) ends at Decision Support -> Export. This task makes the
+      decision a first-class object the case carries: the validated findings,
+      each with its residual uncertainty - the checks that did not pass, never
+      a score - the claims still open, and the implications the analyst writes.
+      DAH informs decisions; it does not make them.
+CONTEXT: the seven tasks before it built what the view reads - the nine
+         validation dimensions and the causal guard that produce the verdicts
+         (P8-VALID-003, P8-CAUSAL-004), the golden suite that measured them
+         (P8-GOLDEN-005), the orientation spine that says where the case stands
+         (P8-SHELL-006), and the refinement that sharpened the question the
+         view opens on (P8-REFINE-007).
+INPUTS: the case's question, the context's purpose, every finding with the
+        verdict validation computed (status, nine checks, validated_at) and its
+        own caveat, the workflow's own loop-closed flag, and the analyst's
+        implications. Nothing is executed and nothing is derived that is not
+        already on disk.
+RELEVANT FILES: server/app/decision.py (new - the view's assembly and the
+                implications' rules), server/app/main.py (the three endpoints,
+                the persisted verdict, the duplicate and the delete),
+                server/app/db.py (schema v13, two tables, one migration),
+                server/app/models.py (DecisionView, DecisionWrite,
+                DecisionFinding, DecisionOpenItem, DecisionCheck),
+                server/app/history.py (two new event kinds),
+                server/app/exporter.py (the two new package sections and their
+                import), server/tests/test_decision.py (new, 30 tests),
+                server/tests/test_case_history.py (the timeline's two new
+                kinds), verification/e2e/verify_e2e.py (+3 steps, a PUT helper),
+                web/src/DecisionPanel.tsx (new), web/src/CaseWorkspace.tsx,
+                web/src/api.ts, web/src/CaseWorkspace.test.tsx (+10 tests),
+                ai/HANDOFF.md, ai/TASKS.md, ai/CURRENT_STATE.md
 REQUIRED CHANGE:
-  - The persistent workflow rail (UX 5/7) with the document's four marks:
-    `✓` complete, `⚠` requires attention, `●` the current stage, `○` not
-    started. The marks are derived the way the core derives the stage itself -
-    from `progress.completed` and `progress.stage` - so the rail cannot
-    disagree with the core. The one judgement is the warning, and it is
-    measured: the data stage's `⚠` is the profiler's own quality issue
-    (P8-QUALITY-002), never a guess. The rail is sticky, so the workflow
-    indicator stays visible while the work zone scrolls.
-  - The three-zone layout (UX 8): left = orientation (the rail, the case
-    overview, the LEARN walk, the history, the template action), center = work
-    (data, the plan, EDA, runs, findings, EVALUATE, the evidence graph),
-    right = intelligence (the context, the analyst agent, the reviewer, the
-    chat). The zones are real landmarks - `<section>` with an aria-label each -
-    so "where am I / what am I doing / what can help me" is the DOM as well as
-    the design. On a narrow screen the grid collapses to one column and the
-    rail stops being sticky.
-  - The case overview (UX 45, AT-33): objective, question, status as "N / M
-    stages complete", key findings, open issues (the profiler's defects plus
-    findings still awaiting validation), data sources, and the validation
-    counts. The objective reads the context's purpose and falls back to the
-    question, so a case that never stated intent is still described.
-  - The three render gaps: a run's result rows and the query that produced
-    them, reopened on demand over the endpoint that already served them; the
-    plan's own contents - objective, sub-questions, hypotheses with their
-    rationale and check, steps, data requirements, and the basis it was
-    planned from; and each column's measured null count at the Data stage.
-  - The two adjacent input boxes are separated by the zones themselves:
-    generate-code sits in the work zone, ask-this-case in the intelligence
-    zone.
-NON-GOALS: the decision view (P8-DECISION-008 - this is orientation, not the
-           loop's exit); question refinement (P8-REFINE-007); measurement
-           (P8-MEASURE-009 - AT-33's own 8/10 threshold is a usability study,
-           not something a unit suite asserts; what this task delivers is the
-           surface the study would be run against, and the suite asserts the
-           seven questions are answerable from it); any new core capability -
-           every endpoint the new surfaces read already existed, and a failure
-           in one of them is a finding about an existing contract.
-CONSTRAINTS: green only. No new endpoint, no schema change, no new dependency
-             (DEC-001). Deterministic: nothing new is executed and no LLM is
-             involved. The rearrangement must not weaken an existing panel's
-             contract - each panel keeps its own heading and its own asserted
-             content, and the tests that pinned them were not edited to fit
-             the new layout.
+  - The verdict stops being ephemeral. validate_finding computed nine checks
+    and kept only the status; now the whole verdict (status, checks,
+    validated_at) is persisted, so a decision is read without re-running a
+    single query and a reopened case still shows what validation found. A new
+    GET /cases/{id}/findings/{fid}/validation answers it read-only, and a
+    never-validated finding is a 404 naming the endpoint that creates one
+    rather than an empty list.
+  - The view: GET /cases/{id}/decision is read-only, deterministic and executes
+    nothing. It answers the question, the purpose the analyst stated, the key
+    findings (supported / partially_supported) each carrying its caveat and the
+    checks that did not pass as its uncertainty, the open items (a finding
+    awaiting validation, or one the verdict refused, naming the hard dimension
+    that failed), counts, and the analyst's implications. The loop's closure is
+    the core's to declare - the view reads workflow.case_progress rather than
+    restating it, so the decision cannot disagree with the rail.
+  - The only write is the implications: PUT /cases/{id}/decision with a list of
+    strings. It validates what it accepts - a list, each entry non-empty after
+    trimming, at most twelve, at most two thousand characters - and answers 400
+    naming the first entry that breaks a rule. An empty list clears them, which
+    is a decision the analyst is allowed to make.
+  - A case's decision travels: the export gains the verdicts and the decision,
+    and the import round trip restores both, so AT-43's "validation states
+    preserved" is a property of the package rather than a claim about it. The
+    duplicate carries both; the delete removes both.
+  - The timeline gains two events - the validation itself, now that it has a
+    timestamp of its own (AT-44 names validation among its minimum events), and
+    the decision the analyst wrote.
+  - The shell (UX 46): the panel is last in the work zone, where the loop
+    exits. Question, key findings with their caveats, the uncertainty, the
+    claims still open, the implications the analyst edits, and the case's
+    export - which had no surface in the shell at all, and whose natural home
+    is the decision it sits beside.
+NON-GOALS: the agent proposing implications - DAH informs decisions and does
+           not make them, so no agent step touches the decision view;
+           measurement of the view (P8-MEASURE-009); a formatted report output
+           (PDF / markdown, UX 47's future list); scoring, ranking or
+           recommending anything; the traceability matrix (P8-TRACE-010).
+CONSTRAINTS: green only. No new dependency (DEC-001). Schema v12 -> v13, one
+             in-place migration creating two tables. Read-only by default: the
+             GET executes nothing, and the PUT is the only write. Deterministic
+             and offline. UX 44's rule holds throughout - no confidence score
+             appears anywhere in the view.
 ACCEPTANCE CRITERIA:
-- [x] the rail renders the four marks and its current stage agrees with the
-      core's derived stage, asserted against the progress the core answers
-- [x] a measured data-quality defect marks the data stage `⚠`, and a clean
-      stage beside it stays `✓`
-- [x] AT-33's seven questions are answerable from the rendered workspace
-      alone - case, stage, task, next action and analysis status all assert on
-      rendered text
-- [x] the three zones are distinguishable landmarks, and the assistants live
-      only in the intelligence zone
-- [x] a run's result rows and its query render on demand, including the
-      truncation notice when the stored result was capped
-- [x] the plan's contents render, and a case without a plan is guidance
-      rather than an error
-- [x] every column's measured null count renders at the Data stage
-- [x] the layout is responsive: narrow screens collapse to one column and the
-      rail stops being sticky
-TESTS: CaseWorkspace.test.tsx - the seven AT-33 questions asserted from the
-       rendered workspace, the purpose-as-objective path, the open-issue count
-       over quality defects plus pending validation, the three zones as
-       landmarks with the assistants on one side and the work on another, the
-       four marks over completed/current/attention stages, the per-column null
-       counts, the plan's full body, the no-plan-yet degradation, the run's
-       rows with its query, the hide path, the truncation notice, and a failed
-       read reported rather than hidden.
+- [x] every validated finding appears in the decision view with its residual
+      uncertainty, and a check that did not pass is named, never scored
+- [x] the view is read-only: reading it executes nothing and writes nothing,
+      and the second read answers the first's verdict
+- [x] the verdict persists, so a case reopened shows what validation found
+      without re-validating
+- [x] the implications are the only write, and a bad entry is a 400 naming it
+- [x] export carries the verdicts and the decision, and the round trip
+      restores both with fresh ids
+- [x] the duplicate carries them; the delete removes them
+- [x] the timeline records the validation and the decision
+- [x] the shell renders the view, and the case's export is reachable from it
+- [x] the view's loop-closed is the core's own value, so it cannot disagree
+      with the workflow rail
+TESTS: test_decision.py (30) - the empty case as guidance rather than an empty
+       decision, a supported finding with no uncertainty, a partially
+       supported finding carrying its failing checks verbatim from the verdict,
+       a refused finding as an open item naming the hard dimension that failed,
+       the awaiting-validation reason, the purpose, oldest-first ordering,
+       loop-closed agreeing with /progress, the verdict readable without
+       re-validating, the 404 for a never-validated finding and for another
+       case's, reading changes nothing across repeated reads, re-validation
+       keeping one row, the delete leaving no trace, the duplicate carrying
+       both, the implications' round trip, trimming, the three 400 shapes and
+       the empty-list clear, the unit rules on a non-list, the two new timeline
+       events and their counts, the export carrying both sections, the round
+       trip restoring both, an older package degrading rather than failing, the
+       AT-43 measurement over two findings, and the v12 -> v13 upgrade plus the
+       fresh store. CaseWorkspace.test.tsx (+10) - the panel in the work zone,
+       the question and purpose, a validated finding with its caveat and no
+       score anywhere, the failing checks as the uncertainty, the open claims
+       and their reasons, the guidance before a closed loop, a failed read
+       reported, the implications written and confirmed saved, a failed save
+       reported with the server's sentence, and the export downloaded as a
+       named file.
 VERIFICATION: `cd server && DAH_LLM_API_KEY= DAH_LLM_BASE_URL= DAH_LLM_MODEL=
-              .venv/bin/python -m pytest -q` green (477);
+              .venv/bin/python -m pytest -q` green (548);
               `server/.venv/bin/python verification/e2e/verify_e2e.py` green
-              (25/25); `cd web && npm test && npm run build` green (99, build
-              ok).
-STATE UPDATE: TASKS/CURRENT_STATE gain the task; the schema stays at v11 and
-              the server suite is unchanged - this task touched only the
-              shell.
+              (28/28); `server/.venv/bin/python
+              verification/golden/verify_golden.py` green (21/21 reference and
+              workflow); `server/.venv/bin/python verification/refine/verify_refine.py`
+              green (AT-04's four thresholds); `cd web && npm test && npm run
+              build` green (116, build ok).
+STATE UPDATE: TASKS/CURRENT_STATE gain the task; schema v12 -> v13.
 ```
 
-TASK: P8-SHELL-006 - the orientation spine
-ID: P8-SHELL-006
+TASK: P8-DECISION-008 - the decision view
+ID: P8-DECISION-008
 PRIORITY: high
 STATUS: DONE
-SUMMARY: the shell now answers "where am I, what am I doing, what can help me"
-         as a layout rather than as a sentence. The persistent rail carries the
-         UX document's four marks - `✓` complete, `⚠` requires attention, `●`
-         the current stage, `○` not started - derived the same way the core
-         derives the stage, from `progress.completed` and `progress.stage`, so
-         the rail cannot disagree with the core. The one judgement is the
-         warning, and it is measured: the data stage's `⚠` is the profiler's
-         own quality defect from P8-QUALITY-002, never a guess. Beside it sits
-         the case overview (UX 45) - objective, question, status as "N / M
-         stages complete", key findings, open issues, data sources, validation
-         counts - every one of them an artifact count the core already
-         computed, and the objective reading the context's purpose with the
-         question as the fallback. The workspace splits into three landmark
-         zones (orientation / work / intelligence), which is a rearrangement of
-         panels that already existed: no panel was rewritten and the tests that
-         pinned them were not edited to fit the new layout - only the one that
-         asserted a stage the loop is on was "pending" now reads "current", the
-         rail's own sharper vocabulary. The three render gaps the walkthrough
-         found are closed over endpoints that already existed: a run's result
-         rows and the query that produced them reopen on demand (with the
-         truncation notice when the stored result was capped), the plan's own
-         contents - sub-questions, hypotheses with their rationale and check,
-         steps, data requirements, the basis it was planned from - render
-         instead of being written and never read back, and every column's
-         measured null count shows at the Data stage. The two adjacent
-         near-identical input boxes are separated by the zones themselves. One
-         limitation worth naming rather than papering over: the overview's
-         labels are unstyled text, because splitting a label into its own
-         element breaks the text matching a test and a screen reader both read
-         - the sentence stays whole, and the first two rows carry the weight
-         instead.
+SUMMARY: the loop has an exit. A validated finding used to be the last thing
+         the product did with itself: the verdict was computed, shown and
+         discarded, only the status surviving on the finding, and nothing closed
+         over what the loop had established. Now the verdict is kept - all nine
+         checks, not only the status - and the decision view reads it without
+         re-running a single query. The view answers the question, the findings
+         validation stood behind with their caveats and the checks that did not
+         pass (a sentence each, never a score, per UX 44), the claims still open
+         with the reason each is unresolved, and the implications the analyst
+         writes - the view's only write, and the one thing in it a human
+         authors, because a tool that drafts the action to take is a tool
+         making the decision. The loop's closure is the core's own value, read
+         from workflow.case_progress rather than restated, so the decision
+         cannot say the loop is open while the rail says it is closed. The
+         decision travels: the export carries the verdicts and the implications
+         and the round trip restores both with fresh ids, the duplicate carries
+         them, the delete removes them, and the timeline records the validation
+         and the decision as their own events. The shell gained the panel and,
+         with it, the case's export - which existed as an endpoint and had no
+         surface in the product at all. Two bugs the work surfaced, both fixed
+         with their own tests: the timeline asserted its event list exactly, so
+         the two new kinds needed the assertions that name them, and the test
+         file's decision describe sits outside the CaseWorkspace describe, so
+         the plan and run read rejections it inherited by accident of the
+         previous test's persistence are now its own beforeEach - a fragility
+         the refinement describe beside it still has and this task did not
+         touch.
 
 Contracts for the rolling window (the two most recent). Older blocks are in
 `ai/TASKS-ARCHIVE.md`.
