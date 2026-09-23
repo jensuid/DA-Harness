@@ -39,6 +39,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from uuid import uuid4
 
+from app.models import REFINEMENT_STATUSES
+
 PACKAGE_FORMAT = "dah-case-package"
 PACKAGE_VERSION = 1
 
@@ -281,6 +283,31 @@ def export_case(db, case_id: str) -> dict | None:
         "plans": plans,
         "context": context,
         "agent_steps": agent_steps,
+        # The proposed sharpenings and what the analyst did with them
+        # (P8-REFINE-007). An accepted refinement replaced the question on the
+        # case row; the original lives here, so the round trip keeps it
+        # recoverable - AT-04's threshold holds across an export, not only
+        # within one store.
+        "refinements": [
+            {
+                "original_question": row["original_question"],
+                "refined_question": row["refined_question"] or "",
+                "rationale": row["rationale"] or "",
+                "grounds": json.loads(row["grounds_json"] or "[]"),
+                "source": row["source"],
+                "status": row["status"],
+                "edited_question": row["edited_question"],
+                "created_at": row["created_at"],
+                "decided_at": row["decided_at"],
+            }
+            for row in db.execute(
+                "SELECT original_question, refined_question, rationale, "
+                "grounds_json, source, status, edited_question, created_at, "
+                "decided_at FROM refinements WHERE case_id = ? "
+                "ORDER BY created_at",
+                (case_id,),
+            ).fetchall()
+        ],
     }
 
 
@@ -354,6 +381,38 @@ def import_package(db, package: dict, data_dir: Path) -> dict:
                 json.dumps(context_lists["hypotheses"]),
                 json.dumps(context_lists["constraints"]),
                 now.isoformat(),
+            ),
+        )
+
+    # The question's refinement history, if the package carries it. A package
+    # from before the feature has no section, which is no history rather than
+    # an error - the round trip degrades, it does not fail.
+    for refinement in (package.get("refinements") or []):
+        if not isinstance(refinement, dict):
+            continue
+        original = str(refinement.get("original_question") or "").strip()
+        if not original:
+            continue
+        status = refinement.get("status")
+        if status not in REFINEMENT_STATUSES:
+            status = "declined"
+        db.execute(
+            "INSERT INTO refinements (id, case_id, original_question, "
+            "refined_question, rationale, grounds_json, source, status, "
+            "edited_question, created_at, decided_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (
+                str(uuid4()),
+                new_case_id,
+                original,
+                str(refinement.get("refined_question") or "")[:_CONTEXT_TEXT_MAX],
+                str(refinement.get("rationale") or "")[:_CONTEXT_TEXT_MAX * 4],
+                json.dumps(refinement.get("grounds") or []),
+                str(refinement.get("source") or "deterministic"),
+                status,
+                str(refinement.get("edited_question") or "").strip()[:_CONTEXT_TEXT_MAX] or None,
+                refinement.get("created_at") or now.isoformat(),
+                refinement.get("decided_at"),
             ),
         )
 

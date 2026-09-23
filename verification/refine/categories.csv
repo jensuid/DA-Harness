@@ -1,0 +1,7 @@
+category,subcategory,owner,status
+hardware,peripherals,alice,active
+hardware,storage,bob,active
+software,productivity,carol,retired
+software,security,alice,active
+services,training,dan,paused
+services,consulting,carol,active

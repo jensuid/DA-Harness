@@ -58,6 +58,7 @@ from app.interpreter import create_interpretation as create_interpretation_modul
 from app.drafter import create_draft as create_draft_module
 from app.generator import create_code as create_code_module
 from app.assistant import create_answer as create_answer_module, summarize_case
+from app.refine import create_refinement as create_refinement_module
 from app.exporter import export_case, import_package, PACKAGE_FORMAT, PACKAGE_VERSION
 from app.planner import validate_plan as validate_plan_module
 from app.generator import _columns_referenced as _columns_referenced_module
@@ -137,6 +138,10 @@ from app.models import (
     AxisFinding,
     Evaluation,
     EvaluationCreate,
+    Refinement,
+    RefinementGround,
+    RefinementEdit,
+    REFINEMENT_STATUSES,
 )
 
 # Give the core's output somewhere to go. Under the desktop shell the core is a
@@ -555,6 +560,24 @@ def _context_of(db, case_id: str) -> CaseContext:
     )
 
 
+def _question_of(db, case_id: str) -> str:
+    """The case's current question."""
+    row = db.execute(
+        "SELECT question FROM cases WHERE id = ?", (case_id,),
+    ).fetchone()
+    return "" if row is None else row["question"]
+
+
+def _refinement_row(db, proposal_id: str):
+    """One proposal row by id, after a decision has been written to it."""
+    return db.execute(
+        "SELECT id, case_id, original_question, refined_question, rationale, "
+        "grounds_json, source, status, edited_question, created_at, decided_at "
+        "FROM refinements WHERE id = ?",
+        (proposal_id,),
+    ).fetchone()
+
+
 @app.get("/cases/{case_id}/context", response_model=CaseContext)
 async def get_context(case_id: str, db=Depends(get_db)) -> CaseContext:
     """The case's stated intent: purpose, sub-questions, hypotheses, constraints.
@@ -646,6 +669,284 @@ async def put_context(
         constraints=cleaned["constraints"],
         updated_at=now,
     )
+
+
+def _profile_for_refinement(db, case_id: str) -> dict | None:
+    """The most recently attached dataset's profile, or none.
+
+    The refinement grounds itself in measured data; a case with no profiled
+    dataset yet has nothing to sharpen against, and the honest answer is a
+    decline rather than a guess at what the columns might be.
+    """
+    row = db.execute(
+        "SELECT p.rows, p.columns_json, p.stats_json, p.duplicate_rows, "
+        "p.quality_json FROM profiles p "
+        "JOIN datasets d ON p.dataset_id = d.id "
+        "WHERE d.case_id = ? ORDER BY d.created_at DESC LIMIT 1",
+        (case_id,),
+    ).fetchone()
+    if row is None:
+        return None
+    return {
+        "rows": row["rows"],
+        "columns": json.loads(row["columns_json"] or "[]"),
+        "stats": json.loads(row["stats_json"] or "{}"),
+        "duplicate_rows": row["duplicate_rows"],
+        "quality": json.loads(row["quality_json"] or "[]"),
+    }
+
+
+def _refinement_of(row) -> Refinement:
+    """One stored row as the API answers it."""
+    return Refinement(
+        id=row["id"],
+        case_id=row["case_id"],
+        original_question=row["original_question"],
+        refined_question=row["refined_question"] or "",
+        rationale=row["rationale"] or "",
+        grounds=[RefinementGround(**ground) for ground in json.loads(row["grounds_json"] or "[]")],
+        source=row["source"],
+        status=row["status"],
+        edited_question=row["edited_question"],
+        created_at=row["created_at"],
+        decided_at=row["decided_at"],
+    )
+
+
+def _latest_refinement(db, case_id: str) -> Refinement | None:
+    row = db.execute(
+        "SELECT id, case_id, original_question, refined_question, rationale, "
+        "grounds_json, source, status, edited_question, created_at, decided_at "
+        "FROM refinements WHERE case_id = ? ORDER BY created_at DESC LIMIT 1",
+        (case_id,),
+    ).fetchone()
+    return None if row is None else _refinement_of(row)
+
+
+@app.post(
+    "/cases/{case_id}/refine",
+    response_model=Refinement,
+    # 200 rather than 201, as the agent's own proposal endpoint: the call is
+    # idempotent and may hand back an existing proposal rather than make one,
+    # so the status does not promise a creation that did not happen.
+    status_code=200,
+)
+async def refine_case_question(
+    case_id: str,
+    db=Depends(get_db),
+) -> Refinement:
+    """Propose a sharpening of the case's question (AT-04).
+
+    Proposes and never writes: the case's question moves only through the
+    accept and edit endpoints below. Idempotent while a proposal is pending and
+    the case's question has not moved on - asking twice costs one proposal, not
+    two, and a question the analyst already changed gets a fresh look.
+    """
+    _require_case(db, case_id)
+    question = _question_of(db, case_id)
+
+    pending = _latest_refinement(db, case_id)
+    if pending is not None and pending.status == "pending" and pending.original_question == question:
+        # Same question, same open proposal: hand it back rather than
+        # recomputing, so a refresh is not a re-roll.
+        return pending
+
+    profile = _profile_for_refinement(db, case_id)
+    context = _context_of(db, case_id)
+    context_body = (
+        {
+            "purpose": context.purpose,
+            "sub_questions": context.sub_questions,
+            "hypotheses": context.hypotheses,
+        }
+        if (context.purpose or context.sub_questions or context.hypotheses)
+        else None
+    )
+
+    proposal, source = create_refinement_module(question, profile, context_body)
+    now = datetime.now(timezone.utc).isoformat()
+    proposal_id = str(uuid4())
+    if proposal is None:
+        # The engine looked and had nothing to add. Recorded rather than
+        # answered as an empty proposal, so the shell can say so and the
+        # analyst is not left wondering whether anything was tried.
+        db.execute(
+            "INSERT INTO refinements (id, case_id, original_question, "
+            "refined_question, rationale, grounds_json, source, status, "
+            "edited_question, created_at, decided_at) "
+            "VALUES (?, ?, ?, '', ?, '[]', ?, 'declined', NULL, ?, NULL)",
+            (
+                proposal_id, case_id, question,
+                "The question is already specific enough for the profiled data, "
+                "or the data offers nothing that would make it more answerable. "
+                "Nothing was changed.",
+                source, now,
+            ),
+        )
+        return _refinement_of(_refinement_row(db, proposal_id))
+    else:
+        db.execute(
+            "INSERT INTO refinements (id, case_id, original_question, "
+            "refined_question, rationale, grounds_json, source, status, "
+            "edited_question, created_at, decided_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', NULL, ?, NULL)",
+            (
+                proposal_id, case_id,
+                proposal["original"], proposal["refined"], proposal["rationale"],
+                json.dumps(proposal.get("grounds") or []),
+                source, now,
+            ),
+        )
+        return _refinement_of(_refinement_row(db, str(proposal_id)))
+
+
+@app.get("/cases/{case_id}/refine", response_model=Refinement | None)
+async def get_latest_refinement(case_id: str, db=Depends(get_db)) -> Refinement | None:
+    """The case's latest refinement proposal.
+
+    Read-only, like every other GET in the workspace: opening a case proposes
+    nothing, and the proposal is made only when the analyst asks for one.
+    """
+    _require_case(db, case_id)
+    return _latest_refinement(db, case_id)
+
+
+@app.get("/cases/{case_id}/refinements", response_model=list[Refinement])
+async def list_refinements(case_id: str, db=Depends(get_db)) -> list[Refinement]:
+    """Every refinement proposal the case has, newest first.
+
+    This is the audit trail AT-04's recoverability threshold is measured
+    against: the original question is here after any of the three paths,
+    including the accept that replaced it on the case row.
+    """
+    _require_case(db, case_id)
+    rows = db.execute(
+        "SELECT id, case_id, original_question, refined_question, rationale, "
+        "grounds_json, source, status, edited_question, created_at, decided_at "
+        "FROM refinements WHERE case_id = ? ORDER BY created_at DESC",
+        (case_id,),
+    ).fetchall()
+    return [_refinement_of(row) for row in rows]
+
+
+def _require_pending_refinement(db, case_id: str, proposal_id: str):
+    """The proposal the analyst is deciding on, or the error that names the gap."""
+    row = db.execute(
+        "SELECT id, case_id, original_question, refined_question, rationale, "
+        "grounds_json, source, status, edited_question, created_at, decided_at "
+        "FROM refinements WHERE id = ?",
+        (proposal_id,),
+    ).fetchone()
+    if row is None:
+        raise HTTPException(status_code=404, detail="refinement proposal not found")
+    if row["case_id"] != case_id:
+        raise HTTPException(
+            status_code=404,
+            detail="refinement proposal does not belong to this case",
+        )
+    if row["status"] != "pending":
+        raise HTTPException(
+            status_code=409,
+            detail=f"refinement proposal is already {row['status']}; a decided "
+            "proposal is not decided twice",
+        )
+    return row
+
+
+@app.post(
+    "/cases/{case_id}/refine/{proposal_id}/accept",
+    response_model=Refinement,
+)
+async def accept_refinement(
+    case_id: str,
+    proposal_id: str,
+    db=Depends(get_db),
+) -> Refinement:
+    """Accept the refinement: the case's question becomes the refined one.
+
+    The only write to the case's question this feature performs, and the
+    original stays on the proposal row - recoverable through
+    GET /cases/{id}/refinements and through the export, never overwritten.
+    """
+    row = _require_pending_refinement(db, case_id, proposal_id)
+    now = datetime.now(timezone.utc)
+    db.execute(
+        "UPDATE refinements SET status = 'accepted', decided_at = ? WHERE id = ?",
+        (now.isoformat(), proposal_id),
+    )
+    db.execute(
+        "UPDATE cases SET question = ?, updated_at = ? WHERE id = ?",
+        (row["refined_question"], now.isoformat(), case_id),
+    )
+    return _refinement_of(_refinement_row(db, proposal_id))
+
+
+@app.post(
+    "/cases/{case_id}/refine/{proposal_id}/reject",
+    response_model=Refinement,
+)
+async def reject_refinement(
+    case_id: str,
+    proposal_id: str,
+    db=Depends(get_db),
+) -> Refinement:
+    """Keep the original: the proposal is recorded as rejected, nothing is written.
+
+    This is the "keep original" path - the analyst looked and said no, which is
+    a decision the case remembers rather than a request that never happened.
+    """
+    _require_pending_refinement(db, case_id, proposal_id)
+    now = datetime.now(timezone.utc).isoformat()
+    db.execute(
+        "UPDATE refinements SET status = 'rejected', decided_at = ? WHERE id = ?",
+        (now, proposal_id),
+    )
+    return _refinement_of(_refinement_row(db, proposal_id))
+
+
+@app.post(
+    "/cases/{case_id}/refine/{proposal_id}/edit",
+    response_model=Refinement,
+)
+async def edit_refinement(
+    case_id: str,
+    proposal_id: str,
+    payload: RefinementEdit,
+    db=Depends(get_db),
+) -> Refinement:
+    """Apply the analyst's own wording instead of either the original or the proposal.
+
+    The third path: the proposal was close but wrong, and the analyst's edit
+    becomes the case's question. The edit is kept on the row and the original
+    with it, so the transformation is still readable afterwards.
+    """
+    row = _require_pending_refinement(db, case_id, proposal_id)
+    edited = (payload.question or "").strip()
+    if not edited:
+        raise HTTPException(status_code=400, detail="the edited question must not be empty")
+    if len(edited) > _CONTEXT_TEXT_MAX:
+        raise HTTPException(
+            status_code=400,
+            detail=f"the edited question is longer than {_CONTEXT_TEXT_MAX} characters",
+        )
+    if edited == (row["original_question"] or "").strip():
+        # An edit that restores the original is a rejection with extra steps;
+        # route it to the honest status rather than recording a no-op write.
+        raise HTTPException(
+            status_code=400,
+            detail="the edited question is the original; use keep original instead",
+        )
+    now = datetime.now(timezone.utc)
+    db.execute(
+        "UPDATE refinements SET status = 'edited', edited_question = ?, "
+        "decided_at = ? WHERE id = ?",
+        (edited, now.isoformat(), proposal_id),
+    )
+    db.execute(
+        "UPDATE cases SET question = ?, updated_at = ? WHERE id = ?",
+        (edited, now.isoformat(), case_id),
+    )
+    return _refinement_of(_refinement_row(db, proposal_id))
 
 
 @app.post(
@@ -875,6 +1176,30 @@ async def duplicate_case(
             ),
         )
 
+    # A proposed sharpening and its decision travel with the copy
+    # (P8-REFINE-007): a duplicated case is still the investigation that asked
+    # the question it asked, including the sharpening it accepted.
+    for refinement in db.execute(
+        "SELECT original_question, refined_question, rationale, grounds_json, "
+        "source, status, edited_question, created_at, decided_at "
+        "FROM refinements WHERE case_id = ? ORDER BY created_at",
+        (case_id,),
+    ).fetchall():
+        db.execute(
+            "INSERT INTO refinements (id, case_id, original_question, "
+            "refined_question, rationale, grounds_json, source, status, "
+            "edited_question, created_at, decided_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (
+                str(uuid4()), new_case_id,
+                refinement["original_question"], refinement["refined_question"],
+                refinement["rationale"], refinement["grounds_json"],
+                refinement["source"], refinement["status"],
+                refinement["edited_question"],
+                refinement["created_at"], refinement["decided_at"],
+            ),
+        )
+
     return new_case
 
 
@@ -904,6 +1229,7 @@ async def delete_case(case_id: str, db=Depends(get_db)) -> None:
     )
     db.execute("DELETE FROM plans WHERE case_id = ?", (case_id,))
     db.execute("DELETE FROM contexts WHERE case_id = ?", (case_id,))
+    db.execute("DELETE FROM refinements WHERE case_id = ?", (case_id,))
     db.execute("DELETE FROM datasets WHERE case_id = ?", (case_id,))
     db.execute("DELETE FROM cases WHERE id = ?", (case_id,))
 

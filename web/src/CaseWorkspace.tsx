@@ -63,6 +63,7 @@ import {
 import { ApiError } from './api'
 import { messageOf } from './CaseList'
 import { ContextPanel } from './ContextPanel'
+import { RefinePanel } from './RefinePanel'
 import { PromoteTemplate } from './Templates'
 
 // One case as the loop the core walks: attach and profile data, propose the
@@ -258,6 +259,11 @@ export function CaseWorkspace({
             findings={findings.length}
             openIssues={qualityIssues.length + pendingFindings}
             pendingValidation={pendingFindings}
+          />
+          <RefinePanel
+            caseId={caseId}
+            question={caseRow?.question ?? ''}
+            onChanged={() => void load()}
           />
           <LearnPanel walk={walk} error={walkError} missing={walkMissing} />
           <HistoryPanel

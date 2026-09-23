@@ -169,6 +169,21 @@ CREATE TABLE IF NOT EXISTS contexts (
     FOREIGN KEY (case_id) REFERENCES cases(id)
 );
 
+CREATE TABLE IF NOT EXISTS refinements (
+    id TEXT PRIMARY KEY,
+    case_id TEXT NOT NULL,
+    original_question TEXT NOT NULL,
+    refined_question TEXT NOT NULL DEFAULT '',
+    rationale TEXT NOT NULL DEFAULT '',
+    grounds_json TEXT NOT NULL DEFAULT '[]',
+    source TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending',
+    edited_question TEXT,
+    created_at TEXT NOT NULL,
+    decided_at TEXT,
+    FOREIGN KEY (case_id) REFERENCES cases(id)
+);
+
 CREATE TABLE IF NOT EXISTS schema_migrations (
     version INTEGER PRIMARY KEY,
     name TEXT NOT NULL,
@@ -212,7 +227,7 @@ def _ensure_column(conn, table: str, column: str, definition: str) -> None:
 # opening one above it is refused (see _check_version) rather than silently
 # treated as current, because a downgrade against an unknown schema is how a
 # store is corrupted quietly.
-LATEST_SCHEMA_VERSION = 11
+LATEST_SCHEMA_VERSION = 12
 
 
 class Migration:
@@ -309,6 +324,28 @@ def _m_contexts_table(conn: sqlite3.Connection) -> None:
     )
 
 
+def _m_refinements_table(conn: sqlite3.Connection) -> None:
+    # A proposed sharpening of the case's question and what the analyst did
+    # with it (P8-REFINE-007, AT-04). The original is carried on the row, so it
+    # survives an accept that replaced it on the case: recoverability is a
+    # property of the store, not of the client that happened to be looking.
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS refinements ("
+        "id TEXT PRIMARY KEY, "
+        "case_id TEXT NOT NULL, "
+        "original_question TEXT NOT NULL, "
+        "refined_question TEXT NOT NULL DEFAULT '', "
+        "rationale TEXT NOT NULL DEFAULT '', "
+        "grounds_json TEXT NOT NULL DEFAULT '[]', "
+        "source TEXT NOT NULL, "
+        "status TEXT NOT NULL DEFAULT 'pending', "
+        "edited_question TEXT, "
+        "created_at TEXT NOT NULL, "
+        "decided_at TEXT, "
+        "FOREIGN KEY (case_id) REFERENCES cases(id))"
+    )
+
+
 def _m_agent_steps_role(conn: sqlite3.Connection) -> None:
     # Multi-agent workflows: a step belongs to a role (P7-AGENT-001). Every
     # step recorded before the column existed is the analyst role - the one
@@ -332,6 +369,7 @@ MIGRATIONS: tuple[Migration, ...] = (
     Migration(9, "agent_steps gain the role they belong to", _m_agent_steps_role),
     Migration(10, "contexts: a case carries purpose, sub-questions, hypotheses", _m_contexts_table),
     Migration(11, "profiles gain the quality issues they detected", _m_profiles_quality_json),
+    Migration(12, "refinements: a proposed question sharpening and its decision", _m_refinements_table),
 )
 
 

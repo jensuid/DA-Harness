@@ -1,9 +1,9 @@
-**Phase:** P8 Analytical Contract - IN PROGRESS (6 of 10 delivered: the case's
+**Phase:** P8 Analytical Contract - IN PROGRESS (7 of 10 delivered: the case's
 context object, quality beyond missingness, the PRD's nine validation
 dimensions, the causal guard, the analytical golden suite that measures them,
-and the orientation spine that presents them). P7 Product Modes is COMPLETE - every checklist
+the orientation spine that presents them, and question refinement). P7 Product Modes is COMPLETE - every checklist
 item that builds something shipped, including the manual walkthrough and the
-CORS fix, and the store's schema is at v11. P6, P5, P4, P3, P2, P1 and P0 are
+CORS fix, and the store's schema is at v12. P6, P5, P4, P3, P2, P1 and P0 are
 all COMPLETE (see the phase table below). P8 closes the PRD's Level 1 breadth
 gaps and makes "done" measurable: quality detection beyond missingness (2 of 7
 defect classes today), validation from 3 checks to the PRD's 9 dimensions, the
@@ -11,36 +11,30 @@ causal-language guard, the analytical golden suite, the orientation spine,
 question refinement, the decision view, and the measurement layer. The full gap
 analysis is `docs/PRD & UX Conformance Evaluation.md`.
 
-- **Active task:** P8-SHELL-006 DONE - the orientation spine. The shell answers
-  AT-33's seven questions as a layout rather than as a sentence. The persistent
-  rail carries UX 7's four marks - `✓` complete, `⚠` requires attention, `●`
-  the current stage, `○` not started - derived the same way the core derives
-  the stage, from `progress.completed` and `progress.stage`, so the rail cannot
-  disagree with the core. The one judgement is the warning, and it is measured:
-  the data stage's `⚠` is the profiler's own quality defect (P8-QUALITY-002),
-  never a guess. Beside the rail sits the case overview (UX 45) - objective,
-  question, "N / M stages complete", key findings, open issues, data sources,
-  validation counts - each an artifact count the core already computed, with
-  the objective reading the context's purpose and the question as the
-  fallback. The workspace splits into three landmark zones (orientation / work
-  / intelligence), a rearrangement of panels that already existed: no panel was
-  rewritten, and the tests that pinned them were not edited to fit the layout -
-  only the assertion that a stage the loop is on was "pending" now reads
-  "current", the rail's own sharper vocabulary.
-  The three render gaps the walkthrough found are closed over endpoints that
-  already existed: a run's result rows and the query that produced them reopen
-  on demand (with the truncation notice when the stored result was capped); the
-  plan's own contents - sub-questions, hypotheses with their rationale and
-  check, steps, data requirements, the basis it was planned from - render
-  instead of being written and never read back; and every column's measured
-  null count shows at the Data stage. The two adjacent near-identical input
-  boxes are separated by the zones themselves. Two new client functions
-  (`getRun`, `getPlan`) read endpoints the core already served; no server code
-  changed. One limitation recorded rather than papered over: the overview's
-  labels are unstyled text, because splitting a label into its own element
-  breaks the text matching a test and a screen reader both read.
-  Before it: P8-GOLDEN-005 (the golden suite), P8-CAUSAL-004 (the causal
-  guard), P8-VALID-003, P8-QUALITY-002, P8-CONTEXT-001, the v0.2.0 release.
+- **Active task:** P8-REFINE-007 DONE - question refinement (AT-04). The
+  vague question is the one thing carried verbatim into every plan, query and
+  finding after it; this task is the surface where its sharpening is proposed.
+  Two engines behind one interface, as in every other assistant: a
+  deterministic refiner that appends grounding the profiler measured (the
+  measure, the split, the window, the comparison a direction word leaves
+  unstated) and an LLM refiner gated by `validate_refinement` before the
+  analyst sees it - original echoed verbatim, subject terms surviving, every
+  cited and quoted column real, every figure measured, a rationale present.
+  The refined question is the original plus clauses, never a replacement, so
+  preserve and relevant are structural; the suite measures them anyway, because
+  a structural guarantee is one renamed variable away from a regression. The
+  engine declines rather than invents - no profile, nothing numeric or
+  temporal, no subject terms, or an already-answerable question - and the
+  decline is recorded, not answered as an empty proposal.
+  Measured over 50 cases and 6 datasets against a real server: preserve 100%,
+  relevant 100%, 0 silent overwrites, 0 fabrications. The three paths are the
+  only three - accept and edit are the sole writes to the case's question,
+  keep-original writes nothing but the no, a decided proposal is a 409 - and
+  the original rides on the proposal row, so it survives the accept that
+  replaced it, the export round trip and the duplicate, and it shows in the
+  timeline as two new event kinds.
+  Before it: P8-SHELL-006 (the orientation spine), P8-GOLDEN-005, P8-CAUSAL-004,
+  P8-VALID-003, P8-QUALITY-002, P8-CONTEXT-001, the v0.2.0 release.
 
 - **Known issues:** CI's billing is suspended: every workflow (Release, and both CI suites) is
   rejected at start with "recent account payments have failed or your spending
@@ -54,15 +48,15 @@ analysis is `docs/PRD & UX Conformance Evaluation.md`.
   documented minimum but is no longer enforced by CI, and a green run no longer
   proves the exact Intel triple a local build produces. Restoring that needs a
   self-hosted Intel runner.
-- **Test status:** server 477 passed (unchanged - P8-SHELL-006 touched only
-  the shell); web 99 passed (13 for this task: AT-33's seven questions asserted
-  from the rendered workspace, the purpose-as-objective path, the open-issue
-  count over quality defects plus findings awaiting validation, the three zones
-  as landmarks with the assistants on one side and the work on another, the
-  four marks over completed / current / attention stages, the per-column null
-  counts, the plan's full body, the no-plan-yet degradation, the run's rows
-  with its query, the hide path, the truncation notice, and a failed read
-  reported rather than hidden).
+- **Test status:** server 518 passed (41 for this task: the engine's
+  additions and its four decline paths, its determinism, the gate's nine
+  rejection paths, the five endpoints and their error contracts, the history's
+  two events, the export round trip, the duplicate, the delete, the schema
+  upgrade, and the measurement over a real server); web 106 passed (7 for this
+  task: the transformation shown with both halves, accept moving the question
+  while the original stays visible, keep original writing nothing, the edit
+  pre-filled from the proposal, a failed decision reported, the decline said
+  rather than shown as an empty panel, and the panel in the orientation zone).
   Before it, the server suite's own additions this phase: 6 golden (the ten
   shapes' coverage, the suite's own size floor, the two-way fixture audit, the
   deliberately-wrong expectation the audit catches, the comparator's tolerance,
@@ -76,12 +70,11 @@ analysis is `docs/PRD & UX Conformance Evaluation.md`.
   **v0.2.0 released** (tag `v0.2.0` on `ec819fc`).
 - **e2e:** all 25 real-server steps PASS.
 
-- **Next task:** P8-REFINE-007 - question refinement (AT-04): AI proposes a
-  refinement, the original question is preserved verbatim and shown beside it,
-  and accept / edit / keep-original are the only three paths - zero silent
-  overwrites is a Level 0 requirement. It edits the context object
-  P8-CONTEXT-001 built. After it: P8-DECISION-008 (the decision view, UX 46,
-  the loop's exit) and P8-MEASURE-009 (the measurement layer).
+- **Next task:** P8-DECISION-008 - the decision view (UX 46, AT-43): the
+  loop's exit, reading the validated findings and their residual uncertainty -
+  the failing checks, not a score - with the implications the analyst writes,
+  and the export carrying it. After it: P8-MEASURE-009 (the measurement layer)
+  and P8-TRACE-010 (the traceability matrix).
   The release is done: **v0.2.0** is tagged on `ec819fc`. GitHub Actions is
   still refusing to start any job with "recent account payments have failed";
   that is an account billing problem (Settings > Billing & plans), not a code
@@ -138,6 +131,16 @@ analysis is `docs/PRD & UX Conformance Evaluation.md`.
 - Export: `GET /cases/{id}/export` (self-contained JSON package); `POST /cases/import`
   reconstructs it with fresh IDs
 - Plan: `POST /cases/{id}/datasets/{id}/plan` (structured plan from question + profile; deterministic by default, LLM when DAH_LLM_API_KEY is set, source field records which); latest at `GET .../plan`, history at `GET .../plans`
+- Refine the question (AT-04): `POST /cases/{id}/refine` proposes a
+  sharpening grounded in the profile's measured columns and ranges
+  (deterministic by default, LLM when DAH_LLM_API_KEY is set, `source` records
+  which); idempotent while a proposal is pending and the question unmoved.
+  Read-only: latest at `GET .../refine`, history at `GET .../refinements`.
+  `POST .../refine/{proposal}/accept` makes the refined question the case's;
+  `POST .../refine/{proposal}/reject` keeps the original and writes nothing but
+  the no; `POST .../refine/{proposal}/edit {question}` makes the analyst's own
+  wording the case's. Accept and edit are the only paths that move the
+  question; the original rides on the proposal row and survives both.
 - Search cases: `GET /cases?q=<term>` (case-insensitive substring over question and dataset; blank lists all)
 - Case timeline: `GET /cases/{id}/history` (one event per artifact, chronological)
 - Walk a case as the LEARN ladder: `GET /cases/{id}/learn` (read-only; the four
@@ -232,6 +235,13 @@ analysis is `docs/PRD & UX Conformance Evaluation.md`.
   reference-match rate and AT-01's workflow-completion rate over 21 scripted
   runs and 3 datasets, writing verification/golden/REPORT.md; exit 0 only when
   both thresholds hold; ~60s cold)
+- AT-04's refinement suite: `server/.venv/bin/python
+  verification/refine/verify_refine.py` (starts a real server on a free port
+  with an isolated data dir and the LLM vars empty; drives 50 cases over 6
+  datasets through accept / edit / keep / pending, and measures the four
+  thresholds - preserve >= 95%, relevant >= 90%, 0 silent overwrites, 0
+  fabricated data references - writing verification/refine/REPORT.md; exit 0
+  only when all four hold; ~40s cold)
 - End-to-end against a REAL server: `server/.venv/bin/python
   verification/e2e/verify_e2e.py` (starts uvicorn on a free port with an
   isolated data dir, drives the whole journey over HTTP - the case built

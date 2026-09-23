@@ -5532,3 +5532,132 @@ SUMMARY: a finding's verdict now accounts for all nine dimensions the PRD names
          asserted the pre-existing names, and the web suite's 5000ms timeouts
          under parallel file execution were load, not code - `fileParallelism:
          false` makes the gate deterministic without costing wall-clock time.
+
+### P8-GOLDEN-005 contract
+
+```
+TASK ID: P8-GOLDEN-005
+MILESTONE: P8 Analytical Contract
+CAPABILITY: Verification (the analytical golden suite)
+GOAL: the trust machinery P8 built is unmeasured. AT-40 names ten analytical
+      shapes a product like this must compute correctly - aggregation,
+      filtering, joins, missingness, duplicates, dates, percentages,
+      segmentation, statistical calculations, validation - and requires 100% of
+      deterministic reference calculations to match expected results. AT-01
+      requires >= 95% of scripted workflow attempts to complete the full loop
+      over >= 20 runs and >= 3 datasets. Today neither number exists: the
+      detectors and the nine dimensions are pinned by per-feature tests, but a
+      test that asserts its own fixture cannot tell you the product computes a
+      percentile correctly against data it did not write. This task ships the
+      golden datasets as fixtures with hand-computed reference values, and a
+      suite that runs the real workflow over them and reports the two numbers.
+CONTEXT: the phase's own rule is that convenience is sacrificed before
+         analytical trust, and the three tasks before this built the objects a
+         measurement would cover - quality detection (P8-QUALITY-002), the nine
+         validation dimensions (P8-VALID-003) and the causal guard with its
+         50-case corpus (P8-CAUSAL-004). That corpus is the model for this one:
+         data plus a measurement, not a wall of assertions. The golden values
+         are computed by hand and by an independent path (Python's statistics
+         module over the same fixture), never by running the query and
+         recording what came back - which would make the suite tautological.
+INPUTS: three or more deterministic CSV fixtures, each covering a subset of
+        AT-40's ten shapes, each with: the reference SQL or Python the analyst
+        would run, and the expected rows computed independently. The workflow
+        measurement drives the loop over them - create, question, attach,
+        profile, plan, run, interpret, draft, accept, validate, reopen.
+RELEVANT FILES: verification/golden/datasets/*.csv (new fixtures),
+                verification/golden/reference.py (new - the hand-computed
+                expectations and the independent-path recomputation),
+                verification/golden/verify_golden.py (new - the runner: the
+                reference-calculation check and the workflow-completion
+                measurement, writing verification/golden/REPORT.md),
+                server/tests/test_golden.py (new - asserts the runner's two
+                numbers in the suite, so a regression fails a test rather
+                than a report nobody reads),
+                ai/HANDOFF.md, ai/TASKS.md, ai/CURRENT_STATE.md
+REQUIRED CHANGE:
+  - Deterministic fixtures, at least three, each exercising several of AT-40's
+    shapes: a sales dataset with missingness, duplicates, dates and
+    segmentation; a spend/signups dataset for joins and correlation; a tickets
+    dataset for percentages and statistical calculations. Small enough to hold
+    a reference value in the head, real enough that the shapes are not
+    synthetic one-rows.
+  - Reference values computed two ways: by hand from the fixture's own numbers,
+    and independently in the suite by a second path (Python over the parsed
+    CSV, not the engine's own SQL), so the golden value is not the engine
+    agreeing with itself. Where the two paths disagree the fixture is wrong,
+    not the engine.
+  - A runner that, per dataset and shape: attaches the fixture to a real server
+    on an isolated store, runs the reference query over HTTP, and compares the
+    result to the golden value within a stated tolerance. Floats compare to a
+    tolerance; exact types (counts, category labels) compare exactly.
+  - The workflow-completion measurement: a scripted run over each dataset
+    walking the whole loop AT-01 names, counting a run complete when every
+    stage produced its artifact and the case reopens with it. >= 20 scripted
+    runs, >= 3 datasets, reported as a rate.
+  - Both numbers asserted in the test suite, not only written to a report.
+NON-GOALS: the traceability matrix (P8-TRACE-010); coverage/perf/a11y
+           measurement (P8-MEASURE-009); new core capability - every shape the
+           suite measures is computed by code that already exists, and a
+           failure in the suite is a finding about an existing calculation, not
+           a reason to build one; LLM-judged quality.
+CONSTRAINTS: green only. Deterministic and offline - no LLM calls (the planner
+             falls back to deterministic with the LLM vars empty, which the
+             e2e already relies on). The suite runs against a real server with
+             an isolated data dir, the pattern verify_e2e.py established, so it
+             exercises the HTTP surface a user actually touches. Reference
+             values are never derived from the engine's own output.
+ACCEPTANCE CRITERIA:
+- [x] at least 3 fixtures exist, covering all 10 of AT-40's shapes between them
+- [x] every reference calculation matches its golden value, 100%, within a
+      stated tolerance, and each golden value is independently recomputed
+- [x] no golden value is derived from the engine's own output
+- [x] >= 20 scripted workflow runs across >= 3 datasets complete, and the
+      measured completion rate is >= 95%
+- [x] the two numbers are asserted in the test suite, so a regression fails a
+      test
+- [x] the suite is deterministic and offline, no LLM call
+TESTS: test_golden.py - the fixtures' shapes are all covered, the runner's two
+       measurements meet their thresholds, and at least one fixture carries a
+       deliberately-wrong reference value that the runner catches (proving the
+       measurement can fail, per the repo's proven-to-fail discipline).
+VERIFICATION: `cd server && DAH_LLM_API_KEY= DAH_LLM_BASE_URL= DAH_LLM_MODEL=
+              .venv/bin/python -m pytest -q` green;
+              `server/.venv/bin/python verification/e2e/verify_e2e.py` green;
+              `cd web && npm test && npm run build` green.
+STATE UPDATE: TASKS/CURRENT_STATE gain the task; the schema stays at v11.
+```
+
+TASK: P8-GOLDEN-005 - the analytical golden suite
+ID: P8-GOLDEN-005
+PRIORITY: high
+STATUS: DONE
+SUMMARY: the trust machinery P8 built is now measured, and the two numbers the
+         PRD names exist. Three fixtures (sales, spend, tickets) carry 21
+         reference calculations covering all ten of AT-40's shapes, and each
+         golden value is computed twice before the engine is ever asked: by
+         hand from the fixture's own numbers, and again by an independent
+         implementation (plain Python and `statistics` over the parsed CSV -
+         never DuckDB). Where the two disagree the fixture is wrong, and the
+         suite fails before a single query runs. Only then does the runner ask
+         a real server the same question over HTTP and compare: 21/21 match,
+         100%, against a threshold of 100%. The same 21 journeys answer
+         AT-01's workflow rate, because the query a scripted run makes *is* the
+         reference query - create, attach, profile, plan, run, interpret,
+         draft, accept, validate, reopen - and 21/21 complete the loop over 3
+         datasets, against thresholds of 95%, 20 runs and 3 datasets. A verdict
+         of `insufficient_evidence` still counts as a complete run: a finding
+         the evidence does not support is a finished analysis, not a failed
+         one. Both numbers are asserted in test_golden.py rather than only in a
+         report, and the proven-to-fail discipline holds - a deliberately wrong
+         expectation (average resolution time claimed as 25.0h against a true
+         19.83h) is caught by the audit. The suite is offline by construction:
+         the runner fails the `plan` stage unless the planner answers
+         `source: "deterministic"`, so a completion rate above zero is itself
+         proof no LLM was called. Two real bugs the suite surfaced on the way,
+         both fixed with their own tests: grouping by a date column handed a
+         raw `datetime.date` to `json.dumps` and answered a 500 for a valid
+         query (the profile already described one as an ISO string; the run
+         path now agrees), and the runner's own health check raced the stdout
+         pump thread for the server's announcement and blocked forever on a
+         `readline()` with no timeout.

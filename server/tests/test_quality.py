@@ -558,7 +558,7 @@ def test_a_v10_store_upgrades_to_v11_and_keeps_its_rows(tmp_path) -> None:
     import sqlite3
 
     import app.db as db_module
-    from app.db import get_connection
+    from app.db import get_connection, LATEST_SCHEMA_VERSION
 
     store = tmp_path / "v10.db"
     conn = sqlite3.connect(store)
@@ -602,7 +602,9 @@ def test_a_v10_store_upgrades_to_v11_and_keeps_its_rows(tmp_path) -> None:
             "SELECT version, name FROM schema_migrations WHERE version = 11"
         ).fetchone()
 
-    assert version == 11
+    # The chain runs to whatever this build understands; what matters is that
+    # a v10 store is carried forward, not stopped at v11.
+    assert version == LATEST_SCHEMA_VERSION
     # The row the store already held is intact, and the new column reads as
     # empty rather than missing.
     assert profile[0] == 3

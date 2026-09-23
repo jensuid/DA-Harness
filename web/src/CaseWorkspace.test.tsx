@@ -42,6 +42,11 @@ vi.mock('./api', async (importOriginal) => {
     approveRoleAgentStep: vi.fn(),
     rejectRoleAgentStep: vi.fn(),
     promoteCaseToTemplate: vi.fn(),
+    getRefinement: vi.fn(),
+    proposeRefinement: vi.fn(),
+    acceptRefinement: vi.fn(),
+    rejectRefinement: vi.fn(),
+    editRefinement: vi.fn(),
   }
 })
 
@@ -269,6 +274,7 @@ function mockEmptyCase() {
   vi.mocked(api.getEvidenceGraph).mockResolvedValue(evidenceGraph)
   vi.mocked(api.getCaseHistory).mockResolvedValue(caseHistory)
   vi.mocked(api.getLearnWalk).mockResolvedValue(learnWalk)
+  vi.mocked(api.getRefinement).mockResolvedValue(null)
 }
 
 function emptyContext(): api.CaseContext {
@@ -2135,3 +2141,148 @@ expect(timeline.getByText(/case created/)).toBeInTheDocument()
 
   })
 
+
+  // Question refinement (P8-REFINE-007, AT-04, UX 12): the transformation is
+  // shown explicitly, the original is never overwritten in place, and accept /
+  // edit / keep original are the only three paths.
+  describe('question refinement', () => {
+    // The api spies are module-level and persist across the whole file, so the
+    // call record is cleared per test - otherwise a "not called" assertion
+    // answers for a test that ran before it. This block sits beside the
+    // CaseWorkspace describe rather than in it, so it needs its own clear.
+    beforeEach(() => {
+      vi.clearAllMocks()
+    })
+
+    const proposal: api.Refinement = {
+      id: 'rf1', case_id: 'c1',
+      original_question: 'Why did revenue decline?',
+      refined_question:
+        'Why did revenue decline? measured as revenue (1,200 to 9,800), split by region (4 values), over order_date (2026-01-04 to 2026-06-14)',
+      rationale: 'The measure was unnamed; revenue spans 1,200 to 9,800.',
+      grounds: [
+        { kind: 'column', name: 'revenue', detail: 'numeric column, 1,200 to 9,800' },
+        { kind: 'column', name: 'region', detail: 'categorical column with 4 values' },
+      ],
+      source: 'deterministic',
+      status: 'pending',
+      edited_question: null,
+      created_at: '',
+      decided_at: null,
+    }
+
+    function mockProposal(overrides: Partial<api.Refinement> = {}) {
+      vi.mocked(api.getRefinement).mockResolvedValue({ ...proposal, ...overrides })
+    }
+
+    async function openWithProposal(overrides: Partial<api.Refinement> = {}) {
+      mockEmptyCase()
+      mockProposal(overrides)
+      const user = userEvent.setup()
+      render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+      const heading = await screen.findByRole('heading', { name: /refine the question/i })
+      const panel = heading.closest('.panel') as HTMLElement
+      return { user, panel }
+    }
+
+    it('proposes on request and shows the transformation, both halves of it', async () => {
+      mockEmptyCase()
+      vi.mocked(api.proposeRefinement).mockResolvedValue(proposal)
+      const user = userEvent.setup()
+      render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+      const orientation = screen.getByRole('region', { name: /orientation/i })
+
+      // Nothing is proposed by opening the case: the GET is read-only.
+      expect(vi.mocked(api.proposeRefinement)).not.toHaveBeenCalled()
+      await user.click(await screen.findByRole('button', { name: /propose a refinement/i }))
+
+      // UX 12: the original beside the refinement, not replaced by it.
+      expect(within(orientation).getByText('Your question')).toBeInTheDocument()
+      expect(within(orientation).getByText('Why did revenue decline?')).toBeInTheDocument()
+      expect(within(orientation).getByText('Refined question')).toBeInTheDocument()
+      expect(within(orientation).getByText(proposal.refined_question)).toBeInTheDocument()
+      // The refinement says which engine spoke and what it is grounded in.
+      expect(within(orientation).getByText(/AI suggestion \(deterministic\)/)).toBeInTheDocument()
+      // The grounds and the refined question both carry the measured range;
+      // what matters is that a measured range appears at all.
+      expect(within(orientation).getAllByText(/1,200 to 9,800/).length).toBeGreaterThan(0)
+      expect(within(orientation).getByRole('button', { name: /accept/i })).toBeInTheDocument()
+      expect(within(orientation).getByRole('button', { name: /^edit$/i })).toBeInTheDocument()
+      expect(within(orientation).getByRole('button', { name: /keep original/i })).toBeInTheDocument()
+    })
+
+    it('accept moves the question and keeps the original visible', async () => {
+      const { user, panel } = await openWithProposal()
+      vi.mocked(api.acceptRefinement).mockResolvedValue({ ...proposal, status: 'accepted' })
+
+      await user.click(within(panel).getByRole('button', { name: /accept/i }))
+
+      expect(vi.mocked(api.acceptRefinement)).toHaveBeenCalledWith('c1', 'rf1')
+      // The original survives the accept that replaced it on the case row.
+      expect(await within(panel).findByText(/the case now carries the refined question/i)).toBeInTheDocument()
+      expect(within(panel).getByText('Why did revenue decline?')).toBeInTheDocument()
+    })
+
+    it('keep original writes nothing and says so', async () => {
+      const { user, panel } = await openWithProposal()
+      vi.mocked(api.rejectRefinement).mockResolvedValue({ ...proposal, status: 'rejected' })
+
+      await user.click(within(panel).getByRole('button', { name: /keep original/i }))
+
+      expect(vi.mocked(api.rejectRefinement)).toHaveBeenCalledWith('c1', 'rf1')
+      expect(vi.mocked(api.acceptRefinement)).not.toHaveBeenCalled()
+      expect(await within(panel).findByText(/kept the original question/i)).toBeInTheDocument()
+    })
+
+    it("edit starts from the proposal and applies the analyst's own wording", async () => {
+      const { user, panel } = await openWithProposal()
+      vi.mocked(api.editRefinement).mockResolvedValue({
+        ...proposal, status: 'edited',
+        edited_question: 'What explains the change in revenue by region?',
+      })
+
+      await user.click(within(panel).getByRole('button', { name: /^edit$/i }))
+      const box = within(panel).getByLabelText(/refined question, edited/i)
+      // The proposal pre-fills the edit, so the analyst edits rather than retypes.
+      expect(box).toHaveValue(proposal.refined_question)
+      await user.clear(box)
+      await user.type(box, 'What explains the change in revenue by region?')
+      await user.click(within(panel).getByRole('button', { name: /apply my edit/i }))
+
+      expect(vi.mocked(api.editRefinement)).toHaveBeenCalledWith(
+        'c1', 'rf1', 'What explains the change in revenue by region?',
+      )
+      expect(await within(panel).findByText(/your wording replaced both/i)).toBeInTheDocument()
+    })
+
+    it('reports a failed decision rather than hiding it', async () => {
+      const { user, panel } = await openWithProposal()
+      vi.mocked(api.acceptRefinement).mockRejectedValue(new api.ApiError(500, 'boom'))
+
+      await user.click(within(panel).getByRole('button', { name: /accept/i }))
+
+      expect(await within(panel).findByText(/could not accept the refinement/i)).toBeInTheDocument()
+      // The proposal is still pending, so the analyst can try again.
+      expect(within(panel).getByRole('button', { name: /accept/i })).toBeInTheDocument()
+    })
+
+    it('says when the engine had nothing to add, instead of an empty proposal', async () => {
+      const { panel } = await openWithProposal({
+        status: 'declined', refined_question: '',
+        rationale: 'The question is already specific enough.',
+      })
+
+      expect(within(panel).getByText(/had nothing to add/i)).toBeInTheDocument()
+      // A decline offers no decision: there is no proposal to accept or reject.
+      expect(within(panel).queryByRole('button', { name: /accept/i })).toBeNull()
+    })
+
+    it('lives in the orientation zone, where the question is described', async () => {
+      const { panel } = await openWithProposal()
+      const orientation = screen.getByRole('region', { name: /orientation/i })
+      expect(orientation).toContainElement(panel)
+      // ...and not in the intelligence zone beside the assistants.
+      const intelligence = screen.getByRole('region', { name: /intelligence/i })
+      expect(intelligence).not.toContainElement(panel)
+    })
+  })

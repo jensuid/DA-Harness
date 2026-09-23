@@ -354,6 +354,77 @@ export function putContext(
   })
 }
 
+// --- question refinement (P8-REFINE-007 / AT-04) ---------------------------
+
+// A proposed sharpening of the case's question, and what the analyst decided.
+// The original is carried beside the proposal and is never overwritten by it:
+// accepting moves the refined question onto the case, but the row keeps what
+// was there before, so the transformation stays recoverable.
+export interface RefinementGround {
+  kind: string
+  name: string
+  detail: string
+}
+
+export interface Refinement {
+  id: string
+  case_id: string
+  original_question: string
+  refined_question: string
+  rationale: string
+  grounds: RefinementGround[]
+  source: string
+  status: 'pending' | 'declined' | 'accepted' | 'rejected' | 'edited'
+  edited_question: string | null
+  created_at: string
+  decided_at: string | null
+}
+
+// Proposing writes nothing: the question moves only through accept or edit.
+// Read-only on a GET, so opening a case never proposes.
+export function proposeRefinement(caseId: string): Promise<Refinement> {
+  return request<Refinement>(`/cases/${caseId}/refine`, { method: 'POST' })
+}
+
+export function getRefinement(caseId: string): Promise<Refinement | null> {
+  return request<Refinement | null>(`/cases/${caseId}/refine`)
+}
+
+export function acceptRefinement(
+  caseId: string,
+  proposalId: string,
+): Promise<Refinement> {
+  return request<Refinement>(
+    `/cases/${caseId}/refine/${proposalId}/accept`,
+    { method: 'POST' },
+  )
+}
+
+// Keep original: the no is recorded, nothing is written.
+export function rejectRefinement(
+  caseId: string,
+  proposalId: string,
+): Promise<Refinement> {
+  return request<Refinement>(
+    `/cases/${caseId}/refine/${proposalId}/reject`,
+    { method: 'POST' },
+  )
+}
+
+// The third path: neither the original nor the proposal, but the analyst's own
+// wording, which becomes the case's question.
+export function editRefinement(
+  caseId: string,
+  proposalId: string,
+  question: string,
+): Promise<Refinement> {
+  return request<Refinement>(
+    `/cases/${caseId}/refine/${proposalId}/edit`,
+    { method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ question }) },
+  )
+}
+
 // --- case management (P2-CASE-010 / P7-SHELL-004) --------------------------
 
 // Omitted fields are left as they are, and updated_at moves so a rename shows

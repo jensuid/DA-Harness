@@ -48,7 +48,7 @@ def test_fresh_case_has_single_creation_event(tmp_path) -> None:
     assert history["events"][0]["detail"] == "dataset: s.csv"
     assert history["counts"] == {
         "datasets": 0, "profiles": 0, "plans": 0, "runs": 0, "charts": 0,
-        "findings": 0,
+        "findings": 0, "refinements": 0,
     }
 
 
@@ -97,7 +97,7 @@ def test_history_covers_every_artifact_in_order(tmp_path) -> None:
     # Counts come from the artifacts, not the event list.
     assert history["counts"] == {
         "datasets": 1, "profiles": 1, "plans": 1, "runs": 1, "charts": 1,
-        "findings": 1,
+        "findings": 1, "refinements": 0,
     }
 
 

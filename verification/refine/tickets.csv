@@ -1,0 +1,11 @@
+ticket_id,priority,status,resolution_hours,opened
+1,high,closed,6.5,2026-01-03
+2,low,closed,38.0,2026-01-05
+3,medium,open,,2026-01-08
+4,high,closed,12.0,2026-01-11
+5,low,closed,45.5,2026-01-14
+6,medium,closed,19.0,2026-01-18
+7,high,open,,2026-01-22
+8,low,closed,52.0,2026-01-25
+9,medium,closed,22.5,2026-01-28
+10,high,closed,8.0,2026-01-31

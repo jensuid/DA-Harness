@@ -25,6 +25,12 @@ EVENT_PLAN_CREATED = "plan_created"
 EVENT_RUN_EXECUTED = "run_executed"
 EVENT_CHART_RENDERED = "chart_rendered"
 EVENT_FINDING_RECORDED = "finding_recorded"
+# A proposed sharpening of the question, and the decision the analyst made
+# about it (P8-REFINE-007). Two events from one row: the proposal at
+# created_at, the decision at decided_at - the same shape as the loop's own
+# propose-then-approve rhythm.
+EVENT_QUESTION_REFINED = "question_refined"
+EVENT_REFINE_DECISION = "refine_decision"
 
 
 def _parse(timestamp: str | None) -> datetime | None:
@@ -130,6 +136,35 @@ def build_case_history(db, case_id: str) -> dict[str, Any]:
         add(row["created_at"], EVENT_FINDING_RECORDED, row["id"],
             row["statement"], f"validation: {row['validation_status']}")
 
+    for row in db.execute(
+        "SELECT id, original_question, refined_question, source, status, "
+        "edited_question, created_at, decided_at FROM refinements "
+        "WHERE case_id = ? ORDER BY created_at",
+        (case_id,),
+    ).fetchall():
+        if (row["status"] or "pending") == "declined":
+            add(row["created_at"], EVENT_QUESTION_REFINED, row["id"],
+                row["original_question"],
+                "no refinement proposed; the question was already specific "
+                f"(source: {row['source']})")
+            continue
+        add(row["created_at"], EVENT_QUESTION_REFINED, row["id"],
+            row["refined_question"] or row["original_question"],
+            f"proposed a sharpening of the question (source: {row['source']})")
+        if row["decided_at"] and row["status"] != "pending":
+            if row["status"] == "accepted":
+                label = row["refined_question"] or row["original_question"]
+                detail = "accepted; the case's question is now the refined one"
+            elif row["status"] == "edited":
+                label = row["edited_question"] or row["original_question"]
+                detail = ("edited; the analyst's own wording replaced both the "
+                          "original and the proposal")
+            else:
+                label = row["original_question"]
+                detail = "kept the original question"
+            add(row["decided_at"], EVENT_REFINE_DECISION, row["id"], label,
+                detail)
+
     events.sort(key=lambda item: (item[0], item[1]))
 
     counts = {
@@ -139,6 +174,9 @@ def build_case_history(db, case_id: str) -> dict[str, Any]:
         "runs": sum(1 for e in events if e[2]["kind"] == EVENT_RUN_EXECUTED),
         "charts": sum(1 for e in events if e[2]["kind"] == EVENT_CHART_RENDERED),
         "findings": sum(1 for e in events if e[2]["kind"] == EVENT_FINDING_RECORDED),
+        "refinements": sum(
+            1 for e in events if e[2]["kind"] == EVENT_QUESTION_REFINED
+        ),
     }
     return {
         "case_id": case_id,

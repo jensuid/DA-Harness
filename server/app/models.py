@@ -50,6 +50,59 @@ class CaseContext(BaseModel):
     updated_at: datetime | None = None
 
 
+class RefinementGround(BaseModel):
+    """One thing a proposed refinement cites, and what the profile said about it.
+
+    Every ground names a column the profile measured, so a proposal's basis is
+    checkable rather than asserted (AT-04: 0 fabricated data references).
+    """
+    kind: str
+    name: str
+    detail: str
+
+
+# The statuses that close a refinement proposal, plus `pending` for one the
+# analyst has not decided on yet and `declined` for one where the engine looked
+# and had nothing to add. One source of truth: the endpoint's decision guard and
+# the importer's validation both ask "is this a status we store?" of this list.
+REFINEMENT_STATUSES = (
+    "pending", "declined", "accepted", "rejected", "edited",
+)
+
+
+class Refinement(BaseModel):
+    """A proposed sharpening of the case's question and its decision (AT-04).
+
+    The original is carried beside the proposal and never overwritten: `accept`
+    moves the refined question onto the case row, but the row keeps what was
+    there before, so the transformation stays recoverable and auditable. The
+    three paths the analyst has - accept, edit, keep original - are the three
+    statuses that close a proposal; a proposal with no decision is `pending`,
+    and one where the engine looked and had nothing to add is `declined`.
+    """
+    id: str
+    case_id: str
+    original_question: str
+    refined_question: str = ""
+    rationale: str = ""
+    grounds: list[RefinementGround] = []
+    source: str
+    status: str
+    edited_question: str | None = None
+    created_at: datetime
+    decided_at: datetime | None = None
+
+
+class RefinementEdit(BaseModel):
+    """The analyst's own wording for the question, applied in place of the proposal.
+
+    An edit is a third path, not a silent overwrite: it is recorded on the row
+    with the wording the analyst chose, and the original the proposal replaced
+    stays recoverable on the same row.
+    """
+    question: str
+
+
 class ContextUpdate(BaseModel):
     """A whole-context replacement.
 

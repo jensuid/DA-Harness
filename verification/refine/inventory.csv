@@ -1,0 +1,9 @@
+sku,warehouse,qty,last_count_date
+SKU-0001,north,142,2026-01-12
+SKU-0002,south,88,2026-01-12
+SKU-0003,east,203,2026-01-13
+SKU-0004,north,57,2026-01-13
+SKU-0005,west,318,2026-01-14
+SKU-0006,south,94,2026-01-15
+SKU-0007,east,176,2026-01-16
+SKU-0008,west,41,2026-01-17

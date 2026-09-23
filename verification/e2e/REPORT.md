@@ -1,7 +1,7 @@
 # End-to-End Verification (real server)
 
-Run: 2026-09-22T17:40:57.597138+00:00
-Outcome: PASS (2.8s)
+Run: 2026-09-23T11:01:03.020140+00:00
+Outcome: PASS (5.7s)
 
 A fresh uvicorn server on a free port with an isolated data dir, driven
 over real HTTP. No LLM key is passed to the server, so the deterministic
@@ -9,7 +9,7 @@ engines answer and the run is reproducible offline.
 
 | Step | Verdict | Detail |
 |------|---------|--------|
-| Store opens at the build's schema | PASS | version 11 of 11, 0 migration(s) applied |
+| Store opens at the build's schema | PASS | version 12 of 12, 0 migration(s) applied |
 | Case created | PASS | question='Why did revenue change between the first two quarters?' |
 | Dataset attached over multipart | PASS | sales.csv (csv) |
 | Profile counts the null and the duplicate | PASS | rows=5, columns=['order_id', 'quarter', 'revenue', 'region'], revenue nulls=1, duplicates=1 |
@@ -22,14 +22,14 @@ engines answer and the run is reproducible offline.
 | The reviewer's GET proposes nothing | PASS | pending is null on a read |
 | The reviewer proposes the finding's audit | PASS | kind=evaluate, claim is the finding's own statement |
 | A cross-role approval is refused | PASS | HTTP 409, names the analyst's own pending step |
-| The approved audit records its verdict | PASS | audited finding d425e7c2-53ef-425d-bce2-756162fc26ce: 9 axes, 7 pass, 2 concern, 0 fail |
+| The approved audit records its verdict | PASS | audited finding 5bfaacec-c8e4-4789-a841-a876b7d958bc: 9 axes, 7 pass, 2 concern, 0 fail |
 | An audited finding is not re-audited | PASS | the reviewer's next derivation has nothing pending |
 | An unknown role is named, not guessed | PASS | HTTP 400 names the roles |
 | The evidence graph traces the claim | PASS | counts={'datasets': 1, 'runs': 3, 'charts': 0, 'plans': 1, 'findings': 1, 'edges': 5} |
-| The case history is the whole timeline | PASS | 8 events, kinds=['charts', 'datasets', 'findings', 'plans', 'profiles', 'runs'] |
+| The case history is the whole timeline | PASS | 8 events, kinds=['charts', 'datasets', 'findings', 'plans', 'profiles', 'refinements', 'runs'] |
 | The LEARN walk is the spec's four phases | PASS | why, what, how, validate; work on now: how |
 | The case answers with citations | PASS | source=deterministic, 2 ground(s) |
-| The case round-trips through export | PASS | restored as c4b55161 with fresh ids |
+| The case round-trips through export | PASS | restored as ab888105 with fresh ids |
 | The analyst agent drives the loop to a stop | PASS | approved=7, rejected=0, steps=profile->plan->analyze->interpret->accept->chart->validate; stopped: no further step |
 | Every agent step names its engine | PASS | sources=['deterministic'], 7 step(s) recorded |
 | The agent-run case reaches a stated stage | PASS | stage=validated, loop_closed=True |

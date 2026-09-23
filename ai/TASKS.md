@@ -147,10 +147,186 @@ answers.
 | P8-CAUSAL-004 | Validation (the causal-language guard) | DONE | 16 tests added (468 server, 86 web); 50-case corpus measures 100% on AT-18's three thresholds; e2e green; schema v11 |
 | P8-GOLDEN-005 | Verification (the analytical golden suite) | DONE | 21 reference calculations match at 100% (AT-40); 21/21 scripted runs complete the loop at 100% over 3 datasets (AT-01); 477 server, 86 web; e2e green |
 | P8-SHELL-006 | UX (the orientation spine) | DONE | 13 tests added (477 server, 99 web); AT-33's seven questions answerable from the rendered workspace; e2e green |
-| P8-REFINE-007 | AI (question refinement) | OPEN | AT-04 |
+| P8-REFINE-007 | AI (question refinement) | DONE | 41 tests added (518 server, 106 web); schema v12; AT-04's four thresholds measured over 50 cases at 100%/100%/0/0; e2e green |
 | P8-DECISION-008 | UX (the decision view) | OPEN | UX 46 |
 | P8-MEASURE-009 | Verification (coverage, perf, a11y, deps) | OPEN | AT-27..30/32/37/38/45/46 |
 | P8-TRACE-010 | Verification (the traceability matrix) | OPEN | AT-48 |
+
+### P8-REFINE-007 contract
+
+```
+TASK ID: P8-REFINE-007
+MILESTONE: P8 Analytical Contract
+CAPABILITY: AI (question refinement)
+GOAL: AT-04 requires that an AI refinement preserves the user's original
+      question, presents the revision separately, allows accept / reject /
+      edit, and never silently overwrites - and measures it over 50 cases:
+      >= 95% preserve the original, >= 90% semantically relevant, 0 silent
+      overwrites, 0 fabricated data references. Before this task nothing
+      proposed a sharpening at all: a vague question ("why are sales down?")
+      was carried verbatim into every plan, every generated query and every
+      finding, so the analysis inherited its vagueness and the product had no
+      surface where the gap was even visible.
+CONTEXT: the six tasks before it built the objects a refinement reads and the
+         surfaces it sits beside - the context object (P8-CONTEXT-001), the
+         profile's own measurements with their quality defects
+         (P8-QUALITY-002), and the orientation spine that places the question
+         at the top of the case (P8-SHELL-006). The refinement grounds itself
+         in the profiler's measured columns and ranges, so it proposes from
+         the same data every other assistant reads.
+INPUTS: the case's question, the most recently profiled dataset's profile
+        (columns, per-column stats, measured min/max and cardinality), and the
+        context's purpose / sub-questions / hypotheses when the case stated
+        intent.
+RELEVANT FILES: server/app/refine.py (new - the deterministic engine, the
+                validation gate, the LLM refiner behind the same interface),
+                server/app/main.py (the five refine endpoints and the
+                duplicate/delete wiring), server/app/db.py (schema v12, the
+                refinements table and its migration), server/app/models.py
+                (Refinement, RefinementGround, RefinementEdit,
+                REFINEMENT_STATUSES), server/app/history.py (the two new event
+                kinds), server/app/exporter.py (the round trip),
+                verification/refine/{cases.py,verify_refine.py} (new - the
+                50-case corpus and the measurement runner),
+                server/tests/test_refine.py (new, 41 tests),
+                web/src/RefinePanel.tsx (new), web/src/CaseWorkspace.tsx,
+                web/src/api.ts, web/src/CaseWorkspace.test.tsx (+7 tests),
+                ai/HANDOFF.md, ai/TASKS.md, ai/CURRENT_STATE.md
+REQUIRED CHANGE:
+  - One interface, two engines, as in the planner / assistant / drafter /
+    generator: `refine_question` is deterministic and always available;
+    `LLMRefiner` calls an OpenAI-compatible endpoint when DAH_LLM_API_KEY is
+    set and its output is gated by `validate_refinement` before it is stored.
+    A failure of the LLM falls back to the deterministic proposal, which may
+    itself be a decline.
+  - The deterministic engine appends grounding rather than rewording: the
+    refined question is the original with clauses added - the measure, the
+    split, the time window, the comparison a direction word leaves unstated -
+    each one a column and a range the profile measured. So the original is
+    preserved by construction and the refinement is relevant by construction,
+    and the suite measures both anyway because a structural guarantee is one
+    renamed variable away from a regression. It declines rather than invents:
+    no profile, nothing numeric or temporal, no subject terms to preserve, or
+    a question already naming its measure, split and window is left alone, and
+    the decline is recorded rather than answered as an empty proposal.
+  - The gate: the original must be echoed verbatim, the subject terms must
+    survive, every cited column must be one the profile has, every quoted
+    column name must exist, every figure must be one the profile measured (in
+    any spelling the formatter or the analyst might use), and a rationale is
+    required - a bare proposal never reaches the analyst.
+  - Five endpoints, and only two of them write: POST /refine proposes
+    (idempotent while pending and the question unmoved); GET /refine and GET
+    /refinements are read-only; accept and edit are the only paths that move
+    the case's question, and reject keeps the original and writes nothing but
+    the decision. A decided proposal is a 409, not a second decision; an edit
+    that restores the original is refused with "use keep original instead".
+  - The original is carried on the proposal row, so recoverability is a
+    property of the store, not of the client that happened to be looking: it
+    survives the accept that replaced it on the case row, travels with the
+    export and the duplicate, and is readable from the case's refinement
+    history and its timeline (two new event kinds - the proposal, then the
+    decision).
+  - The measurement: verification/refine/verify_refine.py drives 50 cases over
+    6 datasets against a real server over HTTP with the LLM vars scrubbed,
+    walking accept / edit / keep / pending at volume, and reports the four
+    numbers to verification/refine/REPORT.md. Relevance is measured
+    mechanically, not judged: the refined question keeps the original's subject
+    terms and names at least one real column. The same four numbers are
+    asserted in the test suite.
+  - The shell panel (UX 12) shows the transformation explicitly - "Your
+    question" above "Refined question", the arrow between them, the engine that
+    spoke, the rationale and the grounds behind a disclosure - and accept /
+    edit / keep original are the only three buttons. It sits in the orientation
+    zone, where the question is described.
+NON-GOALS: the decision view (P8-DECISION-008); measurement of coverage /
+           perf / a11y (P8-MEASURE-009); refining the context's sub-questions
+           and hypotheses rather than the primary question; an LLM judgement of
+           relevance - the measurement is mechanical by design, and the
+           deterministic engine makes three of the four thresholds structural.
+CONSTRAINTS: green only. No new dependency (DEC-001 - the LLM client is
+             httpx, already required). Schema moves to v12 with a migration
+             that upgrades an existing store in place. Deterministic and
+             offline by default: the runner fails unless the deterministic
+             engine answered, so a passing suite is itself proof no LLM was
+             called. Zero silent overwrites is a Level 0 requirement.
+ACCEPTANCE CRITERIA:
+- [x] the original question is preserved verbatim beside the proposal, and is
+      recoverable after accept, after edit, and after keep-original
+- [x] accept / edit / keep-original are the only three paths, and there is no
+      fourth that moves the question
+- [x] 0 silent overwrites: the case's question moves only through the accept
+      and edit endpoints, and the original stays on the row
+- [x] 0 fabricated data references: the gate rejects a cited or quoted column
+      the profile does not have and a figure it did not measure, before the
+      analyst sees the proposal
+- [x] AT-04 measured over 50 cases: preserve 100% (>= 95%), relevant 100%
+      (>= 90%), 0 silent overwrites, 0 fabrications
+- [x] the four numbers are asserted in the test suite, so a regression fails a
+      test rather than a report nobody reads
+- [x] a deliberately-wrong expectation is caught, proving the measurement can
+      fail
+- [x] the round trip through export keeps the refinement history, and the
+      original with it
+- [x] the suite is deterministic and offline, no LLM call
+TESTS: test_refine.py (41) - the engine's additions and its four decline
+       paths, its determinism, the gate's nine rejection paths and its
+       allowance of a measured figure in any spelling, the five endpoints
+       (proposes nothing, a read never proposes, idempotency, the decline
+       answer, accept / keep / edit and their error contracts: 409 on a second
+       decision, 404 on another case's proposal, 400 on an edit that restores
+       the original or is empty), the history's two events, the export round
+       trip including a decline, the duplicate carrying the history, the delete
+       removing the proposals, the schema upgrade recording the migration, and
+       the measurement over a real server. CaseWorkspace.test.tsx (+7) - the
+       transformation shown with both halves, accept moving the question while
+       the original stays visible, keep original writing nothing, the edit
+       pre-filled from the proposal, a failed decision reported, the decline
+       said rather than shown as an empty panel, and the panel in the
+       orientation zone.
+VERIFICATION: `cd server && DAH_LLM_API_KEY= DAH_LLM_BASE_URL= DAH_LLM_MODEL=
+              .venv/bin/python -m pytest -q` green (518);
+              `server/.venv/bin/python verification/refine/verify_refine.py`
+              green (50 cases, four thresholds);
+              `server/.venv/bin/python verification/e2e/verify_e2e.py` green
+              (25/25); `cd web && npm test && npm run build` green (106, build
+              ok).
+STATE UPDATE: TASKS/CURRENT_STATE gain the task; schema v11 -> v12.
+```
+
+TASK: P8-REFINE-007 - question refinement
+ID: P8-REFINE-007
+PRIORITY: high
+STATUS: DONE
+SUMMARY: AT-04's four numbers now exist, and the question is the one place in
+         the loop a vague ask was carried verbatim into every artifact after
+         it. Two engines sit behind one interface, as in every other assistant:
+         a deterministic refiner that appends grounding the profile measured
+         (the measure, the split, the window, and the comparison a direction
+         word like "down" leaves unstated) and an LLM refiner whose output is
+         gated before the analyst sees it - the original echoed verbatim, the
+         subject terms surviving, every cited and quoted column real, every
+         figure measured, a rationale present. The refined question is the
+         original with clauses added, never a replacement, so preserve and
+         relevant are structural; the suite measures them anyway. The engine
+         declines rather than invents - no profile, nothing numeric or
+         temporal, nothing to preserve, or an already-answerable question - and
+         the decline is recorded, not answered as an empty proposal.
+         Measured over 50 cases and 6 datasets against a real server:
+         preserve 100%, relevant 100%, 0 silent overwrites, 0 fabrications.
+         The three paths are the only three: accept and edit are the sole
+         writes to the case's question, and keep-original writes nothing but
+         the no. Recoverability is a property of the store, not the client -
+         the original rides on the proposal row, so it survives the accept
+         that replaced it, the export round trip and the duplicate, and it is
+         readable in the case's timeline as two events. Schema v12, one
+         migration, upgrading in place. Two bugs the work surfaced, both fixed
+         with their own tests: the new suite's schema test caught that a fresh
+         store records no migration rows at all (it is born current, which is
+         the truth - the assertion now builds the legacy store the upgrade
+         path is actually about), and the web test caught that the api spies
+         are module-level, so a "not called" assertion in a top-level describe
+         answers for every test before it (its own beforeEach clear, the same
+         discipline the CaseWorkspace describe already had).
 
 ### P8-SHELL-006 contract
 
@@ -301,135 +477,6 @@ SUMMARY: the shell now answers "where am I, what am I doing, what can help me"
          element breaks the text matching a test and a screen reader both read
          - the sentence stays whole, and the first two rows carry the weight
          instead.
-
-### P8-GOLDEN-005 contract
-
-```
-TASK ID: P8-GOLDEN-005
-MILESTONE: P8 Analytical Contract
-CAPABILITY: Verification (the analytical golden suite)
-GOAL: the trust machinery P8 built is unmeasured. AT-40 names ten analytical
-      shapes a product like this must compute correctly - aggregation,
-      filtering, joins, missingness, duplicates, dates, percentages,
-      segmentation, statistical calculations, validation - and requires 100% of
-      deterministic reference calculations to match expected results. AT-01
-      requires >= 95% of scripted workflow attempts to complete the full loop
-      over >= 20 runs and >= 3 datasets. Today neither number exists: the
-      detectors and the nine dimensions are pinned by per-feature tests, but a
-      test that asserts its own fixture cannot tell you the product computes a
-      percentile correctly against data it did not write. This task ships the
-      golden datasets as fixtures with hand-computed reference values, and a
-      suite that runs the real workflow over them and reports the two numbers.
-CONTEXT: the phase's own rule is that convenience is sacrificed before
-         analytical trust, and the three tasks before this built the objects a
-         measurement would cover - quality detection (P8-QUALITY-002), the nine
-         validation dimensions (P8-VALID-003) and the causal guard with its
-         50-case corpus (P8-CAUSAL-004). That corpus is the model for this one:
-         data plus a measurement, not a wall of assertions. The golden values
-         are computed by hand and by an independent path (Python's statistics
-         module over the same fixture), never by running the query and
-         recording what came back - which would make the suite tautological.
-INPUTS: three or more deterministic CSV fixtures, each covering a subset of
-        AT-40's ten shapes, each with: the reference SQL or Python the analyst
-        would run, and the expected rows computed independently. The workflow
-        measurement drives the loop over them - create, question, attach,
-        profile, plan, run, interpret, draft, accept, validate, reopen.
-RELEVANT FILES: verification/golden/datasets/*.csv (new fixtures),
-                verification/golden/reference.py (new - the hand-computed
-                expectations and the independent-path recomputation),
-                verification/golden/verify_golden.py (new - the runner: the
-                reference-calculation check and the workflow-completion
-                measurement, writing verification/golden/REPORT.md),
-                server/tests/test_golden.py (new - asserts the runner's two
-                numbers in the suite, so a regression fails a test rather
-                than a report nobody reads),
-                ai/HANDOFF.md, ai/TASKS.md, ai/CURRENT_STATE.md
-REQUIRED CHANGE:
-  - Deterministic fixtures, at least three, each exercising several of AT-40's
-    shapes: a sales dataset with missingness, duplicates, dates and
-    segmentation; a spend/signups dataset for joins and correlation; a tickets
-    dataset for percentages and statistical calculations. Small enough to hold
-    a reference value in the head, real enough that the shapes are not
-    synthetic one-rows.
-  - Reference values computed two ways: by hand from the fixture's own numbers,
-    and independently in the suite by a second path (Python over the parsed
-    CSV, not the engine's own SQL), so the golden value is not the engine
-    agreeing with itself. Where the two paths disagree the fixture is wrong,
-    not the engine.
-  - A runner that, per dataset and shape: attaches the fixture to a real server
-    on an isolated store, runs the reference query over HTTP, and compares the
-    result to the golden value within a stated tolerance. Floats compare to a
-    tolerance; exact types (counts, category labels) compare exactly.
-  - The workflow-completion measurement: a scripted run over each dataset
-    walking the whole loop AT-01 names, counting a run complete when every
-    stage produced its artifact and the case reopens with it. >= 20 scripted
-    runs, >= 3 datasets, reported as a rate.
-  - Both numbers asserted in the test suite, not only written to a report.
-NON-GOALS: the traceability matrix (P8-TRACE-010); coverage/perf/a11y
-           measurement (P8-MEASURE-009); new core capability - every shape the
-           suite measures is computed by code that already exists, and a
-           failure in the suite is a finding about an existing calculation, not
-           a reason to build one; LLM-judged quality.
-CONSTRAINTS: green only. Deterministic and offline - no LLM calls (the planner
-             falls back to deterministic with the LLM vars empty, which the
-             e2e already relies on). The suite runs against a real server with
-             an isolated data dir, the pattern verify_e2e.py established, so it
-             exercises the HTTP surface a user actually touches. Reference
-             values are never derived from the engine's own output.
-ACCEPTANCE CRITERIA:
-- [x] at least 3 fixtures exist, covering all 10 of AT-40's shapes between them
-- [x] every reference calculation matches its golden value, 100%, within a
-      stated tolerance, and each golden value is independently recomputed
-- [x] no golden value is derived from the engine's own output
-- [x] >= 20 scripted workflow runs across >= 3 datasets complete, and the
-      measured completion rate is >= 95%
-- [x] the two numbers are asserted in the test suite, so a regression fails a
-      test
-- [x] the suite is deterministic and offline, no LLM call
-TESTS: test_golden.py - the fixtures' shapes are all covered, the runner's two
-       measurements meet their thresholds, and at least one fixture carries a
-       deliberately-wrong reference value that the runner catches (proving the
-       measurement can fail, per the repo's proven-to-fail discipline).
-VERIFICATION: `cd server && DAH_LLM_API_KEY= DAH_LLM_BASE_URL= DAH_LLM_MODEL=
-              .venv/bin/python -m pytest -q` green;
-              `server/.venv/bin/python verification/e2e/verify_e2e.py` green;
-              `cd web && npm test && npm run build` green.
-STATE UPDATE: TASKS/CURRENT_STATE gain the task; the schema stays at v11.
-```
-
-TASK: P8-GOLDEN-005 - the analytical golden suite
-ID: P8-GOLDEN-005
-PRIORITY: high
-STATUS: DONE
-SUMMARY: the trust machinery P8 built is now measured, and the two numbers the
-         PRD names exist. Three fixtures (sales, spend, tickets) carry 21
-         reference calculations covering all ten of AT-40's shapes, and each
-         golden value is computed twice before the engine is ever asked: by
-         hand from the fixture's own numbers, and again by an independent
-         implementation (plain Python and `statistics` over the parsed CSV -
-         never DuckDB). Where the two disagree the fixture is wrong, and the
-         suite fails before a single query runs. Only then does the runner ask
-         a real server the same question over HTTP and compare: 21/21 match,
-         100%, against a threshold of 100%. The same 21 journeys answer
-         AT-01's workflow rate, because the query a scripted run makes *is* the
-         reference query - create, attach, profile, plan, run, interpret,
-         draft, accept, validate, reopen - and 21/21 complete the loop over 3
-         datasets, against thresholds of 95%, 20 runs and 3 datasets. A verdict
-         of `insufficient_evidence` still counts as a complete run: a finding
-         the evidence does not support is a finished analysis, not a failed
-         one. Both numbers are asserted in test_golden.py rather than only in a
-         report, and the proven-to-fail discipline holds - a deliberately wrong
-         expectation (average resolution time claimed as 25.0h against a true
-         19.83h) is caught by the audit. The suite is offline by construction:
-         the runner fails the `plan` stage unless the planner answers
-         `source: "deterministic"`, so a completion rate above zero is itself
-         proof no LLM was called. Two real bugs the suite surfaced on the way,
-         both fixed with their own tests: grouping by a date column handed a
-         raw `datetime.date` to `json.dumps` and answered a 500 for a valid
-         query (the profile already described one as an ISO string; the run
-         path now agrees), and the runner's own health check raced the stdout
-         pump thread for the server's announcement and blocked forever on a
-         `readline()` with no timeout.
 
 Contracts for the rolling window (the two most recent). Older blocks are in
 `ai/TASKS-ARCHIVE.md`.

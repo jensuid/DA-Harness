@@ -1,0 +1,7 @@
+first_name,last_name,email,department,hired_on
+Ada,Lovelace,ada@example.com,engineering,2024-02-01
+Grace,Hopper,grace@example.com,engineering,2023-11-15
+Linus,Torvalds,linus@example.com,engineering,2025-01-20
+Margaret,Hamilton,margaret@example.com,operations,2022-06-30
+Donald,Knuth,donald@example.com,research,2024-09-05
+Barbara,Liskov,barbara@example.com,research,2023-03-12

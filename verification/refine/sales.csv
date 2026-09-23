@@ -1,0 +1,13 @@
+order_id,region,product,revenue,units,order_date
+101,north,widget,4200,14,2026-01-04
+102,south,widget,3100,10,2026-01-09
+103,east,gadget,8600,22,2026-02-11
+104,west,gadget,5400,17,2026-02-18
+105,north,widget,3900,13,2026-03-02
+106,south,gadget,9100,25,2026-03-15
+107,east,widget,2700,9,2026-04-06
+108,west,widget,6100,19,2026-04-22
+109,north,gadget,7300,21,2026-05-05
+110,south,gadget,8800,24,2026-05-19
+111,east,widget,2400,8,2026-06-01
+112,west,gadget,9600,26,2026-06-14
