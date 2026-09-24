@@ -4,7 +4,7 @@ Source of truth for **where we are** on the global roadmap
 (`docs/Implementation Roadmap.md`). Every phase completion must update this
 file together with `CURRENT_STATE.md` and `TASKS.md`.
 
-**Current stage: P8 Analytical Contract — COMPLETE (10 of 10). No phase is open; v0.3.0 is the release to tag.**
+**Current stage: P8 Analytical Contract — COMPLETE (10 of 10). No phase is open; v0.3.0 and v0.3.1 are published.**
 
 ```
 P0 Foundation          DONE  ✓
@@ -23,7 +23,7 @@ P7 Product Modes       COMPLETE ✓  (all 4 checklist items built; the web-shell
                               published)
 P8 Analytical Contract COMPLETE ✓  (all 10 checklist items; every PRD threshold
                               now carries a measured number and every requirement
-                              traces end to end; v0.3.0 is the release to tag)
+                              traces end to end; v0.3.0 and v0.3.1 are published)
                               ← we are here
 ```
 
@@ -248,7 +248,10 @@ once per bounded lookup (12.5s over a 5s target, now 1.7s with one
 materialisation), and the coverage counter's denominator counted
 function-signature lines the interpreter never reports.
 
-**Next:** the v0.3.0 release. With CI's billing still suspended the artifacts
+**Releases:** v0.3.0 shipped the phase, and v0.3.1 re-masked the app icon to the
+standard macOS squircle (the artwork is unchanged inside the mask; the icon had
+been a full-bleed square with 60px corners, so it rendered as a tile rather than
+a native Ventura icon). With CI's billing still suspended the artifacts
 are built and published locally from the same steps `release.yml` runs, as
 v0.2.0's were. After that the roadmap's remaining ladder - cloud,
 collaboration, warehouse connectors, governance - stays deferred at a user

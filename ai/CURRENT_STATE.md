@@ -62,20 +62,31 @@ requirement-traceability matrix. The full gap analysis is `docs/PRD & UX Conform
   asserted in the shell's own suite, which the measurement runner reads as its
   evidence).
   Desktop shell 22 Rust tests; P2, P3 and P4 gates PASS; **v0.2.0 and v0.3.0
-  released** (tags `v0.2.0` on `ec819fc`, `v0.3.0` on `ab56541`).
+  released** (tags `v0.2.0` on `ec819fc`, `v0.3.0` on `ab56541`, `v0.3.1` on
+  `19cefc1`).
 - **e2e:** all 28 real-server steps PASS; the golden suite and the refinement
   runner green, and the measurement layer 9/9 - the reports the matrix cites as
   its measured evidence, regenerated on the current tree.
 
 - **Next task:** none open, and no phase is open. P8 is complete (10 of 10) and
-  **v0.3.0 is released**: the tag sits on `ab56541` (the bump commit),
-  686 server tests pass on it, and the sidecar, `.app` and ditto zip were
-  built locally from the same steps `release.yml` runs - CI's billing is still
-  suspended - with the packaged core proven on an isolated store and the zip
-  plus its sha256 published as a flagged pre-release. The DMG step failed
-  locally on a tooling gap (`create-dmg` is not the bundler Tauri expects on
-  this machine); the published artifact is the zip, which is what the workflow
-  ships.
+  **v0.3.0 and v0.3.1 are released** (tags `v0.3.0` on `ab56541`, `v0.3.1` on
+  `19cefc1`), 686 server tests passing on the tag. Both were built locally from
+  the same steps `release.yml` runs - CI's billing is still suspended - with the
+  packaged core proven on an isolated store and the ditto zip plus its sha256
+  published as flagged pre-releases. v0.3.1 re-masks the app icon to the
+  standard macOS squircle: the icon had been a full-bleed 1024 square with 60px
+  corners, so it rendered as a tile rather than a native Ventura icon. The
+  artwork is unchanged inside the mask (verified numerically - zero RGB pixels
+  changed inside it, zero opaque pixels left outside), and `icon.icns` was
+  regenerated through `iconutil` with every standard size.
+  One defect the packaging surfaced, present in v0.2.0 and v0.3.0 too and not
+  fixed here: the packaged core answers `current: unknown` at
+  `/updates/latest`, because neither the distribution's metadata nor
+  `pyproject.toml` is reachable inside the PyInstaller bundle. The update
+  check therefore cannot compare versions until the bundle is taught to carry
+  one. The DMG also bundles only when the local `create-dmg` happens to be the
+  tool Tauri's bundler expects; the published artifact is the zip, which is
+  what the workflow ships.
   The release is done: **v0.2.0** is tagged on `ec819fc`. GitHub Actions is
   still refusing to start any job with "recent account payments have failed";
   that is an account billing problem (Settings > Billing & plans), not a code
