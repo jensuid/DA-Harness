@@ -61,16 +61,21 @@ requirement-traceability matrix. The full gap analysis is `docs/PRD & UX Conform
   a row can fail the gate). The web suite is 138 (12 a11y, 10 measure -
   asserted in the shell's own suite, which the measurement runner reads as its
   evidence).
-  Desktop shell 22 Rust tests; P2, P3 and P4 gates PASS; **v0.2.0 released**
-  (tag `v0.2.0` on `ec819fc`).
+  Desktop shell 22 Rust tests; P2, P3 and P4 gates PASS; **v0.2.0 and v0.3.0
+  released** (tags `v0.2.0` on `ec819fc`, `v0.3.0` on `ab56541`).
 - **e2e:** all 28 real-server steps PASS; the golden suite and the refinement
   runner green, and the measurement layer 9/9 - the reports the matrix cites as
   its measured evidence, regenerated on the current tree.
 
-- **Next task:** none open. P8 is complete (10 of 10); every checklist item in
-  `docs/PRD & UX Conformance Evaluation.md` is delivered. v0.3.0 is the release
-  to tag, and with CI's billing still suspended the artifacts would be built
-  and published locally, as v0.2.0's were.
+- **Next task:** none open, and no phase is open. P8 is complete (10 of 10) and
+  **v0.3.0 is released**: the tag sits on `ab56541` (the bump commit),
+  686 server tests pass on it, and the sidecar, `.app` and ditto zip were
+  built locally from the same steps `release.yml` runs - CI's billing is still
+  suspended - with the packaged core proven on an isolated store and the zip
+  plus its sha256 published as a flagged pre-release. The DMG step failed
+  locally on a tooling gap (`create-dmg` is not the bundler Tauri expects on
+  this machine); the published artifact is the zip, which is what the workflow
+  ships.
   The release is done: **v0.2.0** is tagged on `ec819fc`. GitHub Actions is
   still refusing to start any job with "recent account payments have failed";
   that is an account billing problem (Settings > Billing & plans), not a code

@@ -23,10 +23,14 @@ matrix 48/48.
 
 ### What is next, in priority order
 
-- **P8 is complete: 10 of 10.** v0.3.0 is the release to tag - every
-  checklist item in `docs/PRD & UX Conformance Evaluation.md` is delivered and
-  the phase's ten tasks are green. CI's billing is still suspended, so the
-  artifacts would be built and published locally, as v0.2.0's were.
+- **Nothing is open.** P8 is complete (10 of 10) and **v0.3.0 is published**
+  (`ab56541`, pre-release with its checksum): the phase's releases are v0.2.0
+  and v0.3.0. The roadmap's remaining ladder - cloud, collaboration, warehouse
+  connectors, governance - stays deferred at a user count of one, and the
+  conformance evaluation's deliberately-not-built list is explicit deferral.
+  Two environmental notes carry: CI's billing is still suspended, so nothing
+  since `c73118c` has run in CI; and the Ventura floor is documented but no
+  longer CI-enforced (DEC-005).
 
 ## Recent completions
 
