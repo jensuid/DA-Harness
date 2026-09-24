@@ -4,7 +4,7 @@ Source of truth for **where we are** on the global roadmap
 (`docs/Implementation Roadmap.md`). Every phase completion must update this
 file together with `CURRENT_STATE.md` and `TASKS.md`.
 
-**Current stage: P7 Product Modes — IN PROGRESS (P6 closed; entry checklist proposed below).**
+**Current stage: P8 Analytical Contract — COMPLETE (10 of 10). No phase is open; v0.3.0 is the release to tag.**
 
 ```
 P0 Foundation          DONE  ✓
@@ -21,9 +21,9 @@ P7 Product Modes       COMPLETE ✓  (all 4 checklist items built; the web-shell
                               gap closed; EVALUATE, LEARN and multi-agent
                               workflows in core and shell; v0.1.0 and v0.2.0
                               published)
-P8 Analytical Contract IN PROGRESS (2 of 10: the case's context object, then
-                              quality detection beyond missingness; the v0.2.0
-                              release shipped between 001 and 002)
+P8 Analytical Contract COMPLETE ✓  (all 10 checklist items; every PRD threshold
+                              now carries a measured number and every requirement
+                              traces end to end; v0.3.0 is the release to tag)
                               ← we are here
 ```
 
@@ -43,7 +43,8 @@ production-grade**.
 | P4 Production Candidate | Serious software: reliability, security, performance, UX, observability | DONE | P3 gate PASS | `verification/p3/REPORT.md` (23 journey steps, 15 exit criteria, all PASS); CI runs every layer (P4-CI-007); signing deferred to P5 by DEC-004 |
 | P5 Production Grade | Maintainable, distributable, secure product | DONE | — | P4 gate, observability, the 500 envelope, release automation, the Reveal-logs menu and the CI repair (P5-CI-FIX-007) DONE; v0.1.0 published. Only signing remains, blocked on the Apple Developer ID (DEC-004). CI runs on macos-latest - macos-13 is retired (DEC-005) |
 | P6 Post-Launch Evolution | Scale and intelligence | DONE | — | all 5 checklist items: cross-case recall (P6-MEMORY-001), agentic analysis (P6-AGENT-002), analytical-shape templates (P6-TEMPLATE-003), the versioned migration path (P6-MIGRATE-004) and the update check (P6-UPDATE-005) |
-| P7 Product Modes | The spec's LEARN and EVALUATE modes, and the UI surface for the P6 capabilities | IN PROGRESS | — | EVALUATE and LEARN both delivered in core and shell (P7-EVAL-001 + P7-SHELL-002, P7-LEARN-001 + P7-SHELL-010); the web-shell gap CLOSED - eight surfaces (P7-SHELL-002..009); both multi-agent layers delivered - the core (P7-AGENT-001: analyst and reviewer roles behind one approval gate) and the shell (P7-SHELL-011: a second agent panel beside the analyst's); server 380 with three gates green plus a REAL-server end-to-end run (P7-E2E-001, 25 steps over live HTTP), web 78 with build green. What remains: the release |
+| P7 Product Modes | The spec's LEARN and EVALUATE modes, and the UI surface for the P6 capabilities | DONE | — | all 4 checklist items: EVALUATE (P7-EVAL-001 + P7-SHELL-002), the closed web-shell gap (P7-SHELL-002..009, eight surfaces), LEARN (P7-LEARN-001 + P7-SHELL-010) and multi-agent workflows (P7-AGENT-001 + P7-SHELL-011); a real-server end-to-end run (P7-E2E-001), a hand walkthrough (P7-WALK-001), the packaged app's CORS fix (P7-CORS-001) and the CSV fix (P7-CSV-002) |
+| P8 Analytical Contract | Close the PRD's Level 1 breadth gaps and make "done" measurable | DONE | — | all 10 checklist items: the case's context object (P8-CONTEXT-001), quality beyond missingness (P8-QUALITY-002), the nine validation dimensions (P8-VALID-003), the causal guard (P8-CAUSAL-004), the analytical golden suite (P8-GOLDEN-005), the orientation spine (P8-SHELL-006), question refinement (P8-REFINE-007), the decision view (P8-DECISION-008), the measurement layer (P8-MEASURE-009) and the traceability matrix (P8-TRACE-010); server 686, web 138, 28/28 e2e, schema v13 |
 
 ## Phase gate definitions (what "done" means)
 
@@ -57,43 +58,40 @@ production-grade**.
 
 ## Current position detail
 
-- **Completed capabilities:** FastAPI core; SQLite case state; DuckDB analytical
-  engine; React+Vite shell; CSV/Parquet/Excel ingest; deep profiling; read-only
-  SQL and Python execution with persisted results; deterministic SVG charts;
-  case management (rename/duplicate/delete); structured AI planning
-  (deterministic default, LLM behind `DAH_LLM_API_KEY`); case export/import
-  round trip.
-- **Test status:** server 256 passed; web 21 passed; desktop shell 7 Rust
-  tests (5 unit + 2 e2e); P2, P3 **and P4** gates PASS. All of it runs in CI
-  (`.github/workflows/ci.yml`) - before P4-CI-007, every test was green only
-  because a developer happened to run it.
-- **Active task:** P7 is IN PROGRESS - EVALUATE mode is DONE in the core
-  (P7-EVAL-001) and in the shell (P7-SHELL-002 for EVALUATE, P7-SHELL-003 for
-  the agent, P7-SHELL-004 for case management, P7-SHELL-005 for templates,
-  P7-SHELL-006 for cross-case memory, P7-SHELL-007 for EDA, P7-SHELL-008 for
-  the evidence graph and P7-SHELL-009 for case history); item 2 - the
-  web-shell gap - is closed: every capability with an endpoint now has a
-  surface. LEARN mode - item 3 - has a core: P7-LEARN-001 ships the guided
-  Why -> What -> How -> Validate walk as a read-side projection over the
-  workflow stages, and P7-SHELL-010 walks it in the shell as the Learn this
-  case panel. The two product modes the spec names that DAH uniquely owns are
-  both built, and the checklist's fourth item is delivered in both layers: P7-AGENT-001 ships
-  analyst and reviewer roles over one case - the reviewer's entire method is EVALUATE, so an
-  agent-proposed finding is audited by a different agent with a different objective, and the
-  verdict is recorded beside the finding rather than folded into it. The release landed:
-  v0.1.0 and v0.2.0 are both published. P6 is CLOSED (all 5 items); v0.1.0 published
-  and checksum-verified; signing deferred indefinitely by DEC-006. A `v<x.y.z>` tag
-  matching server/pyproject.toml now builds, smokes and publishes a versioned,
-  unsigned .app as a flagged pre-release, with its checksum and generated notes
-  that state how to open it past Gatekeeper and that the published build is
-  Intel. The version has one source of truth and a tag that disagrees with it
-  fails before any build starts.
-- **Known issues / blockers:** none. Signing is deferred indefinitely by
-  DEC-006 (DAH is single-user), not blocked.
-- **Supported platform:** macOS. The documented floor is Ventura; CI builds on
-  macos-latest because GitHub retired the macos-13 pool (DEC-005), so CI proves
-  the packaging path but not the Intel triple a local build produces. See
-  `README.md`.
+- **Completed capabilities:** FastAPI core; SQLite case state (schema v13, with
+  a versioned migration path); DuckDB analytical engine; React+Vite shell
+  wrapped by the Tauri desktop app; CSV/Parquet/Excel ingest; deep profiling
+  with seven defect classes; read-only SQL and Python execution (the latter
+  under an OS-level sandbox) with persisted results; raster charts; case
+  management, search, history, templates and cross-case recall; structured AI
+  planning, code generation, interpretation, drafting and chat - deterministic
+  by default, LLM behind `DAH_LLM_API_KEY`; EVALUATE and LEARN modes; analyst
+  and reviewer agent roles behind one approval gate; question refinement; the
+  decision view that closes the loop; case export/import round trip; the
+  measurement layer and the requirement-traceability matrix.
+- **Test status:** server 686 passed; web 138 passed; desktop shell 22 Rust
+  tests. The P2, P3 and P4 gates PASS, and the verification runners are green:
+  the real-server e2e journey (28/28), the analytical golden suite (21/21
+  reference and workflow), AT-04's refinement thresholds, the measurement
+  layer (9/9) and the traceability matrix (48/48 rows; AT-48's own 15/15 and
+  33/33).
+- **Active task:** none open. P8 Analytical Contract is COMPLETE at 10 of 10 -
+  the PRD's Level 1 breadth gaps are closed and every one of its 48 acceptance
+  thresholds now traces from the PRD, through the UX surface, the
+  implementation and the test, to a measured or asserted threshold
+  (`verification/trace/REPORT.md`). v0.2.0 is published and tagged on
+  `ec819fc`; v0.3.0 is the release to tag now that the phase is closed.
+- **Known issues / blockers:** none in the code. Two are environmental:
+  (1) GitHub Actions refuses every job with "recent account payments have
+  failed" - an account-billing problem (Settings > Billing & plans), so
+  nothing pushed since `c73118c` has run in CI and the v0.2.0 artifacts were
+  built and published locally from the same steps `release.yml` runs;
+  (2) the documented Ventura floor is no longer CI-enforced because GitHub
+  retired the `macos-13` pool (DEC-005) - restoring it needs a self-hosted
+  Intel runner. Signing and notarization are deferred indefinitely by DEC-006
+  (DAH is single-user), so the published app is unsigned and Gatekeeper needs
+  right-click → Open on first launch.
+- **Supported platform:** macOS. See `README.md`.
 - **Desktop shell:** **DAH > Reveal DAH Logs** asks the core where its log is
   and opens the folder in Finder with the file selected (P5-UX-006).
 - **Repository:** private, `master` tracks `origin/master`.
@@ -219,3 +217,41 @@ ordered by what the one user gains first.
   with two sets of wording so two panels on one page stay distinguishable, and the
   reviewer placed after the findings it audits. 5 web tests (78 total), web build
   and desktop bundle green. Nothing on the checklist remains but the release | Only after EVALUATE, which is the audit layer an agent's own output has to survive. Without it, more agents means more unexamined output | P6 Agentic Analysis (continued) |
+
+## P8 Analytical Contract — entry checklist (COMPLETE, 10 of 10)
+
+The last phase, and the one the PRD's own rule ordered: *"DAH should sacrifice
+convenience before it sacrifices analytical trust."* P7 delivered the product
+modes; P8 closed the PRD's Level 1 breadth gaps (`docs/PRD & UX Conformance
+Evaluation.md`) and replaced prose thresholds with measured numbers. The gap
+analysis named nine gaps; the checklist answers each, and a tenth item traces
+them.
+
+| # | Capability | What landed | Closes |
+|---|-----------|-------------|--------|
+| 1 | **The case's context object** — DONE (**P8-CONTEXT-001**): purpose, sub-questions, hypotheses and constraints, persisted (schema v10) and read by the planner, so a plan is generated from stated intent rather than a question string | AT-03, AT-10 |
+| 2 | **Quality beyond missingness** — DONE (**P8-QUALITY-002**): five new defect classes in the one-scan profile (invalid types, inconsistent categories, date gaps, extreme values, insufficient coverage), each with an impact sentence | AT-08, AT-09 |
+| 3 | **Validation, 3 checks to 9 dimensions** — DONE (**P8-VALID-003**): question, data, quality, method, calculation, evidence, assumptions, alternatives, causality - each a check with a sentence, never a score | AT-17 |
+| 4 | **The causal-language guard** — DONE (**P8-CAUSAL-004**): an unsupported causal claim is refused, not merely commented on; a 50-case corpus measures 100% on all three of AT-18's thresholds | AT-18 |
+| 5 | **The analytical golden suite** — DONE (**P8-GOLDEN-005**): three fixtures, 21 reference calculations over all ten of AT-40's shapes, each expectation verified two ways before the engine ran; AT-40's match rate and AT-01's completion rate are measured numbers | AT-40, AT-01 |
+| 6 | **The orientation spine** — DONE (**P8-SHELL-006**): the workflow rail, the case overview and the three-zone workspace; AT-33's seven questions answerable from the rendered workspace | AT-33..35, UX §5/7/8/45 |
+| 7 | **Question refinement** — DONE (**P8-REFINE-007**): a sharpening grounded in the profile's measured columns and ranges, with the three paths (accept / edit / keep) and the original preserved on every one; 50 cases measure AT-04's four thresholds | AT-04 |
+| 8 | **The decision view** — DONE (**P8-DECISION-008**): the loop's exit. The verdict is persisted (all nine checks, not only the status), the view reads it without executing anything, the implications are the view's only write, and the export carries both | UX 46, AT-43 |
+| 9 | **The measurement layer** — DONE (**P8-MEASURE-009**): one runner folds five measurements into a report with a verdict per acceptance test and exits non-zero when one does not hold. AT-38 core 93.9% / analytical 92.9% / evidence 92.4%; AT-28 p95 223ms; AT-29 p95 1.5s; AT-46 at the envelope; AT-45 declared and enforced; AT-37 0 critical / 0 high | AT-27..30, 32, 37, 38, 45, 46 |
+| 10 | **The requirement-traceability matrix** — DONE (**P8-TRACE-010**): the PRD's own section 59 control artifact, as code. 48 rows carry every acceptance threshold from the PRD through the UX surface, the implementation and the test to the threshold that says it holds, and one runner resolves every cell against the repository as it stands - a renamed symbol, a deleted test, a moved section or a red report fails the gate rather than reading as a claim. AT-48: 15/15 P0 (100%), 33/33 P1 (>= 95%) | AT-48 |
+
+**What the phase leaves behind:** every PRD threshold is now either a measured
+number with a committed report behind it or a threshold asserted by a named
+test, and the matrix that says which is itself gated. Two bugs the phase's
+measurement exposed, each fixed with its own tests: profiling re-parsed the CSV
+once per bounded lookup (12.5s over a 5s target, now 1.7s with one
+materialisation), and the coverage counter's denominator counted
+function-signature lines the interpreter never reports.
+
+**Next:** the v0.3.0 release. With CI's billing still suspended the artifacts
+are built and published locally from the same steps `release.yml` runs, as
+v0.2.0's were. After that the roadmap's remaining ladder - cloud,
+collaboration, warehouse connectors, governance - stays deferred at a user
+count of one, and the conformance evaluation's deliberately-not-built list
+(the Analysis Canvas, the command palette, the Knowledge nav item) is explicit
+deferral, not backlog.
