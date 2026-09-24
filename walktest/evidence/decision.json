@@ -1,0 +1,56 @@
+{
+ "case_id": "23fd9c29-4eed-48ec-82eb-a8b8742ad4dc",
+ "question": "Mengapa revenue September tidak kembali ke puncak Juli padahal jumlah order sudah pulih? split by channel (3 values)?",
+ "purpose": "",
+ "loop_closed": true,
+ "findings": [
+  {
+   "id": "a9f352f5-b19a-487b-83a4-01eeef898e9c",
+   "statement": "revenue spans 1034616.27 to 6296140.8 across 3 row(s)",
+   "validation_status": "partially_supported",
+   "interpretation": "the result's revenue varies between 1034616.27 and 6296140.8, but the result names no dimension to attribute the spread to",
+   "caveat": "a range is an observation, not a comparison; no grouping is present to explain it",
+   "uncertainty": [
+    {
+     "dimension": "data",
+     "detail": "account_id contains 1.2% missing values; rows may be silently excluded from comparisons grouped by it.",
+     "hard": false
+    },
+    {
+     "dimension": "method",
+     "detail": "the question names channel but the query does not read it, so the computation cannot be about what was asked",
+     "hard": false
+    },
+    {
+     "dimension": "alternative_explanations",
+     "detail": "the question names revenue but the query never reads it, so an explanation resting on it is untested",
+     "hard": false
+    }
+   ],
+   "validated_at": "2026-09-24T17:51:49.892543Z"
+  }
+ ],
+ "open_items": [
+  {
+   "id": "4d6ccc85-a5a1-4cf4-95bd-027b5d5a7ba2",
+   "statement": "2026-07 has the highest revenue at 1526309.57, the largest of 44 grouped value(s)",
+   "validation_status": "insufficient_evidence",
+   "reasons": [
+    "the finding quotes values absent from its own result: -7.0, 2026.0"
+   ]
+  }
+ ],
+ "implications": [
+  "Premis pertanyaan salah: revenue September (6,30 jt) SUDAH melampaui Juli (6,11 jt). Yang berubah adalah mix - share Hardware naik 33,% -> 41,%, ukuran order hardware ~2,3x. Implikasi: forecast Q4 pakai asumsi mix September, bukan rata-rata Q3."
+ ],
+ "updated_at": "2026-09-24T22:28:51.771820Z",
+ "counts": {
+  "findings": 2,
+  "key_findings": 1,
+  "supported": 0,
+  "partially_supported": 1,
+  "open_items": 1,
+  "open_checks": 3,
+  "implications": 1
+ }
+}

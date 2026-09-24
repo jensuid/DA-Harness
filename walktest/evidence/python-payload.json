@@ -1,0 +1,3 @@
+{
+  "code": "from collections import defaultdict\n\nby_month = defaultdict(lambda: {\"revenue\": 0.0, \"orders\": set(), \"units\": 0})\nfor row in dataset.rows:\n    m = row[\"order_date\"][:7]\n    by_month[m][\"revenue\"] += float(row[\"revenue\"] or 0)\n    by_month[m][\"orders\"].add(row[\"order_id\"])\n    by_month[m][\"units\"] += int(row[\"units\"] or 0)\n\nresult = [\n    {\n        \"bulan\": m,\n        \"revenue\": round(by_month[m][\"revenue\"], 2),\n        \"jumlah_order\": len(by_month[m][\"orders\"]),\n        \"units\": by_month[m][\"units\"],\n    }\n    for m in sorted(by_month)\n]"
+}

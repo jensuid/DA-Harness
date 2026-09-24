@@ -1,0 +1,485 @@
+order_id,order_date,quarter,account_id,account_name,industry,segment,region,product_sku,product_name,category,units,unit_price,revenue,rep,channel,discount_pct
+ORD-100331,2026-09-29,2026-Q3,ACC-5007,Ironclad Manufacturing,Manufacturing,Enterprise,Central,SKU-4001,Drift Integrator,Svc,20,640.0,12800.0,R-04 Marcus Bell,Partner,0
+ORD-100283,2026-08-19,2026-Q3,ACC-5009,Vanguard Insurance,Financial Services,Mid-Market,West,SKU-2001,Beacon Analytics,Software,2,2400.0,4800.0,R-05 Sara Nadeau,Partner,10
+ORD-100280,2026-08-08,2026-Q3,ACC-5001,Meridian Health Group,Healthcare,Enterprise,South,SKU-3001,Cobalt Storage,Hardware,7,3400.0,23800.0,R-05 Sara Nadeau,Direct,0
+ORD-100091,2026-07-09,2026-Q3,ACC-5003,Northwind Capital,Financial Services,Enterprise,Central,SKU-2001,Beacon Analytics,Software,37,2400.0,88800.0,R-01 Dana Okafor,Online Self-Serve,5
+ORD-100133,2026-07-01,2026-Q3,ACC-5008,Lumen Education,Education,Mid-Market,South,SKU-3002,Cobalt Storage,Service,7,420.0,2940.0,R-05 Sara Nadeau,Partner,0
+ORD-100169,2026-07-06,2026-Q3,ACC-5012,Riverside Council,Public Sector,Mid-Market,Central,SKU-2001,Beacon Analytics,Software,14,2400.0,33600.0,R-01 Dana Okafor,Online Self-Serve,10
+ORD-100351,2026-09-07,2026-Q3,ACC-5003,Northwind Capital,Financial Services,Enterprise,South,SKU-4001,Drift Integrator,Service,13,640.0,8320.0,R-02 Theo Lindqvist,Partner,0
+ORD-100201,2026-08-02,2026-Q3,ACC-5012,Riverside Council,Public Sector,Mid-Market,North,SKU-1001,Atom Workspace,Software,10,1200.0,17073.73,R-03 Priya Raman,Online Self-Serve,5
+ORD-100024,2026-07-09,2026-Q3,ACC-5001,Meridian Health Group,Healthcare,Enterprise,South,SKU-4001,Drift Integrator,Service,12,640.0,7680.0,R-02 Theo Lindqvist,Partner,0
+ORD-100344,2026-09-30,2026-Q3,ACC-5002,Atlas Logistics,Transportation,Enterprise,West,SKU-2001,Beacon Analytics,Software,48,2400.0,115200.0,R-04 Marcus Bell,Direct,10
+ORD-100016,2026-07-07,2026-Q3,ACC-5009,Vanguard Insurance,Financial Services,Mid-Market,North,SKU-3001,Cobalt Storage,Hardware,14,3400.0,47600.0,R-01 Dana Okafor,Online Self-Serve,10
+ORD-100003,2026-07-24,2026-Q3,ACC-5005,Crestline Energy,Energy,Enterprise,East,SKU-1001,Atom Workspace,Software,15,1200.0,18000.0,R-01 Dana Okafor,Direct,10
+ORD-100371,2026-09-21,2026-Q3,ACC-5003,Northwind Capital,Financial Services,Enterprise,West,SKU-4001,Drift Integrator,Svc,14,640.0,8960.0,R-02 Theo Lindqvist,Online Self-Serve,0
+ORD-100435,2026-09-22,2026-Q3,ACC-5002,Atlas Logistics,Transportation,Enterprise,Central,SKU-2001,Beacon Analytics,Software,26,2400.0,62400.0,R-05 Sara Nadeau,Online Self-Serve,0
+ORD-100134,2026-07-06,2026-Q3,ACC-5002,Atlas Logistics,Transportation,Enterprise,East,SKU-2002,Beacon Insights,Software,14,1500.0,21000.0,R-01 Dana Okafor,Direct,10
+ORD-100216,2026-08-22,2026-Q3,ACC-5012,Riverside Council,Public Sector,Mid-Market,North,SKU-2001,Beacon Analytics,Software,8,2400.0,19200.0,R-02 Theo Lindqvist,Partner,0
+ORD-100084,2026-07-31,2026-Q3,ACC-5006,Solstice Media,Media,Mid-Market,East,SKU-4001,Drift Integrator,Service,21,640.0,13440.0,R-04 Marcus Bell,Online Self-Serve,0
+ORD-100391,2026-09-30,2026-Q3,ACC-5007,Ironclad Manufacturing,Manufacturing,Enterprise,Central,SKU-3001,Cobalt Storage,Hardware,48,3400.0,163200.0,R-01 Dana Okafor,Direct,0
+ORD-100256,2026-08-02,2026-Q3,ACC-5012,Riverside Council,Public Sector,Mid-Market,East,SKU-2001,Beacon Analytics,Software,5,2400.0,20782.54,R-03 Priya Raman,Online Self-Serve,5
+ORD-100439,2026-09-08,2026-Q3,ACC-5007,Ironclad Manufacturing,Manufacturing,Enterprise,South,SKU-1002,Atom Workspace,Service,7,180.0,1260.0,R-04 Marcus Bell,Partner,10
+ORD-100040,2026-07-26,2026-Q3,ACC-5011,Quantum Leap Labs,Technology,Small,West,SKU-3002,Cobalt Storage,Service,2,420.0,840.0,R-03 Priya Raman,Direct,5
+ORD-100178,2026-07-25,2026-Q3,ACC-5003,Northwind Capital,Financial Services,Enterprise,East,SKU-2001,Beacon Analytics,Software,7,2400.0,16800.0,R-02 Theo Lindqvist,Direct,5
+ORD-100224,2026-08-07,2026-Q3,ACC-5004,Bluepine Retail,Retail,Mid-Market,East,SKU-3001,Cobalt Storage,Hardware,9,3400.0,30600.0,R-02 Theo Lindqvist,Online Self-Serve,20
+ORD-100017,2026-07-02,2026-Q3,ACC-5001,Meridian Health Group,Healthcare,Enterprise,West,SKU-3001,Cobalt Storage,Hardware,24,3400.0,81600.0,R-04 Marcus Bell,Direct,5
+ORD-100213,2026-08-15,2026-Q3,ACC-5005,Crestline Energy,Energy,Enterprise,West,SKU-3002,Cobalt Storage,Service,3,420.0,1260.0,R-01 Dana Okafor,Direct,0
+ORD-100196,2026-08-10,2026-Q3,ACC-5001,Meridian Health Group,Healthcare,Enterprise,South,SKU-3002,Cobalt Storage,Service,5,420.0,2100.0,R-05 Sara Nadeau,Direct,10
+ORD-100075,2026-07-08,2026-Q3,ACC-5005,Crestline Energy,Energy,Enterprise,East,SKU-1002,Atom Workspace,Service,23,180.0,4140.0,R-04 Marcus Bell,Online Self-Serve,0
+ORD-100162,2026-07-05,2026-Q3,ACC-5002,Atlas Logistics,Transportation,Enterprise,West,SKU-3001,Cobalt Storage,HW,40,3400.0,136000.0,R-04 Marcus Bell,Online Self-Serve,5
+ORD-100383,2026-09-10,2026-Q3,ACC-5005,Crestline Energy,Energy,Enterprise,South,SKU-1002,Atom Workspace,Service,30,180.0,5400.0,R-04 Marcus Bell,Online Self-Serve,0
+ORD-100309,2026-08-18,2026-Q3,ACC-5003,Northwind Capital,Financial Services,Enterprise,East,SKU-5001,Ember Secure,Software,1,980.0,980.0,R-02 Theo Lindqvist,Online Self-Serve,10
+ORD-100011,2026-07-07,2026-Q3,ACC-5004,Bluepine Retail,Retail,Mid-Market,North,SKU-5001,Ember Secure,Software,25,980.0,24500.0,R-05 Sara Nadeau,Partner,5
+ORD-100467,2026-09-14,2026-Q3,ACC-5003,Northwind Capital,Financial Services,Enterprise,East,SKU-3001,Cobalt Storage,Hardware,5,3400.0,34315.5,R-03 Priya Raman,Direct,0
+ORD-100258,2026-08-29,2026-Q3,ACC-5003,Northwind Capital,Financial Services,Enterprise,Central,SKU-3001,Cobalt Storage,HW,10,3400.0,34000.0,R-01 Dana Okafor,Direct,10
+ORD-100129,2026-07-01,2026-Q3,ACC-5009,Vanguard Insurance,Financial Services,Mid-Market,South,SKU-3001,Cobalt Storage,Hardware,9,3400.0,30600.0,R-04 Marcus Bell,Partner,0
+ORD-100059,2026-07-20,2026-Q3,ACC-5008,Lumen Education,Education,Mid-Market,East,SKU-2002,Beacon Insights,Software,34,1500.0,51000.0,R-03 Priya Raman,Online Self-Serve,5
+ORD-100398,2026-09-11,2026-Q3,ACC-5005,Crestline Energy,Energy,Enterprise,West,SKU-1002,Atom Workspace,Service,8,180.0,1440.0,R-03 Priya Raman,Online Self-Serve,10
+ORD-100009,2026-07-14,2026-Q3,ACC-5003,Northwind Capital,Financial Services,Enterprise,South,SKU-1002,Atom Workspace,Service,30,180.0,5400.0,R-01 Dana Okafor,Direct,0
+ORD-100413,2026-09-16,2026-Q3,ACC-5001,Meridian Health Group,Healthcare,Enterprise,Central,SKU-1002,Atom Workspace,Service,26,180.0,4680.0,R-01 Dana Okafor,Direct,0
+ORD-100376,2026-09-08,2026-Q3,ACC-5003,Northwind Capital,Financial Services,Enterprise,Central,SKU-5001,Ember Secure,Software,7,980.0,6860.0,R-05 Sara Nadeau,Online Self-Serve,0
+ORD-100264,2026-08-23,2026-Q3,ACC-5004,Bluepine Retail,Retail,Mid-Market,Central,SKU-1002,Atom Workspace,Service,12,180.0,2160.0,R-04 Marcus Bell,Direct,0
+ORD-100262,2026-08-30,2026-Q3,ACC-5001,Meridian Health Group,Healthcare,Enterprise,North,SKU-1002,Atom Workspace,Service,8,180.0,1440.0,R-03 Priya Raman,Partner,20
+ORD-100039,2026-07-12,2026-Q3,ACC-5002,Atlas Logistics,Transportation,Enterprise,North,SKU-5001,Ember Secure,Software,32,980.0,31360.0,R-01 Dana Okafor,Online Self-Serve,15
+ORD-100337,2026-09-13,2026-Q3,ACC-5001,Meridian Health Group,Healthcare,Enterprise,West,SKU-3001,Cobalt Storage,Hardware,19,3400.0,64600.0,R-02 Theo Lindqvist,Direct,5
+ORD-100450,2026-09-13,2026-Q3,ACC-5001,Meridian Health Group,Healthcare,Enterprise,East,SKU-3001,Cobalt Storage,Hardware,29,3400.0,98600.0,R-04 Marcus Bell,Partner,0
+ORD-100225,2026-08-20,2026-Q3,ACC-5006,Solstice Media,Media,Mid-Market,North,SKU-1001,Atom Workspace,Software,3,1200.0,3600.0,R-01 Dana Okafor,Partner,0
+ORD-100356,2026-09-10,2026-Q3,ACC-5003,Northwind Capital,Financial Services,Enterprise,West,SKU-2001,Beacon Analytics,Software,10,2400.0,24000.0,R-05 Sara Nadeau,Partner,5
+ORD-100203,2026-08-08,2026-Q3,ACC-5009,Vanguard Insurance,Financial Services,Mid-Market,East,SKU-5001,Ember Secure,Software,4,980.0,3920.0,R-03 Priya Raman,Online Self-Serve,5
+ORD-100188,2026/07/04,2026-Q3,ACC-5003,Northwind Capital,Financial Services,Enterprise,East,SKU-1002,Atom Workspace,Service,36,180.0,6480.0,R-03 Priya Raman,Partner,0
+ORD-100461,2026-09-28,2026-Q3,ACC-5003,Northwind Capital,Financial Services,Enterprise,East,SKU-2002,Beacon Insights,Software,28,1500.0,42000.0,R-02 Theo Lindqvist,Online Self-Serve,0
+ORD-100128,2026-07-09,2026-Q3,ACC-5005,Crestline Energy,Energy,Enterprise,South,SKU-5001,Ember Secure,Software,21,980.0,20580.0,R-04 Marcus Bell,Online Self-Serve,0
+ORD-100243,2026-08-22,2026-Q3,ACC-5004,Bluepine Retail,Retail,Mid-Market,North,SKU-2001,Beacon Analytics,Software,5,2400.0,12000.0,R-02 Theo Lindqvist,Partner,20
+ORD-100051,2026-07-19,2026-Q3,ACC-5011,Quantum Leap Labs,Technology,Small,South,SKU-1002,Atom Workspace,Service,37,180.0,6660.0,R-01 Dana Okafor,Online Self-Serve,5
+ORD-100223,2026-08-18,2026-Q3,ACC-5005,Crestline Energy,Energy,Enterprise,South,SKU-1001,Atom Workspace,Software,2,1200.0,2400.0,R-02 Theo Lindqvist,Direct,5
+ORD-100137,2026-07-10,2026-Q3,ACC-5010,Harbor & Field,Retail,Small,West,SKU-1001,Atom Workspace,Software,31,1200.0,37200.0,R-01 Dana Okafor,Partner,10
+ORD-100150,2026-07-21,2026-Q3,ACC-5008,Lumen Education,Education,Mid-Market,East,SKU-1002,Atom Workspace,Service,9,180.0,1620.0,R-05 Sara Nadeau,Direct,5
+ORD-100479,2026-09-21,2026-Q3,ACC-5001,Meridian Health Group,Healthcare,Enterprise,East,SKU-1002,Atom Workspace,Service,45,180.0,8100.0,R-02 Theo Lindqvist,Online Self-Serve,10
+ORD-100032,2026-07-16,2026-Q3,ACC-5009,Vanguard Insurance,Financial Services,Mid-Market,West,SKU-5001,Ember Secure,Software,28,980.0,27440.0,R-02 Theo Lindqvist,Online Self-Serve,10
+ORD-100105,2026-07-07,2026-Q3,ACC-5004,Bluepine Retail,Retail,Mid-Market,West,SKU-3001,Cobalt Storage,Hardware,31,3400.0,105400.0,R-04 Marcus Bell,Direct,0
+ORD-100270,2026-08-28,2026-Q3,ACC-5010,Harbor & Field,Retail,Small,East,SKU-2002,Beacon Insights,Software,1,1500.0,1500.0,R-04 Marcus Bell,Partner,20
+ORD-100348,2026-09-27,2026-Q3,ACC-5001,Meridian Health Group,Healthcare,Enterprise,Central,SKU-5001,Ember Secure,Software,30,980.0,29400.0,R-04 Marcus Bell,Direct,0
+ORD-100471,2026-09-22,2026-Q3,ACC-5005,Crestline Energy,Energy,Enterprise,West,SKU-1001,Atom Workspace,Software,26,1200.0,31200.0,R-05 Sara Nadeau,Direct,0
+ORD-100423,2026-09-07,2026-Q3,ACC-5007,Ironclad Manufacturing,Manufacturing,Enterprise,East,SKU-3001,Cobalt Storage,Hardware,12,3400.0,40800.0,R-04 Marcus Bell,Online Self-Serve,0
+ORD-100038,2026-07-21,2026-Q3,ACC-5007,Ironclad Manufacturing,Manufacturing,Enterprise,West,SKU-2001,Beacon Analytics,Software,5,2400.0,12000.0,R-04 Marcus Bell,Online Self-Serve,0
+ORD-100428,2026-09-16,2026-Q3,ACC-5002,Atlas Logistics,Transportation,Enterprise,North,SKU-2001,Beacon Analytics,Software,34,2400.0,81600.0,R-01 Dana Okafor,Partner,0
+ORD-100148,2026-07-01,2026-Q3,ACC-5003,Northwind Capital,Financial Services,Enterprise,West,SKU-4001,Drift Integrator,Service,23,640.0,14720.0,R-02 Theo Lindqvist,Online Self-Serve,10
+ORD-100117,2026-07-08,2026-Q3,ACC-5004,Bluepine Retail,Retail,Mid-Market,West,SKU-2002,Beacon Insights,Software,20,1500.0,30000.0,R-02 Theo Lindqvist,Direct,15
+ORD-100367,2026-09-17,2026-Q3,ACC-5002,Atlas Logistics,Transportation,Enterprise,North,SKU-4001,Drift Integrator,Svc,45,640.0,28800.0,R-03 Priya Raman,Direct,5
+ORD-100082,2026-07-06,2026-Q3,ACC-5004,Bluepine Retail,Retail,Mid-Market,West,SKU-1001,Atom Workspace,Software,6,1200.0,7200.0,R-05 Sara Nadeau,Online Self-Serve,0
+ORD-100278,2026-08-30,2026-Q3,ACC-5007,Ironclad Manufacturing,Manufacturing,Enterprise,West,SKU-4001,Drift Integrator,Service,5,640.0,3200.0,R-02 Theo Lindqvist,Online Self-Serve,5
+ORD-100466,2026-09-06,2026-Q3,ACC-5002,Atlas Logistics,Transportation,Enterprise,East,SKU-2001,Beacon Analytics,Software,43,2400.0,103200.0,R-05 Sara Nadeau,Direct,0
+ORD-100158,2026-07-10,2026-Q3,,Atlas Logistics,Transportation,Enterprise,West,SKU-3002,Cobalt Storage,Service,10,420.0,4200.0,R-04 Marcus Bell,Partner,0
+ORD-100151,2026-07-23,2026-Q3,ACC-5004,Bluepine Retail,Retail,Mid-Market,West,SKU-2001,Beacon Analytics,Software,37,2400.0,88800.0,R-01 Dana Okafor,Online Self-Serve,0
+ORD-100377,2026-09-03,2026-Q3,ACC-5005,Crestline Energy,Energy,Enterprise,East,SKU-1002,Atom Workspace,Service,37,180.0,6660.0,R-05 Sara Nadeau,Partner,0
+ORD-100292,2026-08-24,2026-Q3,ACC-5007,Ironclad Manufacturing,Manufacturing,Enterprise,Central,SKU-2002,Beacon Insights,Software,9,1500.0,13500.0,R-02 Theo Lindqvist,Partner,20
+ORD-100152,2026-07-06,2026-Q3,,Northwind Capital,Financial Services,Enterprise,North,SKU-1002,Atom Workspace,Service,32,180.0,5760.0,R-05 Sara Nadeau,Online Self-Serve,0
+ORD-100282,2026-08-27,2026-Q3,ACC-5002,Atlas Logistics,Transportation,Enterprise,East,SKU-3001,Cobalt Storage,HW,9,3400.0,30600.0,R-01 Dana Okafor,Partner,-7.0
+ORD-100109,2026-07-20,2026-Q3,ACC-5002,Atlas Logistics,Transportation,Enterprise,North,SKU-2002,Beacon Insights,Software,35,1500.0,52500.0,R-01 Dana Okafor,Direct,0
+ORD-100019,2026/07/15,2026-Q3,ACC-5007,Ironclad Manufacturing,Manufacturing,Enterprise,South,SKU-1001,Atom Workspace,Software,22,1200.0,26400.0,R-03 Priya Raman,Partner,0
+ORD-100230,2026-08-17,2026-Q3,ACC-5010,Harbor & Field,Retail,Small,East,SKU-4001,Drift Integrator,Service,12,640.0,7680.0,R-05 Sara Nadeau,Online Self-Serve,0
+ORD-100459,2026-09-17,2026-Q3,ACC-5002,Atlas Logistics,Transportation,Enterprise,West,SKU-2002,Beacon Insights,Software,47,1500.0,70500.0,R-03 Priya Raman,Direct,5
+ORD-100130,2026-07-27,2026-Q3,ACC-5009,Vanguard Insurance,Financial Services,Mid-Market,Central,SKU-2001,Beacon Analytics,Software,2,2400.0,4800.0,R-02 Theo Lindqvist,Partner,0
+ORD-100147,2026-07-16,2026-Q3,ACC-5008,Lumen Education,Education,Mid-Market,North,SKU-2001,Beacon Analytics,Software,28,2400.0,67200.0,R-04 Marcus Bell,Partner,5
+ORD-100313,2026-09-15,2026-Q3,ACC-5002,Atlas Logistics,Transportation,Enterprise,East,SKU-5001,Ember Secure,Software,39,980.0,38220.0,R-04 Marcus Bell,Online Self-Serve,0
+ORD-100347,2026-09-03,2026-Q3,ACC-5007,Ironclad Manufacturing,Manufacturing,Enterprise,Central,SKU-4001,Drift Integrator,Service,46,640.0,29440.0,R-01 Dana Okafor,Partner,5
+ORD-100057,2026-07-27,2026-Q3,ACC-5010,Harbor & Field,Retail,Small,West,SKU-3001,Cobalt Storage,HW,24,3400.0,81600.0,R-03 Priya Raman,Partner,0
+ORD-100208,2026-08-02,2026-Q3,ACC-5007,Ironclad Manufacturing,Manufacturing,Enterprise,North,SKU-5001,Ember Secure,Software,6,980.0,5880.0,R-04 Marcus Bell,Partner,20
+ORD-100440,2026-09-14,2026-Q3,ACC-5005,Crestline Energy,Energy,Enterprise,North,SKU-1001,Atom Workspace,Software,5,1200.0,6000.0,R-03 Priya Raman,Direct,5
+ORD-100469,2026-09-12,2026-Q3,ACC-5007,Ironclad Manufacturing,Manufacturing,Enterprise,North,SKU-3002,Cobalt Storage,Service,49,420.0,36825.22,R-03 Priya Raman,Direct,0
+ORD-100172,2026-07-16,2026-Q3,ACC-5003,Northwind Capital,Financial Services,Enterprise,East,SKU-1001,Atom Workspace,Software,38,1200.0,45600.0,R-01 Dana Okafor,Direct,0
+ORD-100170,2026-07-22,2026-Q3,ACC-5012,Riverside Council,Public Sector,Mid-Market,South,SKU-2001,Beacon Analytics,Software,9999,2400.0,14400.0,R-05 Sara Nadeau,Partner,0
+ORD-100023,2026-07-30,2026-Q3,ACC-5002,Atlas Logistics,Transportation,Enterprise,East,SKU-2002,Beacon Insights,Software,39,1500.0,58500.0,R-04 Marcus Bell,Partner,15
+ORD-100108,2026-07-04,2026-Q3,ACC-5005,Crestline Energy,Energy,Enterprise,West,SKU-1002,Atom Workspace,Service,39,180.0,7020.0,R-03 Priya Raman,Direct,5
+ORD-100058,2026-07-04,2026-Q3,ACC-5002,Atlas Logistics,Transportation,Enterprise,South,SKU-5001,Ember Secure,Software,13,980.0,12740.0,R-03 Priya Raman,Partner,0
+ORD-100073,2026-07-05,2026-Q3,ACC-5011,Quantum Leap Labs,Technology,Small,North,SKU-3001,Cobalt Storage,HW,15,3400.0,51000.0,R-03 Priya Raman,Direct,0
+ORD-100378,2026-09-06,2026-Q3,ACC-5001,Meridian Health Group,Healthcare,Enterprise,West,SKU-5001,Ember Secure,Software,34,980.0,33320.0,R-01 Dana Okafor,Online Self-Serve,5
+ORD-100474,2026-09-21,2026-Q3,ACC-5005,Crestline Energy,Energy,Enterprise,West,SKU-3002,Cobalt Storage,Service,15,420.0,6300.0,R-03 Priya Raman,Partner,0
+ORD-100384,2026-09-16,2026-Q3,ACC-5001,Meridian Health Group,Healthcare,Enterprise,East,SKU-4001,Drift Integrator,Service,33,640.0,21120.0,R-05 Sara Nadeau,Partner,5
+ORD-100197,2026-08-06,2026-Q3,ACC-5004,Bluepine Retail,Retail,Mid-Market,Central,SKU-2001,Beacon Analytics,Software,3,2400.0,7200.0,R-01 Dana Okafor,Partner,0
+ORD-100406,2026-09-10,2026-Q3,ACC-5003,Northwind Capital,Financial Services,Enterprise,South,SKU-1002,Atom Workspace,Service,18,180.0,3240.0,R-04 Marcus Bell,Partner,0
+ORD-100089,2026-07-10,2026-Q3,ACC-5010,Harbor & Field,Retail,Small,East,SKU-2001,Beacon Analytics,Software,30,2400.0,72000.0,R-04 Marcus Bell,Direct,10
+ORD-100339,2026-09-09,2026-Q3,ACC-5003,Northwind Capital,Financial Services,Enterprise,East,SKU-2002,Beacon Insights,Software,10,1500.0,15000.0,R-01 Dana Okafor,Direct,5
+ORD-100104,2026-07-20,2026-Q3,ACC-5005,Crestline Energy,Energy,Enterprise,East,SKU-2001,Beacon Analytics,Software,39,2400.0,93600.0,R-02 Theo Lindqvist,Partner,0
+ORD-100385,2026-09-17,2026-Q3,ACC-5003,Northwind Capital,Financial Services,Enterprise,North,SKU-2002,Beacon Insights,Software,14,1500.0,21000.0,R-04 Marcus Bell,Partner,10
+ORD-100121,2026/07/22,2026-Q3,ACC-5012,Riverside Council,Public Sector,Mid-Market,North,SKU-2001,Beacon Analytics,Software,38,2400.0,91200.0,R-05 Sara Nadeau,Partner,0
+ORD-100401,2026-09-22,2026-Q3,ACC-5002,Atlas Logistics,Transportation,Enterprise,East,SKU-2002,Beacon Insights,Software,38,1500.0,57000.0,R-01 Dana Okafor,Direct,5
+ORD-100142,2026-07-15,2026-Q3,ACC-5006,Solstice Media,Media,Mid-Market,Central,SKU-3002,Cobalt Storage,Service,34,420.0,14280.0,R-02 Theo Lindqvist,Online Self-Serve,0
+ORD-100480,2026-09-12,2026-Q3,ACC-5002,Atlas Logistics,Transportation,Enterprise,East,SKU-1001,Atom Workspace,Software,50,1200.0,60000.0,R-02 Theo Lindqvist,Partner,0
+ORD-100136,2026-07-27,2026-Q3,ACC-5007,Ironclad Manufacturing,Manufacturing,Enterprise,West,SKU-3001,Cobalt Storage,Hardware,18,3400.0,61200.0,R-01 Dana Okafor,Direct,0
+ORD-100219,2026-08-01,2026-Q3,ACC-5002,Atlas Logistics,Transportation,Enterprise,South,SKU-3002,Cobalt Storage,Service,12,420.0,5040.0,R-01 Dana Okafor,Direct,20
+ORD-100164,2026-07-08,2026-Q3,ACC-5010,Harbor & Field,Retail,Small,West,SKU-3001,Cobalt Storage,Hardware,11,3400.0,37400.0,R-04 Marcus Bell,Direct,0
+ORD-100200,2026-08-08,2026-Q3,ACC-5010,Harbor & Field,Retail,Small,North,SKU-3002,Cobalt Storage,Service,3,420.0,1260.0,R-05 Sara Nadeau,Partner,20
+ORD-100168,2026-07-12,2026-Q3,ACC-5011,Quantum Leap Labs,Technology,Small,East,SKU-2001,Beacon Analytics,Software,13,2400.0,31200.0,R-02 Theo Lindqvist,Partner,0
+ORD-100141,2026-07-16,2026-Q3,ACC-5004,Bluepine Retail,Retail,Mid-Market,West,SKU-5001,Ember Secure,Software,18,980.0,36875.97,R-05 Sara Nadeau,Direct,5
+ORD-100097,2026-07-14,2026-Q3,ACC-5005,Crestline Energy,Energy,Enterprise,East,SKU-4001,Drift Integrator,Service,11,640.0,7040.0,R-04 Marcus Bell,Direct,0
+ORD-100255,2026-08-25,2026-Q3,ACC-5005,Crestline Energy,Energy,Enterprise,East,SKU-1001,Atom Workspace,Software,6,1200.0,7200.0,R-05 Sara Nadeau,Online Self-Serve,20
+ORD-100417,2026-09-16,2026-Q3,ACC-5005,Crestline Energy,Energy,Enterprise,South,SKU-2002,Beacon Insights,Software,13,1500.0,19500.0,R-04 Marcus Bell,Online Self-Serve,0
+ORD-100364,2026-09-07,2026-Q3,ACC-5007,Ironclad Manufacturing,Manufacturing,Enterprise,Central,SKU-1002,Atom Workspace,Service,32,180.0,5760.0,R-01 Dana Okafor,Direct,0
+ORD-100050,2026-07-13,2026-Q3,ACC-5007,Ironclad Manufacturing,Manufacturing,Enterprise,Central,SKU-5001,Ember Secure,Software,22,980.0,21560.0,R-05 Sara Nadeau,Direct,15
+ORD-100380,2026-09-24,2026-Q3,ACC-5001,Meridian Health Group,Healthcare,Enterprise,East,SKU-1002,Atom Workspace,Service,27,180.0,4860.0,R-01 Dana Okafor,Online Self-Serve,0
+ORD-100289,2026-08-11,2026-Q3,ACC-5012,Riverside Council,Public Sector,Mid-Market,South,SKU-1002,Atom Workspace,Service,7,180.0,1260.0,R-01 Dana Okafor,Online Self-Serve,0
+ORD-100087,2026-07-15,2026-Q3,ACC-5002,Atlas Logistics,Transportation,Enterprise,West,SKU-2001,Beacon Analytics,Software,39,2400.0,93600.0,R-02 Theo Lindqvist,Online Self-Serve,0
+ORD-100410,2026-09-07,2026-Q3,ACC-5007,Ironclad Manufacturing,Manufacturing,Enterprise,Central,SKU-1001,Atom Workspace,Software,20,1200.0,24000.0,R-05 Sara Nadeau,Direct,0
+ORD-100007,2026-07-09,2026-Q3,ACC-5008,Lumen Education,Education,Mid-Market,Central,SKU-2001,Beacon Analytics,Software,35,2400.0,84000.0,R-04 Marcus Bell,Online Self-Serve,0
+ORD-100447,2026-09-21,2026-Q3,ACC-5001,Meridian Health Group,Healthcare,Enterprise,Central,SKU-4001,Drift Integrator,Service,30,640.0,19200.0,R-02 Theo Lindqvist,Partner,5
+ORD-100259,2026-08-10,2026-Q3,ACC-5008,Lumen Education,Education,Mid-Market,South,SKU-4001,Drift Integrator,Service,2,640.0,1280.0,R-02 Theo Lindqvist,Partner,0
+ORD-100363,2026-09-22,2026-Q3,ACC-5001,Meridian Health Group,Healthcare,Enterprise,South,SKU-3001,Cobalt Storage,Hardware,43,3400.0,238373.26,R-01 Dana Okafor,Partner,5
+ORD-100177,2026-07-23,2026-Q3,ACC-5002,Atlas Logistics,Transportation,Enterprise,Central,SKU-3002,Cobalt Storage,Service,7,420.0,2940.0,R-02 Theo Lindqvist,Online Self-Serve,0
+ORD-100254,2026-08-02,2026-Q3,ACC-5003,Northwind Capital,Financial Services,Enterprise,West,SKU-2001,Beacon Analytics,Software,11,2400.0,26400.0,R-02 Theo Lindqvist,Partner,10
+ORD-100195,2026-08-29,2026-Q3,ACC-5004,Bluepine Retail,Retail,Mid-Market,West,SKU-1002,Atom Workspace,Service,5,180.0,900.0,R-01 Dana Okafor,Online Self-Serve,0
+ORD-100425,2026-09-03,2026-Q3,ACC-5003,Northwind Capital,Financial Services,Enterprise,North,SKU-4001,Drift Integrator,Service,39,640.0,24960.0,R-01 Dana Okafor,Direct,0
+ORD-100252,2026-08-28,2026-Q3,ACC-5012,Riverside Council,Public Sector,Mid-Market,Central,SKU-3001,Cobalt Storage,HW,8,3400.0,27200.0,R-01 Dana Okafor,Partner,5
+ORD-100341,2026-09-13,2026-Q3,ACC-5002,Atlas Logistics,Transportation,Enterprise,Central,SKU-4001,Drift Integrator,Service,23,640.0,14720.0,R-04 Marcus Bell,Partner,0
+ORD-100175,2026-07-27,2026-Q3,ACC-5009,Vanguard Insurance,Financial Services,Mid-Market,East,SKU-3002,Cobalt Storage,Service,19,420.0,7980.0,R-04 Marcus Bell,Online Self-Serve,10
+ORD-100232,2026-08-30,2026-Q3,ACC-5004,Bluepine Retail,Retail,Mid-Market,Central,SKU-4001,Drift Integrator,Service,12,640.0,7680.0,R-03 Priya Raman,Online Self-Serve,0
+ORD-100031,2026-07-17,2026-Q3,ACC-5001,Meridian Health Group,Healthcare,Enterprise,West,SKU-4001,Drift Integrator,Svc,8,640.0,5120.0,R-02 Theo Lindqvist,Online Self-Serve,0
+ORD-100308,2026-08-21,2026-Q3,ACC-5009,Vanguard Insurance,Financial Services,Mid-Market,South,SKU-5001,Ember Secure,Software,5,980.0,4900.0,R-01 Dana Okafor,Partner,5
+ORD-100392,2026-09-01,2026-Q3,ACC-5001,Meridian Health Group,Healthcare,Enterprise,North,SKU-1002,Atom Workspace,Service,18,180.0,3240.0,R-04 Marcus Bell,Online Self-Serve,0
+ORD-100193,2026-08-08,2026-Q3,ACC-5001,Meridian Health Group,Healthcare,Enterprise,South,SKU-1002,Atom Workspace,Service,5,180.0,900.0,R-03 Priya Raman,Partner,0
+ORD-100382,2026-09-27,2026-Q3,ACC-5001,Meridian Health Group,Healthcare,Enterprise,Central,SKU-3001,Cobalt Storage,HW,15,3400.0,51000.0,R-03 Priya Raman,Online Self-Serve,0
+ORD-100094,2026-07-06,2026-Q3,ACC-5010,Harbor & Field,Retail,Small,Central,SKU-2001,Beacon Analytics,Software,5,2400.0,12000.0,R-05 Sara Nadeau,Partner,5
+ORD-100063,2026-07-11,2026-Q3,ACC-5003,Northwind Capital,Financial Services,Enterprise,West,SKU-1002,Atom Workspace,Service,22,180.0,3960.0,R-04 Marcus Bell,Partner,10
+ORD-100390,2026-09-15,2026-Q3,ACC-5001,Meridian Health Group,Healthcare,Enterprise,Central,SKU-1002,Atom Workspace,Service,32,180.0,5760.0,R-05 Sara Nadeau,Online Self-Serve,0
+ORD-100310,2026-08-06,2026-Q3,ACC-5006,Solstice Media,Media,Mid-Market,East,SKU-5001,Ember Secure,Software,2,980.0,1960.0,R-05 Sara Nadeau,Partner,10
+ORD-100424,2026/09/02,2026-Q3,ACC-5005,Crestline Energy,Energy,Enterprise,North,SKU-1001,Atom Workspace,Software,41,1200.0,49200.0,R-01 Dana Okafor,Online Self-Serve,0
+ORD-100277,2026-08-20,2026-Q3,ACC-5004,Bluepine Retail,Retail,Mid-Market,South,SKU-1001,Atom Workspace,Software,9,1200.0,10800.0,R-04 Marcus Bell,Partner,0
+ORD-100008,2026-07-28,2026-Q3,ACC-5012,Riverside Council,Public Sector,Mid-Market,West,SKU-1002,Atom Workspace,Service,3,180.0,540.0,R-02 Theo Lindqvist,Online Self-Serve,-7.0
+ORD-100334,2026-09-15,2026-Q3,ACC-5005,Crestline Energy,Energy,Enterprise,Central,SKU-1002,Atom Workspace,Service,36,180.0,12036.46,R-03 Priya Raman,Online Self-Serve,5
+ORD-100320,2026-09-27,2026-Q3,ACC-5003,Northwind Capital,Financial Services,Enterprise,North,SKU-1001,Atom Workspace,Software,42,1200.0,50400.0,R-02 Theo Lindqvist,Direct,10
+ORD-100473,2026-09-06,2026-Q3,ACC-5005,Crestline Energy,Energy,Enterprise,Central,SKU-5001,Ember Secure,Software,21,980.0,20580.0,R-03 Priya Raman,Online Self-Serve,5
+ORD-100095,2026-07-03,2026-Q3,ACC-5005,Crestline Energy,Energy,Enterprise,West,SKU-2002,Beacon Insights,Software,3,1500.0,4500.0,R-01 Dana Okafor,Online Self-Serve,15
+ORD-100157,2026-07-15,2026-Q3,ACC-5006,Solstice Media,Media,Mid-Market,South,SKU-2002,Beacon Insights,Software,6,1500.0,9000.0,R-02 Theo Lindqvist,Partner,10
+ORD-100214,2026-08-21,2026-Q3,ACC-5001,Meridian Health Group,Healthcare,Enterprise,East,SKU-5001,Ember Secure,Software,8,980.0,7840.0,R-01 Dana Okafor,Online Self-Serve,0
+ORD-100198,2026-08-05,2026-Q3,ACC-5011,Quantum Leap Labs,Technology,Small,East,SKU-3002,Cobalt Storage,Service,2,420.0,840.0,R-03 Priya Raman,Online Self-Serve,10
+ORD-100072,2026-07-06,2026-Q3,ACC-5005,Crestline Energy,Energy,Enterprise,Central,SKU-1001,Atom Workspace,Software,29,1200.0,34800.0,R-01 Dana Okafor,Partner,0
+ORD-100118,2026-07-15,2026-Q3,ACC-5005,Crestline Energy,Energy,Enterprise,North,SKU-1001,Atom Workspace,Software,7,1200.0,8400.0,R-05 Sara Nadeau,Direct,0
+ORD-100069,2026-07-05,2026-Q3,ACC-5005,Crestline Energy,Energy,Enterprise,East,SKU-3001,Cobalt Storage,Hardware,14,3400.0,47600.0,R-02 Theo Lindqvist,Online Self-Serve,15
+ORD-100434,2026-09-11,2026-Q3,ACC-5007,Ironclad Manufacturing,Manufacturing,Enterprise,South,SKU-2001,Beacon Analytics,Software,6,2400.0,14400.0,R-01 Dana Okafor,Online Self-Serve,0
+ORD-100086,2026-07-28,2026-Q3,ACC-5006,Solstice Media,Media,Mid-Market,West,SKU-3001,Cobalt Storage,HW,7,3400.0,23800.0,R-04 Marcus Bell,Online Self-Serve,0
+ORD-100409,2026-09-25,2026-Q3,ACC-5003,Northwind Capital,Financial Services,Enterprise,West,SKU-4001,Drift Integrator,Service,35,640.0,22400.0,R-02 Theo Lindqvist,Direct,0
+ORD-100035,2026-07-28,2026-Q3,ACC-5001,Meridian Health Group,Healthcare,Strategic,East,SKU-3002,Cobalt Storage,Service,6,420.0,2520.0,R-03 Priya Raman,Online Self-Serve,0
+ORD-100055,2026-07-10,2026-Q3,,Northwind Capital,Financial Services,Enterprise,North,SKU-3001,Cobalt Storage,Hardware,40,3400.0,136000.0,R-01 Dana Okafor,Direct,15
+ORD-100477,2026-09-09,2026-Q3,ACC-5001,Meridian Health Group,Healthcare,Enterprise,Central,SKU-3001,Cobalt Storage,Hardware,29,3400.0,98600.0,R-04 Marcus Bell,Direct,10
+ORD-100095,2026-07-03,2026-Q3,ACC-5005,Crestline Energy,Energy,Enterprise,West,SKU-2002,Beacon Insights,Software,3,1500.0,4500.0,R-01 Dana Okafor,Online Self-Serve,15
+ORD-100328,2026-09-27,2026-Q3,ACC-5001,Meridian Health Group,Healthcare,Enterprise,Central,SKU-4001,Drift Integrator,Service,8,640.0,5120.0,R-02 Theo Lindqvist,Direct,0
+ORD-100386,2026-09-21,2026-Q3,ACC-5001,Meridian Health Group,Healthcare,Enterprise,Central,SKU-3002,Cobalt Storage,Service,34,420.0,14280.0,R-02 Theo Lindqvist,Direct,0
+ORD-100119,2026-07-12,2026-Q3,ACC-5012,Riverside Council,Public Sector,Mid-Market,Central,SKU-2001,Beacon Analytics,Software,18,2400.0,43200.0,R-05 Sara Nadeau,Partner,0
+ORD-100361,2026-09-09,2026-Q3,ACC-5005,Crestline Energy,Energy,Enterprise,South,SKU-5001,Ember Secure,Software,19,980.0,18620.0,R-05 Sara Nadeau,Direct,0
+ORD-100275,2026-08-21,2026-Q3,ACC-5012,Riverside Council,Public Sector,Mid-Market,South,SKU-2001,Beacon Analytics,Software,11,2400.0,26400.0,R-03 Priya Raman,Direct,0
+ORD-100140,2026-07-22,2026-Q3,ACC-5005,Crestline Energy,Energy,Enterprise,Central,SKU-1001,Atom Workspace,Software,5,1200.0,6000.0,R-02 Theo Lindqvist,Online Self-Serve,0
+ORD-100161,2026-07-12,2026-Q3,ACC-5012,Riverside Council,Public Sector,Mid-Market,West,SKU-2002,Beacon Insights,Software,32,1500.0,48000.0,R-04 Marcus Bell,Partner,0
+ORD-100429,2026-09-17,2026-Q3,ACC-5007,Ironclad Manufacturing,Manufacturing,Enterprise,East,SKU-3002,Cobalt Storage,Service,13,420.0,5460.0,R-04 Marcus Bell,Online Self-Serve,5
+ORD-100373,2026-09-10,2026-Q3,ACC-5001,Meridian Health Group,Healthcare,Enterprise,Central,SKU-1002,Atom Workspace,Service,32,180.0,5760.0,R-05 Sara Nadeau,Partner,5
+ORD-100159,2026-07-29,2026-Q3,ACC-5006,Solstice Media,Media,Mid-Market,North,SKU-2001,Beacon Analytics,Software,30,2400.0,72000.0,R-05 Sara Nadeau,Direct,0
+ORD-100206,2026-08-06,2026-Q3,ACC-5012,Riverside Council,Public Sector,Mid-Market,West,SKU-5001,Ember Secure,Software,5,980.0,4900.0,R-04 Marcus Bell,Online Self-Serve,0
+ORD-100212,2026-08-18,2026-Q3,ACC-5002,Atlas Logistics,Transportation,Enterprise,South,SKU-1002,Atom Workspace,Service,7,180.0,1260.0,R-04 Marcus Bell,Direct,10
+ORD-100183,2026-07-20,2026-Q3,ACC-5008,Lumen Education,Education,Mid-Market,Central,SKU-3002,Cobalt Storage,Service,21,420.0,8820.0,R-04 Marcus Bell,Direct,0
+ORD-100160,2026-07-22,2026-Q3,ACC-5012,Riverside Council,Public Sector,Mid-Market,Central,SKU-1002,Atom Workspace,Service,12,180.0,2160.0,R-04 Marcus Bell,Partner,5
+ORD-100293,2026-08-08,2026-Q3,ACC-5007,Ironclad Manufacturing,Manufacturing,Enterprise,East,SKU-4001,Drift Integrator,Service,5,640.0,3200.0,R-01 Dana Okafor,Online Self-Serve,10
+ORD-100311,2026-09-25,2026-Q3,ACC-5001,Meridian Health Group,Healthcare,Enterprise,South,SKU-2001,Beacon Analytics,Software,31,2400.0,74400.0,R-02 Theo Lindqvist,Online Self-Serve,0
+ORD-100067,2026-07-31,2026-Q3,ACC-5010,Harbor & Field,Retail,Small,Central,SKU-3002,Cobalt Storage,Service,15,420.0,6300.0,R-01 Dana Okafor,Online Self-Serve,5
+ORD-100291,2026-08-21,2026-Q3,ACC-5009,Vanguard Insurance,Financial Services,Mid-Market,Central,SKU-2002,Beacon Insights,Software,2,1500.0,3000.0,R-02 Theo Lindqvist,Online Self-Serve,5
+ORD-100303,2026-08-01,2026-Q3,ACC-5002,Atlas Logistics,Transportation,Enterprise,East,SKU-1002,Atom Workspace,Service,8,180.0,1440.0,R-01 Dana Okafor,Partner,0
+ORD-100045,2026-07-06,2026-Q3,ACC-5001,Meridian Health Group,Healthcare,Enterprise,East,SKU-2002,Beacon Insights,Software,2,1500.0,3000.0,R-05 Sara Nadeau,Direct,15
+ORD-100460,2026-09-12,2026-Q3,ACC-5001,Meridian Health Group,Healthcare,Enterprise,South,SKU-2001,Beacon Analytics,Software,10,2400.0,24000.0,R-01 Dana Okafor,Partner,5
+ORD-100449,2026-09-16,2026-Q3,ACC-5005,Crestline Energy,Energy,Enterprise,West,SKU-2002,Beacon Insights,Software,22,1500.0,33000.0,R-03 Priya Raman,Direct,0
+ORD-100299,2026-08-25,2026-Q3,ACC-5003,Northwind Capital,Financial Services,Enterprise,South,SKU-4001,Drift Integrator,Svc,1,640.0,640.0,R-03 Priya Raman,Direct,10
+ORD-100349,2026-09-10,2026-Q3,ACC-5002,Atlas Logistics,Transportation,Enterprise,Central,SKU-1002,Atom Workspace,Service,47,180.0,8460.0,R-01 Dana Okafor,Direct,0
+ORD-100013,2026-07-24,2026-Q3,ACC-5006,Solstice Media,Media,Mid-Market,North,SKU-4001,Drift Integrator,Service,34,640.0,21760.0,R-02 Theo Lindqvist,Partner,0
+ORD-100312,2026-09-14,2026-Q3,ACC-5001,Meridian Health Group,Healthcare,Enterprise,South,SKU-3002,Cobalt Storage,Service,28,420.0,11760.0,R-02 Theo Lindqvist,Direct,5
+ORD-100127,2026-07-04,2026-Q3,ACC-5003,Northwind Capital,Financial Services,Enterprise,Central,SKU-5001,Ember Secure,Software,5,980.0,4900.0,R-04 Marcus Bell,Direct,0
+ORD-100454,2026-09-21,2026-Q3,ACC-5003,Northwind Capital,Financial Services,Enterprise,West,SKU-3002,Cobalt Storage,Service,15,420.0,6300.0,R-03 Priya Raman,Online Self-Serve,5
+ORD-100002,2026-07-25,2026-Q3,ACC-5009,Vanguard Insurance,Financial Services,Mid-Market,East,SKU-5001,Ember Secure,Software,23,980.0,22540.0,R-04 Marcus Bell,Online Self-Serve,0
+ORD-100445,2026-09-13,2026-Q3,ACC-5001,Meridian Health Group,Healthcare,Enterprise,East,SKU-2002,Beacon Insights,Software,18,1500.0,27000.0,R-01 Dana Okafor,Partner,0
+ORD-100266,2026-08-16,2026-Q3,ACC-5009,Vanguard Insurance,Financial Services,Mid-Market,North,SKU-5001,Ember Secure,Software,9,980.0,8820.0,R-05 Sara Nadeau,Online Self-Serve,10
+ORD-100374,2026-09-09,2026-Q3,ACC-5001,Meridian Health Group,Healthcare,Enterprise,East,SKU-4001,Drift Integrator,Service,31,640.0,19840.0,R-04 Marcus Bell,Direct,0
+ORD-100346,2026-09-21,2026-Q3,ACC-5007,Ironclad Manufacturing,Manufacturing,Enterprise,East,SKU-5001,Ember Secure,Software,8,980.0,7840.0,R-03 Priya Raman,Online Self-Serve,5
+ORD-100427,2026-09-07,2026-Q3,ACC-5001,Meridian Health Group,Healthcare,Enterprise,Central,SKU-3001,Cobalt Storage,Hardware,40,3400.0,136000.0,R-02 Theo Lindqvist,Partner,5
+ORD-100026,2026-07-08,2026-Q3,ACC-5006,Solstice Media,Media,Mid-Market,South,SKU-1002,Atom Workspace,Service,23,180.0,4140.0,R-01 Dana Okafor,Online Self-Serve,5
+ORD-100369,2026-09-23,2026-Q3,ACC-5005,Crestline Energy,Energy,Enterprise,Central,SKU-3002,Cobalt Storage,Service,7,420.0,2940.0,R-04 Marcus Bell,Online Self-Serve,5
+ORD-100061,2026-07-10,2026-Q3,ACC-5003,Northwind Capital,Financial Services,Enterprise,Central,SKU-2001,Beacon Analytics,Software,34,2400.0,81600.0,R-02 Theo Lindqvist,Partner,15
+ORD-100190,2026-07-31,2026-Q3,ACC-5005,Crestline Energy,Energy,Enterprise,South,SKU-5001,Ember Secure,Software,8,980.0,7840.0,R-02 Theo Lindqvist,Direct,0
+ORD-100245,2026-08-07,2026-Q3,ACC-5008,Lumen Education,Education,Mid-Market,Central,SKU-1001,Atom Workspace,Software,8,1200.0,9600.0,R-01 Dana Okafor,Direct,0
+ORD-100297,2026-08-05,2026-Q3,ACC-5008,Lumen Education,Education,Mid-Market,Central,SKU-3001,Cobalt Storage,Hardware,1,3400.0,3400.0,R-01 Dana Okafor,Online Self-Serve,20
+ORD-100387,2026-09-19,2026-Q3,ACC-5003,Northwind Capital,Financial Services,Enterprise,North,SKU-3001,Cobalt Storage,Hardware,50,3400.0,170000.0,R-02 Theo Lindqvist,Partner,10
+ORD-100184,2026-07-16,2026-Q3,ACC-5006,Solstice Media,Media,Mid-Market,Central,SKU-1001,Atom Workspace,Software,6,1200.0,7200.0,R-03 Priya Raman,Online Self-Serve,10
+ORD-100060,2026-07-21,2026-Q3,ACC-5005,Crestline Energy,Energy,Enterprise,West,SKU-2001,Beacon Analytics,Software,40,2400.0,96000.0,R-02 Theo Lindqvist,Partner,0
+ORD-100407,2026-09-05,2026-Q3,ACC-5001,Meridian Health Group,Healthcare,Enterprise,Central,SKU-2002,Beacon Insights,Software,27,1500.0,40500.0,R-04 Marcus Bell,Partner,5
+ORD-100305,2026-08-02,2026-Q3,ACC-5001,Meridian Health Group,Healthcare,Enterprise,North,SKU-3002,Cobalt Storage,Service,1,420.0,420.0,R-04 Marcus Bell,Online Self-Serve,5
+ORD-100411,2026-09-20,2026-Q3,ACC-5003,Northwind Capital,Financial Services,Enterprise,North,SKU-3001,Cobalt Storage,Hardware,5,3400.0,17000.0,R-02 Theo Lindqvist,Partner,0
+ORD-100415,2026-09-11,2026-Q3,ACC-5001,Meridian Health Group,Healthcare,Enterprise,South,SKU-1001,Atom Workspace,Software,37,1200.0,44400.0,R-05 Sara Nadeau,Direct,5
+ORD-100043,2026-07-10,2026-Q3,ACC-5004,Bluepine Retail,Retail,Mid-Market,East,SKU-2001,Beacon Analytics,Software,12,2400.0,28800.0,R-05 Sara Nadeau,Partner,5
+ORD-100343,2026-09-17,2026-Q3,ACC-5002,Atlas Logistics,Transportation,Enterprise,North,SKU-2002,Beacon Insights,Software,19,1500.0,28500.0,R-02 Theo Lindqvist,Online Self-Serve,10
+ORD-100229,2026-08-02,2026-Q3,ACC-5009,Vanguard Insurance,Financial Services,Mid-Market,Central,SKU-1001,Atom Workspace,Software,12,1200.0,14400.0,R-04 Marcus Bell,Online Self-Serve,0
+ORD-100238,2026-08-02,2026-Q3,ACC-5010,Harbor & Field,Retail,Small,North,SKU-2002,Beacon Insights,Software,11,1500.0,16500.0,R-05 Sara Nadeau,Direct,20
+ORD-100314,2026-09-10,2026-Q3,ACC-5005,Crestline Energy,Energy,Enterprise,East,SKU-5001,Ember Secure,Software,39,980.0,38220.0,R-05 Sara Nadeau,Direct,10
+ORD-100345,2026-09-29,2026-Q3,ACC-5007,Ironclad Manufacturing,Manufacturing,Enterprise,West,SKU-5001,Ember Secure,Software,40,980.0,39200.0,R-02 Theo Lindqvist,Online Self-Serve,0
+ORD-100145,2026-07-16,2026-Q3,ACC-5011,Quantum Leap Labs,Technology,Small,Central,SKU-5001,Ember Secure,Software,31,980.0,30380.0,R-01 Dana Okafor,Partner,15
+ORD-100116,2026-07-12,2026-Q3,ACC-5007,Ironclad Manufacturing,Manufacturing,Enterprise,West,SKU-1002,Atom Workspace,Service,25,180.0,4500.0,R-03 Priya Raman,Partner,15
+ORD-100227,2026-08-09,2026-Q3,ACC-5009,Vanguard Insurance,Financial Services,Mid-Market,South,SKU-3002,Cobalt Storage,Service,9,420.0,3780.0,R-04 Marcus Bell,Direct,0
+ORD-100046,2026-07-16,2026-Q3,ACC-5005,Crestline Energy,Energy,Enterprise,Central,SKU-1001,Atom Workspace,Software,27,1200.0,32400.0,R-03 Priya Raman,Direct,0
+ORD-100465,2026-09-24,2026-Q3,ACC-5003,Northwind Capital,Financial Services,Enterprise,East,SKU-1002,Atom Workspace,Service,32,180.0,5760.0,R-03 Priya Raman,Partner,5
+ORD-100033,2026-07-22,2026-Q3,ACC-5003,Northwind Capital,Financial Services,Enterprise,West,SKU-1001,Atom Workspace,Software,34,1200.0,40800.0,R-04 Marcus Bell,Partner,0
+ORD-100342,2026-09-03,2026-Q3,ACC-5002,Atlas Logistics,Transportation,Enterprise,West,SKU-3002,Cobalt Storage,Service,8,420.0,3360.0,R-01 Dana Okafor,Direct,10
+ORD-100335,2026-09-13,2026-Q3,ACC-5001,Meridian Health Group,Healthcare,Enterprise,West,SKU-1001,Atom Workspace,Software,44,1200.0,52800.0,R-03 Priya Raman,Direct,0
+ORD-100054,2026-07-03,2026-Q3,ACC-5004,Bluepine Retail,Retail,Mid-Market,South,SKU-5001,Ember Secure,Software,34,980.0,33320.0,R-02 Theo Lindqvist,Direct,5
+ORD-100153,2026-07-06,2026-Q3,ACC-5010,Harbor & Field,Retail,Small,East,SKU-1002,Atom Workspace,Service,34,180.0,6120.0,R-01 Dana Okafor,Direct,0
+ORD-100074,2026-07-06,2026-Q3,ACC-5001,Meridian Health Group,Healthcare,Enterprise,North,SKU-2002,Beacon Insights,Software,4,1500.0,6000.0,R-02 Theo Lindqvist,Direct,10
+ORD-100396,2026-09-15,2026-Q3,ACC-5003,Northwind Capital,Financial Services,Enterprise,West,SKU-5001,Ember Secure,Software,7,980.0,6860.0,R-03 Priya Raman,Partner,0
+ORD-100065,2026-07-06,2026-Q3,ACC-5009,Vanguard Insurance,Financial Services,Mid-Market,East,SKU-5001,Ember Secure,Software,32,980.0,31360.0,R-02 Theo Lindqvist,Partner,0
+ORD-100306,2026-08-03,2026-Q3,ACC-5002,Atlas Logistics,Transportation,Enterprise,West,SKU-4001,Drift Integrator,Svc,4,640.0,2560.0,R-01 Dana Okafor,Online Self-Serve,10
+ORD-100285,2026-08-05,2026-Q3,ACC-5012,Riverside Council,Public Sector,Mid-Market,West,SKU-3001,Cobalt Storage,Hardware,11,3400.0,37400.0,R-02 Theo Lindqvist,Direct,20
+ORD-100360,2026-09-19,2026-Q3,ACC-5007,Ironclad Manufacturing,Manufacturing,Enterprise,North,SKU-1001,Atom Workspace,Software,10,1200.0,12000.0,R-05 Sara Nadeau,Direct,10
+ORD-100226,2026-08-05,2026-Q3,ACC-5008,Lumen Education,Education,Mid-Market,East,SKU-1001,Atom Workspace,Software,9,1200.0,10800.0,R-02 Theo Lindqvist,Online Self-Serve,20
+ORD-100231,2026-08-18,2026-Q3,ACC-5002,Atlas Logistics,Transportation,Enterprise,Central,SKU-2001,Beacon Analytics,Software,8,2400.0,19200.0,R-05 Sara Nadeau,Partner,5
+ORD-100464,2026-09-24,2026-Q3,ACC-5007,Ironclad Manufacturing,Manufacturing,Enterprise,North,SKU-3001,Cobalt Storage,Hardware,42,3400.0,142800.0,R-02 Theo Lindqvist,Partner,0
+ORD-100322,2026-09-07,2026-Q3,ACC-5007,Ironclad Manufacturing,Manufacturing,Enterprise,West,SKU-3001,Cobalt Storage,Hardware,34,3400.0,115600.0,R-05 Sara Nadeau,Direct,0
+ORD-100458,2026-09-08,2026-Q3,ACC-5003,Northwind Capital,Financial Services,Enterprise,North,SKU-1001,Atom Workspace,Software,28,1200.0,33600.0,R-03 Priya Raman,Direct,10
+ORD-100325,2026-09-04,2026-Q3,ACC-5001,Meridian Health Group,Healthcare,Enterprise,Central,SKU-4001,Drift Integrator,Svc,14,640.0,8960.0,R-02 Theo Lindqvist,Online Self-Serve,10
+ORD-100077,2026-07-29,2026-Q3,ACC-5009,Vanguard Insurance,Financial Services,Mid-Market,South,SKU-2002,Beacon Insights,Software,24,1500.0,36000.0,R-02 Theo Lindqvist,Partner,10
+ORD-100301,2026-08-03,2026-Q3,ACC-5007,Ironclad Manufacturing,Manufacturing,Enterprise,East,SKU-4001,Drift Integrator,Service,2,640.0,1280.0,R-04 Marcus Bell,Partner,20
+ORD-100333,2026-09-06,2026-Q3,ACC-5003,Northwind Capital,Financial Services,Enterprise,East,SKU-2002,Beacon Insights,Software,9,1500.0,13500.0,R-05 Sara Nadeau,Partner,0
+ORD-100307,2026-08-12,2026-Q3,ACC-5010,Harbor & Field,Retail,Small,West,SKU-1002,Atom Workspace,Service,2,180.0,360.0,R-04 Marcus Bell,Direct,20
+ORD-100265,2026-08-30,2026-Q3,ACC-5009,Vanguard Insurance,Financial Services,Mid-Market,Central,SKU-3002,Cobalt Storage,Service,3,420.0,1260.0,R-04 Marcus Bell,Partner,0
+ORD-100418,2026-09-03,2026-Q3,ACC-5002,Atlas Logistics,Transportation,Enterprise,Central,SKU-1002,Atom Workspace,Service,10,180.0,1800.0,R-05 Sara Nadeau,Online Self-Serve,5
+ORD-100092,2026-07-01,2026-Q3,ACC-5006,Solstice Media,Media,Mid-Market,North,SKU-2002,Beacon Insights,Software,33,1500.0,49500.0,R-04 Marcus Bell,Partner,5
+ORD-100442,2026-09-19,2026-Q3,ACC-5003,Northwind Capital,Financial Services,Enterprise,South,SKU-2002,Beacon Insights,Software,20,1500.0,30000.0,R-05 Sara Nadeau,Partner,0
+ORD-100030,2026-07-11,2026-Q3,ACC-5011,Quantum Leap Labs,Technology,Small,Central,SKU-2001,Beacon Analytics,Software,35,2400.0,84000.0,R-01 Dana Okafor,Direct,15
+ORD-100124,2026-07-13,2026-Q3,ACC-5007,Ironclad Manufacturing,Manufacturing,Enterprise,Central,SKU-5001,Ember Secure,Software,11,980.0,10780.0,R-04 Marcus Bell,Online Self-Serve,0
+ORD-100217,2026-08-12,2026-Q3,ACC-5011,Quantum Leap Labs,Technology,Small,North,SKU-1002,Atom Workspace,Service,8,180.0,1440.0,R-05 Sara Nadeau,Partner,0
+ORD-100405,2026-09-20,2026-Q3,ACC-5001,Meridian Health Group,Healthcare,Enterprise,East,SKU-3002,Cobalt Storage,Service,35,420.0,14700.0,R-01 Dana Okafor,Direct,0
+ORD-100403,2026-09-03,2026-Q3,ACC-5007,Ironclad Manufacturing,Manufacturing,Enterprise,South,SKU-5001,Ember Secure,Software,10,980.0,9800.0,R-05 Sara Nadeau,Partner,0
+ORD-100430,2026-09-13,2026-Q3,ACC-5003,Northwind Capital,Financial Services,Enterprise,East,SKU-1001,Atom Workspace,Software,43,1200.0,51600.0,R-02 Theo Lindqvist,Online Self-Serve,5
+ORD-100177,2026-07-23,2026-Q3,ACC-5002,Atlas Logistics,Transportation,Enterprise,Central,SKU-3002,Cobalt Storage,Service,7,420.0,2940.0,R-02 Theo Lindqvist,Online Self-Serve,0
+ORD-100006,2026-07-27,2026-Q3,ACC-5009,Vanguard Insurance,Financial Services,Mid-Market,Central,SKU-2001,Beacon Analytics,Software,27,2400.0,64800.0,R-04 Marcus Bell,Direct,10
+ORD-100444,2026-09-18,2026-Q3,ACC-5002,Atlas Logistics,Transportation,Enterprise,South,SKU-4001,Drift Integrator,Service,20,640.0,12800.0,R-02 Theo Lindqvist,Online Self-Serve,5
+ORD-100234,2026-08-05,2026-Q3,ACC-5004,Bluepine Retail,Retail,Mid-Market,South,SKU-2001,Beacon Analytics,Software,10,2400.0,24000.0,R-04 Marcus Bell,Online Self-Serve,5
+ORD-100100,2026-07-10,2026-Q3,ACC-5012,Riverside Council,Public Sector,Mid-Market,North,SKU-5001,Ember Secure,Software,5,980.0,4900.0,R-01 Dana Okafor,Direct,10
+ORD-100257,2026-08-05,2026-Q3,ACC-5011,Quantum Leap Labs,Technology,Small,Central,SKU-1001,Atom Workspace,Software,7,1200.0,8400.0,R-03 Priya Raman,Direct,0
+ORD-100304,2026-08-10,2026-Q3,ACC-5004,Bluepine Retail,Retail,Mid-Market,Central,SKU-5001,Ember Secure,Software,4,980.0,3920.0,R-01 Dana Okafor,Direct,10
+ORD-100181,2026-07-25,2026-Q3,ACC-5003,Northwind Capital,Financial Services,Enterprise,Central,SKU-3001,Cobalt Storage,Hardware,25,3400.0,85000.0,R-04 Marcus Bell,Direct,15
+ORD-100191,2026-08-08,2026-Q3,ACC-5006,Solstice Media,Media,Mid-Market,West,SKU-4001,Drift Integrator,Service,5,640.0,3200.0,R-05 Sara Nadeau,Direct,20
+ORD-100324,2026-09-05,2026-Q3,ACC-5007,Ironclad Manufacturing,Manufacturing,Enterprise,East,SKU-2001,Beacon Analytics,Software,18,2400.0,43200.0,R-04 Marcus Bell,Partner,5
+ORD-100462,2026-09-13,2026-Q3,ACC-5005,Crestline Energy,Energy,Enterprise,South,SKU-5001,Ember Secure,Software,9999,980.0,35280.0,R-04 Marcus Bell,Partner,0
+ORD-100290,2026-08-26,2026-Q3,ACC-5003,Northwind Capital,Financial Services,Enterprise,West,SKU-5001,Ember Secure,Software,8,980.0,7840.0,R-04 Marcus Bell,Partner,20
+ORD-100120,2026-07-24,2026-Q3,ACC-5003,Northwind Capital,Financial Services,Enterprise,South,SKU-3001,Cobalt Storage,HW,5,3400.0,17000.0,R-02 Theo Lindqvist,Online Self-Serve,15
+ORD-100316,2026-09-09,2026-Q3,ACC-5001,Meridian Health Group,Healthcare,Enterprise,South,SKU-1002,Atom Workspace,Service,32,180.0,5760.0,R-04 Marcus Bell,Direct,10
+ORD-100215,2026-08-28,2026-Q3,ACC-5003,Northwind Capital,Financial Services,Enterprise,South,SKU-1002,Atom Workspace,Service,8,180.0,1440.0,R-03 Priya Raman,Direct,0
+ORD-100296,2026-08-10,2026-Q3,ACC-5011,Quantum Leap Labs,Technology,Small,North,SKU-3002,Cobalt Storage,Service,6,420.0,2520.0,R-04 Marcus Bell,Online Self-Serve,0
+ORD-100287,2026-08-14,2026-Q3,ACC-5003,Northwind Capital,Financial Services,Enterprise,West,SKU-4001,Drift Integrator,Service,6,640.0,3840.0,R-05 Sara Nadeau,Direct,10
+ORD-100125,2026-07-03,2026-Q3,ACC-5003,Northwind Capital,Financial Services,Enterprise,East,SKU-4001,Drift Integrator,Service,13,640.0,8320.0,R-04 Marcus Bell,Direct,5
+ORD-100010,2026-07-14,2026-Q3,ACC-5007,Ironclad Manufacturing,Manufacturing,Enterprise,Central,SKU-2002,Beacon Insights,Software,37,1500.0,55500.0,R-03 Priya Raman,Online Self-Serve,5
+ORD-100241,2026/08/28,2026-Q3,ACC-5005,Crestline Energy,Energy,Enterprise,South,SKU-3002,Cobalt Storage,Service,6,420.0,2520.0,R-03 Priya Raman,Partner,10
+ORD-100052,2026-07-06,2026-Q3,ACC-5004,Bluepine Retail,Retail,Mid-Market,West,SKU-3002,Cobalt Storage,Service,30,420.0,12600.0,R-05 Sara Nadeau,Partner,0
+ORD-100475,2026-09-01,2026-Q3,ACC-5002,Atlas Logistics,Transportation,Enterprise,West,SKU-3001,Cobalt Storage,HW,35,3400.0,119000.0,R-01 Dana Okafor,Partner,5
+ORD-100338,2026-09-29,2026-Q3,ACC-5005,Crestline Energy,Energy,Enterprise,West,SKU-3002,Cobalt Storage,Service,7,420.0,2940.0,R-01 Dana Okafor,Partner,10
+ORD-100271,2026-08-26,2026-Q3,ACC-5009,Vanguard Insurance,Financial Services,Mid-Market,South,SKU-5001,Ember Secure,Software,8,980.0,7840.0,R-04 Marcus Bell,Direct,10
+ORD-100048,2026-07-12,2026-Q3,ACC-5001,Meridian Health Group,Healthcare,Enterprise,Central,SKU-3001,Cobalt Storage,HW,26,3400.0,88400.0,R-03 Priya Raman,Partner,0
+ORD-100182,2026-07-12,2026-Q3,ACC-5002,Atlas Logistics,Transportation,Enterprise,South,SKU-3002,Cobalt Storage,Service,7,420.0,2940.0,R-01 Dana Okafor,Direct,15
+ORD-100281,2026-08-26,2026-Q3,ACC-5011,Quantum Leap Labs,Technology,Small,Central,SKU-2001,Beacon Analytics,Software,1,2400.0,2400.0,R-01 Dana Okafor,Direct,10
+ORD-100070,2026-07-05,2026-Q3,ACC-5002,Atlas Logistics,Transportation,Enterprise,Central,SKU-1001,Atom Workspace,Software,22,1200.0,50709.57,R-05 Sara Nadeau,Partner,15
+ORD-100456,2026-09-04,2026-Q3,ACC-5002,Atlas Logistics,Transportation,Enterprise,East,SKU-4001,Drift Integrator,Service,43,640.0,27520.0,R-01 Dana Okafor,Direct,10
+ORD-100122,2026-07-06,2026-Q3,ACC-5007,Ironclad Manufacturing,Manufacturing,Enterprise,East,SKU-3002,Cobalt Storage,Service,39,420.0,16380.0,R-01 Dana Okafor,Online Self-Serve,0
+ORD-100156,2026-07-02,2026-Q3,ACC-5011,Quantum Leap Labs,Technology,Small,Central,SKU-1001,Atom Workspace,Software,22,1200.0,26400.0,R-03 Priya Raman,Partner,10
+ORD-100355,2026-09-21,2026-Q3,ACC-5005,Crestline Energy,Energy,Enterprise,East,SKU-5001,Ember Secure,Software,36,980.0,35280.0,R-04 Marcus Bell,Partner,0
+ORD-100267,2026-08-09,2026-Q3,ACC-5009,Vanguard Insurance,Financial Services,Mid-Market,North,SKU-1002,Atom Workspace,Service,3,180.0,540.0,R-03 Priya Raman,Partner,0
+ORD-100179,2026-07-02,2026-Q3,ACC-5008,Lumen Education,Education,Mid-Market,East,SKU-3001,Cobalt Storage,Hardware,23,3400.0,78200.0,R-03 Priya Raman,Direct,0
+ORD-100446,2026-09-17,2026-Q3,ACC-5007,Ironclad Manufacturing,Manufacturing,Enterprise,North,SKU-5001,Ember Secure,Software,25,980.0,24500.0,R-02 Theo Lindqvist,Online Self-Serve,10
+ORD-100099,2026-07-28,2026-Q3,ACC-5007,Ironclad Manufacturing,Manufacturing,Enterprise,West,SKU-4001,Drift Integrator,Svc,34,640.0,21760.0,R-05 Sara Nadeau,Direct,10
+ORD-100260,2026-08-28,2026-Q3,ACC-5009,Vanguard Insurance,Financial Services,Mid-Market,Central,SKU-5001,Ember Secure,Software,12,980.0,11760.0,R-02 Theo Lindqvist,Direct,20
+ORD-100005,2026-07-20,2026-Q3,ACC-5008,Lumen Education,Education,Mid-Market,West,SKU-5001,Ember Secure,Software,30,980.0,29400.0,R-04 Marcus Bell,Partner,0
+ORD-100171,2026-07-16,2026-Q3,ACC-5011,Quantum Leap Labs,Technology,Small,North,SKU-2002,Beacon Insights,Software,33,1500.0,49500.0,R-03 Priya Raman,Direct,15
+ORD-100165,2026-07-16,2026-Q3,ACC-5001,Meridian Health Group,Healthcare,Enterprise,Central,SKU-3001,Cobalt Storage,HW,12,3400.0,40800.0,R-05 Sara Nadeau,Partner,10
+ORD-100210,2026-08-31,2026-Q3,ACC-5007,Ironclad Manufacturing,Manufacturing,Enterprise,South,SKU-1002,Atom Workspace,Service,10,180.0,1800.0,R-04 Marcus Bell,Direct,0
+ORD-100327,2026-09-06,2026-Q3,ACC-5001,Meridian Health Group,Healthcare,Enterprise,South,SKU-2001,Beacon Analytics,Software,45,2400.0,108000.0,R-02 Theo Lindqvist,Partner,5
+ORD-100101,2026-07-29,2026-Q3,ACC-5010,Harbor & Field,Retail,Small,East,SKU-4001,Drift Integrator,Svc,24,640.0,15360.0,R-02 Theo Lindqvist,Partner,5
+ORD-100359,2026-09-13,2026-Q3,ACC-5005,Crestline Energy,Energy,Enterprise,North,SKU-5001,Ember Secure,Software,29,980.0,28420.0,R-05 Sara Nadeau,Direct,0
+ORD-100414,2026-09-12,2026-Q3,ACC-5002,Atlas Logistics,Transportation,Enterprise,East,SKU-1002,Atom Workspace,Service,26,180.0,4680.0,R-05 Sara Nadeau,Online Self-Serve,0
+ORD-100399,2026-09-23,2026-Q3,ACC-5002,Atlas Logistics,Transportation,Enterprise,South,SKU-3001,Cobalt Storage,HW,16,3400.0,54400.0,R-01 Dana Okafor,Partner,10
+ORD-100138,2026-07-14,2026-Q3,ACC-5003,Northwind Capital,Financial Services,Strategic,Central,SKU-1001,Atom Workspace,Software,39,1200.0,46800.0,R-02 Theo Lindqvist,Online Self-Serve,0
+ORD-100315,2026-09-06,2026-Q3,ACC-5001,Meridian Health Group,Healthcare,Enterprise,East,SKU-1001,Atom Workspace,Software,40,1200.0,48000.0,R-03 Priya Raman,Partner,0
+ORD-100422,2026-09-29,2026-Q3,ACC-5007,Ironclad Manufacturing,Manufacturing,Enterprise,Central,SKU-1002,Atom Workspace,Service,45,180.0,8100.0,R-05 Sara Nadeau,Direct,10
+ORD-100123,2026-07-09,2026-Q3,ACC-5002,Atlas Logistics,Transportation,Enterprise,Central,SKU-3001,Cobalt Storage,Hardware,38,3400.0,129200.0,R-04 Marcus Bell,Partner,0
+ORD-100263,2026-08-06,2026-Q3,ACC-5002,Atlas Logistics,Transportation,Enterprise,North,SKU-1002,Atom Workspace,Service,10,180.0,1800.0,R-03 Priya Raman,Direct,0
+ORD-100053,2026-07-19,2026-Q3,ACC-5002,Atlas Logistics,Transportation,Enterprise,Central,SKU-5001,Ember Secure,Software,2,980.0,1960.0,R-03 Priya Raman,Online Self-Serve,0
+ORD-100126,2026-07-20,2026-Q3,ACC-5001,Meridian Health Group,Healthcare,Enterprise,South,SKU-3001,Cobalt Storage,Hardware,32,3400.0,108800.0,R-04 Marcus Bell,Partner,0
+ORD-100251,2026-08-25,2026-Q3,ACC-5004,Bluepine Retail,Retail,Mid-Market,Central,SKU-2001,Beacon Analytics,Software,4,2400.0,9600.0,R-01 Dana Okafor,Direct,0
+ORD-100261,2026-08-18,2026-Q3,ACC-5009,Vanguard Insurance,Financial Services,Mid-Market,East,SKU-3001,Cobalt Storage,Hardware,7,3400.0,23800.0,R-03 Priya Raman,Online Self-Serve,0
+ORD-100021,2026-07-20,2026-Q3,ACC-5005,Crestline Energy,Energy,Enterprise,Central,SKU-1002,Atom Workspace,Service,29,180.0,5220.0,R-03 Priya Raman,Partner,5
+ORD-100112,2026-07-13,2026-Q3,ACC-5003,Northwind Capital,Financial Services,Enterprise,Central,SKU-1002,Atom Workspace,Service,31,180.0,5580.0,R-05 Sara Nadeau,Online Self-Serve,0
+ORD-100220,2026-08-03,2026-Q3,ACC-5003,Northwind Capital,Financial Services,Enterprise,East,SKU-3001,Cobalt Storage,HW,6,3400.0,20400.0,R-04 Marcus Bell,Online Self-Serve,5
+ORD-100228,2026-08-19,2026-Q3,ACC-5002,Atlas Logistics,Transportation,Enterprise,West,SKU-3002,Cobalt Storage,Service,6,420.0,2520.0,R-02 Theo Lindqvist,Direct,20
+ORD-100113,2026-07-25,2026-Q3,ACC-5008,Lumen Education,Education,Mid-Market,North,SKU-5001,Ember Secure,Software,17,980.0,16660.0,R-05 Sara Nadeau,Partner,5
+ORD-100088,2026-07-25,2026-Q3,ACC-5010,Harbor & Field,Retail,Small,West,SKU-3002,Cobalt Storage,Service,24,420.0,10080.0,R-01 Dana Okafor,Partner,0
+ORD-100174,2026-07-22,2026-Q3,ACC-5005,Crestline Energy,Energy,Enterprise,East,SKU-2001,Beacon Analytics,Software,29,2400.0,69600.0,R-02 Theo Lindqvist,Online Self-Serve,10
+ORD-100056,2026-07-25,2026-Q3,ACC-5003,Northwind Capital,Financial Services,Enterprise,West,SKU-4001,Drift Integrator,Service,33,640.0,21120.0,R-05 Sara Nadeau,Partner,15
+ORD-100027,2026-07-30,2026-Q3,ACC-5011,Quantum Leap Labs,Technology,Small,East,SKU-3002,Cobalt Storage,Service,28,420.0,11760.0,R-04 Marcus Bell,Direct,0
+ORD-100185,2026-07-26,2026-Q3,ACC-5008,Lumen Education,Education,Mid-Market,North,SKU-3001,Cobalt Storage,HW,16,3400.0,54400.0,R-01 Dana Okafor,Online Self-Serve,15
+ORD-100246,2026-08-14,2026-Q3,ACC-5009,Vanguard Insurance,Financial Services,Mid-Market,West,SKU-2002,Beacon Insights,Software,12,1500.0,18000.0,R-01 Dana Okafor,Partner,0
+ORD-100244,2026-08-23,2026-Q3,ACC-5005,Crestline Energy,Energy,Enterprise,East,SKU-3001,Cobalt Storage,Hardware,11,3400.0,37400.0,R-02 Theo Lindqvist,Online Self-Serve,0
+ORD-100131,2026-07-19,2026-Q3,ACC-5010,Harbor & Field,Retail,Small,East,SKU-3001,Cobalt Storage,Hardware,3,3400.0,10200.0,R-04 Marcus Bell,Direct,5
+ORD-100111,2026-07-28,2026-Q3,ACC-5011,Quantum Leap Labs,Technology,Small,South,SKU-2001,Beacon Analytics,Software,26,2400.0,62400.0,R-03 Priya Raman,Partner,15
+ORD-100034,2026-07-03,2026-Q3,ACC-5004,Bluepine Retail,Retail,Mid-Market,South,SKU-2002,Beacon Insights,Software,39,1500.0,58500.0,R-01 Dana Okafor,Partner,0
+ORD-100222,2026-08-23,2026-Q3,ACC-5006,Solstice Media,Media,Mid-Market,Central,SKU-3001,Cobalt Storage,HW,9,3400.0,30600.0,R-02 Theo Lindqvist,Partner,20
+ORD-100366,2026-09-04,2026-Q3,ACC-5001,Meridian Health Group,Healthcare,Enterprise,Central,SKU-4001,Drift Integrator,Svc,30,640.0,19200.0,R-04 Marcus Bell,Online Self-Serve,0
+ORD-100436,2026-09-09,2026-Q3,ACC-5002,Atlas Logistics,Transportation,Enterprise,East,SKU-3002,Cobalt Storage,Service,5,420.0,2100.0,R-02 Theo Lindqvist,Direct,10
+ORD-100284,2026-08-01,2026-Q3,ACC-5009,Vanguard Insurance,Financial Services,Mid-Market,South,SKU-2002,Beacon Insights,Software,5,1500.0,7500.0,R-02 Theo Lindqvist,Direct,0
+ORD-100237,2026-08-14,2026-Q3,ACC-5005,Crestline Energy,Energy,Enterprise,North,SKU-2001,Beacon Analytics,Software,2,2400.0,4800.0,R-05 Sara Nadeau,Online Self-Serve,20
+ORD-100448,2026-09-24,2026-Q3,ACC-5005,Crestline Energy,Energy,Enterprise,South,SKU-5001,Ember Secure,Software,35,980.0,34300.0,R-05 Sara Nadeau,Direct,10
+ORD-100154,2026-07-13,2026-Q3,ACC-5002,Atlas Logistics,Transportation,Enterprise,North,SKU-2001,Beacon Analytics,Software,26,2400.0,62400.0,R-04 Marcus Bell,Online Self-Serve,0
+ORD-100098,2026-07-13,2026-Q3,ACC-5012,Riverside Council,Public Sector,Mid-Market,West,SKU-3001,Cobalt Storage,Hardware,31,3400.0,105400.0,R-03 Priya Raman,Direct,0
+ORD-100025,2026-07-31,2026-Q3,ACC-5007,Ironclad Manufacturing,Manufacturing,Enterprise,Central,SKU-5001,Ember Secure,Software,36,980.0,35280.0,R-02 Theo Lindqvist,Direct,5
+ORD-100163,2026-07-29,2026-Q3,ACC-5010,Harbor & Field,Retail,Small,West,SKU-1001,Atom Workspace,Software,39,1200.0,46800.0,R-03 Priya Raman,Partner,15
+ORD-100452,2026-09-10,2026-Q3,ACC-5007,Ironclad Manufacturing,Manufacturing,Enterprise,Central,SKU-2001,Beacon Analytics,Software,42,2400.0,100800.0,R-03 Priya Raman,Direct,10
+ORD-100166,2026-07-25,2026-Q3,ACC-5007,Ironclad Manufacturing,Manufacturing,Enterprise,South,SKU-1001,Atom Workspace,Software,6,1200.0,7200.0,R-05 Sara Nadeau,Partner,5
+ORD-100470,2026-09-03,2026-Q3,ACC-5001,Meridian Health Group,Healthcare,Enterprise,East,SKU-1001,Atom Workspace,Software,39,1200.0,46800.0,R-05 Sara Nadeau,Partner,0
+ORD-100357,2026-09-08,2026-Q3,ACC-5001,Meridian Health Group,Healthcare,Enterprise,North,SKU-3002,Cobalt Storage,Service,20,420.0,8400.0,R-02 Theo Lindqvist,Direct,0
+ORD-100451,2026-09-22,2026-Q3,ACC-5007,Ironclad Manufacturing,Manufacturing,Enterprise,Central,SKU-1002,Atom Workspace,Service,9,180.0,1620.0,R-04 Marcus Bell,Partner,0
+ORD-100476,2026-09-03,2026-Q3,ACC-5007,Ironclad Manufacturing,Manufacturing,Enterprise,North,SKU-2001,Beacon Analytics,Software,33,2400.0,79200.0,R-03 Priya Raman,Direct,0
+ORD-100239,2026-08-10,2026-Q3,ACC-5012,Riverside Council,Public Sector,Mid-Market,East,SKU-2001,Beacon Analytics,Software,7,2400.0,16800.0,R-02 Theo Lindqvist,Online Self-Serve,20
+ORD-100093,2026-07-19,2026-Q3,ACC-5010,Harbor & Field,Retail,Small,East,SKU-1001,Atom Workspace,Software,11,1200.0,13200.0,R-05 Sara Nadeau,Online Self-Serve,0
+ORD-100397,2026-09-19,2026-Q3,ACC-5002,Atlas Logistics,Transportation,Enterprise,East,SKU-4001,Drift Integrator,Service,37,640.0,23680.0,R-03 Priya Raman,Online Self-Serve,10
+ORD-100079,2026-07-14,2026-Q3,,Bluepine Retail,Retail,Mid-Market,South,SKU-2002,Beacon Insights,Software,6,1500.0,9000.0,R-02 Theo Lindqvist,Direct,0
+ORD-100362,2026-09-14,2026-Q3,ACC-5001,Meridian Health Group,Healthcare,Enterprise,West,SKU-3002,Cobalt Storage,Service,21,420.0,8820.0,R-05 Sara Nadeau,Partner,0
+ORD-100340,2026-09-19,2026-Q3,ACC-5003,Northwind Capital,Financial Services,Enterprise,West,SKU-1002,Atom Workspace,Service,39,180.0,7020.0,R-05 Sara Nadeau,Direct,5
+ORD-100379,2026-09-04,2026-Q3,ACC-5002,Atlas Logistics,Transportation,Enterprise,East,SKU-2002,Beacon Insights,Software,19,1500.0,28500.0,R-01 Dana Okafor,Direct,0
+ORD-100295,2026-08-28,2026-Q3,ACC-5012,Riverside Council,Public Sector,Mid-Market,Central,SKU-1002,Atom Workspace,Service,6,180.0,1080.0,R-02 Theo Lindqvist,Direct,5
+ORD-100049,2026-07-29,2026-Q3,ACC-5001,Meridian Health Group,Healthcare,Enterprise,Central,SKU-1002,Atom Workspace,Service,7,180.0,1260.0,R-05 Sara Nadeau,Online Self-Serve,15
+ORD-100242,2026-08-29,2026-Q3,ACC-5008,Lumen Education,Education,Mid-Market,South,SKU-3002,Cobalt Storage,Service,5,420.0,2100.0,R-01 Dana Okafor,Partner,10
+ORD-100326,2026-09-17,2026-Q3,ACC-5002,Atlas Logistics,Transportation,Enterprise,East,SKU-1002,Atom Workspace,Service,18,180.0,3240.0,R-05 Sara Nadeau,Partner,10
+ORD-100419,2026-09-23,2026-Q3,ACC-5001,Meridian Health Group,Healthcare,Enterprise,East,SKU-1001,Atom Workspace,Software,49,1200.0,58800.0,R-01 Dana Okafor,Online Self-Serve,5
+ORD-100400,2026-09-27,2026-Q3,ACC-5005,Crestline Energy,Energy,Enterprise,North,SKU-2001,Beacon Analytics,Software,20,2400.0,48000.0,R-04 Marcus Bell,Partner,5
+ORD-100294,2026-08-29,2026-Q3,ACC-5005,Crestline Energy,Energy,Enterprise,North,SKU-2001,Beacon Analytics,Software,9,2400.0,21600.0,R-04 Marcus Bell,Online Self-Serve,5
+ORD-100090,2026-07-11,2026-Q3,ACC-5008,Lumen Education,Education,Mid-Market,South,SKU-3001,Cobalt Storage,HW,36,3400.0,122400.0,R-02 Theo Lindqvist,Direct,0
+ORD-100081,2026-07-14,2026-Q3,ACC-5004,Bluepine Retail,Retail,Mid-Market,East,SKU-3002,Cobalt Storage,Service,19,420.0,7980.0,R-05 Sara Nadeau,Partner,0
+ORD-100412,2026-09-19,2026-Q3,ACC-5002,Atlas Logistics,Transportation,Enterprise,West,SKU-3001,Cobalt Storage,HW,5,3400.0,17000.0,R-04 Marcus Bell,Partner,0
+ORD-100029,2026-07-10,2026-Q3,ACC-5001,Meridian Health Group,Healthcare,Enterprise,East,SKU-5001,Ember Secure,Software,12,980.0,11760.0,R-04 Marcus Bell,Partner,0
+ORD-100368,2026-09-04,2026-Q3,ACC-5007,Ironclad Manufacturing,Manufacturing,Enterprise,Central,SKU-3002,Cobalt Storage,Service,41,420.0,17220.0,R-04 Marcus Bell,Partner,0
+ORD-100041,2026-07-02,2026-Q3,ACC-5007,Ironclad Manufacturing,Manufacturing,Enterprise,Central,SKU-2001,Beacon Analytics,Software,22,2400.0,52800.0,R-02 Theo Lindqvist,Online Self-Serve,15
+ORD-100068,2026-07-28,2026-Q3,ACC-5008,Lumen Education,Education,Mid-Market,North,SKU-2002,Beacon Insights,Software,25,1500.0,37500.0,R-03 Priya Raman,Online Self-Serve,10
+ORD-100319,2026-09-18,2026-Q3,ACC-5007,Ironclad Manufacturing,Manufacturing,Enterprise,West,SKU-1001,Atom Workspace,Software,39,1200.0,46800.0,R-05 Sara Nadeau,Online Self-Serve,0
+ORD-100317,2026-09-15,2026-Q3,ACC-5002,Atlas Logistics,Transportation,Enterprise,West,SKU-5001,Ember Secure,Software,17,980.0,16660.0,R-02 Theo Lindqvist,Partner,0
+ORD-100047,2026-07-27,2026-Q3,ACC-5003,Northwind Capital,Financial Services,Enterprise,West,SKU-2002,Beacon Insights,Software,25,1500.0,37500.0,R-02 Theo Lindqvist,Partner,15
+ORD-100078,2026-07-19,2026-Q3,ACC-5010,Harbor & Field,Retail,Small,East,SKU-3002,Cobalt Storage,Service,15,420.0,6300.0,R-03 Priya Raman,Direct,5
+ORD-100036,2026-07-16,2026-Q3,ACC-5004,Bluepine Retail,Retail,Mid-Market,East,SKU-1002,Atom Workspace,Service,30,180.0,5400.0,R-01 Dana Okafor,Direct,0
+ORD-100381,2026-09-15,2026-Q3,ACC-5005,Crestline Energy,Energy,Enterprise,West,SKU-4001,Drift Integrator,Service,17,640.0,10880.0,R-04 Marcus Bell,Online Self-Serve,0
+ORD-100192,2026-08-02,2026-Q3,ACC-5012,Riverside Council,Public Sector,Mid-Market,East,SKU-4001,Drift Integrator,Svc,2,640.0,1280.0,R-04 Marcus Bell,Partner,0
+ORD-100139,2026-07-10,2026-Q3,ACC-5002,Atlas Logistics,Transportation,Enterprise,North,SKU-3002,Cobalt Storage,Service,2,420.0,840.0,R-02 Theo Lindqvist,Direct,15
+ORD-100248,2026-08-28,2026-Q3,ACC-5009,Vanguard Insurance,Financial Services,Mid-Market,North,SKU-1002,Atom Workspace,Service,7,180.0,1260.0,R-05 Sara Nadeau,Partner,10
+ORD-100221,2026-08-30,2026-Q3,ACC-5004,Bluepine Retail,Retail,Mid-Market,East,SKU-4001,Drift Integrator,Service,3,640.0,1920.0,R-01 Dana Okafor,Online Self-Serve,0
+ORD-100018,2026-07-24,2026-Q3,ACC-5007,Ironclad Manufacturing,Manufacturing,Enterprise,East,SKU-4001,Drift Integrator,Service,26,640.0,16640.0,R-04 Marcus Bell,Direct,15
+ORD-100268,2026-08-30,2026-Q3,ACC-5006,Solstice Media,Media,Mid-Market,South,SKU-5001,Ember Secure,Software,10,980.0,9800.0,R-03 Priya Raman,Direct,20
+ORD-100438,2026-09-11,2026-Q3,ACC-5001,Meridian Health Group,Healthcare,Enterprise,North,SKU-3002,Cobalt Storage,Service,16,420.0,6720.0,R-03 Priya Raman,Online Self-Serve,0
+ORD-100020,2026-07-21,2026-Q3,ACC-5003,Northwind Capital,Financial Services,Enterprise,South,SKU-5001,Ember Secure,Software,7,980.0,6860.0,R-04 Marcus Bell,Online Self-Serve,10
+ORD-100249,2026-08-06,2026-Q3,ACC-5009,Vanguard Insurance,Financial Services,Mid-Market,West,SKU-3001,Cobalt Storage,Hardware,7,3400.0,23800.0,R-05 Sara Nadeau,Online Self-Serve,0
+ORD-100205,2026-08-22,2026-Q3,ACC-5002,Atlas Logistics,Transportation,Enterprise,North,SKU-2001,Beacon Analytics,Software,5,2400.0,12000.0,R-02 Theo Lindqvist,Online Self-Serve,10
+ORD-100211,2026-08-07,2026-Q3,ACC-5009,Vanguard Insurance,Financial Services,Mid-Market,West,SKU-4001,Drift Integrator,Svc,2,640.0,1280.0,R-04 Marcus Bell,Direct,10
+ORD-100004,2026-07-12,2026-Q3,ACC-5006,Solstice Media,Media,Mid-Market,East,SKU-5001,Ember Secure,Software,6,980.0,5880.0,R-04 Marcus Bell,Direct,10
+ORD-100042,2026-07-11,2026-Q3,ACC-5012,Riverside Council,Public Sector,Mid-Market,South,SKU-2001,Beacon Analytics,Software,3,2400.0,7200.0,R-03 Priya Raman,Partner,0
+ORD-100274,2026-08-23,2026-Q3,ACC-5009,Vanguard Insurance,Financial Services,Mid-Market,Central,SKU-4001,Drift Integrator,Service,8,640.0,5120.0,R-01 Dana Okafor,Direct,20
+ORD-100107,2026-07-24,2026-Q3,ACC-5007,Ironclad Manufacturing,Manufacturing,Enterprise,East,SKU-4001,Drift Integrator,Service,20,640.0,22623.0,R-03 Priya Raman,Direct,0
+ORD-100114,2026-07-03,2026-Q3,ACC-5008,Lumen Education,Education,Mid-Market,North,SKU-3002,Cobalt Storage,Service,39,420.0,16380.0,R-02 Theo Lindqvist,Online Self-Serve,0
+ORD-100167,2026-07-04,2026-Q3,ACC-5010,Harbor & Field,Retail,Small,West,SKU-1001,Atom Workspace,Software,15,1200.0,18000.0,R-04 Marcus Bell,Online Self-Serve,10
+ORD-100083,2026-07-11,2026-Q3,ACC-5012,Riverside Council,Public Sector,Mid-Market,Central,SKU-5001,Ember Secure,Software,14,980.0,13720.0,R-01 Dana Okafor,Online Self-Serve,5
+ORD-100273,2026-08-10,2026-Q3,ACC-5009,Vanguard Insurance,Financial Services,Mid-Market,Central,SKU-2002,Beacon Insights,Software,6,1500.0,9000.0,R-01 Dana Okafor,Online Self-Serve,0
+ORD-100329,2026-09-22,2026-Q3,ACC-5003,Northwind Capital,Financial Services,Enterprise,Central,SKU-2002,Beacon Insights,Software,10,1500.0,15000.0,R-03 Priya Raman,Partner,0
+ORD-100110,2026-07-24,2026-Q3,ACC-5007,Ironclad Manufacturing,Manufacturing,Enterprise,Central,SKU-2002,Beacon Insights,Software,10,1500.0,15000.0,R-05 Sara Nadeau,Direct,0
+ORD-100389,2026-09-09,2026-Q3,ACC-5002,Atlas Logistics,Transportation,Enterprise,South,SKU-3001,Cobalt Storage,HW,37,3400.0,125800.0,R-02 Theo Lindqvist,Direct,0
+ORD-100437,2026-09-16,2026-Q3,ACC-5003,Northwind Capital,Financial Services,Enterprise,Central,SKU-2001,Beacon Analytics,Software,17,2400.0,40800.0,R-02 Theo Lindqvist,Partner,0
+ORD-100096,2026-07-28,2026-Q3,ACC-5012,Riverside Council,Public Sector,Mid-Market,West,SKU-3001,Cobalt Storage,HW,29,3400.0,98600.0,R-01 Dana Okafor,Direct,15
+ORD-100457,2026-09-15,2026-Q3,ACC-5003,Northwind Capital,Financial Services,Enterprise,West,SKU-4001,Drift Integrator,Service,23,640.0,14720.0,R-04 Marcus Bell,Online Self-Serve,0
+ORD-100022,2026-07-11,2026-Q3,ACC-5001,Meridian Health Group,Healthcare,Enterprise,Central,SKU-2001,Beacon Analytics,Software,3,2400.0,7200.0,R-01 Dana Okafor,Direct,15
+ORD-100432,2026-09-02,2026-Q3,ACC-5005,Crestline Energy,Energy,Enterprise,North,SKU-3002,Cobalt Storage,Service,15,420.0,6300.0,R-03 Priya Raman,Direct,5
+ORD-100388,2026-09-10,2026-Q3,ACC-5007,Ironclad Manufacturing,Manufacturing,Enterprise,West,SKU-3001,Cobalt Storage,HW,19,3400.0,64600.0,R-03 Priya Raman,Online Self-Serve,0
+ORD-100269,2026-08-19,2026-Q3,ACC-5006,Solstice Media,Media,Mid-Market,North,SKU-2002,Beacon Insights,Software,3,1500.0,4500.0,R-03 Priya Raman,Partner,0
+ORD-100014,2026-07-04,2026-Q3,ACC-5010,Harbor & Field,Retail,Small,North,SKU-3001,Cobalt Storage,Hardware,15,3400.0,51000.0,R-05 Sara Nadeau,Online Self-Serve,0
+ORD-100207,2026-08-02,2026-Q3,,Solstice Media,Media,Mid-Market,Central,SKU-3002,Cobalt Storage,Service,4,420.0,1680.0,R-05 Sara Nadeau,Partner,10
+ORD-100394,2026-09-09,2026-Q3,ACC-5005,Crestline Energy,Energy,Enterprise,Central,SKU-3002,Cobalt Storage,Service,5,420.0,2100.0,R-02 Theo Lindqvist,Direct,0
+ORD-100298,2026-08-27,2026-Q3,ACC-5006,Solstice Media,Media,Mid-Market,East,SKU-1002,Atom Workspace,Service,3,180.0,540.0,R-02 Theo Lindqvist,Partner,20
+ORD-100453,2026-09-14,2026-Q3,ACC-5007,Ironclad Manufacturing,Manufacturing,Enterprise,Central,SKU-1001,Atom Workspace,Software,39,1200.0,46800.0,R-04 Marcus Bell,Partner,5
+ORD-100375,2026-09-23,2026-Q3,ACC-5005,Crestline Energy,Energy,Enterprise,South,SKU-3002,Cobalt Storage,Service,14,420.0,5880.0,R-04 Marcus Bell,Direct,0
+ORD-100076,2026-07-19,2026-Q3,ACC-5009,Vanguard Insurance,Financial Services,Mid-Market,Central,SKU-3001,Cobalt Storage,HW,11,3400.0,37400.0,R-05 Sara Nadeau,Direct,0
+ORD-100478,2026-09-11,2026-Q3,ACC-5005,Crestline Energy,Energy,Enterprise,East,SKU-2002,Beacon Insights,Software,32,1500.0,48000.0,R-01 Dana Okafor,Partner,0
+ORD-100176,2026-07-18,2026-Q3,ACC-5012,Riverside Council,Public Sector,Mid-Market,Central,SKU-4001,Drift Integrator,Service,2,640.0,1280.0,R-02 Theo Lindqvist,Direct,10
+ORD-100404,2026-09-24,2026-Q3,ACC-5005,Crestline Energy,Energy,Enterprise,North,SKU-4001,Drift Integrator,Service,18,640.0,11520.0,R-04 Marcus Bell,Direct,0
+ORD-100069,2026-07-05,2026-Q3,ACC-5005,Crestline Energy,Energy,Enterprise,East,SKU-3001,Cobalt Storage,Hardware,14,3400.0,47600.0,R-02 Theo Lindqvist,Online Self-Serve,15
+ORD-100071,2026-07-24,2026-Q3,ACC-5004,Bluepine Retail,Retail,Mid-Market,East,SKU-5001,Ember Secure,Software,30,980.0,29400.0,R-01 Dana Okafor,Partner,15
+ORD-100354,2026-09-03,2026-Q3,ACC-5007,Ironclad Manufacturing,Manufacturing,Enterprise,North,SKU-1002,Atom Workspace,Service,42,180.0,7560.0,R-01 Dana Okafor,Partner,0
+ORD-100085,2026-07-28,2026-Q3,ACC-5009,Vanguard Insurance,Financial Services,Mid-Market,West,SKU-1002,Atom Workspace,Service,34,180.0,6120.0,R-04 Marcus Bell,Direct,0
+ORD-100037,2026-07-06,2026-Q3,ACC-5012,Riverside Council,Public Sector,Mid-Market,East,SKU-1002,Atom Workspace,Service,4,180.0,720.0,R-04 Marcus Bell,Direct,0
+ORD-100408,2026-09-21,2026-Q3,ACC-5001,Meridian Health Group,Healthcare,Enterprise,West,SKU-1001,Atom Workspace,Software,50,1200.0,60000.0,R-04 Marcus Bell,Online Self-Serve,0
+ORD-100455,2026-09-05,2026-Q3,ACC-5001,Meridian Health Group,Healthcare,Enterprise,North,SKU-2001,Beacon Analytics,Software,47,2400.0,112800.0,R-03 Priya Raman,Partner,10
+ORD-100173,2026-07-28,2026-Q3,ACC-5006,Solstice Media,Media,Mid-Market,East,SKU-1002,Atom Workspace,Service,6,180.0,1080.0,R-04 Marcus Bell,Direct,5
+ORD-100062,2026-07-22,2026-Q3,ACC-5002,Atlas Logistics,Transportation,Enterprise,North,SKU-4001,Drift Integrator,Service,4,640.0,2560.0,R-01 Dana Okafor,Partner,5
+ORD-100106,2026-07-07,2026-Q3,ACC-5012,Riverside Council,Public Sector,Mid-Market,West,SKU-4001,Drift Integrator,Service,34,640.0,21760.0,R-04 Marcus Bell,Online Self-Serve,0
+ORD-100395,2026-09-04,2026-Q3,ACC-5002,Atlas Logistics,Transportation,Enterprise,East,SKU-3001,Cobalt Storage,Hardware,34,3400.0,115600.0,R-02 Theo Lindqvist,Online Self-Serve,0
+ORD-100272,2026-08-07,2026-Q3,ACC-5012,Riverside Council,Public Sector,Mid-Market,North,SKU-5001,Ember Secure,Software,1,980.0,980.0,R-04 Marcus Bell,Online Self-Serve,0
+ORD-100247,2026-08-12,2026-Q3,ACC-5002,Atlas Logistics,Transportation,Enterprise,North,SKU-2001,Beacon Analytics,Software,9,2400.0,21600.0,R-01 Dana Okafor,Direct,0
+ORD-100253,2026-08-12,2026-Q3,ACC-5003,Northwind Capital,Financial Services,Enterprise,South,SKU-5001,Ember Secure,Software,7,980.0,6860.0,R-05 Sara Nadeau,Direct,5
+ORD-100233,2026-08-10,2026-Q3,ACC-5003,Northwind Capital,Financial Services,Enterprise,Central,SKU-4001,Drift Integrator,Service,10,640.0,6400.0,R-05 Sara Nadeau,Partner,0
+ORD-100441,2026-09-07,2026-Q3,ACC-5007,Ironclad Manufacturing,Manufacturing,Enterprise,South,SKU-1001,Atom Workspace,Software,23,1200.0,27600.0,R-01 Dana Okafor,Partner,0
+ORD-100279,2026-08-13,2026-Q3,ACC-5008,Lumen Education,Education,Mid-Market,East,SKU-2002,Beacon Insights,Software,5,1500.0,7500.0,R-01 Dana Okafor,Online Self-Serve,20
+ORD-100180,2026-07-15,2026-Q3,ACC-5007,Ironclad Manufacturing,Manufacturing,Enterprise,North,SKU-2002,Beacon Insights,Software,3,1500.0,4500.0,R-05 Sara Nadeau,Direct,15
+ORD-100431,2026-09-21,2026-Q3,ACC-5003,Northwind Capital,Financial Services,Enterprise,South,SKU-2002,Beacon Insights,Software,29,1500.0,43500.0,R-05 Sara Nadeau,Online Self-Serve,0
+ORD-100416,2026-09-30,2026-Q3,ACC-5007,Ironclad Manufacturing,Manufacturing,Enterprise,North,SKU-3002,Cobalt Storage,Service,29,420.0,25150.36,R-05 Sara Nadeau,Direct,10
+ORD-100358,2026-09-16,2026-Q3,ACC-5007,Ironclad Manufacturing,Manufacturing,Enterprise,North,SKU-1002,Atom Workspace,Service,9999,180.0,1800.0,R-05 Sara Nadeau,Partner,0
+ORD-100064,2026-07-11,2026-Q3,ACC-5005,Crestline Energy,Energy,Enterprise,East,SKU-2001,Beacon Analytics,Software,2,2400.0,4800.0,R-05 Sara Nadeau,Online Self-Serve,15
+ORD-100463,2026-09-20,2026-Q3,ACC-5003,Northwind Capital,Financial Services,Enterprise,North,SKU-1002,Atom Workspace,Service,36,180.0,6480.0,R-03 Priya Raman,Partner,0
+ORD-100044,2026-07-21,2026-Q3,ACC-5008,Lumen Education,Education,Mid-Market,East,SKU-5001,Ember Secure,Software,22,980.0,21560.0,R-04 Marcus Bell,Online Self-Serve,0
+ORD-100204,2026-08-14,2026-Q3,ACC-5007,Ironclad Manufacturing,Manufacturing,Enterprise,South,SKU-2001,Beacon Analytics,Software,7,2400.0,16800.0,R-01 Dana Okafor,Online Self-Serve,10
+ORD-100199,2026-08-02,2026-Q3,ACC-5010,Harbor & Field,Retail,Small,North,SKU-5001,Ember Secure,Software,8,980.0,7840.0,R-05 Sara Nadeau,Direct,20
+ORD-100433,2026-09-29,2026-Q3,ACC-5002,Atlas Logistics,Transportation,Enterprise,Central,SKU-3001,Cobalt Storage,Hardware,25,3400.0,85000.0,R-05 Sara Nadeau,Online Self-Serve,5
+ORD-100276,2026-08-11,2026-Q3,ACC-5005,Crestline Energy,Energy,Enterprise,Central,SKU-5001,Ember Secure,Software,10,980.0,9800.0,R-03 Priya Raman,Partner,5
+ORD-100321,2026-09-16,2026-Q3,ACC-5001,Meridian Health Group,Healthcare,Enterprise,East,SKU-3001,Cobalt Storage,HW,46,3400.0,156400.0,R-02 Theo Lindqvist,Direct,0
+ORD-100288,2026-08-21,2026-Q3,ACC-5002,Atlas Logistics,Transportation,Enterprise,Central,SKU-4001,Drift Integrator,Service,12,640.0,7680.0,R-03 Priya Raman,Partner,0
+ORD-100302,2026-08-01,2026-Q3,ACC-5007,Ironclad Manufacturing,Manufacturing,Enterprise,South,SKU-2001,Beacon Analytics,Software,7,2400.0,16800.0,R-01 Dana Okafor,Online Self-Serve,10
+ORD-100402,2026-09-06,2026-Q3,ACC-5001,Meridian Health Group,Healthcare,Enterprise,North,SKU-2001,Beacon Analytics,Software,14,2400.0,33600.0,R-05 Sara Nadeau,Online Self-Serve,0
+ORD-100350,2026-09-12,2026-Q3,ACC-5007,Ironclad Manufacturing,Manufacturing,Enterprise,Central,SKU-3001,Cobalt Storage,HW,42,3400.0,142800.0,R-04 Marcus Bell,Online Self-Serve,0
+ORD-100001,2026-07-01,2026-Q3,ACC-5009,Vanguard Insurance,Financial Services,Mid-Market,North,SKU-2001,Beacon Analytics,Software,38,2400.0,91200.0,R-04 Marcus Bell,Partner,0
+ORD-100420,2026-09-22,2026-Q3,ACC-5001,Meridian Health Group,Healthcare,Enterprise,Central,SKU-2002,Beacon Insights,Software,49,1500.0,73500.0,R-03 Priya Raman,Partner,0
+ORD-100235,2026-08-25,2026-Q3,,Northwind Capital,Financial Services,Enterprise,North,SKU-2001,Beacon Analytics,Software,4,2400.0,9600.0,R-04 Marcus Bell,Online Self-Serve,10
+ORD-100365,2026-09-27,2026-Q3,ACC-5002,Atlas Logistics,Transportation,Enterprise,East,SKU-4001,Drift Integrator,Service,40,640.0,25600.0,R-01 Dana Okafor,Partner,0
+ORD-100135,2026-07-06,2026-Q3,ACC-5010,Harbor & Field,Retail,Small,West,SKU-1002,Atom Workspace,Service,39,180.0,7020.0,R-05 Sara Nadeau,Online Self-Serve,0
+ORD-100115,2026-07-14,2026-Q3,ACC-5008,Lumen Education,Education,Mid-Market,Central,SKU-3002,Cobalt Storage,Service,35,420.0,14700.0,R-05 Sara Nadeau,Online Self-Serve,0
+ORD-100218,2026-08-26,2026-Q3,ACC-5011,Quantum Leap Labs,Technology,Small,West,SKU-2002,Beacon Insights,Software,9,1500.0,13500.0,R-03 Priya Raman,Online Self-Serve,5
+ORD-100146,2026-07-13,2026-Q3,ACC-5005,Crestline Energy,Energy,Enterprise,Central,SKU-1001,Atom Workspace,Software,26,1200.0,31200.0,R-02 Theo Lindqvist,Direct,10
+ORD-100189,2026-07-01,2026-Q3,ACC-5006,Solstice Media,Media,Mid-Market,West,SKU-1002,Atom Workspace,Service,40,180.0,7200.0,R-03 Priya Raman,Online Self-Serve,15
+ORD-100190,2026-07-31,2026-Q3,ACC-5005,Crestline Energy,Energy,Enterprise,South,SKU-5001,Ember Secure,Software,8,980.0,7840.0,R-02 Theo Lindqvist,Direct,0
+ORD-100155,2026-07-15,2026-Q3,ACC-5012,Riverside Council,Public Sector,Mid-Market,Central,SKU-5001,Ember Secure,Software,9,980.0,8820.0,R-05 Sara Nadeau,Online Self-Serve,5
+ORD-100080,2026-07-31,2026-Q3,ACC-5003,Northwind Capital,Financial Services,Enterprise,Central,SKU-3001,Cobalt Storage,Hardware,22,3400.0,74800.0,R-03 Priya Raman,Online Self-Serve,10
+ORD-100194,2026-08-08,2026-Q3,ACC-5006,Solstice Media,Media,Mid-Market,South,SKU-5001,Ember Secure,Software,10,980.0,9800.0,R-01 Dana Okafor,Online Self-Serve,0
+ORD-100330,2026-09-30,2026-Q3,ACC-5003,Northwind Capital,Financial Services,Enterprise,West,SKU-2002,Beacon Insights,Software,21,1500.0,31500.0,R-03 Priya Raman,Partner,5
+ORD-100240,2026-08-25,2026-Q3,ACC-5012,Riverside Council,Public Sector,Mid-Market,East,SKU-5001,Ember Secure,Software,10,980.0,9800.0,R-03 Priya Raman,Partner,20
+ORD-100393,2026-09-04,2026-Q3,ACC-5005,Crestline Energy,Energy,Enterprise,East,SKU-2002,Beacon Insights,Software,15,1500.0,22500.0,R-05 Sara Nadeau,Online Self-Serve,5
+ORD-100352,2026-09-10,2026-Q3,ACC-5007,Ironclad Manufacturing,Manufacturing,Enterprise,South,SKU-4001,Drift Integrator,Service,21,640.0,13440.0,R-02 Theo Lindqvist,Direct,0
+ORD-100236,2026-08-30,2026-Q3,ACC-5006,Solstice Media,Media,Mid-Market,Central,SKU-2002,Beacon Insights,Software,3,1500.0,4500.0,R-04 Marcus Bell,Partner,10
+ORD-100187,2026-07-13,2026-Q3,ACC-5006,Solstice Media,Media,Mid-Market,North,SKU-2002,Beacon Insights,Software,36,1500.0,54000.0,R-05 Sara Nadeau,Direct,10
+ORD-100103,2026-07-16,2026-Q3,ACC-5012,Riverside Council,Public Sector,Mid-Market,Central,SKU-2001,Beacon Analytics,Software,20,2400.0,48000.0,R-04 Marcus Bell,Direct,15
+ORD-100468,2026-09-06,2026-Q3,ACC-5003,Northwind Capital,Financial Services,Enterprise,West,SKU-3001,Cobalt Storage,HW,11,3400.0,37400.0,R-01 Dana Okafor,Online Self-Serve,10
+ORD-100066,2026-07-23,2026-Q3,ACC-5011,Quantum Leap Labs,Technology,Small,Central,SKU-1002,Atom Workspace,Service,26,180.0,4680.0,R-05 Sara Nadeau,Partner,0
+ORD-100353,2026-09-20,2026-Q3,ACC-5001,Meridian Health Group,Healthcare,Enterprise,East,SKU-1002,Atom Workspace,Service,24,180.0,4320.0,R-04 Marcus Bell,Online Self-Serve,0
+ORD-100186,2026-07-19,2026-Q3,ACC-5010,Harbor & Field,Retail,Small,East,SKU-1002,Atom Workspace,Service,38,180.0,6840.0,R-02 Theo Lindqvist,Partner,0
+ORD-100132,2026-07-31,2026-Q3,ACC-5005,Crestline Energy,Energy,Enterprise,South,SKU-3001,Cobalt Storage,HW,9,3400.0,30600.0,R-02 Theo Lindqvist,Partner,10
+ORD-100318,2026-09-14,2026-Q3,ACC-5007,Ironclad Manufacturing,Manufacturing,Enterprise,Central,SKU-4001,Drift Integrator,Svc,31,640.0,19840.0,R-03 Priya Raman,Partner,10
+ORD-100209,2026-08-05,2026-Q3,ACC-5006,Solstice Media,Media,Mid-Market,West,SKU-1001,Atom Workspace,Software,1,1200.0,1200.0,R-03 Priya Raman,Direct,0
+ORD-100102,2026-07-03,2026-Q3,ACC-5011,Quantum Leap Labs,Technology,Small,South,SKU-3001,Cobalt Storage,HW,9,3400.0,30600.0,R-03 Priya Raman,Partner,0
+ORD-100421,2026-09-23,2026-Q3,ACC-5007,Ironclad Manufacturing,Manufacturing,Enterprise,South,SKU-3001,Cobalt Storage,Hardware,47,3400.0,159800.0,R-04 Marcus Bell,Online Self-Serve,10
+ORD-100336,2026-09-21,2026-Q3,ACC-5007,Ironclad Manufacturing,Manufacturing,Enterprise,West,SKU-3001,Cobalt Storage,Hardware,17,3400.0,57800.0,R-03 Priya Raman,Online Self-Serve,5
+ORD-100323,2026-09-27,2026-Q3,ACC-5001,Meridian Health Group,Healthcare,Enterprise,East,SKU-3001,Cobalt Storage,Hardware,22,3400.0,74800.0,R-05 Sara Nadeau,Online Self-Serve,0
+ORD-100149,2026-07-26,2026-Q3,ACC-5003,Northwind Capital,Financial Services,Enterprise,Central,SKU-1001,Atom Workspace,Software,29,1200.0,34800.0,R-01 Dana Okafor,Online Self-Serve,15
+ORD-100012,2026-07-19,2026-Q3,ACC-5002,Atlas Logistics,Transportation,Enterprise,South,SKU-1001,Atom Workspace,Software,40,1200.0,48000.0,R-04 Marcus Bell,Partner,15
+ORD-100015,2026-07-02,2026-Q3,ACC-5005,Crestline Energy,Energy,Enterprise,North,SKU-1001,Atom Workspace,Software,24,1200.0,28800.0,R-01 Dana Okafor,Online Self-Serve,0
+ORD-100250,2026-08-29,2026-Q3,ACC-5004,Bluepine Retail,Retail,Mid-Market,South,SKU-3002,Cobalt Storage,Service,7,420.0,2940.0,R-04 Marcus Bell,Partner,10
+ORD-100372,2026-09-20,2026-Q3,ACC-5005,Crestline Energy,Energy,Enterprise,North,SKU-1001,Atom Workspace,Software,28,1200.0,33600.0,R-04 Marcus Bell,Partner,0
+ORD-100286,2026-08-29,2026-Q3,ACC-5012,Riverside Council,Public Sector,Mid-Market,Central,SKU-1002,Atom Workspace,Service,6,180.0,1080.0,R-01 Dana Okafor,Direct,5
+ORD-100028,2026-07-08,2026-Q3,ACC-5009,Vanguard Insurance,Financial Services,Mid-Market,West,SKU-1002,Atom Workspace,Service,9,180.0,1620.0,R-01 Dana Okafor,Online Self-Serve,10
+ORD-100332,2026-09-06,2026-Q3,ACC-5007,Ironclad Manufacturing,Manufacturing,Enterprise,Central,SKU-1002,Atom Workspace,Service,40,180.0,7200.0,R-03 Priya Raman,Online Self-Serve,0
+ORD-100144,2026-07-19,2026-Q3,ACC-5009,Vanguard Insurance,Financial Services,Mid-Market,East,SKU-2001,Beacon Analytics,Software,21,2400.0,50400.0,R-01 Dana Okafor,Online Self-Serve,15
+ORD-100143,2026-07-19,2026-Q3,ACC-5012,Riverside Council,Public Sector,Mid-Market,South,SKU-2001,Beacon Analytics,Software,16,2400.0,38400.0,R-01 Dana Okafor,Direct,0
+ORD-100443,2026-09-06,2026-Q3,ACC-5003,Northwind Capital,Financial Services,Enterprise,Central,SKU-1002,Atom Workspace,Service,41,180.0,7380.0,R-05 Sara Nadeau,Direct,10
+ORD-100426,2026-09-21,2026-Q3,ACC-5002,Atlas Logistics,Transportation,Enterprise,West,SKU-1002,Atom Workspace,Service,24,180.0,4320.0,R-04 Marcus Bell,Direct,0
+ORD-100300,2026-08-06,2026-Q3,ACC-5002,Atlas Logistics,Transportation,Enterprise,West,SKU-1002,Atom Workspace,Service,1,180.0,180.0,R-01 Dana Okafor,Partner,0
+ORD-100472,2026-09-29,2026-Q3,ACC-5005,Crestline Energy,Energy,Enterprise,South,SKU-3001,Cobalt Storage,HW,10,3400.0,34000.0,R-04 Marcus Bell,Direct,10
+ORD-100202,2026-08-12,2026-Q3,ACC-5011,Quantum Leap Labs,Technology,Small,South,SKU-1002,Atom Workspace,Service,2,180.0,360.0,R-02 Theo Lindqvist,Online Self-Serve,10
+ORD-100370,2026-09-13,2026-Q3,ACC-5007,Ironclad Manufacturing,Manufacturing,Enterprise,East,SKU-4001,Drift Integrator,Service,5,640.0,3200.0,R-03 Priya Raman,Partner,10

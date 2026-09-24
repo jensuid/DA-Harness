@@ -1,0 +1,58 @@
+{
+ "id": "b61e115a-c05e-4760-ac47-ba39fcdc75df",
+ "case_id": "23fd9c29-4eed-48ec-82eb-a8b8742ad4dc",
+ "dataset_id": "e93fe81d-555d-4c00-b565-0a67282da06c",
+ "run_id": "da6bf1cc-7181-42c9-a80c-2ee6e3293657",
+ "artifact_kind": "sql",
+ "code": "SELECT channel, SUM(revenue) AS total FROM read_csv_auto(?) GROUP BY channel",
+ "claim": "Revenue September lebih rendah dari Juli karena channel Online Self-Serve menurun",
+ "findings": [
+  {
+   "axis": "question",
+   "verdict": "pass",
+   "detail": "the claim states a position over 17 profiled column(s)"
+  },
+  {
+   "axis": "data",
+   "verdict": "pass",
+   "detail": "the artifact reads 2 column(s) present in the profile: channel, revenue"
+  },
+  {
+   "axis": "quality",
+   "verdict": "pass",
+   "detail": "the profiled columns the artifact reads carry no material null or duplicate load"
+  },
+  {
+   "axis": "method",
+   "verdict": "concern",
+   "detail": "the result is unordered, so its row order is not a property of the data and a rerun may present it differently"
+  },
+  {
+   "axis": "calculation",
+   "verdict": "pass",
+   "detail": "the artifact executes and a second execution produced the same result"
+  },
+  {
+   "axis": "evidence",
+   "verdict": "concern",
+   "detail": "the claim quotes no magnitude, so there is no number to check against the result"
+  },
+  {
+   "axis": "claim",
+   "verdict": "concern",
+   "detail": "the claim asserts no direction and quotes no magnitude - it reports a topic rather than a result, so it cannot be falsified by the data"
+  },
+  {
+   "axis": "visualization",
+   "verdict": "pass",
+   "detail": "no chart exists for this result and none is required - the numbers are checkable from the table"
+  },
+  {
+   "axis": "limitations",
+   "verdict": "concern",
+   "detail": "3 limitation(s): the result is unordered, so its row order is not a property of the data and a rerun may present it differently | the claim quotes no magnitude, so there is no number to check against the result | the claim asserts no direction and quotes no magnitude - it reports a topic rather than a result, so it cannot be falsified by the data"
+  }
+ ],
+ "source": "deterministic",
+ "created_at": "2026-09-24T22:32:40.587537+00:00"
+}

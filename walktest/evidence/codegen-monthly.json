@@ -1,0 +1,11 @@
+{
+  "step": "C1",
+  "panel": "Ask for the computation",
+  "question_typed": "revenue per bulan, dan jumlah order per bulan",
+  "source": "llm",
+  "columns_used": ["order_id", "order_date"],
+  "explanation": "Aggregates revenue and distinct order counts per month derived from order_date.",
+  "code": "SELECT strftime(order_date, '%Y-%m') AS bulan, SUM(revenue) AS revenue, COUNT(DISTINCT order_id) AS jumlah_order FROM read_csv_auto(?) GROUP BY bulan ORDER BY bulan",
+  "observation": "Pertanyaan diketik manual (input kosong, placeholder 'What would you like to know?'). LLM menghasilkan SQL yang tepat: agregasi bulanan + distinct order_id (benar untuk B2B, 1 order = banyak baris). strftime pada order_date dengan format tanggal campuran - lihat hasil run.",
+  "finding": null
+}

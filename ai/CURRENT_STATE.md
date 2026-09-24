@@ -12,7 +12,19 @@ causal-language guard, the analytical golden suite, the orientation spine,
 question refinement, the decision view, the measurement layer and the
 requirement-traceability matrix. The full gap analysis is `docs/PRD & UX Conformance Evaluation.md`.
 
-- **Active task:** FIX-VERSION-001 DONE - the packaged core reports its own
+- **Active task:** **tidak ada tugas terbuka.** WALK-E2E-001 (walk-test
+  end-to-end flow/UI/UX) SELESAI: semua fase A-F dijalankan sungguh melawan
+  core master + shell Tauri v0.3.2 + bundle web yang sama di Chromium dengan
+  LLM nyata. Trust loop case B2B 484-baris tertutup (`loop_closed: true`).
+  19 temuan (8 MAJOR, 8 MINOR, 3 OBS) di `walktest/FINDINGS.md`, laporan
+  `walktest/REPORT.md`, state mesin live `walktest/HANDOFF.md`. Hasilnya
+  menjadi post-phase fix, satu commit per temuan, prioritas: W-015 (regex
+  `_numbers_in` memotong "2026-07" → false negative pada check evidence
+  HARD), W-011 (PlanPanel tidak POST `/plan`; rail menunjuk aksi tanpa
+  tombol), W-016 (chart + python run tak ada UI), W-014 (interpret/draft
+  LLM timeout 30s + fallback diam). Tidak ada perubahan kode repo; hanya
+  file di `walktest/` + `ai/` state.
+  Sebelumnya: FIX-VERSION-001 DONE - the packaged core reports its own
   version. Since v0.2.0 a bundled core answered `current: unknown` at
   `/updates/latest`, because neither the installed distribution's metadata nor
   `pyproject.toml` survives a one-file PyInstaller bundle and PyInstaller ships

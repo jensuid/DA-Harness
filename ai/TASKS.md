@@ -125,6 +125,24 @@ the gate comes first because a phase is done when a gate says so.
 | P6-MIGRATE-004 | Maintainability (versioned migration path) | DONE | 13 tests in test_migrations.py; P2/P3/P4 gates PASS |
 | P6-UPDATE-005 | Distribution (update check) | DONE | 21 tests in test_updates.py + 7 Rust tests; P2/P3/P4 gates PASS |
 
+## Walk-test (selesai, bukan phase)
+
+Tugas evaluasi flow/UI/UX yang TIDAK tercatat di `ai/HANDOFF.md` saat mulai
+(tugas tambahan dari user). Bukan lulus gate, bukan membuka phase; tujuannya
+menemukan bahan perbaikan. State mesin live: `walktest/HANDOFF.md` (dibaca
+pertama oleh session lanjutan). Mekanisme akses + rencana: `walktest/PLAN.md`.
+Temuan: `walktest/FINDINGS.md` (append-only, 19 blok). Laporan akhir:
+`walktest/REPORT.md`.
+
+| Task ID | Capability | Status | Verification |
+|---------|-----------|--------|--------------|
+| WALK-E2E-001 | Walk-test end-to-end (flow, UI, UX) | DONE | 19 temuan (8 MAJOR, 8 MINOR, 3 OBS); laporan `walktest/REPORT.md`; trust loop case B2B 484-baris tertutup (`loop_closed: true`) |
+
+Konfigurasi target: core master diluncurkan via `.app` v0.3.2 dengan
+`DAH_DEV_CORE=1` (venv checkout, fix version aktif), LLM dari `server/.env`;
+deep DOM walk via Chromium di `:5273` (bundle yang sama dengan Tauri);
+permukaan Tauri (menu) diverifikasi via Accessibility.
+
 ## P7 Product Modes
 
 | Task ID | Capability | Status | Verification |

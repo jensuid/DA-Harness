@@ -2542,3 +2542,46 @@ longer CI-enforced (DEC-005).
   of one, and the deliberately-not-built list in `docs/PRD & UX Conformance
   Evaluation.md` (the Analysis Canvas, the command palette, the Knowledge nav)
   is explicit deferral, not backlog - pick from it deliberately.
+
+---
+
+## Next action (walk-test, selesai 2026-09-25)
+
+**WALK-E2E-001 — walk-test end-to-end sedang IN FLIGHT.** Tugas tambahan dari
+user (tidak tercatat di sini saat mulai, sudah didaftarkan ke
+`ai/TASKS.md`): siapkan satu case + dataset, jalankan app sungguh, evaluasi
+flow, UI, UX untuk bahan perbaikan. Mode comprehensive, LLM nyata.
+
+**Fase A (akses) + Fase B (case + data) SELESAI.** State mesin lengkap di
+`walktest/HANDOFF.md` — session baru baca file itu pertama, lalu lanjut di
+step "berikutnya" (sekarang: Fase C, plan + code generation). Jangan
+menderivasi state dari memori; semua ada di `walktest/`.
+
+Singkatnya: core master jalan via `.app` v0.3.2 + `DAH_DEV_CORE=1`, web dev
+server `:5273`, dataset B2B 484 baris dengan 8 cacat ditanam (3 tertangkap
+profiler), refinement deterministic di-accept. **10 temuan, 4 di antaranya
+MAJOR:**
+
+- **W-009** — "Why these changes" (refinement) kosong; API punya `rationale`
+  + `grounds` lengkap tapi tidak dirender. Accept jadi black-box.
+- **W-008** — profil dataset di-POST otomatis (2x) tiap halaman case dibuka;
+  `profileDataset` di `api.ts:572` POST, dipanggil di `useEffect`
+  (`CaseWorkspace.tsx:191`). "Stage: profile" jadi ambigu.
+- **W-005** — menu "Check for Updates..." hanya `eprintln!` hasilnya
+  (`main.rs:48-60`); repo privat selalu `unknown`, jadi item selalu diam.
+- **W-001** — dev checkout melaporkan `current: 0.1.0` (metadata install
+  stale `dah_server-0.1.0`), padahal pyproject `0.3.2`; `0.1.0` lebih buruk
+  dari "unknown".
+
+Positif yang teramati: guardrail AT-04 menolak jawaban LLM yang kehilangan
+subjek pertanyaan Indonesia lalu fallback deterministic; Accept refinement
+mempertahankan pertanyaan asli di UI + history; kualitas 3 temuan profiler
+sangat baik (dampak terhitung, bukan sekadar "ada duplikat").
+
+Sisa Fase C-F: plan + code gen + run SQL/Python + chart + finding + validate
++ decision; EVALUATE, agent & reviewer, LEARN, history/memory/template;
+UX shell (error taxonomy, empty state); agregasi `walktest/REPORT.md`.
+
+Ketika walk-test selesai, section ini kembali ke "tidak ada tugas terbuka"
+dan hasilnya jadi post-phase fix (satu fix per temuan MAJOR, prioritas:
+W-009, W-005, W-008, W-001).
