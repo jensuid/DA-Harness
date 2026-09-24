@@ -1,6 +1,6 @@
 [project]
 name = "dah-server"
-version = "0.3.1"
+version = "0.3.2"
 description = "Data Analysis Harness - deterministic core (FastAPI)"
 requires-python = ">=3.10"
 dependencies = [
