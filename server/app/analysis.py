@@ -6,6 +6,7 @@ in db.py on SQLite (DEC-001).
 
 import datetime
 import re
+from dataclasses import dataclass
 from decimal import Decimal
 
 import duckdb
@@ -170,6 +171,50 @@ def _type_family(type_name: str) -> str:
     return "other"
 
 
+_MATERIALISED = "_dah_profiled"
+
+
+@dataclass
+class _Profiled:
+    """The file a profile reads: a bound reader, or a table materialised once.
+
+    `read_csv_auto` parses the whole file on every query that reads it, and a
+    profile runs a dozen bounded lookups - the aggregates, the duplicate count
+    and the quality detectors' evidence each take their own look. Each one
+    re-reads and re-parses the CSV from disk, and that is what a 50k-row
+    profile's seconds are spent on: measured, those scans push profiling past
+    AT-29's five-second target without a single one of them doing work the
+    others had not already done.
+
+    Materialising once into a temp table gives every later query an in-memory
+    table to read instead, at the cost of a single scan, without changing a
+    result - the types, the values and the counts are the sniffed reader's
+    own. `bind` is None once the data is a table, and `params()` carries the
+    binding only while there is one, so a call site reads the same way against
+    either.
+    """
+
+    call: str
+    bind: str | None
+
+    def params(self) -> list:
+        return [self.bind] if self.bind is not None else []
+
+
+def _materialise(connection, source: _Profiled) -> _Profiled:
+    """Read the source once into a temp table the rest of the profile reads.
+
+    The single scan this costs replaces the one every later query would have
+    paid; the table carries the sniffed types, so nothing downstream sees a
+    difference in what the columns are.
+    """
+    connection.execute(
+        f"CREATE TEMP TABLE {_MATERIALISED} AS SELECT * FROM {source.call}",
+        source.params(),
+    )
+    return _Profiled(_MATERIALISED, None)
+
+
 def profile_csv(path: str) -> dict:
     """Profile a tabular file: shape, per-column type and null stats, duplicates.
 
@@ -183,14 +228,16 @@ def profile_csv(path: str) -> dict:
     """
     connection = duckdb.connect()
     try:
-        reader_call, bind_path = _sniffed_reader_for(path)
-        # LIMIT 0: the description - names *and* the inferred logical types,
-        # which is what selects each column's stats - is available without
-        # materialising a single row. Fetching the whole dataset here used to
-        # dominate profiling cost on large files (P4-PERF-006: 2.7s of a 6s
-        # profile on 200k rows, all of it rows that were then discarded).
+        # Read the file once and read everything else from the copy. The
+        # description - names *and* the inferred logical types, which is what
+        # selects each column's stats - survives the materialisation, and
+        # every later query then pays nothing to parse. Fetching the dataset
+        # on every scan used to dominate profiling cost on large files
+        # (P4-PERF-006: 2.7s of a 6s profile on 200k rows, all discarded).
+        source = _materialise(connection, _Profiled(*_sniffed_reader_for(path)))
+        reader_call = source.call
         description = connection.execute(
-            f"SELECT * FROM {reader_call} LIMIT 0", [bind_path]
+            f"SELECT * FROM {reader_call} LIMIT 0", source.params()
         ).description or []
         columns = [column[0] for column in description]
         families = {name: _type_family(str(column[1])) for name, column in
@@ -210,7 +257,7 @@ def profile_csv(path: str) -> dict:
             ]
             widths = [1] + [_stat_width(families[name]) for name in columns]
             row = connection.execute(
-                f"SELECT {', '.join(exprs)} FROM {reader_call}", [bind_path]
+                f"SELECT {', '.join(exprs)} FROM {reader_call}", source.params()
             ).fetchone()
 
             total_rows = int(row[0])
@@ -220,14 +267,14 @@ def profile_csv(path: str) -> dict:
                     name, families[name], row[offset:offset + width], total_rows
                 )
                 offset += width
-            duplicate_rows = _duplicate_row_count(connection, path, total_rows)
+            duplicate_rows = _duplicate_row_count(connection, source, total_rows)
 
             # The quality detectors read the same connection while it is still
             # open: their evidence queries are bounded, but they still need a
             # live connection, so they run inside the try rather than after the
-            # close in the finally.
+            # close in the finally. They read the materialised table too.
             samples = _quality_samples(
-                connection, reader_call, bind_path, columns, families, stats
+                connection, source, columns, families, stats
             )
             quality = assess_quality(stats, total_rows, duplicate_rows, samples)
     finally:
@@ -292,17 +339,17 @@ def _column_stat(name: str, family: str, values, total_rows: int) -> dict:
     return stat
 
 
-def _duplicate_row_count(connection, path: str, total_rows: int) -> int:
+def _duplicate_row_count(connection, source: _Profiled, total_rows: int) -> int:
     """Count rows that are exact duplicates of an earlier row.
 
     Total rows minus distinct rows: a row appearing three times contributes two
-    duplicates. Computed on the full row, not per column. The total is already
-    known from the aggregate pass, so only the distinct count rescans the file.
+    duplicates. Computed on the full row, not per column, and against the
+    materialised table - the distinct count is a scan, and the one scan it
+    costs here reads memory rather than re-parsing the file.
     """
-    reader_call, bind_path = _sniffed_reader_for(path)
     distinct = int(connection.execute(
-        f"SELECT COUNT(*) FROM (SELECT DISTINCT * FROM {reader_call})",
-        [bind_path],
+        f"SELECT COUNT(*) FROM (SELECT DISTINCT * FROM {source.call})",
+        source.params(),
     ).fetchone()[0])
     return total_rows - distinct
 
@@ -424,8 +471,7 @@ _EXTREME_SAMPLE = 5
 
 def _quality_samples(
     connection,
-    reader_call: str,
-    bind_path: str,
+    source: _Profiled,
     columns: list[str],
     families: dict[str, str],
     stats: dict[str, dict],
@@ -447,16 +493,16 @@ def _quality_samples(
 
     return {
         "castability": _castability_samples(
-            connection, reader_call, bind_path, other_columns
+            connection, source, other_columns
         ),
         "value_counts": _value_count_samples(
-            connection, reader_call, bind_path, other_columns, stats
+            connection, source, other_columns, stats
         ),
         "distinct_values": _distinct_value_samples(
-            connection, reader_call, bind_path, temporal_columns
+            connection, source, temporal_columns
         ),
         "extremes": _extreme_samples(
-            connection, reader_call, bind_path, numeric_columns
+            connection, source, numeric_columns
         ),
     }
 
@@ -466,7 +512,7 @@ def _quoted(name: str) -> str:
     return '"' + name.replace('"', '""') + '"'
 
 
-def _castability_samples(connection, reader_call, bind_path, columns) -> dict:
+def _castability_samples(connection, source: _Profiled, columns) -> dict:
     """Per column: (non_null, numeric, datetime) counts from one scan.
 
     A VARCHAR column that is mostly numbers or dates but not wholly so is the
@@ -488,7 +534,7 @@ def _castability_samples(connection, reader_call, bind_path, columns) -> dict:
     # One row holding every column's three counts, so this is one scan for the
     # whole table rather than one per column.
     row = connection.execute(
-        f"SELECT {', '.join(exprs)} FROM {reader_call}", [bind_path]
+        f"SELECT {', '.join(exprs)} FROM {source.call}", source.params()
     ).fetchone()
     if row is None:
         return {}
@@ -500,7 +546,7 @@ def _castability_samples(connection, reader_call, bind_path, columns) -> dict:
     return samples
 
 
-def _value_count_samples(connection, reader_call, bind_path, columns, stats) -> dict:
+def _value_count_samples(connection, source: _Profiled, columns, stats) -> dict:
     """Per low-cardinality column: {value: count}.
 
     Serves two detectors that both need the distribution rather than the
@@ -514,9 +560,9 @@ def _value_count_samples(connection, reader_call, bind_path, columns, stats) -> 
         if distinct < 2 or distinct > CATEGORY_MAX_DISTINCT:
             continue
         rows = connection.execute(
-            f"SELECT {_quoted(name)}, COUNT(*) FROM {reader_call} "
+            f"SELECT {_quoted(name)}, COUNT(*) FROM {source.call} "
             f"GROUP BY {_quoted(name)}",
-            [bind_path],
+            source.params(),
         ).fetchall()
         counts: dict[str, int] = {}
         for value, count in rows:
@@ -527,7 +573,7 @@ def _value_count_samples(connection, reader_call, bind_path, columns, stats) -> 
     return samples
 
 
-def _distinct_value_samples(connection, reader_call, bind_path, columns) -> dict:
+def _distinct_value_samples(connection, source: _Profiled, columns) -> dict:
     """Per temporal column: its distinct values, for gap detection.
 
     The distinct list is bounded by the column's own cardinality, so a
@@ -536,32 +582,33 @@ def _distinct_value_samples(connection, reader_call, bind_path, columns) -> dict
     samples = {}
     for name in columns:
         rows = connection.execute(
-            f"SELECT DISTINCT {_quoted(name)} FROM {reader_call} "
+            f"SELECT DISTINCT {_quoted(name)} FROM {source.call} "
             f"WHERE {_quoted(name)} IS NOT NULL",
-            [bind_path],
+            source.params(),
         ).fetchall()
         samples[name] = [row[0] for row in rows if row[0] is not None]
     return samples
 
 
-def _extreme_samples(connection, reader_call, bind_path, columns) -> dict:
+def _extreme_samples(connection, source: _Profiled, columns) -> dict:
     """Per numeric column: its few largest and smallest values.
 
-    Ordered and limited, so DuckDB resolves this without sorting the column -
-    the cost is bounded by the sample size, not the row count.
+    Ordered and limited, so DuckDB resolves this with a top-N selection rather
+    than a full sort, and read against the materialised table, so reaching a
+    column does not include re-parsing the file to get to it.
     """
     samples = {}
     for name in columns:
         quoted = _quoted(name)
         top = connection.execute(
-            f"SELECT {quoted} FROM {reader_call} WHERE {quoted} IS NOT NULL "
+            f"SELECT {quoted} FROM {source.call} WHERE {quoted} IS NOT NULL "
             f"ORDER BY {quoted} DESC LIMIT ?",
-            [bind_path, _EXTREME_SAMPLE],
+            [*source.params(), _EXTREME_SAMPLE],
         ).fetchall()
         bottom = connection.execute(
-            f"SELECT {quoted} FROM {reader_call} WHERE {quoted} IS NOT NULL "
+            f"SELECT {quoted} FROM {source.call} WHERE {quoted} IS NOT NULL "
             f"ORDER BY {quoted} ASC LIMIT ?",
-            [bind_path, _EXTREME_SAMPLE],
+            [*source.params(), _EXTREME_SAMPLE],
         ).fetchall()
         samples[name] = {
             "top": [float(row[0]) for row in top if row[0] is not None],

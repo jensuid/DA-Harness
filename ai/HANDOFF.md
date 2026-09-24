@@ -1,49 +1,50 @@
 ## Next action
-**P8-DECISION-008 is DONE**: the loop has an exit. A validated finding used to be
-the last thing the product did with itself - the verdict was computed, shown and
-discarded, only the status surviving on the finding, and nothing closing over
-what the loop had established. Two changes fix that. The verdict is now kept
-(all nine checks, not only the status), so a decision is read without re-running
-a single query and a reopened case shows what validation found; and a decision
-view assembles it - the question, the findings validation stood behind with
-their caveats and the checks that did not pass (a sentence each, never a score,
-per UX 44), the claims still open with the reason each is unresolved, and the
-implications the analyst writes.
+**P8-MEASURE-009 is DONE**: the PRD's thresholds were prose, and nine of them
+are numbers now. One runner folds five measurements into a report with a
+verdict per acceptance test and exits non-zero when one does not hold -
+`server/.venv/bin/python verification/measure/verify_measure.py`, 9/9 PASS.
 
-The implications are the view's only write and the one thing in it a human
-authors - nothing proposes them and nothing derives them, because a tool that
-drafts the action to take is a tool making the decision. A malformed entry is a
-400 naming the first one to fix. The loop's closure is the core's own value,
-read from `workflow.case_progress` rather than restated, so the decision cannot
-say the loop is open while the rail says it is closed - the same
-one-definition discipline the rail itself used against the stage derivation.
-The decision travels: the export carries the verdicts and the implications, the
-round trip restores both with fresh ids, the duplicate carries them, the delete
-removes them, and the timeline gains two events (the validation itself, now
-that it has a timestamp of its own - AT-44 names it among its minimum events -
-and the decision). Schema v12 -> v13, two tables, one in-place migration.
+Measured: AT-38 is the suite itself under a `sys.monitoring` line counter
+(core 93.9%, analytical 92.9%, evidence 92.4%, all above the PRD's targets);
+AT-28 an opening p95 of 223ms against 2s over the heaviest case in the
+envelope; AT-29 a profiling p95 of 1.5s against 5s over a generated 50k-row
+benchmark; AT-46 a case built at the boundary - a hundred multi-dataset runs,
+two hundred findings, twelve hundred evidence edges - with every surface a
+reopened case offers answering in budget, export round trip included; AT-45
+declared with the PRD's numbers and refused at each limit; AT-37 scanned
+against OSV, 0 critical / 0 high over 22 packages. AT-27, AT-30 and AT-32 are
+asserted in the web suite and the report says where the number lives rather
+than inventing one - jsdom is not a browser.
 
-The shell gained the panel and, with it, the case's export, which existed as an
-endpoint and had no surface in the product at all - its natural home is the
-decision it sits beside, per UX 48's flow ending at Decision Support -> Export.
+Three findings the measurement made, each fixed with its own tests. Profiling
+a 50k-row dataset took 12.5s against AT-29's 5s, because each of the profile's
+dozen bounded lookups re-parsed the CSV; one materialisation into a temp table
+gives every later query an in-memory table and the same profile takes 1.7s,
+with no measured result changed. The counter's denominator counted
+function-signature lines the interpreter never reports, so coverage read lower
+than it was - the exclusion is AST-derived and the numerator is intersected
+with the executable set. And the guards `python_exec` enforces in the child
+were unreachable by measurement, so eighteen tests now exercise them in the
+process that measures them - which is what lifted the evidence group to its
+target, and is worth more than relying on the child to reach them.
 
-**Gates:** 548 server (+30), 116 web (+10), build green, 28/28 e2e, the golden
-suite still 21/21 on both thresholds, AT-04's four still holding.
+**Gates:** 644 server (+44: 26 measurement, 18 guards), 138 web, build green,
+28/28 e2e, the golden suite still 21/21 and AT-04's four still holding.
 
 ### What is next, in priority order
 
-- **P8-MEASURE-009** - the measurement layer (AT-27..30/32/37/38/45/46):
-  coverage, perf, a11y, deps and the data-size envelope. Mechanical now that
-  two measured suites exist to borrow the pattern from.
-- **P8-TRACE-010** - the traceability matrix (AT-48); last, it traces what
-  1-9 delivered.
+- **P8-TRACE-010** - the traceability matrix (AT-48); last, because it traces
+  what 1-9 delivered. Every AT now has a number for it to point at.
 
 ## Recent completions
+
 
 The last tasks to land, newest first. The contract and done-record for each is
 in `ai/TASKS.md` (rolling window) or `ai/TASKS-ARCHIVE.md`; the reasoning and
 the bugs found are in `ai/HANDOFF-ARCHIVE.md`.
 
+- **P8-MEASURE-009** - the measurement layer (AT-27..30/32/37/38/45/46); the runner that folds five measurements into one report, the profiling
+  cost it found and fixed, and the counter's corrected denominator.
 - **P8-DECISION-008** - the decision view (UX 46, AT-43); the persisted
   verdict, the read-only view, the implications as the only write, and the
   export that carries it.

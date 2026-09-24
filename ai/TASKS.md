@@ -149,184 +149,8 @@ answers.
 | P8-SHELL-006 | UX (the orientation spine) | DONE | 13 tests added (477 server, 99 web); AT-33's seven questions answerable from the rendered workspace; e2e green |
 | P8-REFINE-007 | AI (question refinement) | DONE | 41 tests added (518 server, 106 web); schema v12; AT-04's four thresholds measured over 50 cases at 100%/100%/0/0; e2e green |
 | P8-DECISION-008 | UX (the decision view) | DONE | 30 tests added (548 server, 116 web); schema v13; 28/28 e2e; the verdict persists, the export carries it |
-| P8-MEASURE-009 | Verification (coverage, perf, a11y, deps) | OPEN | AT-27..30/32/37/38/45/46 |
+| P8-MEASURE-009 | Verification (the measurement layer) | DONE | 644 server, 138 web, e2e 28/28; every measured AT holds - AT-38 core 93.9% / analytical 92.9% / evidence 92.4%, AT-37 0/0, AT-28 p95 223ms, AT-29 p95 1.5s, AT-46 at the envelope |
 | P8-TRACE-010 | Verification (the traceability matrix) | OPEN | AT-48 |
-
-### P8-REFINE-007 contract
-
-```
-TASK ID: P8-REFINE-007
-MILESTONE: P8 Analytical Contract
-CAPABILITY: AI (question refinement)
-GOAL: AT-04 requires that an AI refinement preserves the user's original
-      question, presents the revision separately, allows accept / reject /
-      edit, and never silently overwrites - and measures it over 50 cases:
-      >= 95% preserve the original, >= 90% semantically relevant, 0 silent
-      overwrites, 0 fabricated data references. Before this task nothing
-      proposed a sharpening at all: a vague question ("why are sales down?")
-      was carried verbatim into every plan, every generated query and every
-      finding, so the analysis inherited its vagueness and the product had no
-      surface where the gap was even visible.
-CONTEXT: the six tasks before it built the objects a refinement reads and the
-         surfaces it sits beside - the context object (P8-CONTEXT-001), the
-         profile's own measurements with their quality defects
-         (P8-QUALITY-002), and the orientation spine that places the question
-         at the top of the case (P8-SHELL-006). The refinement grounds itself
-         in the profiler's measured columns and ranges, so it proposes from
-         the same data every other assistant reads.
-INPUTS: the case's question, the most recently profiled dataset's profile
-        (columns, per-column stats, measured min/max and cardinality), and the
-        context's purpose / sub-questions / hypotheses when the case stated
-        intent.
-RELEVANT FILES: server/app/refine.py (new - the deterministic engine, the
-                validation gate, the LLM refiner behind the same interface),
-                server/app/main.py (the five refine endpoints and the
-                duplicate/delete wiring), server/app/db.py (schema v12, the
-                refinements table and its migration), server/app/models.py
-                (Refinement, RefinementGround, RefinementEdit,
-                REFINEMENT_STATUSES), server/app/history.py (the two new event
-                kinds), server/app/exporter.py (the round trip),
-                verification/refine/{cases.py,verify_refine.py} (new - the
-                50-case corpus and the measurement runner),
-                server/tests/test_refine.py (new, 41 tests),
-                web/src/RefinePanel.tsx (new), web/src/CaseWorkspace.tsx,
-                web/src/api.ts, web/src/CaseWorkspace.test.tsx (+7 tests),
-                ai/HANDOFF.md, ai/TASKS.md, ai/CURRENT_STATE.md
-REQUIRED CHANGE:
-  - One interface, two engines, as in the planner / assistant / drafter /
-    generator: `refine_question` is deterministic and always available;
-    `LLMRefiner` calls an OpenAI-compatible endpoint when DAH_LLM_API_KEY is
-    set and its output is gated by `validate_refinement` before it is stored.
-    A failure of the LLM falls back to the deterministic proposal, which may
-    itself be a decline.
-  - The deterministic engine appends grounding rather than rewording: the
-    refined question is the original with clauses added - the measure, the
-    split, the time window, the comparison a direction word leaves unstated -
-    each one a column and a range the profile measured. So the original is
-    preserved by construction and the refinement is relevant by construction,
-    and the suite measures both anyway because a structural guarantee is one
-    renamed variable away from a regression. It declines rather than invents:
-    no profile, nothing numeric or temporal, no subject terms to preserve, or
-    a question already naming its measure, split and window is left alone, and
-    the decline is recorded rather than answered as an empty proposal.
-  - The gate: the original must be echoed verbatim, the subject terms must
-    survive, every cited column must be one the profile has, every quoted
-    column name must exist, every figure must be one the profile measured (in
-    any spelling the formatter or the analyst might use), and a rationale is
-    required - a bare proposal never reaches the analyst.
-  - Five endpoints, and only two of them write: POST /refine proposes
-    (idempotent while pending and the question unmoved); GET /refine and GET
-    /refinements are read-only; accept and edit are the only paths that move
-    the case's question, and reject keeps the original and writes nothing but
-    the decision. A decided proposal is a 409, not a second decision; an edit
-    that restores the original is refused with "use keep original instead".
-  - The original is carried on the proposal row, so recoverability is a
-    property of the store, not of the client that happened to be looking: it
-    survives the accept that replaced it on the case row, travels with the
-    export and the duplicate, and is readable from the case's refinement
-    history and its timeline (two new event kinds - the proposal, then the
-    decision).
-  - The measurement: verification/refine/verify_refine.py drives 50 cases over
-    6 datasets against a real server over HTTP with the LLM vars scrubbed,
-    walking accept / edit / keep / pending at volume, and reports the four
-    numbers to verification/refine/REPORT.md. Relevance is measured
-    mechanically, not judged: the refined question keeps the original's subject
-    terms and names at least one real column. The same four numbers are
-    asserted in the test suite.
-  - The shell panel (UX 12) shows the transformation explicitly - "Your
-    question" above "Refined question", the arrow between them, the engine that
-    spoke, the rationale and the grounds behind a disclosure - and accept /
-    edit / keep original are the only three buttons. It sits in the orientation
-    zone, where the question is described.
-NON-GOALS: the decision view (P8-DECISION-008); measurement of coverage /
-           perf / a11y (P8-MEASURE-009); refining the context's sub-questions
-           and hypotheses rather than the primary question; an LLM judgement of
-           relevance - the measurement is mechanical by design, and the
-           deterministic engine makes three of the four thresholds structural.
-CONSTRAINTS: green only. No new dependency (DEC-001 - the LLM client is
-             httpx, already required). Schema moves to v12 with a migration
-             that upgrades an existing store in place. Deterministic and
-             offline by default: the runner fails unless the deterministic
-             engine answered, so a passing suite is itself proof no LLM was
-             called. Zero silent overwrites is a Level 0 requirement.
-ACCEPTANCE CRITERIA:
-- [x] the original question is preserved verbatim beside the proposal, and is
-      recoverable after accept, after edit, and after keep-original
-- [x] accept / edit / keep-original are the only three paths, and there is no
-      fourth that moves the question
-- [x] 0 silent overwrites: the case's question moves only through the accept
-      and edit endpoints, and the original stays on the row
-- [x] 0 fabricated data references: the gate rejects a cited or quoted column
-      the profile does not have and a figure it did not measure, before the
-      analyst sees the proposal
-- [x] AT-04 measured over 50 cases: preserve 100% (>= 95%), relevant 100%
-      (>= 90%), 0 silent overwrites, 0 fabrications
-- [x] the four numbers are asserted in the test suite, so a regression fails a
-      test rather than a report nobody reads
-- [x] a deliberately-wrong expectation is caught, proving the measurement can
-      fail
-- [x] the round trip through export keeps the refinement history, and the
-      original with it
-- [x] the suite is deterministic and offline, no LLM call
-TESTS: test_refine.py (41) - the engine's additions and its four decline
-       paths, its determinism, the gate's nine rejection paths and its
-       allowance of a measured figure in any spelling, the five endpoints
-       (proposes nothing, a read never proposes, idempotency, the decline
-       answer, accept / keep / edit and their error contracts: 409 on a second
-       decision, 404 on another case's proposal, 400 on an edit that restores
-       the original or is empty), the history's two events, the export round
-       trip including a decline, the duplicate carrying the history, the delete
-       removing the proposals, the schema upgrade recording the migration, and
-       the measurement over a real server. CaseWorkspace.test.tsx (+7) - the
-       transformation shown with both halves, accept moving the question while
-       the original stays visible, keep original writing nothing, the edit
-       pre-filled from the proposal, a failed decision reported, the decline
-       said rather than shown as an empty panel, and the panel in the
-       orientation zone.
-VERIFICATION: `cd server && DAH_LLM_API_KEY= DAH_LLM_BASE_URL= DAH_LLM_MODEL=
-              .venv/bin/python -m pytest -q` green (518);
-              `server/.venv/bin/python verification/refine/verify_refine.py`
-              green (50 cases, four thresholds);
-              `server/.venv/bin/python verification/e2e/verify_e2e.py` green
-              (25/25); `cd web && npm test && npm run build` green (106, build
-              ok).
-STATE UPDATE: TASKS/CURRENT_STATE gain the task; schema v11 -> v12.
-```
-
-TASK: P8-REFINE-007 - question refinement
-ID: P8-REFINE-007
-PRIORITY: high
-STATUS: DONE
-SUMMARY: AT-04's four numbers now exist, and the question is the one place in
-         the loop a vague ask was carried verbatim into every artifact after
-         it. Two engines sit behind one interface, as in every other assistant:
-         a deterministic refiner that appends grounding the profile measured
-         (the measure, the split, the window, and the comparison a direction
-         word like "down" leaves unstated) and an LLM refiner whose output is
-         gated before the analyst sees it - the original echoed verbatim, the
-         subject terms surviving, every cited and quoted column real, every
-         figure measured, a rationale present. The refined question is the
-         original with clauses added, never a replacement, so preserve and
-         relevant are structural; the suite measures them anyway. The engine
-         declines rather than invents - no profile, nothing numeric or
-         temporal, nothing to preserve, or an already-answerable question - and
-         the decline is recorded, not answered as an empty proposal.
-         Measured over 50 cases and 6 datasets against a real server:
-         preserve 100%, relevant 100%, 0 silent overwrites, 0 fabrications.
-         The three paths are the only three: accept and edit are the sole
-         writes to the case's question, and keep-original writes nothing but
-         the no. Recoverability is a property of the store, not the client -
-         the original rides on the proposal row, so it survives the accept
-         that replaced it, the export round trip and the duplicate, and it is
-         readable in the case's timeline as two events. Schema v12, one
-         migration, upgrading in place. Two bugs the work surfaced, both fixed
-         with their own tests: the new suite's schema test caught that a fresh
-         store records no migration rows at all (it is born current, which is
-         the truth - the assertion now builds the legacy store the upgrade
-         path is actually about), and the web test caught that the api spies
-         are module-level, so a "not called" assertion in a top-level describe
-         answers for every test before it (its own beforeEach clear, the same
-         discipline the CaseWorkspace describe already had).
 
 ### P8-DECISION-008 contract
 
@@ -488,6 +312,201 @@ SUMMARY: the loop has an exit. A validated finding used to be the last thing
          previous test's persistence are now its own beforeEach - a fragility
          the refinement describe beside it still has and this task did not
          touch.
+
+### P8-MEASURE-009 contract
+
+```
+TASK ID: P8-MEASURE-009
+MILESTONE: P8 Analytical Contract
+CAPABILITY: Verification (the measurement layer)
+GOAL: the PRD's measurement targets existed as prose and nothing in the
+      product computed one of them. AT-38's coverage, AT-27..30's performance
+      budgets, AT-32's accessibility, AT-37's dependency security and AT-45/
+      46's size envelopes each had a threshold and no number. This task
+      attaches a measured number to each - measured against a real core over
+      real HTTP, against the OSV database, or by running the suite itself
+      under a line counter - and asserts every one of them in the test suite,
+      so a regression fails a test rather than a report nobody reads.
+CONTEXT: the eight tasks before it built what the layer measures and two
+         measured suites to borrow the pattern from - the golden suite
+         (AT-40/AT-01) and the refinement runner (AT-04), both of which start
+         a real uvicorn on a free port with an isolated data dir and the LLM
+         vars scrubbed. The web side (AT-27, AT-30, AT-32) was already
+         asserted in the shell's own suite by the a11y and measure test files
+         this task found in flight; what was missing was the fold that reads
+         them as a measurement and the server-side numbers beside them.
+INPUTS: the suite (coverage's driver - its calls are what coverage means),
+        the production inventory computed from pyproject.toml and
+        package.json plus the installed distributions' own metadata, the OSV
+        database over HTTP, a generated 50k-row benchmark dataset, and the
+        envelope's own declared limits.
+RELEVANT FILES: verification/measure/verify_measure.py (new - the runner,
+                the fold, the report), verification/measure/perf.py (new -
+                AT-28/29/46 against a real core), verification/measure/
+                coverage.py (AT-38, the line counter - in flight, its
+                denominator corrected), verification/measure/deps.py (AT-37,
+                in flight), server/app/limits.py (AT-45/46, in flight),
+                server/app/main.py (GET /envelope, the attach-time refusal),
+                server/app/analysis.py (the profiling fix AT-29's measurement
+                forced), server/tests/test_measure.py (new, 26),
+                server/tests/test_python_guards.py (new, 18),
+                server/tests/test_envelope.py and test_llm_adapters.py (in
+                flight), web/src/{accessibility,measure}.{ts,test.tsx} (in
+                flight), web/vite.config.ts (css: true, so the a11y audit
+                reads the shipped stylesheet), ai/HANDOFF.md, ai/TASKS.md,
+                ai/CURRENT_STATE.md
+REQUIRED CHANGE:
+  - The runner folds five measurements into one report, one line per
+    acceptance test, and exits non-zero when a measured threshold did not
+    hold. Each measurement is injected so a test can prove a failure fails
+    the gate, and each can be skipped - a skipped measurement is named in the
+    report rather than silently making it smaller.
+  - AT-27/30/32 are asserted in the web suite, not measured here, and the
+    report says so: jsdom is not a browser, and a millisecond there is not a
+    millisecond in one. The suite's green is the measurement; the thresholds
+    are pinned in its tests. Its summary line is the evidence the report
+    quotes.
+  - AT-28 measures an opening as the workspace actually opens one - the case,
+    its datasets, runs, findings, decision and history as one user-visible
+    wait - and takes the p95 over the heaviest case in the envelope, because a
+    percentile over an empty case measures nothing.
+  - AT-29 profiles a generated 50k-row benchmark dataset (the scale P4 pinned,
+    with a date, a split, a measure, a duplicate and a null) and takes the p95.
+  - AT-46 builds a case *at* the envelope - ten datasets, a hundred
+    multi-dataset runs that each bind all ten so the evidence graph crosses a
+    thousand edges, two hundred findings - then reads every surface a reopened
+    case offers and requires each to answer, in budget, at that scale.
+    Stability is a measured property of the reads at the boundary, and the
+    import round trip is among them, so a case that heavy must still restore
+    or the boundary is a dead end.
+  - AT-45's two halves are both measured: the declaration is the PRD's literal
+    numbers, and a dataset past each limit is refused through the same
+    function the attach endpoint calls. The row refusal runs at a tightened
+    value because the PRD's own five million rows would be the fixture the
+    refusal exists to avoid loading; the suite pins the real number.
+  - AT-37 scans the computed inventory against OSV and classifies severity
+    from the advisory's own CVSS vector. An unreachable database answers
+    `unknown` with a reason and the gate is red for it, because "could not
+    check" and "nothing to fix" are different statements.
+  - Two bugs the measurement surfaced, both fixed with their own tests. (1)
+    Profiling a 50k-row dataset took 12.5s against AT-29's 5s, because every
+    one of the profile's dozen bounded lookups re-read and re-parsed the CSV.
+    One materialisation into a temp table gives every later query an
+    in-memory table - same types, same values, same counts - and the same
+    profile takes 1.7s. (2) The coverage counter's denominator counted
+    function-signature continuation lines, which the compiler attributes to
+    the function's code object but the interpreter never reports; the
+    denominator was bigger than the numerator could reach, so coverage read
+    lower than it was. The exclusion is AST-derived and signature-only, and
+    the numerator is intersected with the executable set so a line cannot
+    count as covered outside the denominator either.
+  - The guards python_exec enforces in the child are now tested in the process
+    that measures them: the dunder-hardened handle, the import wall, the
+    restricted builtins, the tabulation shapes and the wall-clock alarm. They
+    are security-relevant (AT-36) and they ran only in a process the line
+    counter cannot instrument, so testing them directly is worth more than
+    relying on the child to reach them - and it is what lifted the evidence
+    group to its target.
+NON-GOALS: the traceability matrix (P8-TRACE-010); re-measuring AT-01, AT-04
+           or AT-40, which have their own runners and reports (the report
+           points at them); a browser-side p95, which needs benchmark hardware
+           and a browser this layer does not have; numeric contrast
+           measurement (jsdom does not paint), recorded in the audit itself.
+CONSTRAINTS: green only. No new dependency (DEC-001 - the coverage counter is
+             sys.monitoring, the scanner is urllib, the p95 is arithmetic).
+             Deterministic and offline: the LLM vars are scrubbed from every
+             server the runner starts, and a passing run needs no network
+             except AT-37's scan, which reports `unknown` rather than a
+             fabricated clean when it cannot reach OSV. The profiling fix
+             changes no measured result - the existing at-scale correctness
+             tests pin the values.
+ACCEPTANCE CRITERIA:
+- [x] every one of AT-27..30, AT-32, AT-37, AT-38, AT-45 and AT-46 has a
+      measured number attached, not a claim
+- [x] AT-38 holds at every target: core >= 80%, analytical >= 90%, evidence
+      >= 90%
+- [x] AT-37 scans the real inventory: 0 critical, 0 high, with the scan's
+      state named when it could not run
+- [x] AT-28 and AT-29 hold at their p95 targets over the benchmark shapes
+- [x] AT-46's boundary case holds - the counts reach the envelope and every
+      surface answers in budget, including the export round trip
+- [x] AT-45 is both declared with the PRD's numbers and enforced at each limit
+- [x] the measurement can fail: a deliberately wrong expectation is caught for
+      the percentile, the coverage ratio, the dependency counts, the envelope
+      drift, the refusal and the fold
+- [x] the numbers are asserted in the suite, so a regression fails a test
+- [x] the profiling cost the measurement exposed is fixed and its at-scale
+      correctness is unchanged
+TESTS: test_measure.py (26) - the percentile's interpolation and its empty
+       sample, a timing over budget failing and a timing with no samples
+       measuring nothing, the boundary counts being the PRD's envelope, a
+       boundary case below it or that does not answer failing, the import's
+       201 as its success and a refused round trip named, the declaration
+       being the PRD's numbers and a drifted limit caught, both refusals and a
+       check that stopped refusing, the dependency classifier counting a
+       Critical from its vector and an unreachable database answering unknown
+       never clean, the coverage groups' ratios and their named shortfalls, a
+       vacuous group failing, the fold green with all measurements holding,
+       one failing measurement failing the gate and being named, an offline
+       dependency scan red with its reason, a red web suite failing the shell
+       targets, and a skipped measurement named rather than silent.
+       test_python_guards.py (18) - the dunder-hardened handle and its query
+       callable, read-only SQL through the handle, the import wall's refusals
+       and its allowlist, the meta_path finder's installation and removal, the
+       builtins' dangerous omissions, the tabulation's three shapes and two
+       rejections, in-process execution and its three contract violations, the
+       resource limits' restoration, and the wall-clock alarm. The suite's own
+       process is kept away from the CPU rlimit the child is meant to enforce.
+VERIFICATION: `cd server && DAH_LLM_API_KEY= DAH_LLM_BASE_URL= DAH_LLM_MODEL=
+              .venv/bin/python -m pytest -q` green (644);
+              `server/.venv/bin/python verification/measure/verify_measure.py`
+              green (every measured threshold holds, the report written to
+              verification/measure/REPORT.md);
+              `server/.venv/bin/python verification/e2e/verify_e2e.py` green
+              (28/28); `cd web && npm test && npm run build` green (138).
+STATE UPDATE: TASKS/CURRENT_STATE gain the task. No schema change.
+```
+
+TASK: P8-MEASURE-009 - the measurement layer
+ID: P8-MEASURE-009
+PRIORITY: high
+STATUS: DONE
+SUMMARY: the PRD's thresholds were prose; nine of them are numbers now. One
+         runner folds five measurements into a report with a verdict per
+         acceptance test and exits non-zero when one does not hold. AT-38 is
+         the suite run under a sys.monitoring line counter - core 93.9%,
+         analytical 92.9%, evidence 92.4%. AT-28 and AT-29 are measured
+         against a real core over HTTP: an opening p95 of 223ms against a 2s
+         target over the heaviest case in the envelope, and a profiling p95 of
+         1.5s against 5s over a generated 50k-row benchmark. AT-46 builds a
+         case at the boundary itself - a hundred multi-dataset runs, two
+         hundred findings, twelve hundred evidence edges - and requires every
+         surface a reopened case offers to answer in budget, the export round
+         trip among them. AT-45 is both halves: the declaration is the PRD's
+         literal numbers, and a dataset past each limit is refused through the
+         same function attach calls. AT-37 scans the computed inventory
+         against OSV and classifies from the CVSS vector: 0 critical, 0 high,
+         22 of 22 packages. AT-27, AT-30 and AT-32 are asserted in the web
+         suite and the report says where the number lives instead of inventing
+         one, because jsdom is not a browser.
+         Two bugs the measurement surfaced, both fixed with their own tests.
+         Profiling a 50k-row dataset took 12.5s against AT-29's 5s, because
+         each of the profile's dozen bounded lookups re-parsed the CSV; one
+         materialisation gives every later query an in-memory table and the
+         same profile takes 1.7s, with no measured result changed. And the
+         counter's denominator counted function-signature lines the
+         interpreter never reports, so coverage read lower than it was - the
+         exclusion is AST-derived, and the numerator is intersected with the
+         denominator's notion of line. A third gap the coverage number named:
+         the guards python_exec enforces in the child were unreachable by
+         measurement, so they are tested in the process that measures them -
+         eighteen tests of the dunder wall, the import wall, the builtins and
+         the tabulation, which is what lifted the evidence group to its
+         target. One hazard the work surfaced along the way: the CPU rlimit is
+         process-wide and cumulative, so an in-process test that sets it
+         delivers SIGXCPU to the suite itself once it has burned more CPU
+         seconds than one run allows; the fixture that fakes the setter is
+         documented for the same reason.
 
 Contracts for the rolling window (the two most recent). Older blocks are in
 `ai/TASKS-ARCHIVE.md`.

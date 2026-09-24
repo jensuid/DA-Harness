@@ -12,30 +12,33 @@ causal-language guard, the analytical golden suite, the orientation spine,
 question refinement, the decision view, and the measurement layer. The full gap
 analysis is `docs/PRD & UX Conformance Evaluation.md`.
 
-- **Active task:** P8-REFINE-007 DONE - question refinement (AT-04). The
-  vague question is the one thing carried verbatim into every plan, query and
-  finding after it; this task is the surface where its sharpening is proposed.
-  Two engines behind one interface, as in every other assistant: a
-  deterministic refiner that appends grounding the profiler measured (the
-  measure, the split, the window, the comparison a direction word leaves
-  unstated) and an LLM refiner gated by `validate_refinement` before the
-  analyst sees it - original echoed verbatim, subject terms surviving, every
-  cited and quoted column real, every figure measured, a rationale present.
-  The refined question is the original plus clauses, never a replacement, so
-  preserve and relevant are structural; the suite measures them anyway, because
-  a structural guarantee is one renamed variable away from a regression. The
-  engine declines rather than invents - no profile, nothing numeric or
-  temporal, no subject terms, or an already-answerable question - and the
-  decline is recorded, not answered as an empty proposal.
-  Measured over 50 cases and 6 datasets against a real server: preserve 100%,
-  relevant 100%, 0 silent overwrites, 0 fabrications. The three paths are the
-  only three - accept and edit are the sole writes to the case's question,
-  keep-original writes nothing but the no, a decided proposal is a 409 - and
-  the original rides on the proposal row, so it survives the accept that
-  replaced it, the export round trip and the duplicate, and it shows in the
-  timeline as two new event kinds.
-  Before it: P8-SHELL-006 (the orientation spine), P8-GOLDEN-005, P8-CAUSAL-004,
-  P8-VALID-003, P8-QUALITY-002, P8-CONTEXT-001, the v0.2.0 release.
+- **Active task:** P8-MEASURE-009 DONE - the measurement layer
+  (AT-27..30/32/37/38/45/46). The PRD's thresholds were prose; nine of them
+  are numbers now. `verification/measure/verify_measure.py` folds five
+  measurements into one report with a verdict per acceptance test and exits
+  non-zero when one does not hold - 9/9 PASS, the report at
+  verification/measure/REPORT.md. AT-38 is the suite itself under a
+  `sys.monitoring` line counter (core 93.9%, analytical 92.9%, evidence
+  92.4%). AT-28 and AT-29 are timed against a real core over HTTP (opening
+  p95 223ms against 2s; profiling p95 1.5s against 5s over a generated 50k-row
+  benchmark). AT-46 builds a case at the envelope - a hundred multi-dataset
+  runs, two hundred findings, twelve hundred evidence edges - and requires
+  every surface a reopened case offers to answer in budget, the export round
+  trip among them. AT-45 is declared with the PRD's numbers and refused at
+  each limit through the same function attach calls. AT-37 scans the computed
+  inventory against OSV, classifying from the CVSS vector (0 critical, 0 high,
+  22/22 packages). AT-27, AT-30 and AT-32 are asserted in the web suite and
+  the report says where that number lives instead of inventing one.
+  Three findings the measurement made, all fixed with their own tests:
+  profiling re-parsed the CSV once per bounded lookup (12.5s over the 5s
+  target) and now materialises once into a temp table (1.7s, no measured
+  result changed); the counter's denominator counted function-signature lines
+  the interpreter never reports, so coverage read lower than it was; and the
+  guards `python_exec` enforces in the child are now tested in the process
+  that measures them, which is what lifted the evidence group to its target.
+  Before it: P8-DECISION-008, P8-REFINE-007, P8-SHELL-006, P8-GOLDEN-005,
+  P8-CAUSAL-004, P8-VALID-003, P8-QUALITY-002, P8-CONTEXT-001, the v0.2.0
+  release.
 
 - **Known issues:** CI's billing is suspended: every workflow (Release, and both CI suites) is
   rejected at start with "recent account payments have failed or your spending
@@ -49,42 +52,25 @@ analysis is `docs/PRD & UX Conformance Evaluation.md`.
   documented minimum but is no longer enforced by CI, and a green run no longer
   proves the exact Intel triple a local build produces. Restoring that needs a
   self-hosted Intel runner.
-- **Test status:** server 548 passed (30 for this task: the view's assembly -
-  guidance before a finding, a supported finding with no uncertainty, a
-  partially supported one carrying its failing checks verbatim from the
-  verdict, a refused one as an open item naming the hard dimension that failed,
-  the purpose, oldest-first ordering, loop-closed agreeing with /progress, the
-  verdict readable without re-validating, reading changing nothing across
-  repeated reads, the duplicate, the delete, the implications' write contract
-  and its three 400 shapes, the two new timeline events, the export's two new
-  sections and their round trip, an older package degrading rather than
-  failing, the AT-43 measurement over two findings, and the v12 -> v13
-  upgrade); web 116 passed (10 for this task: the panel in the work zone, the
-  question and purpose, a validated finding with its caveat and no score
-  anywhere in the panel, the failing checks as the uncertainty, the open claims
-  and their reasons, the guidance before a closed loop, a failed read
-  reported, the implications written and confirmed saved, a failed save
-  reported with the server's own sentence, and the export downloaded as a
-  named file). Before it, the server suite's own additions this phase: 6 golden (the ten
-  shapes' coverage, the suite's own size floor, the two-way fixture audit, the
-  deliberately-wrong expectation the audit catches, the comparator's tolerance,
-  and the one slow measurement over a real server; +3 in test_analysis.py for
-  the date/timestamp/numeric serialisation the suite surfaced), 16 causality
-  (the corpus's three AT-18 thresholds computed and asserted, one test per
-  detector path - hedging, negation, intervention-used-vs-mentioned, word
-  boundaries - the verdict's new gate through validate_finding, and a hedged
-  finding that can still be `supported`), 16 validation, 26 quality, 21
-  context. Desktop shell 22 Rust tests; P2, P3 and P4 gates PASS;
-  **v0.2.0 released** (tag `v0.2.0` on `ec819fc`).
-- **e2e:** all 28 real-server steps PASS (the journey now closes the loop with
-  a chart, reads the decision view, writes the implications, and asserts the
-  export carries the verdicts and the decision through the round trip).
+- **Test status:** server 644 passed (44 for this task: 26 in
+  test_measure.py - the percentiles, the boundary counts, the dependency
+  classifier, the coverage ratios and the fold that turns a failing
+  measurement into a red gate, each with a deliberately wrong expectation
+  proving it can fail; and 18 in test_python_guards.py - the dunder, import
+  and builtins walls and the tabulation shapes, tested in the process that
+  measures them). The web suite is 138 (12 a11y, 10 measure - asserted in the
+  shell's own suite, which the measurement runner reads as its evidence).
+  Desktop shell 22 Rust tests; P2, P3 and P4 gates PASS; **v0.2.0 released**
+  (tag `v0.2.0` on `ec819fc`).
+- **e2e:** all 28 real-server steps PASS (the profiling change touched the
+  attach-and-profile path the journey walks; the journey is unchanged and
+  green).
 
-- **Next task:** P8-MEASURE-009 - the measurement layer (AT-27..30/32/37/38/
-  45/46): coverage, perf, a11y, deps and the data-size envelope. Mechanical now
-  that two measured suites exist to borrow the pattern from - the golden suite
-  and the AT-04 refinement runner. After it: P8-TRACE-010 (the traceability
-  matrix), last because it traces what 1-9 delivered.
+- **Next task:** P8-TRACE-010 - the requirement-traceability matrix
+  (AT-48). Last, because it traces what 1-9 delivered, and every AT now has a
+  measured number for the matrix to point at - the runner's report is the
+  "Verification" column of the PRD's own control artifact (its section 59).
+  When it lands, P8 is complete and v0.3.0 is the release to tag.
   The release is done: **v0.2.0** is tagged on `ec819fc`. GitHub Actions is
   still refusing to start any job with "recent account payments have failed";
   that is an account billing problem (Settings > Billing & plans), not a code
@@ -262,6 +248,16 @@ analysis is `docs/PRD & UX Conformance Evaluation.md`.
   thresholds - preserve >= 95%, relevant >= 90%, 0 silent overwrites, 0
   fabricated data references - writing verification/refine/REPORT.md; exit 0
   only when all four hold; ~40s cold)
+- The measurement layer (AT-27..30/32/37/38/45/46): `server/.venv/bin/python
+  verification/measure/verify_measure.py` (starts a real core on a free port
+  for the timings, runs the suite itself under a line counter for coverage,
+  scans the production inventory against OSV, and runs the web suite for the
+  shell's own targets; writes verification/measure/REPORT.md and exits 0 only
+  when every measured threshold holds; ~7 min. Each module is runnable on its
+  own: `python -m verification.measure.{coverage,deps,perf}`). The three
+  browser-side targets are asserted in the web suite rather than measured
+  here, because jsdom is not a browser - the report says where the number
+  lives.
 - End-to-end against a REAL server: `server/.venv/bin/python
   verification/e2e/verify_e2e.py` (starts uvicorn on a free port with an
   isolated data dir, drives the whole journey over HTTP - the case built

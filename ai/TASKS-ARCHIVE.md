@@ -5811,3 +5811,179 @@ SUMMARY: the shell now answers "where am I, what am I doing, what can help me"
          element breaks the text matching a test and a screen reader both read
          - the sentence stays whole, and the first two rows carry the weight
          instead.
+
+### P8-REFINE-007 contract
+
+```
+TASK ID: P8-REFINE-007
+MILESTONE: P8 Analytical Contract
+CAPABILITY: AI (question refinement)
+GOAL: AT-04 requires that an AI refinement preserves the user's original
+      question, presents the revision separately, allows accept / reject /
+      edit, and never silently overwrites - and measures it over 50 cases:
+      >= 95% preserve the original, >= 90% semantically relevant, 0 silent
+      overwrites, 0 fabricated data references. Before this task nothing
+      proposed a sharpening at all: a vague question ("why are sales down?")
+      was carried verbatim into every plan, every generated query and every
+      finding, so the analysis inherited its vagueness and the product had no
+      surface where the gap was even visible.
+CONTEXT: the six tasks before it built the objects a refinement reads and the
+         surfaces it sits beside - the context object (P8-CONTEXT-001), the
+         profile's own measurements with their quality defects
+         (P8-QUALITY-002), and the orientation spine that places the question
+         at the top of the case (P8-SHELL-006). The refinement grounds itself
+         in the profiler's measured columns and ranges, so it proposes from
+         the same data every other assistant reads.
+INPUTS: the case's question, the most recently profiled dataset's profile
+        (columns, per-column stats, measured min/max and cardinality), and the
+        context's purpose / sub-questions / hypotheses when the case stated
+        intent.
+RELEVANT FILES: server/app/refine.py (new - the deterministic engine, the
+                validation gate, the LLM refiner behind the same interface),
+                server/app/main.py (the five refine endpoints and the
+                duplicate/delete wiring), server/app/db.py (schema v12, the
+                refinements table and its migration), server/app/models.py
+                (Refinement, RefinementGround, RefinementEdit,
+                REFINEMENT_STATUSES), server/app/history.py (the two new event
+                kinds), server/app/exporter.py (the round trip),
+                verification/refine/{cases.py,verify_refine.py} (new - the
+                50-case corpus and the measurement runner),
+                server/tests/test_refine.py (new, 41 tests),
+                web/src/RefinePanel.tsx (new), web/src/CaseWorkspace.tsx,
+                web/src/api.ts, web/src/CaseWorkspace.test.tsx (+7 tests),
+                ai/HANDOFF.md, ai/TASKS.md, ai/CURRENT_STATE.md
+REQUIRED CHANGE:
+  - One interface, two engines, as in the planner / assistant / drafter /
+    generator: `refine_question` is deterministic and always available;
+    `LLMRefiner` calls an OpenAI-compatible endpoint when DAH_LLM_API_KEY is
+    set and its output is gated by `validate_refinement` before it is stored.
+    A failure of the LLM falls back to the deterministic proposal, which may
+    itself be a decline.
+  - The deterministic engine appends grounding rather than rewording: the
+    refined question is the original with clauses added - the measure, the
+    split, the time window, the comparison a direction word leaves unstated -
+    each one a column and a range the profile measured. So the original is
+    preserved by construction and the refinement is relevant by construction,
+    and the suite measures both anyway because a structural guarantee is one
+    renamed variable away from a regression. It declines rather than invents:
+    no profile, nothing numeric or temporal, no subject terms to preserve, or
+    a question already naming its measure, split and window is left alone, and
+    the decline is recorded rather than answered as an empty proposal.
+  - The gate: the original must be echoed verbatim, the subject terms must
+    survive, every cited column must be one the profile has, every quoted
+    column name must exist, every figure must be one the profile measured (in
+    any spelling the formatter or the analyst might use), and a rationale is
+    required - a bare proposal never reaches the analyst.
+  - Five endpoints, and only two of them write: POST /refine proposes
+    (idempotent while pending and the question unmoved); GET /refine and GET
+    /refinements are read-only; accept and edit are the only paths that move
+    the case's question, and reject keeps the original and writes nothing but
+    the decision. A decided proposal is a 409, not a second decision; an edit
+    that restores the original is refused with "use keep original instead".
+  - The original is carried on the proposal row, so recoverability is a
+    property of the store, not of the client that happened to be looking: it
+    survives the accept that replaced it on the case row, travels with the
+    export and the duplicate, and is readable from the case's refinement
+    history and its timeline (two new event kinds - the proposal, then the
+    decision).
+  - The measurement: verification/refine/verify_refine.py drives 50 cases over
+    6 datasets against a real server over HTTP with the LLM vars scrubbed,
+    walking accept / edit / keep / pending at volume, and reports the four
+    numbers to verification/refine/REPORT.md. Relevance is measured
+    mechanically, not judged: the refined question keeps the original's subject
+    terms and names at least one real column. The same four numbers are
+    asserted in the test suite.
+  - The shell panel (UX 12) shows the transformation explicitly - "Your
+    question" above "Refined question", the arrow between them, the engine that
+    spoke, the rationale and the grounds behind a disclosure - and accept /
+    edit / keep original are the only three buttons. It sits in the orientation
+    zone, where the question is described.
+NON-GOALS: the decision view (P8-DECISION-008); measurement of coverage /
+           perf / a11y (P8-MEASURE-009); refining the context's sub-questions
+           and hypotheses rather than the primary question; an LLM judgement of
+           relevance - the measurement is mechanical by design, and the
+           deterministic engine makes three of the four thresholds structural.
+CONSTRAINTS: green only. No new dependency (DEC-001 - the LLM client is
+             httpx, already required). Schema moves to v12 with a migration
+             that upgrades an existing store in place. Deterministic and
+             offline by default: the runner fails unless the deterministic
+             engine answered, so a passing suite is itself proof no LLM was
+             called. Zero silent overwrites is a Level 0 requirement.
+ACCEPTANCE CRITERIA:
+- [x] the original question is preserved verbatim beside the proposal, and is
+      recoverable after accept, after edit, and after keep-original
+- [x] accept / edit / keep-original are the only three paths, and there is no
+      fourth that moves the question
+- [x] 0 silent overwrites: the case's question moves only through the accept
+      and edit endpoints, and the original stays on the row
+- [x] 0 fabricated data references: the gate rejects a cited or quoted column
+      the profile does not have and a figure it did not measure, before the
+      analyst sees the proposal
+- [x] AT-04 measured over 50 cases: preserve 100% (>= 95%), relevant 100%
+      (>= 90%), 0 silent overwrites, 0 fabrications
+- [x] the four numbers are asserted in the test suite, so a regression fails a
+      test rather than a report nobody reads
+- [x] a deliberately-wrong expectation is caught, proving the measurement can
+      fail
+- [x] the round trip through export keeps the refinement history, and the
+      original with it
+- [x] the suite is deterministic and offline, no LLM call
+TESTS: test_refine.py (41) - the engine's additions and its four decline
+       paths, its determinism, the gate's nine rejection paths and its
+       allowance of a measured figure in any spelling, the five endpoints
+       (proposes nothing, a read never proposes, idempotency, the decline
+       answer, accept / keep / edit and their error contracts: 409 on a second
+       decision, 404 on another case's proposal, 400 on an edit that restores
+       the original or is empty), the history's two events, the export round
+       trip including a decline, the duplicate carrying the history, the delete
+       removing the proposals, the schema upgrade recording the migration, and
+       the measurement over a real server. CaseWorkspace.test.tsx (+7) - the
+       transformation shown with both halves, accept moving the question while
+       the original stays visible, keep original writing nothing, the edit
+       pre-filled from the proposal, a failed decision reported, the decline
+       said rather than shown as an empty panel, and the panel in the
+       orientation zone.
+VERIFICATION: `cd server && DAH_LLM_API_KEY= DAH_LLM_BASE_URL= DAH_LLM_MODEL=
+              .venv/bin/python -m pytest -q` green (518);
+              `server/.venv/bin/python verification/refine/verify_refine.py`
+              green (50 cases, four thresholds);
+              `server/.venv/bin/python verification/e2e/verify_e2e.py` green
+              (25/25); `cd web && npm test && npm run build` green (106, build
+              ok).
+STATE UPDATE: TASKS/CURRENT_STATE gain the task; schema v11 -> v12.
+```
+
+TASK: P8-REFINE-007 - question refinement
+ID: P8-REFINE-007
+PRIORITY: high
+STATUS: DONE
+SUMMARY: AT-04's four numbers now exist, and the question is the one place in
+         the loop a vague ask was carried verbatim into every artifact after
+         it. Two engines sit behind one interface, as in every other assistant:
+         a deterministic refiner that appends grounding the profile measured
+         (the measure, the split, the window, and the comparison a direction
+         word like "down" leaves unstated) and an LLM refiner whose output is
+         gated before the analyst sees it - the original echoed verbatim, the
+         subject terms surviving, every cited and quoted column real, every
+         figure measured, a rationale present. The refined question is the
+         original with clauses added, never a replacement, so preserve and
+         relevant are structural; the suite measures them anyway. The engine
+         declines rather than invents - no profile, nothing numeric or
+         temporal, nothing to preserve, or an already-answerable question - and
+         the decline is recorded, not answered as an empty proposal.
+         Measured over 50 cases and 6 datasets against a real server:
+         preserve 100%, relevant 100%, 0 silent overwrites, 0 fabrications.
+         The three paths are the only three: accept and edit are the sole
+         writes to the case's question, and keep-original writes nothing but
+         the no. Recoverability is a property of the store, not the client -
+         the original rides on the proposal row, so it survives the accept
+         that replaced it, the export round trip and the duplicate, and it is
+         readable in the case's timeline as two events. Schema v12, one
+         migration, upgrading in place. Two bugs the work surfaced, both fixed
+         with their own tests: the new suite's schema test caught that a fresh
+         store records no migration rows at all (it is born current, which is
+         the truth - the assertion now builds the legacy store the upgrade
+         path is actually about), and the web test caught that the api spies
+         are module-level, so a "not called" assertion in a top-level describe
+         answers for every test before it (its own beforeEach clear, the same
+         discipline the CaseWorkspace describe already had).

@@ -10,6 +10,20 @@ main {
   padding: 0 1rem;
 }
 
+/* AT-32: a visible focus indicator is the product's, not the user agent's.
+   Browsers draw a default outline, but a focus ring that ships with the app
+   cannot be lost by a page style or a reset, and keyboard users need to see
+   where they are. */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid #1a4a7a;
+  outline-offset: 2px;
+}
+
 /* The workspace widens to the three-zone model (UX 8); every other screen
    stays single-column narrow. */
 main.wide {

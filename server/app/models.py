@@ -860,3 +860,47 @@ class SchemaVersion(BaseModel):
     target: int
     current: bool
     migrations: list[SchemaMigrationRecord]
+
+
+class EnvelopeFormat(BaseModel):
+    """One file format's declared size limits (AT-45)."""
+
+    max_rows: int
+    max_columns: int
+
+
+class DatasetEnvelope(BaseModel):
+    """The dataset sizes this build supports, published rather than assumed.
+
+    AT-45 requires the MVP to define its envelope explicitly instead of
+    claiming unlimited scale. A file beyond it is refused at attach with a
+    sentence naming the limit, so the analyst learns the boundary from the
+    product instead of a hang.
+    """
+
+    formats: dict[str, EnvelopeFormat]
+
+
+class CaseEnvelope(BaseModel):
+    """The case sizes this build supports (AT-46).
+
+    Engineering benchmark limits rather than conceptual ones: the measurement
+    layer builds a case at the boundary and asserts it stays stable.
+    """
+
+    max_runs: int
+    max_results: int
+    max_findings: int
+    max_evidence_relationships: int
+
+
+class Envelope(BaseModel):
+    """The whole supported envelope, as `GET /envelope` publishes it.
+
+    Read-only by construction: a GET with no body and no path parameters can
+    write nothing, and the limits it reports are the values this build was
+    configured with.
+    """
+
+    datasets: DatasetEnvelope
+    cases: CaseEnvelope

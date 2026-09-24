@@ -49,6 +49,12 @@ from app.logging_config import (
 )
 from app.supervisor import start_parent_watchdog
 from app import validation
+from app.limits import (
+    EnvelopeExceeded,
+    check_dataset_envelope,
+    dataset_limits,
+    case_limits,
+)
 from app.python_exec import run_python
 from app.workflow import STAGES, case_progress
 from app.charts import render_chart, CHART_KINDS, CHART_FORMATS
@@ -136,6 +142,10 @@ from app.models import (
     SchemaMigrationRecord,
     SchemaVersion,
     UpdateCheckResult,
+    Envelope,
+    DatasetEnvelope,
+    CaseEnvelope,
+    EnvelopeFormat,
     AxisFinding,
     Evaluation,
     EvaluationCreate,
@@ -348,6 +358,28 @@ def schema_version(db=Depends(get_db)) -> SchemaVersion:
             for row in rows
         ],
     )
+
+@app.get("/envelope", response_model=Envelope)
+def envelope() -> Envelope:
+    """The sizes this build supports (AT-45, AT-46).
+
+    Read-only by construction - a GET with no body and no path parameters -
+    and the declaration itself is the contract: AT-45 requires the MVP to
+    define its envelope explicitly rather than claiming unlimited scale, and a
+    dataset beyond these limits is refused at attach with a sentence naming
+    the one it broke. The values are this build's configuration, so a
+    tightened deployment publishes what it tightened.
+    """
+    return Envelope(
+        datasets=DatasetEnvelope(
+            formats={
+                name: EnvelopeFormat(max_rows=limits["max_rows"], max_columns=limits["max_columns"])
+                for name, limits in sorted(dataset_limits().items())
+            }
+        ),
+        cases=CaseEnvelope(**case_limits()),
+    )
+
 
 @app.get("/updates/latest", response_model=UpdateCheckResult)
 def updates_latest() -> UpdateCheckResult:
@@ -1330,15 +1362,26 @@ async def attach_dataset(
     dataset_id = str(uuid4())
     case_dir = db_module.DATA_DIR / case_id
     case_dir.mkdir(parents=True, exist_ok=True)
-    stored_path = case_dir / f"{dataset_id}.{_format_for(file.filename)}"
+    fmt = _format_for(file.filename)
+    stored_path = case_dir / f"{dataset_id}.{fmt}"
     stored_path.write_bytes(content)
+
+    # AT-45: a dataset beyond the declared envelope is refused here - the
+    # earliest moment the file is on disk - so a six-million-row CSV answers
+    # a sentence instead of hanging a profile on it. The row count comes from
+    # a streaming aggregate, so the refusal does not first load the file.
+    try:
+        check_dataset_envelope(str(stored_path), fmt)
+    except EnvelopeExceeded as err:
+        stored_path.unlink(missing_ok=True)
+        raise HTTPException(status_code=400, detail=str(err))
 
     dataset = Dataset(
         id=dataset_id,
         case_id=case_id,
         filename=file.filename,
         stored_path=str(stored_path),
-        format=_format_for(file.filename),
+        format=fmt,
         created_at=datetime.now(timezone.utc),
     )
     db.execute(

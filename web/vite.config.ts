@@ -27,6 +27,12 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./src/setup-tests.ts'],
+    // The accessibility audit reads the stylesheet the product ships from the
+    // DOM, the way a browser reads it - so the focus rule it checks for is the
+    // one the build actually emits, not a claim about a file. CSS is inert in
+    // every other test (no component imports a stylesheet), so turning it on
+    // costs nothing but makes that one audit honest.
+    css: true,
     // Each test file finishes in well under a second on its own, but running
     // the files in parallel starves the jsdom environments of CPU on a loaded
     // machine and the same tests then blow the 5s timeout without ever
