@@ -17,12 +17,12 @@ and verification/refine/REPORT.md.
 
 ## AT-28                  PASS
 
-- measured: p95 223ms over 20 samples
+- measured: p95 286ms over 20 samples
 - target: p95 <= 2000ms
 
 ## AT-29                  PASS
 
-- measured: p95 1464ms over 10 samples
+- measured: p95 2138ms over 10 samples
 - target: p95 <= 5000ms
 
 ## AT-46                  PASS
@@ -52,4 +52,4 @@ and verification/refine/REPORT.md.
 
 ---
 
-**PASS** - 9/9 measurements hold; measured in 394s.
+**PASS** - 9/9 measurements hold; measured in 462s.

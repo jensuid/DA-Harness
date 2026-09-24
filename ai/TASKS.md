@@ -150,168 +150,145 @@ answers.
 | P8-REFINE-007 | AI (question refinement) | DONE | 41 tests added (518 server, 106 web); schema v12; AT-04's four thresholds measured over 50 cases at 100%/100%/0/0; e2e green |
 | P8-DECISION-008 | UX (the decision view) | DONE | 30 tests added (548 server, 116 web); schema v13; 28/28 e2e; the verdict persists, the export carries it |
 | P8-MEASURE-009 | Verification (the measurement layer) | DONE | 644 server, 138 web, e2e 28/28; every measured AT holds - AT-38 core 93.9% / analytical 92.9% / evidence 92.4%, AT-37 0/0, AT-28 p95 223ms, AT-29 p95 1.5s, AT-46 at the envelope |
-| P8-TRACE-010 | Verification (the traceability matrix) | OPEN | AT-48 |
+| P8-TRACE-010 | Verification (the traceability matrix) | DONE | 48/48 rows resolve; P0 15/15 (100%), P1 33/33 (target >= 95%); 686 server, 138 web; e2e 28/28 |
 
-### P8-DECISION-008 contract
+### P8-TRACE-010 contract
 
 ```
-TASK ID: P8-DECISION-008
+TASK ID: P8-TRACE-010
 MILESTONE: P8 Analytical Contract
-CAPABILITY: UX (the decision view)
-GOAL: UX 46 and AT-43: the loop's exit. A validated finding used to be the end
-      of the road - the verdict was computed, shown and discarded, and nothing
-      in the product closed over what the loop had established. The PRD's own
-      flow (UX 48) ends at Decision Support -> Export. This task makes the
-      decision a first-class object the case carries: the validated findings,
-      each with its residual uncertainty - the checks that did not pass, never
-      a score - the claims still open, and the implications the analyst writes.
-      DAH informs decisions; it does not make them.
-CONTEXT: the seven tasks before it built what the view reads - the nine
-         validation dimensions and the causal guard that produce the verdicts
-         (P8-VALID-003, P8-CAUSAL-004), the golden suite that measured them
-         (P8-GOLDEN-005), the orientation spine that says where the case stands
-         (P8-SHELL-006), and the refinement that sharpened the question the
-         view opens on (P8-REFINE-007).
-INPUTS: the case's question, the context's purpose, every finding with the
-        verdict validation computed (status, nine checks, validated_at) and its
-        own caveat, the workflow's own loop-closed flag, and the analyst's
-        implications. Nothing is executed and nothing is derived that is not
-        already on disk.
-RELEVANT FILES: server/app/decision.py (new - the view's assembly and the
-                implications' rules), server/app/main.py (the three endpoints,
-                the persisted verdict, the duplicate and the delete),
-                server/app/db.py (schema v13, two tables, one migration),
-                server/app/models.py (DecisionView, DecisionWrite,
-                DecisionFinding, DecisionOpenItem, DecisionCheck),
-                server/app/history.py (two new event kinds),
-                server/app/exporter.py (the two new package sections and their
-                import), server/tests/test_decision.py (new, 30 tests),
-                server/tests/test_case_history.py (the timeline's two new
-                kinds), verification/e2e/verify_e2e.py (+3 steps, a PUT helper),
-                web/src/DecisionPanel.tsx (new), web/src/CaseWorkspace.tsx,
-                web/src/api.ts, web/src/CaseWorkspace.test.tsx (+10 tests),
-                ai/HANDOFF.md, ai/TASKS.md, ai/CURRENT_STATE.md
+CAPABILITY: Verification (the requirement-traceability matrix)
+GOAL: AT-48, the PRD's section 59 control artifact. The PRD asks for a matrix
+      that carries each requirement from the PRD through the UX surface, the
+      implementation and the test to the threshold that says it holds - and
+      until now that matrix was the PRD's own table, nine rows of checkmarks a
+      human keeps up to date. This task makes it code: 48 rows, one per
+      acceptance threshold, each cell naming a real thing in the repository,
+      and one runner that resolves every cell against the repository as it
+      actually stands. A matrix someone types drifts the moment a symbol is
+      renamed; a matrix the gate resolves does not.
+CONTEXT: last in the phase because it traces what the first nine delivered,
+         and every AT now has a measured number for it to point at - the
+         golden suite (AT-40/AT-01), the refinement runner (AT-04) and the
+         measurement layer (AT-27..30/32/37/38/45/46) each wrote a committed
+         report the matrix cites as evidence, and the suites hold the rest.
+INPUTS: the PRD (its 48 AT headers and its section 53 release-blocking list),
+        the UX architecture document (its numbered sections), the source of
+        every module and component the matrix names, the test modules it
+        cites, and the committed reports the measured rows point at.
+RELEVANT FILES: verification/trace/matrix.py (new - the 48 rows, the cell
+                types, the release-blocking categories), verification/trace/
+                verify_trace.py (new - the resolver, the requirement-set check,
+                the AT-48 fold, the report), verification/trace/REPORT.md
+                (written by the runner), server/tests/test_trace.py (new, 42
+                tests), ai/HANDOFF.md, ai/TASKS.md, ai/CURRENT_STATE.md
 REQUIRED CHANGE:
-  - The verdict stops being ephemeral. validate_finding computed nine checks
-    and kept only the status; now the whole verdict (status, checks,
-    validated_at) is persisted, so a decision is read without re-running a
-    single query and a reopened case still shows what validation found. A new
-    GET /cases/{id}/findings/{fid}/validation answers it read-only, and a
-    never-validated finding is a 404 naming the endpoint that creates one
-    rather than an empty list.
-  - The view: GET /cases/{id}/decision is read-only, deterministic and executes
-    nothing. It answers the question, the purpose the analyst stated, the key
-    findings (supported / partially_supported) each carrying its caveat and the
-    checks that did not pass as its uncertainty, the open items (a finding
-    awaiting validation, or one the verdict refused, naming the hard dimension
-    that failed), counts, and the analyst's implications. The loop's closure is
-    the core's to declare - the view reads workflow.case_progress rather than
-    restating it, so the decision cannot disagree with the rail.
-  - The only write is the implications: PUT /cases/{id}/decision with a list of
-    strings. It validates what it accepts - a list, each entry non-empty after
-    trimming, at most twelve, at most two thousand characters - and answers 400
-    naming the first entry that breaks a rule. An empty list clears them, which
-    is a decision the analyst is allowed to make.
-  - A case's decision travels: the export gains the verdicts and the decision,
-    and the import round trip restores both, so AT-43's "validation states
-    preserved" is a property of the package rather than a claim about it. The
-    duplicate carries both; the delete removes both.
-  - The timeline gains two events - the validation itself, now that it has a
-    timestamp of its own (AT-44 names validation among its minimum events), and
-    the decision the analyst wrote.
-  - The shell (UX 46): the panel is last in the work zone, where the loop
-    exits. Question, key findings with their caveats, the uncertainty, the
-    claims still open, the implications the analyst edits, and the case's
-    export - which had no surface in the shell at all, and whose natural home
-    is the decision it sits beside.
-NON-GOALS: the agent proposing implications - DAH informs decisions and does
-           not make them, so no agent step touches the decision view;
-           measurement of the view (P8-MEASURE-009); a formatted report output
-           (PDF / markdown, UX 47's future list); scoring, ranking or
-           recommending anything; the traceability matrix (P8-TRACE-010).
-CONSTRAINTS: green only. No new dependency (DEC-001). Schema v12 -> v13, one
-             in-place migration creating two tables. Read-only by default: the
-             GET executes nothing, and the PUT is the only write. Deterministic
-             and offline. UX 44's rule holds throughout - no confidence score
-             appears anywhere in the view.
+  - The matrix is data, not prose. Each row carries the AT id and title, the
+    PRD header line quoted exactly, whether the requirement is
+    release-blocking and which of the PRD's section 53 categories it guards,
+    the UX surface (a shipped component, a section of the UX document, or an
+    explicit "no surface, and here is why"), the implementation (a file and a
+    name defined in it), the tests (a file and the tests defined in it), the
+    threshold in the PRD's own words, and where the measured number lives.
+  - The runner resolves every cell: the PRD header must appear in the PRD, a
+    component must ship and define the component named, a UX section must
+    still carry its number and its title, a Python implementation or test must
+    define the name at module level (an AST check), a cited runner must exist
+    and the report it wrote must be committed, mention the AT and carry its
+    own green sentence. A report carrying a failure marker is a red gate,
+    because a measurement that stopped holding is not evidence.
+  - The requirement set is checked against the PRD itself: the matrix's ids
+    must be exactly the PRD's ids, so a requirement the PRD adds is a red gate
+    until a row exists for it, and a row the PRD no longer states is a phantom
+    the gate rejects.
+  - Fifteen rows are P0, each naming one of the PRD's eight section 53
+    categories: data loss, fabricated evidence, fabricated execution, an
+    incorrect validated finding, a broken evidence chain, a critical security
+    vulnerability, a critical analytical calculation error, and an
+    unrecoverable case. AT-48's two thresholds compute from the resolved rows
+    - 100% of P0 and >= 95% of P1 - rather than being asserted.
+  - The report is the PRD's own table shape (requirement, UX, implementation,
+    test, verification, threshold, verdict) plus the two AT-48 numbers, so a
+    release gate can read it.
+NON-GOALS: re-measuring anything - the matrix cites the runners and reports
+           that already measure (golden, refine, measure) and points at the
+           suites that assert, it does not run them; a browser-side
+           measurement; a product surface for the matrix (section 59 calls it
+           an engineering control artifact, not a user feature).
+CONSTRAINTS: green only. No new dependency (DEC-001 - the resolver is ast and
+             re). Deterministic and offline: the runner reads files that are
+             committed and never touches the network. Read-only: it resolves,
+             it does not execute the product.
 ACCEPTANCE CRITERIA:
-- [x] every validated finding appears in the decision view with its residual
-      uncertainty, and a check that did not pass is named, never scored
-- [x] the view is read-only: reading it executes nothing and writes nothing,
-      and the second read answers the first's verdict
-- [x] the verdict persists, so a case reopened shows what validation found
-      without re-validating
-- [x] the implications are the only write, and a bad entry is a 400 naming it
-- [x] export carries the verdicts and the decision, and the round trip
-      restores both with fresh ids
-- [x] the duplicate carries them; the delete removes them
-- [x] the timeline records the validation and the decision
-- [x] the shell renders the view, and the case's export is reachable from it
-- [x] the view's loop-closed is the core's own value, so it cannot disagree
-      with the workflow rail
-TESTS: test_decision.py (30) - the empty case as guidance rather than an empty
-       decision, a supported finding with no uncertainty, a partially
-       supported finding carrying its failing checks verbatim from the verdict,
-       a refused finding as an open item naming the hard dimension that failed,
-       the awaiting-validation reason, the purpose, oldest-first ordering,
-       loop-closed agreeing with /progress, the verdict readable without
-       re-validating, the 404 for a never-validated finding and for another
-       case's, reading changes nothing across repeated reads, re-validation
-       keeping one row, the delete leaving no trace, the duplicate carrying
-       both, the implications' round trip, trimming, the three 400 shapes and
-       the empty-list clear, the unit rules on a non-list, the two new timeline
-       events and their counts, the export carrying both sections, the round
-       trip restoring both, an older package degrading rather than failing, the
-       AT-43 measurement over two findings, and the v12 -> v13 upgrade plus the
-       fresh store. CaseWorkspace.test.tsx (+10) - the panel in the work zone,
-       the question and purpose, a validated finding with its caveat and no
-       score anywhere, the failing checks as the uncertainty, the open claims
-       and their reasons, the guidance before a closed loop, a failed read
-       reported, the implications written and confirmed saved, a failed save
-       reported with the server's sentence, and the export downloaded as a
-       named file.
+- [x] every one of AT-01..AT-48 has a row, and the row's ids are exactly the
+      PRD's ids - no requirement untraced, no phantom row
+- [x] every cell resolves: a missing file, a renamed symbol, a deleted test, a
+      moved UX section, an uncommitted report or a red one is a named failure
+- [x] the PRD header each row quotes is the PRD's own line, so a drift in the
+      PRD is caught rather than silently mirrored
+- [x] every P0 row guards a category the PRD's section 53 actually names
+- [x] AT-48's thresholds are computed: 100% of P0 (15/15) and >= 95% of P1
+      (33/33), and a single broken P0 row turns them red
+- [x] the matrix can fail: a deliberately broken row is caught for each of the
+      six ways a row can break, and the failure names the requirement
+- [x] every cited measurement is real: the runner exists, the report is
+      committed, it mentions the AT, and it carries its green sentence
+- [x] the report renders the PRD's control-artifact table with a verdict per
+      requirement, and is written to verification/trace/REPORT.md
+TESTS: test_trace.py (42) - the 48 ids are the PRD's 48 in order, no
+       requirement untraced or phantom, a requirement the PRD adds is an
+       untraced red gate and a row it does not state is a phantom one, no AT
+       traced twice, every row states a threshold and names an implementation,
+       tests and evidence, the P0/P1 split is real and the section 53
+       categories are the PRD's, an invented category fails, one broken P0 row
+       fails the 100% threshold, and the six ways a row breaks - a missing
+       file, a renamed symbol, a deleted test, a renumbered and a renamed UX
+       section, a component that no longer ships and one that changed name, a
+       no-surface cell without a reason, an uncommitted report, a missing
+       runner, a report that went red, one that lost its marker, one that no
+       longer mentions the requirement, and a missing suite - each fail and
+       name what broke. Plus the gate itself green, the report written and
+       readable, and AT-48's own row tracing to the matrix and these tests.
 VERIFICATION: `cd server && DAH_LLM_API_KEY= DAH_LLM_BASE_URL= DAH_LLM_MODEL=
-              .venv/bin/python -m pytest -q` green (548);
+              .venv/bin/python -m pytest -q` green (686);
+              `server/.venv/bin/python verification/trace/verify_trace.py`
+              green (48/48 rows, AT-48 PASS);
               `server/.venv/bin/python verification/e2e/verify_e2e.py` green
               (28/28); `server/.venv/bin/python
-              verification/golden/verify_golden.py` green (21/21 reference and
-              workflow); `server/.venv/bin/python verification/refine/verify_refine.py`
-              green (AT-04's four thresholds); `cd web && npm test && npm run
-              build` green (116, build ok).
-STATE UPDATE: TASKS/CURRENT_STATE gain the task; schema v12 -> v13.
+              verification/golden/verify_golden.py` green;
+              `server/.venv/bin/python verification/refine/verify_refine.py`
+              green; `server/.venv/bin/python verification/measure/
+              verify_measure.py` green (9/9); `cd web && npm test && npm run
+              build` green (138, build ok).
+STATE UPDATE: TASKS/CURRENT_STATE gain the task; the P8 table closes at 10 of
+              10. No schema change.
 ```
 
-TASK: P8-DECISION-008 - the decision view
-ID: P8-DECISION-008
+TASK: P8-TRACE-010 - the requirement-traceability matrix
+ID: P8-TRACE-010
 PRIORITY: high
 STATUS: DONE
-SUMMARY: the loop has an exit. A validated finding used to be the last thing
-         the product did with itself: the verdict was computed, shown and
-         discarded, only the status surviving on the finding, and nothing closed
-         over what the loop had established. Now the verdict is kept - all nine
-         checks, not only the status - and the decision view reads it without
-         re-running a single query. The view answers the question, the findings
-         validation stood behind with their caveats and the checks that did not
-         pass (a sentence each, never a score, per UX 44), the claims still open
-         with the reason each is unresolved, and the implications the analyst
-         writes - the view's only write, and the one thing in it a human
-         authors, because a tool that drafts the action to take is a tool
-         making the decision. The loop's closure is the core's own value, read
-         from workflow.case_progress rather than restated, so the decision
-         cannot say the loop is open while the rail says it is closed. The
-         decision travels: the export carries the verdicts and the implications
-         and the round trip restores both with fresh ids, the duplicate carries
-         them, the delete removes them, and the timeline records the validation
-         and the decision as their own events. The shell gained the panel and,
-         with it, the case's export - which existed as an endpoint and had no
-         surface in the product at all. Two bugs the work surfaced, both fixed
-         with their own tests: the timeline asserted its event list exactly, so
-         the two new kinds needed the assertions that name them, and the test
-         file's decision describe sits outside the CaseWorkspace describe, so
-         the plan and run read rejections it inherited by accident of the
-         previous test's persistence are now its own beforeEach - a fragility
-         the refinement describe beside it still has and this task did not
-         touch.
+SUMMARY: the PRD's control artifact is code. Forty-eight rows carry every
+         acceptance threshold from the PRD through the UX surface, the
+         implementation and the test to the threshold that says it holds, and
+         one runner resolves every cell against the repository as it stands.
+         What makes it a control artifact rather than a document is that a
+         renamed symbol, a deleted test, a renumbered UX section, an uncommitted
+         report or a red one is a named failure - the matrix cannot quietly
+         disagree with the thing it traces. The requirement set is checked
+         against the PRD's own headers, so an acceptance threshold the PRD adds
+         is a red gate until a row exists for it. Fifteen rows are
+         release-blocking by the PRD's section 53, each naming the category it
+         guards, and AT-48's thresholds compute from the resolved rows: 15/15
+         (100%) and 33/33 against a >= 95% target. The matrix's own measurement
+         is honest about which rows are measured and which asserted: the
+         measured ones cite a runner and its committed report, and the asserted
+         ones name the suite that pins them. One thing the resolution made
+         visible and fixed: the AST check for a module-level name missed
+         annotated constants (`INPUT_ERROR_TYPES: tuple[...] = ...`), so an
+         implementation cell citing one read as undefined until the check
+         learned `AnnAssign` - the kind of gap a matrix that only listed paths
+         would never have found.
 
 ### P8-MEASURE-009 contract
 

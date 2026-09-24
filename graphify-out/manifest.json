@@ -756,9 +756,9 @@
     "semantic_hash": ""
   },
   "verification/e2e/REPORT.md": {
-    "mtime": 1790210021.354292,
-    "seen": 1790211374.436951,
-    "ast_hash": "d2496df905851c356199a4e26a824a16",
+    "mtime": 1790218385.227982,
+    "seen": 1790219519.845969,
+    "ast_hash": "2ac5add41f47fb5a2bceddc4ea04f6f6",
     "semantic_hash": ""
   },
   "server/tests/test_cors.py": {
@@ -858,8 +858,8 @@
     "semantic_hash": ""
   },
   "verification/golden/REPORT.md": {
-    "mtime": 1790172240.3797545,
-    "seen": 1790172337.491332,
+    "mtime": 1790218598.427413,
+    "seen": 1790219519.845972,
     "ast_hash": "2e02cd95360894b05331dc6c3dc31b91",
     "semantic_hash": ""
   },
@@ -894,8 +894,8 @@
     "semantic_hash": ""
   },
   "verification/refine/REPORT.md": {
-    "mtime": 1790172281.220633,
-    "seen": 1790172337.49136,
+    "mtime": 1790218630.9335337,
+    "seen": 1790219519.845991,
     "ast_hash": "567efcd39803ff6eb9f9efd307bdf7ee",
     "semantic_hash": ""
   },
@@ -996,9 +996,39 @@
     "semantic_hash": ""
   },
   "verification/measure/REPORT.md": {
-    "mtime": 1790210695.04028,
-    "seen": 1790211374.4369621,
-    "ast_hash": "9bc2900d59d85e972e15dfdd579c5ca4",
+    "mtime": 1790219093.996651,
+    "seen": 1790219519.845974,
+    "ast_hash": "be3717f46232b0444750337ac3c8ee02",
+    "semantic_hash": ""
+  },
+  "server/tests/test_trace.py": {
+    "mtime": 1790217978.2109373,
+    "seen": 1790219519.845781,
+    "ast_hash": "41dbc6687f33c106820da529adbf2d76",
+    "semantic_hash": ""
+  },
+  "verification/trace/__init__.py": {
+    "mtime": 1790215971.0783913,
+    "seen": 1790219519.8458319,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": ""
+  },
+  "verification/trace/matrix.py": {
+    "mtime": 1790217634.6892886,
+    "seen": 1790219519.845835,
+    "ast_hash": "b230d22fe3a609685a3bd3bd12ad7431",
+    "semantic_hash": ""
+  },
+  "verification/trace/verify_trace.py": {
+    "mtime": 1790217890.1323225,
+    "seen": 1790219519.845837,
+    "ast_hash": "c4592840ba96c26bace756102c91a450",
+    "semantic_hash": ""
+  },
+  "verification/trace/REPORT.md": {
+    "mtime": 1790219458.673462,
+    "seen": 1790219519.845993,
+    "ast_hash": "5dafbe808905e86f93c94b7069f4a6b8",
     "semantic_hash": ""
   }
 }

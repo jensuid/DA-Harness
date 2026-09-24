@@ -1,4 +1,4 @@
-**Phase:** P8 Analytical Contract - IN PROGRESS (8 of 10 delivered: the case's
+**Phase:** P8 Analytical Contract - COMPLETE (10 of 10 delivered: the case's
 context object, quality beyond missingness, the PRD's nine validation
 dimensions, the causal guard, the analytical golden suite that measures them,
 the orientation spine that presents them, question refinement, and the decision
@@ -9,26 +9,29 @@ all COMPLETE (see the phase table below). P8 closes the PRD's Level 1 breadth
 gaps and makes "done" measurable: quality detection beyond missingness (2 of 7
 defect classes today), validation from 3 checks to the PRD's 9 dimensions, the
 causal-language guard, the analytical golden suite, the orientation spine,
-question refinement, the decision view, and the measurement layer. The full gap
-analysis is `docs/PRD & UX Conformance Evaluation.md`.
+question refinement, the decision view, the measurement layer and the
+requirement-traceability matrix. The full gap analysis is `docs/PRD & UX Conformance Evaluation.md`.
 
-- **Active task:** P8-MEASURE-009 DONE - the measurement layer
-  (AT-27..30/32/37/38/45/46). The PRD's thresholds were prose; nine of them
-  are numbers now. `verification/measure/verify_measure.py` folds five
-  measurements into one report with a verdict per acceptance test and exits
-  non-zero when one does not hold - 9/9 PASS, the report at
-  verification/measure/REPORT.md. AT-38 is the suite itself under a
-  `sys.monitoring` line counter (core 93.9%, analytical 92.9%, evidence
-  92.4%). AT-28 and AT-29 are timed against a real core over HTTP (opening
-  p95 223ms against 2s; profiling p95 1.5s against 5s over a generated 50k-row
-  benchmark). AT-46 builds a case at the envelope - a hundred multi-dataset
-  runs, two hundred findings, twelve hundred evidence edges - and requires
-  every surface a reopened case offers to answer in budget, the export round
-  trip among them. AT-45 is declared with the PRD's numbers and refused at
-  each limit through the same function attach calls. AT-37 scans the computed
-  inventory against OSV, classifying from the CVSS vector (0 critical, 0 high,
-  22/22 packages). AT-27, AT-30 and AT-32 are asserted in the web suite and
-  the report says where that number lives instead of inventing one.
+- **Active task:** P8-TRACE-010 DONE - the requirement-traceability matrix
+  (AT-48). The PRD's section 59 control artifact is code: 48 rows, one per
+  acceptance threshold, each carrying the PRD header it quotes, the UX
+  surface, the implementation, the tests, the threshold in the PRD's own words
+  and where the measured number lives. `verification/trace/verify_trace.py`
+  resolves every cell against the repository as it stands - a missing file, a
+  renamed symbol, a deleted test, a moved UX section, an uncommitted report or
+  a red one is a named failure, so the matrix cannot quietly disagree with
+  what it traces. The requirement set is checked against the PRD's own
+  headers: 48/48 traced, no requirement untraced, no phantom. Fifteen rows are
+  P0 by the PRD's section 53 and each names the category it guards; AT-48's
+  thresholds compute from the resolved rows, 15/15 (100%) and 33/33 against
+  >= 95%. The report is at verification/trace/REPORT.md.
+  One gap the resolution surfaced and fixed: the AST check for a module-level
+  name missed annotated constants, so a cell citing `INPUT_ERROR_TYPES` read
+  as undefined until the check learned `AnnAssign`.
+  Before it: P8-MEASURE-009, P8-DECISION-008, P8-REFINE-007, P8-SHELL-006,
+  P8-GOLDEN-005, P8-CAUSAL-004, P8-VALID-003, P8-QUALITY-002, P8-CONTEXT-001,
+  the v0.2.0 release.
+
   Three findings the measurement made, all fixed with their own tests:
   profiling re-parsed the CSV once per bounded lookup (12.5s over the 5s
   target) and now materialises once into a temp table (1.7s, no measured
@@ -52,25 +55,22 @@ analysis is `docs/PRD & UX Conformance Evaluation.md`.
   documented minimum but is no longer enforced by CI, and a green run no longer
   proves the exact Intel triple a local build produces. Restoring that needs a
   self-hosted Intel runner.
-- **Test status:** server 644 passed (44 for this task: 26 in
-  test_measure.py - the percentiles, the boundary counts, the dependency
-  classifier, the coverage ratios and the fold that turns a failing
-  measurement into a red gate, each with a deliberately wrong expectation
-  proving it can fail; and 18 in test_python_guards.py - the dunder, import
-  and builtins walls and the tabulation shapes, tested in the process that
-  measures them). The web suite is 138 (12 a11y, 10 measure - asserted in the
-  shell's own suite, which the measurement runner reads as its evidence).
+- **Test status:** server 686 passed (42 for this task, all in
+  test_trace.py - the requirement set agreeing with the PRD, the P0/P1
+  thresholds computed, and a deliberately broken row for each of the six ways
+  a row can fail the gate). The web suite is 138 (12 a11y, 10 measure -
+  asserted in the shell's own suite, which the measurement runner reads as its
+  evidence).
   Desktop shell 22 Rust tests; P2, P3 and P4 gates PASS; **v0.2.0 released**
   (tag `v0.2.0` on `ec819fc`).
-- **e2e:** all 28 real-server steps PASS (the profiling change touched the
-  attach-and-profile path the journey walks; the journey is unchanged and
-  green).
+- **e2e:** all 28 real-server steps PASS; the golden suite and the refinement
+  runner green, and the measurement layer 9/9 - the reports the matrix cites as
+  its measured evidence, regenerated on the current tree.
 
-- **Next task:** P8-TRACE-010 - the requirement-traceability matrix
-  (AT-48). Last, because it traces what 1-9 delivered, and every AT now has a
-  measured number for the matrix to point at - the runner's report is the
-  "Verification" column of the PRD's own control artifact (its section 59).
-  When it lands, P8 is complete and v0.3.0 is the release to tag.
+- **Next task:** none open. P8 is complete (10 of 10); every checklist item in
+  `docs/PRD & UX Conformance Evaluation.md` is delivered. v0.3.0 is the release
+  to tag, and with CI's billing still suspended the artifacts would be built
+  and published locally, as v0.2.0's were.
   The release is done: **v0.2.0** is tagged on `ec819fc`. GitHub Actions is
   still refusing to start any job with "recent account payments have failed";
   that is an account billing problem (Settings > Billing & plans), not a code
@@ -258,6 +258,12 @@ analysis is `docs/PRD & UX Conformance Evaluation.md`.
   browser-side targets are asserted in the web suite rather than measured
   here, because jsdom is not a browser - the report says where the number
   lives.
+- The requirement-traceability matrix (AT-48): `server/.venv/bin/python
+  verification/trace/verify_trace.py` (reads the PRD, the UX document and every
+  file the matrix names, resolves every cell of all 48 rows and writes
+  verification/trace/REPORT.md; exits 0 only when every row traces and AT-48's
+  two thresholds hold - 100% of the release-blocking requirements and >= 95% of
+  the rest; ~2s, deterministic, offline and read-only)
 - End-to-end against a REAL server: `server/.venv/bin/python
   verification/e2e/verify_e2e.py` (starts uvicorn on a free port with an
   isolated data dir, drives the whole journey over HTTP - the case built
