@@ -88,12 +88,38 @@ the gate comes first because a phase is done when a gate says so.
 
 ### Carried follow-ups (still open)
 
-- Validation of Python runs still answers a clear 400 "not supported yet". The
-  hard sandbox (P3-SEC-001) makes re-execution safe, so the gate is now
-  implementable: rerun the stored script in the sandbox and compare the result
-  shape, the way SQL validation compares rows. DELIVERED as P3-VALID-010.
+- The packaged core answers `current: unknown` at `/updates/latest`: neither
+  the installed distribution's metadata nor `pyproject.toml` is reachable
+  inside the PyInstaller bundle, so the Check for Updates menu item can never
+  compare versions. Present since v0.2.0. Fix: carry the version into the
+  bundle (a build-time constant, or ship the metadata) and assert it in the
+  packaged-core smoke.
+- DMG bundling depends on the local `create-dmg` happening to be the tool
+  Tauri's `bundle_dmg.sh` expects; it failed on one build and succeeded on
+  another with no code change between. The published artifact is the ditto
+  zip, which is what `release.yml` ships, so this is cosmetic - but a
+  deterministic local build is worth either pinning the tool or dropping the
+  DMG from the local steps.
+- The app icon's proportion was chosen blind (52% of the canvas), because
+  icons cannot be viewed. `desktop/src-tauri/icons/icon.png` is the committed
+  52% source. The recipe to re-cut it: flatten the source onto opaque
+  navy, scale the flattened artwork, centre it on a fresh navy canvas, apply
+  the squircle mask (rounded rectangle, 224px radius on a 1024 canvas), then
+  `iconutil -c icns` from a full iconset. Rebuild with
+  `cd desktop && npm run tauri -- build --config '{"version":"x.y.z"}'`.
+- `web/src/CaseWorkspace.test.tsx`'s question-refinement describe still sits
+  outside the `CaseWorkspace` describe, so it inherits the previous test's
+  persisted plan and run reads. P8-DECISION-008 gave its own decision
+  describe a `beforeEach` for the same reason and noted this one; it is a
+  fragility, not a failure.
 - The packaged app is unsigned: macOS gatekeeps the first launch (right-click,
-  Open). Signing and notarization are P5.
+  Open). Signing and notarization are deferred indefinitely by DEC-006 (DAH is
+  single-user) - not blocked, and worth revisiting if the user count moves
+  beyond one.
+- GitHub Actions refuses every job with "recent account payments have failed";
+  nothing pushed since `c73118c` has run in CI, and v0.2.0-v0.3.2 were built
+  locally from the same steps `release.yml` runs. Fix at Settings > Billing &
+  plans; no code change.
 
 ## P6 Post-Launch Evolution
 

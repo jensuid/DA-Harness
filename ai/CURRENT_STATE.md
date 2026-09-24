@@ -68,7 +68,7 @@ requirement-traceability matrix. The full gap analysis is `docs/PRD & UX Conform
   runner green, and the measurement layer 9/9 - the reports the matrix cites as
   its measured evidence, regenerated on the current tree.
 
-- **Next task:** none open, and no phase is open. P8 is complete (10 of 10) and
+- **Next task:** none open, and no phase is open. The next session inherits the **carried follow-ups** in `ai/TASKS.md` - the packaged core's `current: unknown` at `/updates/latest` is the only one that touches a user-visible promise. P8 is complete (10 of 10) and
   **v0.3.0, v0.3.1 and v0.3.2 are released** (tags `v0.3.0` on `ab56541`,
   `v0.3.1` on `19cefc1`, `v0.3.2` on `2ff1bca`), 686 server tests passing on the
   tag. Both were built locally from
