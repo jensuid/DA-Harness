@@ -63,14 +63,15 @@ requirement-traceability matrix. The full gap analysis is `docs/PRD & UX Conform
   evidence).
   Desktop shell 22 Rust tests; P2, P3 and P4 gates PASS; **v0.2.0 and v0.3.0
   released** (tags `v0.2.0` on `ec819fc`, `v0.3.0` on `ab56541`, `v0.3.1` on
-  `19cefc1`).
+  `19cefc1`, `v0.3.2` on `2ff1bca`).
 - **e2e:** all 28 real-server steps PASS; the golden suite and the refinement
   runner green, and the measurement layer 9/9 - the reports the matrix cites as
   its measured evidence, regenerated on the current tree.
 
 - **Next task:** none open, and no phase is open. P8 is complete (10 of 10) and
-  **v0.3.0 and v0.3.1 are released** (tags `v0.3.0` on `ab56541`, `v0.3.1` on
-  `19cefc1`), 686 server tests passing on the tag. Both were built locally from
+  **v0.3.0, v0.3.1 and v0.3.2 are released** (tags `v0.3.0` on `ab56541`,
+  `v0.3.1` on `19cefc1`, `v0.3.2` on `2ff1bca`), 686 server tests passing on the
+  tag. Both were built locally from
   the same steps `release.yml` runs - CI's billing is still suspended - with the
   packaged core proven on an isolated store and the ditto zip plus its sha256
   published as flagged pre-releases. v0.3.1 re-masks the app icon to the
