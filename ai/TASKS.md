@@ -88,12 +88,6 @@ the gate comes first because a phase is done when a gate says so.
 
 ### Carried follow-ups (still open)
 
-- The packaged core answers `current: unknown` at `/updates/latest`: neither
-  the installed distribution's metadata nor `pyproject.toml` is reachable
-  inside the PyInstaller bundle, so the Check for Updates menu item can never
-  compare versions. Present since v0.2.0. Fix: carry the version into the
-  bundle (a build-time constant, or ship the metadata) and assert it in the
-  packaged-core smoke.
 - DMG bundling depends on the local `create-dmg` happening to be the tool
   Tauri's `bundle_dmg.sh` expects; it failed on one build and succeeded on
   another with no code change between. The published artifact is the ditto
@@ -317,200 +311,133 @@ SUMMARY: the PRD's control artifact is code. Forty-eight rows carry every
          learned `AnnAssign` - the kind of gap a matrix that only listed paths
          would never have found.
 
-### P8-MEASURE-009 contract
+## Post-phase fixes
+
+Fixes worked off the carried follow-up list after P8 closed - each is one
+defect the shipped product still carried, taken in priority order. A phase is
+not reopened for these; the fix's own contract and verification are below.
+
+| Task ID | Capability | Status | Verification |
+|---------|-----------|--------|--------------|
+| FIX-VERSION-001 | Distribution (the packaged core's own version) | DONE | 8 tests added (694 server, 138 web); the packaged binary answers `current: 0.3.2` at `/updates/latest`; both packaged-core smokes now assert it |
+
+### FIX-VERSION-001 contract
 
 ```
-TASK ID: P8-MEASURE-009
-MILESTONE: P8 Analytical Contract
-CAPABILITY: Verification (the measurement layer)
-GOAL: the PRD's measurement targets existed as prose and nothing in the
-      product computed one of them. AT-38's coverage, AT-27..30's performance
-      budgets, AT-32's accessibility, AT-37's dependency security and AT-45/
-      46's size envelopes each had a threshold and no number. This task
-      attaches a measured number to each - measured against a real core over
-      real HTTP, against the OSV database, or by running the suite itself
-      under a line counter - and asserts every one of them in the test suite,
-      so a regression fails a test rather than a report nobody reads.
-CONTEXT: the eight tasks before it built what the layer measures and two
-         measured suites to borrow the pattern from - the golden suite
-         (AT-40/AT-01) and the refinement runner (AT-04), both of which start
-         a real uvicorn on a free port with an isolated data dir and the LLM
-         vars scrubbed. The web side (AT-27, AT-30, AT-32) was already
-         asserted in the shell's own suite by the a11y and measure test files
-         this task found in flight; what was missing was the fold that reads
-         them as a measurement and the server-side numbers beside them.
-INPUTS: the suite (coverage's driver - its calls are what coverage means),
-        the production inventory computed from pyproject.toml and
-        package.json plus the installed distributions' own metadata, the OSV
-        database over HTTP, a generated 50k-row benchmark dataset, and the
-        envelope's own declared limits.
-RELEVANT FILES: verification/measure/verify_measure.py (new - the runner,
-                the fold, the report), verification/measure/perf.py (new -
-                AT-28/29/46 against a real core), verification/measure/
-                coverage.py (AT-38, the line counter - in flight, its
-                denominator corrected), verification/measure/deps.py (AT-37,
-                in flight), server/app/limits.py (AT-45/46, in flight),
-                server/app/main.py (GET /envelope, the attach-time refusal),
-                server/app/analysis.py (the profiling fix AT-29's measurement
-                forced), server/tests/test_measure.py (new, 26),
-                server/tests/test_python_guards.py (new, 18),
-                server/tests/test_envelope.py and test_llm_adapters.py (in
-                flight), web/src/{accessibility,measure}.{ts,test.tsx} (in
-                flight), web/vite.config.ts (css: true, so the a11y audit
-                reads the shipped stylesheet), ai/HANDOFF.md, ai/TASKS.md,
-                ai/CURRENT_STATE.md
+TASK ID: FIX-VERSION-001
+MILESTONE: post-phase (the carried follow-up list)
+CAPABILITY: Distribution (the packaged core's own version)
+GOAL: the packaged core answered `current: unknown` at `/updates/latest`, so
+      the Check for Updates menu item could never compare - it has reported
+      "could not check" for a reason that is honest but incomplete, because the
+      half of the answer the app owns (its own version) was missing. Neither
+      the installed distribution's metadata nor `pyproject.toml` survives a
+      one-file PyInstaller bundle, and PyInstaller ships no stdlib
+      `importlib.metadata` hook, so `current_version` fell through every
+      source to "unknown". Present since v0.2.0. This carries the version into
+      the bundle as a build-time constant stamped from pyproject - the same
+      file the release tag is checked against - and asserts it in both
+      packaged-core smokes, so a bundle built without the stamp fails CI or the
+      release rather than shipping a menu item that cannot work.
+CONTEXT: P6-UPDATE-005 built the honest check - three statuses, a reason for
+         every UNKNOWN, no silent "up to date" - and its tests drove every feed
+         outcome through an injected transport. What it could not test was the
+         frozen interpreter, so the packaged-core smoke was the only place the
+         gap was visible, and it did not look. The fix touches the resolution
+         order, the spec, both smokes and the tests; the endpoint, the feed
+         parsing and the transport are unchanged.
+INPUTS: server/pyproject.toml (the single source of truth the tag check reads),
+        server/app/updates.py's resolution order, server/dah-core.spec's datas,
+        the packaged-core smoke steps in .github/workflows/{ci,release}.yml.
+RELEVANT FILES: server/app/updates.py (BUILD_VERSION_FILE,
+                _frozen_build_version, current_version's new first source),
+                server/dah-core.spec (_build_version, the stamped data file),
+                server/tests/test_updates.py (+8), .github/workflows/ci.yml and
+                .github/workflows/release.yml (the smoke assertion),
+                ai/HANDOFF.md, ai/TASKS.md, ai/CURRENT_STATE.md
 REQUIRED CHANGE:
-  - The runner folds five measurements into one report, one line per
-    acceptance test, and exits non-zero when a measured threshold did not
-    hold. Each measurement is injected so a test can prove a failure fails
-    the gate, and each can be skipped - a skipped measurement is named in the
-    report rather than silently making it smaller.
-  - AT-27/30/32 are asserted in the web suite, not measured here, and the
-    report says so: jsdom is not a browser, and a millisecond there is not a
-    millisecond in one. The suite's green is the measurement; the thresholds
-    are pinned in its tests. Its summary line is the evidence the report
-    quotes.
-  - AT-28 measures an opening as the workspace actually opens one - the case,
-    its datasets, runs, findings, decision and history as one user-visible
-    wait - and takes the p95 over the heaviest case in the envelope, because a
-    percentile over an empty case measures nothing.
-  - AT-29 profiles a generated 50k-row benchmark dataset (the scale P4 pinned,
-    with a date, a split, a measure, a duplicate and a null) and takes the p95.
-  - AT-46 builds a case *at* the envelope - ten datasets, a hundred
-    multi-dataset runs that each bind all ten so the evidence graph crosses a
-    thousand edges, two hundred findings - then reads every surface a reopened
-    case offers and requires each to answer, in budget, at that scale.
-    Stability is a measured property of the reads at the boundary, and the
-    import round trip is among them, so a case that heavy must still restore
-    or the boundary is a dead end.
-  - AT-45's two halves are both measured: the declaration is the PRD's literal
-    numbers, and a dataset past each limit is refused through the same
-    function the attach endpoint calls. The row refusal runs at a tightened
-    value because the PRD's own five million rows would be the fixture the
-    refusal exists to avoid loading; the suite pins the real number.
-  - AT-37 scans the computed inventory against OSV and classifies severity
-    from the advisory's own CVSS vector. An unreachable database answers
-    `unknown` with a reason and the gate is red for it, because "could not
-    check" and "nothing to fix" are different statements.
-  - Two bugs the measurement surfaced, both fixed with their own tests. (1)
-    Profiling a 50k-row dataset took 12.5s against AT-29's 5s, because every
-    one of the profile's dozen bounded lookups re-read and re-parsed the CSV.
-    One materialisation into a temp table gives every later query an
-    in-memory table - same types, same values, same counts - and the same
-    profile takes 1.7s. (2) The coverage counter's denominator counted
-    function-signature continuation lines, which the compiler attributes to
-    the function's code object but the interpreter never reports; the
-    denominator was bigger than the numerator could reach, so coverage read
-    lower than it was. The exclusion is AST-derived and signature-only, and
-    the numerator is intersected with the executable set so a line cannot
-    count as covered outside the denominator either.
-  - The guards python_exec enforces in the child are now tested in the process
-    that measures them: the dunder-hardened handle, the import wall, the
-    restricted builtins, the tabulation shapes and the wall-clock alarm. They
-    are security-relevant (AT-36) and they ran only in a process the line
-    counter cannot instrument, so testing them directly is worth more than
-    relying on the child to reach them - and it is what lifted the evidence
-    group to its target.
-NON-GOALS: the traceability matrix (P8-TRACE-010); re-measuring AT-01, AT-04
-           or AT-40, which have their own runners and reports (the report
-           points at them); a browser-side p95, which needs benchmark hardware
-           and a browser this layer does not have; numeric contrast
-           measurement (jsdom does not paint), recorded in the audit itself.
-CONSTRAINTS: green only. No new dependency (DEC-001 - the coverage counter is
-             sys.monitoring, the scanner is urllib, the p95 is arithmetic).
-             Deterministic and offline: the LLM vars are scrubbed from every
-             server the runner starts, and a passing run needs no network
-             except AT-37's scan, which reports `unknown` rather than a
-             fabricated clean when it cannot reach OSV. The profiling fix
-             changes no measured result - the existing at-scale correctness
-             tests pin the values.
+  - The spec reads the version from pyproject with tomllib (the interpreter's
+    own, no hand-rolled line match) and refuses to build when the version is
+    missing or not a release number - a bundle that would answer "unknown" is
+    a build failure, not a shipped one. It writes the number to
+    `dah-build-version.txt` into the bundle root, which is `sys._MEIPASS` at
+    runtime.
+  - `current_version` reads that stamp first, ahead of the installed metadata
+    and the pyproject beside the source, because the stamp was read from the
+    source of truth at build time while an editable install's metadata can go
+    stale when a version is bumped without reinstalling. A missing or empty
+    stamp is None, so resolution degrades to the next source instead of
+    answering empty.
+  - The stamp's filename is agreed on by both sides but the spec is executed by
+    PyInstaller rather than importable, so the agreement is guarded as a test
+    reading the spec as text - a spec that renamed the file without the app
+    would ship a bundle that answers "unknown" and nothing else would catch it.
+  - Both packaged-core smokes assert `/updates/latest` reports the version the
+    tag named (release.yml) or pyproject states (ci.yml), so the regression
+    that hid for four releases now fails the build.
+NON-GOALS: shipping the release that carries it - that is a tag, and this is
+           the fix; an updater (DEC-006 keeps the app unsigned, so the check
+           remains the verifiable half); reordering the dev sources, where the
+           installed metadata is still read first and is still right for a
+           venv that installed the wheel.
+CONSTRAINTS: green only. No new dependency (DEC-001 - tomllib is stdlib, the
+             stamp is a text file). Deterministic and offline: the stamp is
+             written at build time and read from disk; the smoke's
+             `/updates/latest` call reports UNKNOWN with its reason on a
+             private or unreachable repository and the assertion is on `current`
+             alone, which the app always answers.
 ACCEPTANCE CRITERIA:
-- [x] every one of AT-27..30, AT-32, AT-37, AT-38, AT-45 and AT-46 has a
-      measured number attached, not a claim
-- [x] AT-38 holds at every target: core >= 80%, analytical >= 90%, evidence
-      >= 90%
-- [x] AT-37 scans the real inventory: 0 critical, 0 high, with the scan's
-      state named when it could not run
-- [x] AT-28 and AT-29 hold at their p95 targets over the benchmark shapes
-- [x] AT-46's boundary case holds - the counts reach the envelope and every
-      surface answers in budget, including the export round trip
-- [x] AT-45 is both declared with the PRD's numbers and enforced at each limit
-- [x] the measurement can fail: a deliberately wrong expectation is caught for
-      the percentile, the coverage ratio, the dependency counts, the envelope
-      drift, the refusal and the fold
-- [x] the numbers are asserted in the suite, so a regression fails a test
-- [x] the profiling cost the measurement exposed is fixed and its at-scale
-      correctness is unchanged
-TESTS: test_measure.py (26) - the percentile's interpolation and its empty
-       sample, a timing over budget failing and a timing with no samples
-       measuring nothing, the boundary counts being the PRD's envelope, a
-       boundary case below it or that does not answer failing, the import's
-       201 as its success and a refused round trip named, the declaration
-       being the PRD's numbers and a drifted limit caught, both refusals and a
-       check that stopped refusing, the dependency classifier counting a
-       Critical from its vector and an unreachable database answering unknown
-       never clean, the coverage groups' ratios and their named shortfalls, a
-       vacuous group failing, the fold green with all measurements holding,
-       one failing measurement failing the gate and being named, an offline
-       dependency scan red with its reason, a red web suite failing the shell
-       targets, and a skipped measurement named rather than silent.
-       test_python_guards.py (18) - the dunder-hardened handle and its query
-       callable, read-only SQL through the handle, the import wall's refusals
-       and its allowlist, the meta_path finder's installation and removal, the
-       builtins' dangerous omissions, the tabulation's three shapes and two
-       rejections, in-process execution and its three contract violations, the
-       resource limits' restoration, and the wall-clock alarm. The suite's own
-       process is kept away from the CPU rlimit the child is meant to enforce.
+- [x] the packaged core answers its own version at `/updates/latest`, not
+      "unknown" - verified against the binary built by build_sidecar.sh
+- [x] the stamp is read from pyproject, so the number the bundle reports is the
+      number the release tag was checked against
+- [x] a spec that cannot read a release version aborts the build rather than
+      shipping a bundle that cannot answer
+- [x] a missing or empty stamp degrades to the next source instead of
+      answering empty or "unknown"
+- [x] the stamp wins over installed metadata that has gone stale
+- [x] the endpoint carries the stamped version to the response a shell renders
+- [x] both packaged-core smokes assert it, so the defect cannot recur silently
+- [x] the spec and the app agree on the stamp's filename, and a drift is a
+      failing test
+TESTS: test_updates.py (+8, 29 in the file) - the stamped bundle reports the
+       version, the stamp beats the installed metadata, an empty stamp falls
+       through, the stamp is read from `sys._MEIPASS`, no `_MEIPASS` means no
+       stamp, a missing or empty stamp is None, the spec writes the file the
+       app reads, and the endpoint carries the stamped version.
 VERIFICATION: `cd server && DAH_LLM_API_KEY= DAH_LLM_BASE_URL= DAH_LLM_MODEL=
-              .venv/bin/python -m pytest -q` green (644);
-              `server/.venv/bin/python verification/measure/verify_measure.py`
-              green (every measured threshold holds, the report written to
-              verification/measure/REPORT.md);
-              `server/.venv/bin/python verification/e2e/verify_e2e.py` green
-              (28/28); `cd web && npm test && npm run build` green (138).
-STATE UPDATE: TASKS/CURRENT_STATE gain the task. No schema change.
+              .venv/bin/python -m pytest -q` green (694);
+              `server/.venv/bin/python verification/e2e/verify_e2e.py` green;
+              golden, refine, measure green; trace 48/48;
+              `cd web && npm test && npm run build` green (138);
+              and the packaged binary itself:
+              `curl -s localhost:8126/updates/latest` -> `current: 0.3.2`.
+STATE UPDATE: TASKS/CURRENT_STATE gain the fix; the carried follow-up closes
+              and leaves the list. No schema change, no version bump - the next
+              tag ships it.
 ```
 
-TASK: P8-MEASURE-009 - the measurement layer
-ID: P8-MEASURE-009
+TASK: FIX-VERSION-001 - the packaged core reports its own version
+ID: FIX-VERSION-001
 PRIORITY: high
 STATUS: DONE
-SUMMARY: the PRD's thresholds were prose; nine of them are numbers now. One
-         runner folds five measurements into a report with a verdict per
-         acceptance test and exits non-zero when one does not hold. AT-38 is
-         the suite run under a sys.monitoring line counter - core 93.9%,
-         analytical 92.9%, evidence 92.4%. AT-28 and AT-29 are measured
-         against a real core over HTTP: an opening p95 of 223ms against a 2s
-         target over the heaviest case in the envelope, and a profiling p95 of
-         1.5s against 5s over a generated 50k-row benchmark. AT-46 builds a
-         case at the boundary itself - a hundred multi-dataset runs, two
-         hundred findings, twelve hundred evidence edges - and requires every
-         surface a reopened case offers to answer in budget, the export round
-         trip among them. AT-45 is both halves: the declaration is the PRD's
-         literal numbers, and a dataset past each limit is refused through the
-         same function attach calls. AT-37 scans the computed inventory
-         against OSV and classifies from the CVSS vector: 0 critical, 0 high,
-         22 of 22 packages. AT-27, AT-30 and AT-32 are asserted in the web
-         suite and the report says where the number lives instead of inventing
-         one, because jsdom is not a browser.
-         Two bugs the measurement surfaced, both fixed with their own tests.
-         Profiling a 50k-row dataset took 12.5s against AT-29's 5s, because
-         each of the profile's dozen bounded lookups re-parsed the CSV; one
-         materialisation gives every later query an in-memory table and the
-         same profile takes 1.7s, with no measured result changed. And the
-         counter's denominator counted function-signature lines the
-         interpreter never reports, so coverage read lower than it was - the
-         exclusion is AST-derived, and the numerator is intersected with the
-         denominator's notion of line. A third gap the coverage number named:
-         the guards python_exec enforces in the child were unreachable by
-         measurement, so they are tested in the process that measures them -
-         eighteen tests of the dunder wall, the import wall, the builtins and
-         the tabulation, which is what lifted the evidence group to its
-         target. One hazard the work surfaced along the way: the CPU rlimit is
-         process-wide and cumulative, so an in-process test that sets it
-         delivers SIGXCPU to the suite itself once it has burned more CPU
-         seconds than one run allows; the fixture that fakes the setter is
-         documented for the same reason.
+SUMMARY: a packaged core answered `current: unknown` at `/updates/latest`, so
+         the Check for Updates item could never compare versions - the honest
+         half of its answer was missing because neither the installed
+         distribution's metadata nor `pyproject.toml` survives a one-file
+         PyInstaller bundle, and PyInstaller has no stdlib
+         `importlib.metadata` hook. The spec now reads the version from
+         pyproject with tomllib and stamps `dah-build-version.txt` into the
+         bundle root, where `current_version` finds it through
+         `sys._MEIPASS` - ahead of the installed metadata, which can go stale
+         when a version is bumped without reinstalling. A version the spec
+         cannot read aborts the build rather than shipping a bundle that
+         cannot answer. Both packaged-core smokes now assert the number, which
+         is what makes the recurrence fail the build instead of hiding for
+         four releases. Verified against the binary itself: the sidecar built
+         by build_sidecar.sh answers `current: 0.3.2`.
+
+
 
 Contracts for the rolling window (the two most recent). Older blocks are in
 `ai/TASKS-ARCHIVE.md`.

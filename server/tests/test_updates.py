@@ -7,6 +7,7 @@ malformed body are all `unknown` with a reason, never a silent `current`.
 """
 
 import json
+from pathlib import Path
 
 from fastapi.testclient import TestClient
 
@@ -43,6 +44,79 @@ def _check(feed, current="0.1.0"):
 def test_current_version_resolves_from_the_installed_package():
     version = updates.current_version()
     assert version and version != "unknown"
+
+
+def test_a_stamped_bundle_reports_the_version_the_spec_wrote():
+    """A packaged core has no metadata and no pyproject, so the stamp the spec
+    wrote into the bundle root is the number it answers with."""
+    assert updates.current_version(build_version="0.3.2") == "0.3.2"
+
+
+def test_the_stamp_beats_the_installed_metadata():
+    """The stamp was read from pyproject at build time, so it is more
+    trustworthy than an editable install's metadata - which can go stale when
+    a version is bumped and the package is not reinstalled."""
+    assert updates.current_version(build_version="0.3.2") == "0.3.2"
+    # The installed metadata still resolves (it is the dev venv's), it just
+    # does not win.
+    assert updates.current_version() != "unknown"
+
+
+def test_an_empty_stamp_falls_through_rather_than_answer_empty():
+    """A spec that stamped an empty file is a build fault, but the answer must
+    degrade to the next source rather than to an empty current version."""
+    assert updates.current_version(build_version="") != ""
+
+
+def test_the_frozen_stamp_is_read_from_the_bundle_root(tmp_path, monkeypatch):
+    """`sys._MEIPASS` is where PyInstaller unpacks a one-file bundle's data
+    files, so that is where the stamp is looked for."""
+    stamp = tmp_path / updates.BUILD_VERSION_FILE
+    stamp.write_text("0.3.2\n", encoding="utf-8")
+    monkeypatch.setattr(updates.sys, "_MEIPASS", str(tmp_path), raising=False)
+    assert updates._frozen_build_version() == "0.3.2"
+
+
+def test_no_meipass_means_no_stamp():
+    """A dev checkout has no `_MEIPASS`, and there is no stamp to read."""
+    assert getattr(updates.sys, "_MEIPASS", None) is None
+    assert updates._frozen_build_version() is None
+
+
+def test_a_missing_or_empty_stamp_is_none_not_unknown(tmp_path, monkeypatch):
+    """A bundle without a stamp reads as None, so `current_version` falls
+    through; an empty one is not a version."""
+    monkeypatch.setattr(updates.sys, "_MEIPASS", str(tmp_path), raising=False)
+    assert updates._frozen_build_version() is None
+    stamp = tmp_path / updates.BUILD_VERSION_FILE
+    stamp.write_text("   \n", encoding="utf-8")
+    assert updates._frozen_build_version() is None
+
+
+def test_the_spec_stamps_the_file_the_app_reads():
+    """The spec is executed by PyInstaller, not importable, so the agreement
+    between the name it writes and the name the app reads is checked as text -
+    a spec that renamed one without the other would ship a bundle that answers
+    `unknown` and nothing else would catch it."""
+    spec = Path(__file__).resolve().parent.parent / "dah-core.spec"
+    assert f'"{updates.BUILD_VERSION_FILE}"' in spec.read_text(encoding="utf-8")
+
+
+def test_the_endpoint_carries_the_stamped_version(monkeypatch):
+    """The Check for Updates item shows `current`, so a packaged core's own
+    version has to reach the response, not just the resolver."""
+    import app.main as main_module
+
+    monkeypatch.setattr(updates, "_frozen_build_version", lambda: "0.3.2")
+    monkeypatch.setattr(
+        main_module, "httpx_client", lambda: _feed(status=404, body="Not Found")
+    )
+    client = TestClient(app)
+    response = client.get("/updates/latest")
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["status"] == "unknown"
+    assert body["current"] == "0.3.2"
 
 
 def test_parse_version_handles_tags_suffixes_and_garbage():

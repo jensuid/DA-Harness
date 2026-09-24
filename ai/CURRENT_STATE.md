@@ -12,7 +12,24 @@ causal-language guard, the analytical golden suite, the orientation spine,
 question refinement, the decision view, the measurement layer and the
 requirement-traceability matrix. The full gap analysis is `docs/PRD & UX Conformance Evaluation.md`.
 
-- **Active task:** P8-TRACE-010 DONE - the requirement-traceability matrix
+- **Active task:** FIX-VERSION-001 DONE - the packaged core reports its own
+  version. Since v0.2.0 a bundled core answered `current: unknown` at
+  `/updates/latest`, because neither the installed distribution's metadata nor
+  `pyproject.toml` survives a one-file PyInstaller bundle and PyInstaller ships
+  no stdlib `importlib.metadata` hook. `dah-core.spec` now reads the version
+  from pyproject with tomllib and stamps `dah-build-version.txt` into the
+  bundle root, where `app.updates.current_version` finds it through
+  `sys._MEIPASS` - ahead of the installed metadata, which goes stale when a
+  version is bumped without reinstalling. A version the spec cannot read
+  aborts the build, and both packaged-core smokes (ci.yml, release.yml) now
+  assert the number, which is what makes the recurrence fail a build instead of
+  hiding for four releases. Verified against the binary `build_sidecar.sh`
+  produces: `current: 0.3.2`.
+  Before it: P8-TRACE-010, P8-MEASURE-009, P8-DECISION-008, P8-REFINE-007,
+  P8-SHELL-006, P8-GOLDEN-005, P8-CAUSAL-004, P8-VALID-003, P8-QUALITY-002,
+  P8-CONTEXT-001, the v0.2.0 release.
+
+- **Done before that:** P8-TRACE-010 - the requirement-traceability matrix
   (AT-48). The PRD's section 59 control artifact is code: 48 rows, one per
   acceptance threshold, each carrying the PRD header it quotes, the UX
   surface, the implementation, the tests, the threshold in the PRD's own words
@@ -55,12 +72,11 @@ requirement-traceability matrix. The full gap analysis is `docs/PRD & UX Conform
   documented minimum but is no longer enforced by CI, and a green run no longer
   proves the exact Intel triple a local build produces. Restoring that needs a
   self-hosted Intel runner.
-- **Test status:** server 686 passed (42 for this task, all in
-  test_trace.py - the requirement set agreeing with the PRD, the P0/P1
-  thresholds computed, and a deliberately broken row for each of the six ways
-  a row can fail the gate). The web suite is 138 (12 a11y, 10 measure -
-  asserted in the shell's own suite, which the measurement runner reads as its
-  evidence).
+- **Test status:** server 694 passed (8 for this task, in test_updates.py -
+  the stamped bundle reports its version, the stamp beats stale installed
+  metadata, a missing or empty stamp degrades, and the spec writes the file the
+  app reads). The web suite is 138 (12 a11y, 10 measure - asserted in the
+  shell's own suite, which the measurement runner reads as its evidence).
   Desktop shell 22 Rust tests; P2, P3 and P4 gates PASS; **v0.2.0 and v0.3.0
   released** (tags `v0.2.0` on `ec819fc`, `v0.3.0` on `ab56541`, `v0.3.1` on
   `19cefc1`, `v0.3.2` on `2ff1bca`).
@@ -68,7 +84,13 @@ requirement-traceability matrix. The full gap analysis is `docs/PRD & UX Conform
   runner green, and the measurement layer 9/9 - the reports the matrix cites as
   its measured evidence, regenerated on the current tree.
 
-- **Next task:** none open, and no phase is open. The next session inherits the **carried follow-ups** in `ai/TASKS.md` - the packaged core's `current: unknown` at `/updates/latest` is the only one that touches a user-visible promise. P8 is complete (10 of 10) and
+- **Next task:** none open, and no phase is open. The packaged-core version
+  follow-up is closed; the carried follow-ups that remain in `ai/TASKS.md` are
+  the DMG bundler, the icon proportion (52%, chosen blind), one fragile web
+  test layout, and two environmental items (signing deferred by DEC-006, CI
+  billing suspended). The one action worth taking next is a **v0.3.3 tag**: the
+  fix is on master but no published binary carries it, and v0.2.0-v0.3.2 cannot
+  be repaired without rebuilding. P8 is complete (10 of 10) and
   **v0.3.0, v0.3.1 and v0.3.2 are released** (tags `v0.3.0` on `ab56541`,
   `v0.3.1` on `19cefc1`, `v0.3.2` on `2ff1bca`), 686 server tests passing on the
   tag. Both were built locally from

@@ -10,11 +10,48 @@
 # The one-file build unpacks to a temp dir at startup, which costs roughly a
 # second of startup time - acceptable, and it keeps the .app bundle small.
 
+import re
+import tempfile
+import tomllib
+from pathlib import Path
+
 from PyInstaller.utils.hooks import collect_all
 
 block_cipher = None
 
-datas = []
+# The version this bundle reports at `/updates/latest`. Neither the installed
+# distribution's metadata nor `pyproject.toml` itself reaches a one-file
+# PyInstaller bundle, so the spec reads the version here - from the same file
+# the release workflow's tag check reads - and stamps it into the bundle root as
+# `dah-build-version.txt`, where `app.updates.current_version` finds it through
+# `sys._MEIPASS`. Without it a packaged core answers `current: unknown` and the
+# Check for Updates item can never compare versions.
+
+
+def _build_version() -> str:
+    """The version in pyproject.toml, or fail the build loudly.
+
+    A bundle that reports `unknown` is the failure this exists to prevent, so a
+    spec that cannot read a version aborts the build instead of shipping one
+    whose label the app cannot answer. tomllib is the interpreter's own, so the
+    parse is the standard one rather than a hand-rolled line match.
+    """
+    with open("pyproject.toml", "rb") as project_file:
+        version = tomllib.load(project_file)["project"]["version"]
+    if not re.fullmatch(r"[0-9]+(?:\.[0-9]+)+", str(version)):
+        raise SystemExit(
+            f"dah-core.spec: pyproject.toml's version is {version!r}, not a "
+            "release number - app.updates cannot compare it"
+        )
+    return str(version)
+
+
+BUILD_VERSION = _build_version()
+_stamp = Path(tempfile.gettempdir()) / "dah-build-version.txt"
+_stamp.write_text(BUILD_VERSION, encoding="utf-8")
+print(f"dah-core.spec: stamping version {BUILD_VERSION} into the bundle")
+
+datas = [(str(_stamp), ".")]
 binaries = []
 hiddenimports = []
 

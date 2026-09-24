@@ -23,6 +23,7 @@ carrying a reason the menu can show, never a silent `CURRENT`.
 from __future__ import annotations
 
 import json
+import sys
 from dataclasses import dataclass
 from importlib import metadata
 from pathlib import Path
@@ -43,6 +44,14 @@ PACKAGE_NAME = "dah-server"
 # (running the app from a working copy). Kept as a module-level seam so a test
 # can point it at a fixture.
 _PYPROJECT = Path(__file__).resolve().parent.parent / "pyproject.toml"
+
+# The name of the file `dah-core.spec` stamps into a PyInstaller bundle's root
+# (which is `sys._MEIPASS` at runtime). Neither the installed distribution's
+# metadata nor `pyproject.toml` survives a one-file build, so without this file
+# a packaged core answers `unknown` at `/updates/latest` and the Check for
+# Updates item can never compare. The spec reads the version from pyproject at
+# build time, so this number is the one the release tag was checked against.
+BUILD_VERSION_FILE = "dah-build-version.txt"
 
 # A release answer this old is not a release. The feed is rate-limited to 60
 # requests per hour per address unauthenticated, so a hung or slow request must
@@ -106,15 +115,44 @@ def _read_pyproject_version(path: Path) -> str | None:
     return None
 
 
-def current_version(pyproject: Path = _PYPROJECT) -> str:
+def _frozen_build_version() -> str | None:
+    """The version `dah-core.spec` stamped into this bundle, or None.
+
+    None when this is not a PyInstaller bundle, or when the stamp is missing or
+    empty - both of which mean a packaged core was built by a spec that did not
+    stamp one, and the caller falls through to the other sources rather than
+    guessing.
+    """
+    base = getattr(sys, "_MEIPASS", None)
+    if base is None:
+        return None
+    try:
+        stamped = Path(base, BUILD_VERSION_FILE).read_text(encoding="utf-8")
+    except OSError:
+        return None
+    version = stamped.strip()
+    return version or None
+
+
+def current_version(
+    pyproject: Path = _PYPROJECT, build_version: str | None = None
+) -> str:
     """The version this build was published at.
 
-    Resolved in order of trustworthiness: the installed distribution's metadata
-    (what a bundled sidecar reports, and what the tag was checked against), the
+    Resolved in order of trustworthiness: the version the spec stamped into the
+    bundle at build time (what a packaged sidecar reports - read from
+    pyproject, so it is the number the release tag was checked against), the
+    installed distribution's metadata (a venv that installed the wheel), the
     pyproject beside the source (a dev checkout that is not installed), then
     "unknown" - never a guessed number, because a wrong version here is a wrong
     answer to the whole question.
+
+    `build_version` is a seam a test supplies instead of having to fake a
+    frozen interpreter; in the product it is the stamp the spec wrote.
     """
+    stamped = build_version if build_version is not None else _frozen_build_version()
+    if stamped:
+        return stamped
     try:
         version = metadata.version(PACKAGE_NAME)
         if version and version != "0.0.0":

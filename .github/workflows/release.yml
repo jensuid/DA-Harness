@@ -112,6 +112,16 @@ jobs:
             sleep 0.5
           done
           curl -fsS http://127.0.0.1:8125/health
+          # The packaged core has to know its own version: `/updates/latest`
+          # compares it against this job's own release page, and a bundle that
+          # answers `unknown` cannot. The spec stamps the version from
+          # pyproject - the same file the tag check above read - so a bundle
+          # whose label disagrees with the tag fails the release here.
+          UPDATES="$(curl -fsS http://127.0.0.1:8125/updates/latest)"
+          echo "$UPDATES"
+          echo "$UPDATES" | grep -qF "\"current\":\"${{ steps.version.outputs.version }}\"" || \
+            { echo "the packaged core does not report ${{ steps.version.outputs.version }}"; \
+              exit 1; }
           LOGS="$(curl -fsS http://127.0.0.1:8125/logs)"
           echo "$LOGS" | grep -q '"enabled":true' || \
             { echo "file logging is off in the packaged core"; echo "$LOGS"; exit 1; }

@@ -2503,3 +2503,42 @@ suite still 21/21 on both thresholds, AT-04's four still holding.
   two measured suites exist to borrow the pattern from.
 - **P8-TRACE-010** - the traceability matrix (AT-48); last, it traces what
   1-9 delivered.
+
+## Next action
+**All ten phases are complete and v0.3.2 is published.** P0 through P8 are
+DONE; the last task (P8-TRACE-010) made the PRD's section 59 control artifact
+code, and the three releases after it re-cut the app icon - v0.3.1 rounded the
+full-bleed 60px-corner tile to the standard Ventura squircle, v0.3.2 scaled the
+bar-chart artwork from 68% of the canvas to 52% and centred it. The tree is
+green: 686 server, 138 web, 28/28 e2e, the measurement layer 9/9, the matrix
+48/48.
+
+There is no open task. What a next session inherits is the **open follow-up
+list** in `ai/TASKS.md`, which is where to look first - it carries the
+packaged-core version gap (`/updates/latest` answers `current: unknown`,
+because the PyInstaller bundle sees neither the distribution metadata nor
+`pyproject.toml`), the DMG bundling's dependence on a local `create-dmg` that
+is not the bundler Tauri expects, the icon proportion still chosen blind
+(52%; the source is the committed `icon.png`, and `ai/TASKS.md`'s carried
+follow-ups carry the exact recipe to re-cut it), and the `web/src/CaseWorkspace.test.tsx` refinement describe that
+still inherits the previous test's persistence.
+
+**Gates:** 686 server, 138 web, build green, 28/28 e2e, golden 21/21, AT-04's
+four thresholds, measurement 9/9, matrix 48/48. Two environmental notes carry:
+CI's billing is suspended, so nothing since `c73118c` has run in CI and every
+release artifact was built locally; and the Ventura floor is documented but no
+longer CI-enforced (DEC-005).
+
+### What is next, in priority order
+
+- **Fix the packaged core's version** so `/updates/latest` can compare: carry
+  the version into the PyInstaller bundle. It is the one open defect that
+  touches a user-visible promise (the Check for Updates menu item), present
+  since v0.2.0.
+- **Restore CI** at GitHub Settings > Billing & plans, then re-run the suites
+  against `v0.3.2`; nothing since `c73118c` has been verified by CI.
+- **Then extension**, not before: the roadmap's scale ladder (cloud,
+  collaboration, warehouse connectors, governance) is deferred at a user count
+  of one, and the deliberately-not-built list in `docs/PRD & UX Conformance
+  Evaluation.md` (the Analysis Canvas, the command palette, the Knowledge nav)
+  is explicit deferral, not backlog - pick from it deliberately.

@@ -261,6 +261,18 @@ jobs:
             sleep 0.5
           done
           curl -fsS http://127.0.0.1:8124/health
+          # The packaged core has to know its own version: `/updates/latest`
+          # compares it against the release feed, and a bundle that answers
+          # `unknown` can never compare. The spec stamps the version into the
+          # bundle from pyproject, so this is the same number the tag was cut
+          # from - and a bundle built without the stamp fails here rather than
+          # shipping a Check for Updates item that cannot work.
+          VERSION="$(grep -m1 '^version' pyproject.toml | sed 's/.*"\(.*\)".*/\1/')"
+          UPDATES="$(curl -fsS http://127.0.0.1:8124/updates/latest)"
+          echo "$UPDATES"
+          echo "$UPDATES" | grep -qF "\"current\":\"$VERSION\"" || \
+            { echo "the packaged core reports a version other than $VERSION"; \
+              exit 1; }
           # File logging has to be on in the packaged core, and the log has to
           # be under the data dir the shell sets - not next to the binary,
           # which a user cannot read inside an .app bundle.
