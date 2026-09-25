@@ -31,9 +31,10 @@ is the P9 restyle-safety property the tests were written for.
 
 **Next, in priority order:**
 
-1. **Tag v0.3.3** - the two backend fixes are on master but no published
-   binary carries them, and v0.2.0-v0.3.2 cannot be repaired without
-   rebuilding. CI's billing is still suspended, so the smokes are local.
+1. **Tag v0.3.3 DONE** - tagged on `30db6e9`, published as a flagged
+   pre-release with the ditto zip and its sha256. The packaged core answers
+   `current: 0.3.3` and the `.app`'s version string is 0.3.3; CI's billing
+   is still suspended, so the build and publish were local.
 2. **Then FIX-REFINE-007 (W-009)** - the refinement's rationale and grounds
    are returned by the API and rendered by neither; the "Why these changes"
    heading sits empty. Contract in `ai/TASKS.md`; `RefinePanel.tsx` only.
@@ -55,9 +56,9 @@ is the P9 restyle-safety property the tests were written for.
 The last tasks to land, newest first. The contract and done-record for each
 is in `ai/TASKS.md` (rolling window) or `ai/TASKS-ARCHIVE.md`.
 
-- **FIX-EVIDENCE-002** - the evidence check's number regex (W-015); a
-  `YYYY-MM` finding validates, a date/id/sku is not a magnitude, and a
-  fabricated figure still fails and is named.
+- **FIX-TIMEOUT-006** - one configured LLM timeout (DAH_LLM_TIMEOUT_SECONDS,
+  default 120) for all six assistant call sites, and a fallback announced as a
+  sentence; v0.3.3 carries it.
 - **FIX-VERSION-001** - the packaged core reports its own version; the spec
   stamps it from pyproject, `current_version` reads it first, and both
   packaged-core smokes assert it.

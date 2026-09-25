@@ -23,9 +23,10 @@ requirement-traceability matrix. The full gap analysis is `docs/PRD & UX Conform
   (interpret, draft, chat, plan, generate-code, agent proposal, refinement).
   723 server (+24), 140 web (+2), build ok, golden 21/21, e2e, refine
   AT-04, measure 9/9, trace 48/48.
-  Selanjutnya: **tag v0.3.3** (dua fix backend belum ada di binary yang
-  dipublikasikan; CI billing masih suspended jadi smokes local), lalu
-  **FIX-REFINE-007 (W-009)**, lalu FIX-PROFILE-008 / FIX-UPDATES-009 /
+  Selanjutnya: **tag v0.3.3 SELESAI** (release published: zip + sha256,
+  flagged pre-release; packaged core terverifikasi `current: 0.3.3`,
+  `CFBundleShortVersionString` 0.3.3, CI billing masih suspended jadi
+  build+publish local). Lalu **FIX-REFINE-007 (W-009)**, lalu FIX-PROFILE-008 / FIX-UPDATES-009 /
   FIX-VERSION-010 (bebas urutan), lalu **P9 redesign UI/UX** (npm, light
   theme, tailwind + shadcn + framer-motion + recharts untuk layar;
   SVG/PNG server tetap untuk export; 4 fase F1-F4 hijau tiap fase).
