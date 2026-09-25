@@ -12,29 +12,38 @@ causal-language guard, the analytical golden suite, the orientation spine,
 question refinement, the decision view, the measurement layer and the
 requirement-traceability matrix. The full gap analysis is `docs/PRD & UX Conformance Evaluation.md`.
 
-- **Active task:** **tidak ada tugas terbuka.** WALK-E2E-001 (walk-test
-  end-to-end flow/UI/UX) SELESAI: semua fase A-F dijalankan sungguh melawan
-  core master + shell Tauri v0.3.2 + bundle web yang sama di Chromium dengan
-  LLM nyata. Trust loop case B2B 484-baris tertutup (`loop_closed: true`).
-  19 temuan (8 MAJOR, 8 MINOR, 3 OBS) di `walktest/FINDINGS.md`, laporan
-  `walktest/REPORT.md`, state mesin live `walktest/HANDOFF.md`. Hasilnya
-  menjadi post-phase fix, satu commit per temuan, prioritas: W-015 (regex
-  `_numbers_in` memotong "2026-07" → false negative pada check evidence
-  HARD), W-011 (PlanPanel tidak POST `/plan`; rail menunjuk aksi tanpa
-  tombol), W-016 (chart + python run tak ada UI), W-014 (interpret/draft
-  LLM timeout 30s + fallback diam). Tidak ada perubahan kode repo; hanya
-  file di `walktest/` + `ai/` state.
-  Sebelumnya: FIX-VERSION-001 DONE - the packaged core reports its own
+- **Active task:** **FIX-EVIDENCE-002 DONE** — W-015 (walk-test finding):
+  check evidence menolak finding yang benar. Regex `_numbers_in`
+  (`server/app/evaluator.py`) `-?\d[\d,]*\.?\d*` memotong token "2026-07"
+  menjadi `2026` dan `-7`; keduanya absen dari `_allowed_numbers`, jadi
+  verdict `insufficient_evidence` pada HARD check — setiap analisis
+  time-series `YYYY-MM` gagal validasi. Sekarang run-regex + accept step
+  yang membaca karakter di kedua sisi: digit / huruf / hyphen di tepi =
+  bagian token lebih panjang, minus hanya tanda saat memulai.
+  `_allowed_numbers` juga mendapat panjang kolom sendiri (bentuk "N
+  grouped value(s)"). 699 server, 138 web, golden 21/21, e2e, refine
+  AT-04, measure 9/9, trace 48/48.
+  Selanjutnya: **FIX-TIMEOUT-006 (W-014)** — interpret/draft LLM timeout
+  30s hardcoded (`interpreter.py:239`, `drafter.py:312`) + fallback
+  deterministic diam-diam; UI "Working…" 30s. Contract sudah ada di
+  `ai/TASKS.md`. Lalu tag **v0.3.3**, lalu **P9 redesign UI/UX** (npm,
+  light theme, tailwind + shadcn + framer-motion + recharts untuk layar;
+  SVG/PNG server tetap untuk export; 4 fase F1-F4 hijau tiap fase).
+  Sebelumnya: WALK-E2E-001 (walk-test end-to-end) SELESAI - 19 temuan
+  (8 MAJOR, 8 MINOR, 3 OBS) di `walktest/FINDINGS.md`, laporan
+  `walktest/REPORT.md`, state mesin live `walktest/HANDOFF.md`; hasilnya
+  jadi post-phase fix, satu commit per temuan.
+  Sebelum itu: FIX-VERSION-001 DONE - the packaged core reports its own
   version. Since v0.2.0 a bundled core answered `current: unknown` at
-  `/updates/latest`, because neither the installed distribution's metadata nor
-  `pyproject.toml` survives a one-file PyInstaller bundle and PyInstaller ships
-  no stdlib `importlib.metadata` hook. `dah-core.spec` now reads the version
-  from pyproject with tomllib and stamps `dah-build-version.txt` into the
-  bundle root, where `app.updates.current_version` finds it through
-  `sys._MEIPASS` - ahead of the installed metadata, which goes stale when a
-  version is bumped without reinstalling. A version the spec cannot read
-  aborts the build, and both packaged-core smokes (ci.yml, release.yml) now
-  assert the number, which is what makes the recurrence fail a build instead of
+  `/updates/latest`, because neither the installed distribution's metadata
+  nor `pyproject.toml` survives a one-file PyInstaller bundle, and
+  PyInstaller ships no stdlib `importlib.metadata` hook. `dah-core.spec`
+  now reads the version from pyproject with tomllib and stamps
+  `dah-build-version.txt` into the bundle root, where `current_version`
+  finds it through `sys._MEIPASS` - ahead of installed metadata, which goes
+  stale when a version is bumped without reinstalling. A version the spec
+  cannot read aborts the build, and both packaged-core smokes now assert
+  the number, which is what makes the recurrence fail a build instead of
   hiding for four releases. Verified against the binary `build_sidecar.sh`
   produces: `current: 0.3.2`.
   Before it: P8-TRACE-010, P8-MEASURE-009, P8-DECISION-008, P8-REFINE-007,
@@ -84,12 +93,14 @@ requirement-traceability matrix. The full gap analysis is `docs/PRD & UX Conform
   documented minimum but is no longer enforced by CI, and a green run no longer
   proves the exact Intel triple a local build produces. Restoring that needs a
   self-hosted Intel runner.
-- **Test status:** server 694 passed (8 for this task, in test_updates.py -
-  the stamped bundle reports its version, the stamp beats stale installed
-  metadata, a missing or empty stamp degrades, and the spec writes the file the
-  app reads). The web suite is 138 (12 a11y, 10 measure - asserted in the
-  shell's own suite, which the measurement runner reads as its evidence).
-  Desktop shell 22 Rust tests; P2, P3 and P4 gates PASS; **v0.2.0 and v0.3.0
+- **Test status:** server 699 passed (+5 for FIX-EVIDENCE-002, in
+  test_validation.py - the WALK-E2E-001 regression as a literal `YYYY-MM`
+  case, a date / id / sku shape emitting no magnitude, a negative inside a
+  token versus a real negative, the group-count allowance, and a fabricated
+  magnitude still failing). The web suite is 138 (12 a11y, 10 measure -
+  asserted in the shell's own suite, which the measurement runner reads as
+  its evidence). Desktop shell 22 Rust tests; P2, P3 and P4 gates PASS;
+  **v0.2.0 and v0.3.0
   released** (tags `v0.2.0` on `ec819fc`, `v0.3.0` on `ab56541`, `v0.3.1` on
   `19cefc1`, `v0.3.2` on `2ff1bca`).
 - **e2e:** all 28 real-server steps PASS; the golden suite and the refinement

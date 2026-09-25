@@ -2585,3 +2585,58 @@ UX shell (error taxonomy, empty state); agregasi `walktest/REPORT.md`.
 Ketika walk-test selesai, section ini kembali ke "tidak ada tugas terbuka"
 dan hasilnya jadi post-phase fix (satu fix per temuan MAJOR, prioritas:
 W-009, W-005, W-008, W-001).
+---
+
+## Next action (post-phase fixes, sebelum W-015 dikerjakan)
+
+**Tidak ada tugas terbuka.** Walk-test end-to-end (WALK-E2E-001) SELESAI:
+semua fase A-F dijalankan sungguh melawan core master + shell Tauri v0.3.2 +
+bundle web yang sama di Chromium, dengan LLM nyata. Laporan akhir
+`walktest/REPORT.md`; 19 temuan (8 MAJOR, 8 MINOR, 3 OBS) di
+`walktest/FINDINGS.md`; state mesin live di `walktest/HANDOFF.md`.
+
+Hasilnya jadi post-phase fix (satu commit per temuan, prioritas berurutan):
+
+1. **W-015 MAJOR** — check evidence menolak finding yang benar. Regex
+   `_numbers_in` (`server/app/evaluator.py`) `-?\d[\d,]*\.?\d*` memotong token
+   "2026-07" menjadi `2026` dan `-7`; keduanya absen dari
+   `_allowed_numbers`, jadi verdict `insufficient_evidence` pada HARD check.
+   Setiap analisis time-series `YYYY-MM` gagal validasi. Diverifikasi
+   langsung di interpreter. Perbaikan terlokalisir; `_allowed_numbers` (yang
+   tidak memasukkan row_count / jumlah group yang statement sebut) perlu
+   diperiksa bersamaan.
+2. **W-011 MAJOR** — `PlanPanel` (`web/src/CaseWorkspace.tsx`) hanya GET
+   plan; rail menunjuk "Generate an analysis plan" (`POST /plan`) tapi tidak
+   ada satu pun elemen UI yang memanggilnya. Plan stage tidak bisa
+   diselesaikan dari shell.
+3. **W-016 MAJOR** — chart (`POST /runs/{id}/charts`) dan Python run
+   (`POST /runs/python`) punya endpoint tapi `grep -c chart web/src/api.ts`
+   = 0; dua kapabilitas inti tak terjangkau tanpa terminal.
+4. **W-014 MAJOR** — interpret + draft-finding LLM selalu timeout 30s
+   (`interpreter.py:239`, `drafter.py:312`) lalu fallback deterministic
+   diam-diam; UI "Working…" 30s tanpa sinyal. Planner/refine (60s) sukses.
+
+Sisa MAJOR: W-009 (rationale+grounds tak dirender), W-008 (profil di-POST
+otomatis tiap buka case), W-005 (Check for Updates hanya eprintln), W-001
+(dev checkout melaporkan 0.1.0).
+
+Yang terbukti bekerja dengan baik (jangan rusak saat memperbaiki): guardrail
+refinement AT-04, validasi 9 dimensi + carry-over uncertainty ke decision,
+profiler dengan dampak terhitung, sandbox Python seatbelt, EVALUATE 9 axis,
+agent approve/reject + reviewer, cross-case memory dengan grounds, error
+taxonomy (400/404/422/500 — tidak ada jalan input-user ke 500), export 13
+struktur + template round-trip.
+
+### What is next, in priority order
+
+- **Tag the release that ships it** (v0.3.3): the fix is on master, but no
+  published binary carries it - v0.2.0 through v0.3.2 still answer "unknown",
+  and that cannot be repaired without rebuilding. The release procedure is
+  unchanged; the new smoke step does the verification.
+- **Restore CI** at GitHub Settings > Billing & plans, then re-run the suites
+  against the tag; nothing since `c73118c` has been verified by CI.
+- **Then extension**, not before: the roadmap's scale ladder (cloud,
+  collaboration, warehouse connectors, governance) is deferred at a user count
+  of one, and the deliberately-not-built list in `docs/PRD & UX Conformance
+  Evaluation.md` (the Analysis Canvas, the command palette, the Knowledge nav)
+  is explicit deferral, not backlog - pick from it deliberately.

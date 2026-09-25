@@ -302,6 +302,7 @@ def test_validate_python_run_whose_script_now_fails(tmp_path) -> None:
 # the reason it exists rather than by accident.
 
 from app import validation  # noqa: E402
+from app import evaluator as evaluator_module  # noqa: E402
 
 
 def _dimension(results, name: str) -> dict:
@@ -414,6 +415,75 @@ def test_a_finding_quoting_an_invented_magnitude_fails_evidence() -> None:
     assert evidence["passed"] is False
     assert "9000" in evidence["detail"]
     assert status == "insufficient_evidence"
+
+
+_MONTHS = [
+    "2026-01", "2026-02", "2026-03", "2026-04", "2026-05", "2026-06",
+    "2026-07", "2026-08", "2026-09", "2026-10", "2026-11", "2026-12",
+]
+_MONTHLY = [[month, 1000.0 * (index + 1)] for index, month in enumerate(_MONTHS)]
+
+
+def test_a_finding_naming_yyyy_mm_periods_passes_evidence() -> None:
+    """W-015: a period is a label, not two magnitudes, so it is not quoted.
+
+    The statement is correct - every magnitude it names is a cell value - and
+    before the fix the check split `2026-07` into 2026 and -7, neither of which
+    the result holds, and refused the finding for quoting them.
+    """
+    status, checks = validation.validate_finding(
+        reproduced=True,
+        rerun_detail="rerun matches stored result",
+        statement="2026-07 has the highest revenue at 7000.0",
+        interpretation="",
+        question="Which month has the highest revenue?",
+        sql="SELECT month, revenue FROM read_csv_auto(?)",
+        columns=["month", "revenue"],
+        rows=_MONTHLY,
+        context=None,
+        profile={
+            "rows": 12,
+            "columns": ["month", "revenue"],
+            "stats": {
+                "revenue": {"type": "numeric", "null_count": 0, "distinct_count": 12},
+                "month": {"type": "other", "null_count": 0, "distinct_count": 12},
+            },
+            "quality": [],
+        },
+    )
+    evidence = _dimension([c.to_dict() for c in checks], "evidence")
+    assert evidence["passed"] is True, evidence["detail"]
+    assert status != "insufficient_evidence"
+
+
+def test_digits_inside_a_longer_token_are_not_magnitudes() -> None:
+    """A date, an id and a sku are shapes, not numbers the claim quotes."""
+    for shape in ("2026-01-15", "ORD-100331", "SKU-4001"):
+        assert evaluator_module._numbers_in(f"order {shape} totals 450.25") == {450.25}
+
+
+def test_a_negative_number_inside_a_token_is_not_emitted_as_one() -> None:
+    """The minus in a period is a separator, not a sign (W-015's -7)."""
+    assert evaluator_module._numbers_in("2026-07 revenue fell") == set()
+    assert evaluator_module._numbers_in("a change of -5 units") == {-5.0}
+
+
+def test_a_statement_naming_its_own_group_count_passes() -> None:
+    """The drafter writes `N grouped value(s)`; the count is a shape the result holds."""
+    allowed = evaluator_module._allowed_numbers(["month", "revenue"], _MONTHLY)
+    assert 12.0 in allowed
+    quoted = evaluator_module._numbers_in(
+        "2026-07 has the highest revenue at 7000.0, the largest of 12 grouped value(s)"
+    )
+    assert quoted <= allowed, quoted - allowed
+
+
+def test_a_fabricated_magnitude_still_fails_and_names_the_number() -> None:
+    """The honesty budget's purpose is unchanged: an invented figure still fails."""
+    invented = evaluator_module._numbers_in("2026-07 leads with 9999.0")
+    allowed = evaluator_module._allowed_numbers(["month", "revenue"], _MONTHLY)
+    assert 9999.0 in invented
+    assert 9999.0 not in allowed
 
 
 def test_causal_language_from_a_correlation_is_flagged() -> None:

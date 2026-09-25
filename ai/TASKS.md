@@ -338,7 +338,7 @@ not reopened for these; the fix's own contract and verification are below.
 | Task ID | Capability | Status | Verification |
 |---------|-----------|--------|--------------|
 | FIX-VERSION-001 | Distribution (the packaged core's own version) | DONE | 8 tests added (694 server, 138 web); the packaged binary answers `current: 0.3.2` at `/updates/latest`; both packaged-core smokes now assert it |
-| FIX-EVIDENCE-002 | Validation (the evidence check's number regex, W-015) | PENDING | the regex no longer splits a date token; a `YYYY-MM` finding validates on its evidence axis |
+| FIX-EVIDENCE-002 | Validation (the evidence check's number regex, W-015) | DONE | +5 tests (699 server, 138 web); golden 21/21, e2e all pass, refine AT-04, measure 9/9, trace 48/48 |
 | FIX-PLAN-003 | UX (the plan stage's missing button, W-011) | PENDING | the rail's named action is reachable from the shell |
 | FIX-CHART-004 | UX (a chart surface, W-016) | PENDING | a chart can be rendered and seen from a run |
 | FIX-PYTHON-005 | UX (a python run surface, W-016) | PENDING | a python run can be generated and executed from the shell |
@@ -426,26 +426,30 @@ CONSTRAINTS: green only. No new dependency (DEC-001). Deterministic and
              offline: the check is pure over its inputs. Read-only: it
              judges, it never writes.
 ACCEPTANCE CRITERIA:
-- [ ] a finding naming `YYYY-MM` periods with correct magnitudes passes its
+- [x] a finding naming `YYYY-MM` periods with correct magnitudes passes its
       evidence dimension, where before it failed as insufficient_evidence
-- [ ] a date, an id and a sku are not extracted as magnitudes, verified per
+- [x] a date, an id and a sku are not extracted as magnitudes, verified per
       shape
-- [ ] a negative number inside a longer token is not emitted as one
-- [ ] a statement naming its result's own row count or group count passes
-- [ ] a genuinely fabricated magnitude still fails, and the failure names the
+- [x] a negative number inside a longer token is not emitted as one
+- [x] a statement naming its result's own row count or group count passes
+- [x] a genuinely fabricated magnitude still fails, and the failure names the
       invented number
-- [ ] the golden suite's reference claims still hold their evidence verdicts
-- [ ] the evidence check's sentence, when it fails, still names what the
+- [x] the golden suite's reference claims still hold their evidence verdicts
+- [x] the evidence check's sentence, when it fails, still names what the
       statement quoted that the result does not hold
-TESTS: test_evaluator.py / test_validation.py (+~8) - per shape (date, id,
-       sku, negative-in-token), the group-count and row-count allowance, a
-       fabricated number still failing, the regression from WALK-E2E-001
-       stated as a literal case, and the existing corpus re-green.
+TESTS: test_validation.py (+5) - the WALK-E2E-001 regression as a literal case
+       (a `YYYY-MM` statement over twelve monthly rows passes evidence), a
+       date / id / sku shape emitting no magnitude, a negative inside a token
+       versus a real negative, the group-count allowance, and a fabricated
+       magnitude still failing.
 VERIFICATION: `cd server && DAH_LLM_API_KEY= DAH_LLM_BASE_URL= DAH_LLM_MODEL=
-               .venv/bin/python -m pytest -q` green (702);
-               `verification/e2e/verify_e2e.py`, `verify_golden.py`,
-               `verify_refine.py`, `verify_measure.py`, `verify_trace.py`
-               green; `cd web && npm test && npm run build` green.
+               .venv/bin/python -m pytest -q` green (694 + 5 = 699);
+               `verification/e2e/verify_e2e.py` green (all steps);
+               `verify_golden.py` green (21/21 reference, 21/21 workflow);
+               `verify_refine.py` green (AT-04);
+               `verify_measure.py` green (9/9);
+               `verify_trace.py` green (48/48);
+               `cd web && npm test && npm run build` green (138).
 STATE UPDATE: TASKS/CURRENT_STATE/HANDOFF gain the fix; the walk-test's
               W-015 closes. No schema change, no version bump.
 ```

@@ -1,112 +1,68 @@
 ## Next action
 
-**Tidak ada tugas terbuka.** Walk-test end-to-end (WALK-E2E-001) SELESAI:
-semua fase A-F dijalankan sungguh melawan core master + shell Tauri v0.3.2 +
-bundle web yang sama di Chromium, dengan LLM nyata. Laporan akhir
-`walktest/REPORT.md`; 19 temuan (8 MAJOR, 8 MINOR, 3 OBS) di
-`walktest/FINDINGS.md`; state mesin live di `walktest/HANDOFF.md`.
+**FIX-EVIDENCE-002 (W-015) DONE.** The evidence check no longer splits a
+token and refuses the finding for quoting the fragments. `_numbers_in`
+(`server/app/evaluator.py`) matched `-?\d[\d,]*\.?\d*`, which cut `2026-07`
+into `2026` and `-7`; neither was in `_allowed_numbers`, so a correct
+`YYYY-MM` finding answered `insufficient_evidence` on a HARD check and every
+time-series analysis failed validation. The run is a regex that finds a digit
+run and an accept step that reads the characters at both edges: a digit, a
+letter or a hyphen against either side means the run is part of a longer
+token, and the minus is only a sign when it starts one. `_allowed_numbers`
+also gained the column's own length, the shape the deterministic drafter
+names as "N grouped value(s)".
 
-Hasil jadi post-phase fix (satu commit per temuan, prioritas berurutan):
+**Gates:** 699 server (+5 in test_validation.py), 138 web + build, golden
+21/21, e2e all steps, refine AT-04, measure 9/9, trace 48/48.
 
-1. **W-015 MAJOR** — check evidence menolak finding yang benar. Regex
-   `_numbers_in` (`server/app/evaluator.py`) `-?\d[\d,]*\.?\d*` memotong token
-   "2026-07" menjadi `2026` dan `-7`; keduanya absen dari
-   `_allowed_numbers`, jadi verdict `insufficient_evidence` pada HARD check.
-   Setiap analisis time-series `YYYY-MM` gagal validasi. Diverifikasi
-   langsung di interpreter. Perbaikan terlokalisir; `_allowed_numbers` (yang
-   tidak memasukkan row_count / jumlah group yang statement sebut) perlu
-   diperiksa bersamaan.
-2. **W-011 MAJOR** — `PlanPanel` (`web/src/CaseWorkspace.tsx`) hanya GET
-   plan; rail menunjuk "Generate an analysis plan" (`POST /plan`) tapi tidak
-   ada satu pun elemen UI yang memanggilnya. Plan stage tidak bisa
-   diselesaikan dari shell.
-3. **W-016 MAJOR** — chart (`POST /runs/{id}/charts`) dan Python run
-   (`POST /runs/python`) punya endpoint tapi `grep -c chart web/src/api.ts`
-   = 0; dua kapabilitas inti tak terjangkau tanpa terminal.
-4. **W-014 MAJOR** — interpret + draft-finding LLM selalu timeout 30s
-   (`interpreter.py:239`, `drafter.py:312`) lalu fallback deterministic
-   diam-diam; UI "Working…" 30s tanpa sinyal. Planner/refine (60s) sukses.
+A scope correction worth carrying: the first attempt wrote its own ad-hoc
+shape suite and looped for ~40 iterations chasing five edge cases that were
+never in the contract - European decimal commas, broken comma runs, sentence
+dots, version strings, dotted ranges. Two of them are mutually inconsistent
+and one (a bare year at a sentence end) is a magnitude the check *should*
+extract, since it is a real cell value in a time-series result. The contract
+is the boundary; when a regex's edge cases fight each other, the answer is to
+stop widening the spec, not to keep tuning it.
 
-Sisa MAJOR: W-009 (rationale+grounds tak dirender), W-008 (profil di-POST
-otomatis tiap buka case), W-005 (Check for Updates hanya eprintln), W-001
-(dev checkout melaporkan 0.1.0).
+**Next, in priority order:**
 
-Yang terbukti bekerja dengan baik (jangan rusak saat memperbaiki): guardrail
-refinement AT-04, validasi 9 dimensi + carry-over uncertainty ke decision,
-profiler dengan dampak terhitung, sandbox Python seatbelt, EVALUATE 9 axis,
-agent approve/reject + reviewer, cross-case memory dengan grounds, error
-taxonomy (400/404/422/500 — tidak ada jalan input-user ke 500), export 13
-struktur + template round-trip.
-
-## Recent completions
-
-**FIX-VERSION-001 is DONE: the packaged core reports its own version.** Since
-v0.2.0 a bundled core answered `current: unknown` at `/updates/latest`, so the
-Check for Updates item could never compare - neither the installed metadata nor
-`pyproject.toml` survives a one-file PyInstaller bundle, and PyInstaller ships
-no stdlib `importlib.metadata` hook. `dah-core.spec` now reads the version from
-pyproject with tomllib and stamps `dah-build-version.txt` into the bundle root,
-where `current_version` finds it through `sys._MEIPASS` - ahead of installed
-metadata, which goes stale when a version is bumped without reinstalling. A
-version the spec cannot read aborts the build, and both packaged-core smokes
-now assert the number, which is what makes the recurrence fail a build instead
-of hiding for four releases. Verified against the binary `build_sidecar.sh`
-produces: `current: 0.3.2`.
-
-**Gates:** 694 server (+8 in test_updates.py), 138 web, build green, 28/28
-e2e, golden green, refine green, measure 9/9, matrix 48/48 - plus the packaged
-binary itself answering over real HTTP. CI's billing is still suspended, so
-nothing since `c73118c` has run in CI; the smokes were exercised locally.
-
-### What is next, in priority order
-
-- **Tag the release that ships it** (v0.3.3): the fix is on master, but no
-  published binary carries it - v0.2.0 through v0.3.2 still answer "unknown",
-  and that cannot be repaired without rebuilding. The release procedure is
-  unchanged; the new smoke step does the verification.
-- **Restore CI** at GitHub Settings > Billing & plans, then re-run the suites
-  against the tag; nothing since `c73118c` has been verified by CI.
-- **Then extension**, not before: the roadmap's scale ladder (cloud,
-  collaboration, warehouse connectors, governance) is deferred at a user count
-  of one, and the deliberately-not-built list in `docs/PRD & UX Conformance
-  Evaluation.md` (the Analysis Canvas, the command palette, the Knowledge nav)
-  is explicit deferral, not backlog - pick from it deliberately.
+1. **FIX-TIMEOUT-006 (W-014)** — the interpret and draft LLM calls wait a
+   hardcoded 30s, time out, and fall back to deterministic silently while the
+   UI shows "Working…" for the whole thirty seconds. Contract already written
+   in `ai/TASKS.md`; the five call sites are `interpreter.py:239`,
+   `drafter.py:312`, `assistant.py:576` at 30.0 and `planner.py:366`,
+   `refine.py:595` at 60.0. Server + the web panel that renders the source
+   label. `test_llm_adapters.py` patches `httpx.post`, so a timeout is
+   injected as a raised `httpx.ReadTimeout`, not waited for.
+2. **Tag v0.3.3** once the two backend fixes are on master; nothing since
+   `c73118c` has run in CI (billing suspended), so the smokes are local.
+3. **Then P9, the UI/UX redesign** the user asked for, decided in this order:
+   npm (CI hardcodes `npm ci`, Tauri's beforeDevCommand uses `npm --prefix`),
+   light theme first, and recharts on screen because the server's chart SVG
+   bakes a white background into the image (a white box on a light page) and
+   is static - while its layout engine and PNG export stay for the export
+   path. Four phases, green at each: F1 the foundation (tailwind, shadcn,
+   framer-motion, recharts, splitting `CaseWorkspace.tsx`'s 2,501 lines into
+   `web/src/panels/`), F2 the surfaces (which also closes W-011, W-016, W-013,
+   W-009, W-017, W-018), F3 motion (respecting `prefers-reduced-motion`), F4
+   the chart surface and a re-walk. A new DEC records the dependency change;
+   the tests use role/text/label queries with zero `className` references, so
+   a restyle does not break them.
 
 ## Recent completions
 
+The last tasks to land, newest first. The contract and done-record for each
+is in `ai/TASKS.md` (rolling window) or `ai/TASKS-ARCHIVE.md`.
 
-The last tasks to land, newest first. P8 is complete; a post-phase fix closes
-the carried follow-up that touched a user-visible promise. The contract and
-done-record for each task below is in `ai/TASKS.md` (rolling window) or
-`ai/TASKS-ARCHIVE.md`.
-
-- **WALK-E2E-001** (IN FLIGHT) - walk-test end-to-end flow/UI/UX; Fase A+B
-  selesai, 10 temuan (4 MAJOR). State: `walktest/HANDOFF.md`; detail temuan
-  `walktest/FINDINGS.md`. Dilanjutkan kapan saja.
+- **FIX-EVIDENCE-002** - the evidence check's number regex (W-015); a
+  `YYYY-MM` finding validates, a date/id/sku is not a magnitude, and a
+  fabricated figure still fails and is named.
 - **FIX-VERSION-001** - the packaged core reports its own version; the spec
   stamps it from pyproject, `current_version` reads it first, and both
   packaged-core smokes assert it.
-- **P8-TRACE-010** - the requirement-traceability matrix (AT-48); 48 rows,
-  resolved rather than asserted, and the 42 tests that prove a broken row
-  fails the gate.
-- **P8-MEASURE-009** - the measurement layer (AT-27..30/32/37/38/45/46); the
-  runner that folds five measurements into one report, the profiling cost it
-  found and fixed, and the counter's corrected denominator.
+- **WALK-E2E-001** - the walk-test end-to-end; 19 findings (8 MAJOR), the
+  report that prioritises them, and the list of what works that the fixes
+  must not break.
 
-- **P8-DECISION-008** - the decision view (UX 46, AT-43); the persisted
-  verdict, the read-only view, the implications as the only write, and the
-  export that carries it.
-- **P8-REFINE-007** - question refinement (AT-04); the deterministic
-  engine, the LLM gate, the three paths, and the 50-case measurement.
-- **P8-SHELL-006** - the orientation spine; the rail, the case overview and the
-  three-zone workspace, and the three render gaps the walkthrough found.
-- **P8-GOLDEN-005** - the analytical golden suite; AT-40's reference match rate
-  and AT-01's workflow-completion rate are now measured numbers, not claims.
-- **P8-CAUSAL-004** - the causal-language guard (AT-18); causality is a hard
-  dimension, a 50-case corpus measures 100% on its three thresholds.
-- **P8-VALID-003** - validation across the PRD's nine dimensions (AT-17).
-- **P8-QUALITY-002** - quality detection beyond missingness (AT-08/AT-09).
-- **P8-CONTEXT-001** - a case carries purpose, sub-questions, hypotheses and
-  constraints (AT-03).
-- **v0.2.0** - released and published (tag on `ec819fc`); CI's billing is
-  suspended, so artifacts were built and uploaded locally.
+Contracts for the rolling window (the two most recent). Older blocks are in
+`ai/TASKS-ARCHIVE.md`.

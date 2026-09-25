@@ -7,7 +7,7 @@ and verification/refine/REPORT.md.
 
 ## AT-38                  PASS
 
-- measured: core 93.9% (8105/8630 lines), analytical 92.9%, evidence 92.4%
+- measured: core 93.9% (8115/8641 lines), analytical 92.9%, evidence 92.4%
 - target: >= 80% core, >= 90% analytical and evidence
 
 ## AT-37                  PASS
@@ -17,12 +17,12 @@ and verification/refine/REPORT.md.
 
 ## AT-28                  PASS
 
-- measured: p95 266ms over 20 samples
+- measured: p95 148ms over 20 samples
 - target: p95 <= 2000ms
 
 ## AT-29                  PASS
 
-- measured: p95 1442ms over 10 samples
+- measured: p95 2199ms over 10 samples
 - target: p95 <= 5000ms
 
 ## AT-46                  PASS
@@ -52,4 +52,4 @@ and verification/refine/REPORT.md.
 
 ---
 
-**PASS** - 9/9 measurements hold; measured in 486s.
+**PASS** - 9/9 measurements hold; measured in 691s.

@@ -29,6 +29,7 @@ sentence, never judge one.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -132,15 +133,36 @@ def _is_number(value: Any) -> bool:
     return isinstance(value, (int, float)) and not isinstance(value, bool)
 
 
+# The notion of magnitude a statement quotes. Digits are only a magnitude when
+# they are a token, not a fragment of a longer one: a period (`2026-07`), an id
+# (`ORD-100331`) or a code (`SKU-4001`) is not a number the claim states, and
+# counting it split the token into two invented numbers a correct finding was
+# then refused for quoting (W-015). A minus is only a sign when it starts a
+# token, which is the exact confusion that turned `2026-07` into `-7`.
+#
+# The regex finds the run; the edges decide. A digit, a letter or a hyphen
+# against either side of the run means the run is part of something larger, so
+# it is not a magnitude the claim quotes.
+_NUMBER_TOKEN_RE = re.compile(r"-?[0-9]+(?:[0-9]{0,2},[0-9]{3})*(?:\.[0-9]+)?")
+_NUMBER_EDGE = frozenset("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-")
+
+
 def _numbers_in(text: str) -> set[float]:
     """Every numeric token a claim quotes - the same notion a draft is judged by."""
-    import re
-
-    return {
-        float(match.replace(",", ""))
-        for match in re.findall(r"-?\d[\d,]*\.?\d*", text or "")
-        if match.replace(",", "").lstrip("-").replace(".", "", 1).isdigit()
-    }
+    source = text or ""
+    quoted: set[float] = set()
+    for match in _NUMBER_TOKEN_RE.finditer(source):
+        start, end = match.start(), match.end()
+        before = source[start - 1] if start > 0 else ""
+        after = source[end] if end < len(source) else ""
+        # A run that touches a digit, a letter or a hyphen is a fragment of a
+        # longer token, and the minus is only a sign when it starts the run.
+        if before in _NUMBER_EDGE or after in _NUMBER_EDGE:
+            continue
+        digits = match.group(0).replace(",", "")
+        if digits.lstrip("-").replace(".", "", 1).isdigit():
+            quoted.add(float(digits))
+    return quoted
 
 
 def _allowed_numbers(columns: list[str], rows: list[list[Any]]) -> set[float]:
@@ -149,6 +171,11 @@ def _allowed_numbers(columns: list[str], rows: list[list[Any]]) -> set[float]:
     Reused from the drafter's honesty budget (P3-AI-012): cell values, the row
     and column counts, and how often a value repeats. A claim quoting anything
     else is quoting a number the analysis did not produce.
+
+    A statement may also name its own result's shape - the number of groups a
+    column has, or how many rows it reads - which the deterministic drafter
+    writes as "N grouped value(s)" and which is true of the result, so both are
+    part of the budget.
     """
     allowed = {float(len(rows)), float(len(columns))}
     for row in rows:
@@ -168,6 +195,7 @@ def _allowed_numbers(columns: list[str], rows: list[list[Any]]) -> set[float]:
         for how_often in counts.values():
             allowed.add(float(how_often))
         allowed.add(float(len(counts)))
+        allowed.add(float(len(values)))
     return allowed
 
 
