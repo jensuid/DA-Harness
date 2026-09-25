@@ -12,6 +12,7 @@ vi.mock('./api', async (importOriginal) => {
     getContext: vi.fn(),
     putContext: vi.fn(),
     getProgress: vi.fn(),
+    getProfile: vi.fn(),
     listDatasets: vi.fn(),
     getPlan: vi.fn(),
     listRuns: vi.fn(),
@@ -270,7 +271,7 @@ function mockEmptyCase() {
   vi.mocked(api.listRuns).mockResolvedValue([])
   vi.mocked(api.listFindings).mockResolvedValue([])
   vi.mocked(api.listChat).mockResolvedValue([])
-  vi.mocked(api.profileDataset).mockResolvedValue(profile)
+  vi.mocked(api.getProfile).mockResolvedValue(profile)
   vi.mocked(api.listEvaluations).mockResolvedValue([])
   vi.mocked(api.getAgentState).mockResolvedValue(agentIdle())
   vi.mocked(api.getRoleAgentState).mockResolvedValue(agentIdle({ role: 'reviewer' }))
@@ -425,11 +426,86 @@ describe('CaseWorkspace', () => {
     expect(await screen.findByText(/3 rows, 3 columns, 0 duplicate/i)).toBeInTheDocument()
   })
 
+  // W-008 (FIX-PROFILE-008): opening a case is read-only. The profile used to
+  // be re-POSTed on every mount - twice under strict mode - so a visit
+  // recomputed a profile that already existed and silently completed the step
+  // the rail names as the analyst's. Reading is a GET now; the POST is the
+  // analyst's explicit ask.
+  it('reads the profile on mount and never writes it', async () => {
+    mockEmptyCase()
+    const user = userEvent.setup()
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+
+    await screen.findByText(/3 rows, 3 columns, 0 duplicate/i)
+    // A mount reads the stored profile; it does not recompute it.
+    expect(api.getProfile).toHaveBeenCalledWith('c1', 'd1')
+    expect(api.profileDataset).not.toHaveBeenCalled()
+    // The stored profile is what the panel renders.
+    expect(screen.getByText('sales.csv')).toBeInTheDocument()
+    // And the step is the analyst's to take again, on request.
+    expect(screen.getByRole('button', { name: /re-profile sales\.csv/i })).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /re-profile sales\.csv/i }))
+    expect(api.profileDataset).toHaveBeenCalledWith('c1', 'd1')
+  })
+
+  it('offers a profile for a dataset that has none rather than making one', async () => {
+    mockEmptyCase()
+    // The mount finds no stored profile; the analyst's request and the reload
+    // it triggers then read it back.
+    vi.mocked(api.getProfile)
+      .mockRejectedValueOnce(new api.ApiError(404, 'profile not found'))
+      .mockResolvedValue(profile)
+    vi.mocked(api.profileDataset).mockResolvedValue(profile)
+    const user = userEvent.setup()
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+
+    // Nothing is fabricated by opening the case: the shell says the dataset is
+    // unprofiled and offers the step.
+    expect(await screen.findByText(/unprofiled/i)).toBeInTheDocument()
+    expect(api.profileDataset).not.toHaveBeenCalled()
+    expect(screen.getByRole('button', { name: /profile sales\.csv/i })).toBeInTheDocument()
+
+    // The analyst asks, and the profile lands.
+    await user.click(screen.getByRole('button', { name: /profile sales\.csv/i }))
+    expect(api.profileDataset).toHaveBeenCalledWith('c1', 'd1')
+    expect(await screen.findByText(/3 rows, 3 columns, 0 duplicate/i)).toBeInTheDocument()
+  })
+
+  it('shows the endpoint\'s own reason when a profile fails on request', async () => {
+    mockEmptyCase()
+    vi.mocked(api.getProfile).mockRejectedValue(new api.ApiError(404, 'profile not found'))
+    vi.mocked(api.profileDataset).mockRejectedValue(new api.ApiError(400, 'the file is unreadable'))
+    const user = userEvent.setup()
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+
+    await screen.findByText(/unprofiled/i)
+    await user.click(screen.getByRole('button', { name: /profile sales\.csv/i }))
+
+    // A refusal is the analyst's input, not a broken panel.
+    expect(await screen.findByText(/the file is unreadable/i)).toBeInTheDocument()
+  })
+
+  it('keeps the rail\'s profile stage and the panel agreeing', async () => {
+    // The panel no longer completes the profile stage by opening the case, so
+    // what the rail says and what the panel shows are the same fact: this case
+    // has a profiled dataset.
+    mockEmptyCase()
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+
+    await screen.findByText(/3 rows, 3 columns, 0 duplicate/i)
+    const dataPanel = screen.getByRole('heading', { name: 'Data' }).closest('.panel') as HTMLElement
+    // The panel renders the stored profile, and the stage is complete in the
+    // rail for the same reason - a read, not a write the panel made.
+    expect(within(dataPanel).getByText(/3 rows, 3 columns, 0 duplicate/i)).toBeInTheDocument()
+    expect(api.getProfile).toHaveBeenCalled()
+    expect(api.profileDataset).not.toHaveBeenCalled()
+  })
+
   it('renders a quality issue with its impact at the Data stage', async () => {
     // AT-09: the consequence, not just the count, visible before analysis.
     mockEmptyCase()
     // After mockEmptyCase, so its own profileDataset mock does not win.
-    vi.mocked(api.profileDataset).mockResolvedValue({
+    vi.mocked(api.getProfile).mockResolvedValue({
       ...profile,
       quality: [
         {
@@ -835,7 +911,7 @@ describe('CaseWorkspace', () => {
     vi.mocked(api.listFindings).mockResolvedValue([])
     vi.mocked(api.listChat).mockResolvedValue([])
     // No profile yet, so the dataset is not auditable.
-    vi.mocked(api.profileDataset).mockRejectedValue(new api.ApiError(404, 'no profile'))
+    vi.mocked(api.getProfile).mockRejectedValue(new api.ApiError(404, 'no profile'))
 
     render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
     expect(await screen.findByText(/attach and profile a dataset first/i)).toBeInTheDocument()
@@ -1678,7 +1754,7 @@ expect(timeline.getByText(/case created/)).toBeInTheDocument()
 
   it('correlates two numeric columns', async () => {
     mockEmptyCase()
-    vi.mocked(api.profileDataset).mockResolvedValue({
+    vi.mocked(api.getProfile).mockResolvedValue({
       ...profile,
       columns: ['order_id', 'revenue', 'orders'],
       stats: {
@@ -1738,7 +1814,7 @@ expect(timeline.getByText(/case created/)).toBeInTheDocument()
 
   it('waits for a profile before offering an op', async () => {
     mockEmptyCase()
-    vi.mocked(api.profileDataset).mockRejectedValue(new api.ApiError(404, 'not profiled'))
+    vi.mocked(api.getProfile).mockRejectedValue(new api.ApiError(404, 'not profiled'))
 
     render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
     await waitFor(() =>
@@ -1898,7 +1974,7 @@ expect(timeline.getByText(/case created/)).toBeInTheDocument()
 
     it('counts the open issues: quality defects plus findings awaiting validation', async () => {
       mockEmptyCase()
-      vi.mocked(api.profileDataset).mockResolvedValue({
+      vi.mocked(api.getProfile).mockResolvedValue({
         ...profile,
         quality: [
           { kind: 'invalid_types', column: 'revenue', severity: 'high',
@@ -1944,7 +2020,7 @@ expect(timeline.getByText(/case created/)).toBeInTheDocument()
 
     it('marks the data stage with a warning when the profiler found a defect', async () => {
       mockEmptyCase()
-      vi.mocked(api.profileDataset).mockResolvedValue({
+      vi.mocked(api.getProfile).mockResolvedValue({
         ...profile,
         quality: [
           { kind: 'invalid_types', column: 'revenue', severity: 'high',

@@ -43,6 +43,7 @@ import {
   getAgentState,
   getRoleAgentState,
   getCase,
+  getProfile,
   getProgress,
   getRun,
   interpretRun,
@@ -191,9 +192,14 @@ export function CaseWorkspace({
       setReviewer(await getRoleAgentState(caseId, 'reviewer'))
       // Profiles are read-only context for the generator; a dataset without
       // one is unprofiled, and the UI says so rather than guessing.
+      // W-008: the read is a GET. A mount used to POST here, so opening a
+      // case recomputed a profile that already existed - twice, under strict
+      // mode - and silently completed the step the rail calls the analyst's.
+      // A dataset without a profile stays unprofiled until the analyst asks;
+      // the panel says so rather than writing on a read.
       const profiled = await Promise.all(
         ds.map((d) =>
-          profileDataset(caseId, d.id)
+          getProfile(caseId, d.id)
             .then((profile) => [d.id, profile] as const)
             .catch(() => [d.id, null] as const),
         ),
@@ -623,6 +629,24 @@ function DataPanel({
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // W-008: re-profiling is the analyst's, on request. A dataset that has a
+  // stored profile shows it; one without shows an offer to profile it, so the
+  // profile stage is a step the shell takes when asked rather than on every
+  // visit.
+  async function profileDatasetNow(datasetId: string) {
+    if (busy) return
+    setBusy(true)
+    setError(null)
+    try {
+      await profileDataset(caseId, datasetId)
+      onChanged()
+    } catch (err) {
+      setError(messageOf(err))
+    } finally {
+      setBusy(false)
+    }
+  }
+
   async function attach(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]
     if (!file) return
@@ -666,12 +690,37 @@ function DataPanel({
               <li key={d.id}>
                 <strong>{d.filename}</strong> <span className="muted">({d.format})</span>
                 {profile ? (
-                  <span className="muted">
-                    {' '}— {profile.rows} rows, {profile.columns.length} columns,{' '}
-                    {profile.duplicate_rows} duplicate
-                  </span>
+                  <>
+                    <span className="muted">
+                      {' '}— {profile.rows} rows, {profile.columns.length} columns,{' '}
+                      {profile.duplicate_rows} duplicate
+                    </span>
+                    <div className="row">
+                      <button
+                        type="button"
+                        onClick={() => void profileDatasetNow(d.id)}
+                        disabled={busy}
+                        aria-label={`Re-profile ${d.filename}`}
+                      >
+                        {busy ? 'Profiling…' : 'Re-profile'}
+                      </button>
+                    </div>
+                  </>
                 ) : (
-                  <span className="muted"> — profiling…</span>
+                  // W-008: an unprofiled dataset is offered a profile rather
+                  // than silently profiled on open. The rail's profile stage
+                  // is the analyst's step; the shell takes it when asked.
+                  <div className="row">
+                    <button
+                      type="button"
+                      onClick={() => void profileDatasetNow(d.id)}
+                      disabled={busy}
+                      aria-label={`Profile ${d.filename}`}
+                    >
+                      {busy ? 'Profiling…' : 'Profile this dataset'}
+                    </button>
+                    <span className="muted">unprofiled - the generator and the planner read this</span>
+                  </div>
                 )}
                 {profile && <QualityList quality={profile.quality} />}
                 {profile && <ColumnNulls profile={profile} />}

@@ -344,7 +344,7 @@ not reopened for these; the fix's own contract and verification are below.
 | FIX-PYTHON-005 | UX (a python run surface, W-016) | PENDING | a python run can be generated and executed from the shell |
 | FIX-TIMEOUT-006 | Reliability (the interpret/draft LLM timeout, W-014) | DONE | +24 tests (723 server, 140 web); every adapter posts one configured 120s timeout; a fallback source renders as a sentence; e2e all pass, golden 21/21, refine AT-04, measure 9/9, trace 48/48 |
 | FIX-REFINE-007 | UX (the refinement's rationale, W-009) | DONE | +3 web tests (143 web total); "Why these changes" renders the rationale and grounds the API returns, shown rather than disclosed, and stays readable after an accept |
-| FIX-PROFILE-008 | Reliability (the automatic re-profiling, W-008) | PENDING | opening a case does not re-POST the profile |
+| FIX-PROFILE-008 | Reliability (the automatic re-profiling, W-008) | DONE | +4 web tests (147 web total); the mount GETs the profile and the analyst's POST is on request - no write on open, an offer when there is none, a re-profile when there is |
 | FIX-UPDATES-009 | Distribution (the silent update check, W-005) | PENDING | the Check for Updates menu item answers the user |
 | FIX-VERSION-010 | Distribution (the dev checkout's stale version, W-001) | PENDING | the dev checkout reports the source's version, not the stale metadata's |
 
@@ -783,17 +783,38 @@ CONSTRAINTS: green only. No new dependency. A GET is preferred to a POST
              when the endpoint can answer one; if it cannot, the change adds
              one and the tests cover it.
 ACCEPTANCE CRITERIA:
-- [ ] opening a case with a profile does not POST the profile endpoint
-- [ ] opening a case without a profile does not fabricate one
-- [ ] an explicit re-profile works and the panel reflects it
-- [ ] the profile the panels render is the stored one
-- [ ] the rail's profile stage and the panel's state agree
+- [x] opening a case with a profile does not POST the profile endpoint
+- [x] opening a case without a profile does not fabricate one
+- [x] an explicit re-profile works and the panel reflects it
+- [x] the profile the panels render is the stored one
+- [x] the rail's profile stage and the panel's state agree
 TESTS: CaseWorkspace.test.tsx (+~4) - no POST on mount with a profile, one
        on request, the panel renders the stored profile.
 VERIFICATION: `cd server && ... pytest -q` green; `cd web && npm test && npm
               run build` green.
 STATE UPDATE: TASKS/CURRENT_STATE/HANDOFF gain the fix; W-008 closes.
 ```
+
+TASK: FIX-PROFILE-008 - opening a case reads its profile, and does not write one
+ID: FIX-PROFILE-008
+PRIORITY: high
+STATUS: DONE
+SUMMARY: opening a case re-profiled its datasets, twice. The mount effect
+         called `profileDataset` - a POST - per attached dataset on every
+         visit, and strict mode's double render made it two writes, so a
+         profile that already existed was recomputed and rewritten, and the
+         step the rail names as the analyst's was silently completed by the
+         shell. The GET endpoint already existed (`main.py:1654`, a 404 when
+         there is nothing stored), so the mount now reads through a new
+         `getProfile` helper and the POST is the analyst's explicit ask.
+         A dataset with a profile shows it and offers Re-profile; one
+         without shows an offer to profile it rather than a "profiling…"
+         placeholder that was the shell completing the step - so the panel
+         and the rail now agree about where the profile stage stands. Four
+         tests cover it: the mount GETs and never POSTs and a request POSTs,
+         an unprofiled dataset is offered rather than fabricated, a failed
+         profiling surfaces the endpoint's own reason, and the panel renders
+         the stored profile.
 
 ### FIX-UPDATES-009 contract
 

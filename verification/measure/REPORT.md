@@ -17,12 +17,12 @@ and verification/refine/REPORT.md.
 
 ## AT-28                  PASS
 
-- measured: p95 149ms over 20 samples
+- measured: p95 184ms over 20 samples
 - target: p95 <= 2000ms
 
 ## AT-29                  PASS
 
-- measured: p95 1066ms over 10 samples
+- measured: p95 1495ms over 10 samples
 - target: p95 <= 5000ms
 
 ## AT-46                  PASS
@@ -47,9 +47,9 @@ and verification/refine/REPORT.md.
 
 ## AT-27 / AT-30 / AT-32  PASS
 
-- measured: the web suite is green (Tests  143 passed (143))
+- measured: the web suite is green (Tests  147 passed (147))
 - target: p95 <= 200ms, every long-running operation shows its state, 0 critical accessibility violations
 
 ---
 
-**PASS** - 9/9 measurements hold; measured in 367s.
+**PASS** - 9/9 measurements hold; measured in 504s.

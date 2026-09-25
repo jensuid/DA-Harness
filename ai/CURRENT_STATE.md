@@ -12,26 +12,35 @@ causal-language guard, the analytical golden suite, the orientation spine,
 question refinement, the decision view, the measurement layer and the
 requirement-traceability matrix. The full gap analysis is `docs/PRD & UX Conformance Evaluation.md`.
 
-- **Active task:** **FIX-REFINE-007 DONE** — W-009 (walk-test finding): panel
-  refinement `web/src/RefinePanel.tsx` sudah punya `rationale` + `grounds`
-  dari API tapi merendernya di dalam `<details>` yang selalu collapsed, jadi
+- **Active task:** **FIX-PROFILE-008 DONE** — W-008 (walk-test finding): membuka
+  case POST `/profile` untuk tiap dataset di setiap mount (StrictMode double
+  render = 2 write), sehingga profile yang sudah ada direcompute-ditulis ulang,
+  dan shell diam-diam menyelesaikan langkah yang rail namakan milik analyst.
+  GET endpoint sudah ada (`server/app/main.py:1654`, 404 kalau belum stored),
+  jadi mount sekarang baca lewat `getProfile` baru di `web/src/api.ts`;
+  POST jadi control di panel Data — "Re-profile" untuk dataset berprofile,
+  "Profile this dataset" untuk yang belum (menggantikan placeholder
+  "profiling…" yang adalah shell menyelesaikan langkah). Rail dan panel kini
+  sepakat soal stage profile.
+  723 server (tak berubah), 147 web (+4), tsc bersih, build ok.
+  Selanjutnya: **FIX-UPDATES-009 (W-005)** — handler
+  `desktop/src-tauri/src/main.rs:48-60` hanya print ke stderr; tiga status
+  yang core bedakan (up to date / update / unreachable) harus sampai ke
+  window sebagai pesan. Lalu **FIX-VERSION-010 (W-001)** —
+  `server/app/updates.py` baca metadata stale (0.1.0) sebelum pyproject di
+  sisi source; urutannya: stamp > pyproject > metadata. Lalu
+  FIX-PLAN-003 / FIX-CHART-004 / FIX-PYTHON-005, lalu **P9 redesign UI/UX**
+  (npm, light theme, tailwind + shadcn + framer-motion + recharts untuk
+  layar; SVG/PNG server tetap untuk export; 4 fase F1-F4 hijau tiap fase).
+  Sebelumnya: FIX-REFINE-007 (W-009) DONE - panel refinement sudah punya
   "Why these changes" diklik dan tidak muncul apa-apa. Widget disclosure
   bukan primitive yang tepat untuk jawaban atas pertanyaan panelnya sendiri,
   jadi diganti blok yang selalu terlihat: `<h4>Why these changes</h4>`,
   paragraf rationale, daftar grounds; tetap dirender setelah accept.
   `.rationale` di `web/src/index.css` memakai left rule + ground yang sama
   dengan proposal, dan `.panel h4` baru (belum ada panel pakai h4).
-  723 server (tak berubah), 143 web (+3), tsc bersih, build ok, e2e semua
-  langkah, golden kedua threshold, refine AT-04, measure 9/9, trace 48/48.
-  Selanjutnya: **FIX-PROFILE-008 (W-008)** — `web/src/CaseWorkspace.tsx:191`
-  POST `/profile` di setiap mount, StrictMode double render = 2 write per
-  buka case; GET profile dulu, POST hanya saat analyst minta re-profile.
-  Lalu FIX-UPDATES-009 (W-005, Rust + surface pesan) dan
-  FIX-VERSION-010 (W-001, urutan resolusi `server/app/updates.py` baca
-  metadata stale sebelum pyproject di sisi source), bebas urutan. Lalu
-  **P9 redesign UI/UX** (npm, light theme, tailwind + shadcn +
-  framer-motion + recharts untuk layar; SVG/PNG server tetap untuk export;
-  4 fase F1-F4 hijau tiap fase).
+  723 server (tak berubah), 143 web (+3), tsc bersih, build ok, e2e, golden,
+  refine AT-04, measure 9/9, trace 48/48.
   Sebelumnya: FIX-TIMEOUT-006 (W-014) DONE - satu
   `LLM_TIMEOUT_SECONDS` (`DAH_LLM_TIMEOUT_SECONDS`, default 120) di
   `server/app/timeouts.py` dipakai semua 6 call site; fallback diumumkan
@@ -115,10 +124,10 @@ requirement-traceability matrix. The full gap analysis is `docs/PRD & UX Conform
   proves the exact Intel triple a local build produces. Restoring that needs a
   self-hosted Intel runner.
 - **Test status:** server 723 passed (unchanged by this fix, which is
-  web-only). The web suite is 143 (+3 for FIX-REFINE-007 - the rationale and
-  both grounds under their own heading, the accepted state keeping them
-  readable, and a proposal without grounds rendering no list; 12 a11y, 10
-  measure - asserted in the shell's own suite, which the measurement runner
+  web-only). The web suite is 147 (+4 for FIX-PROFILE-008 - the mount reads a
+  profile and never writes one, an unprofiled dataset is offered rather than
+  fabricated, a failed profiling surfaces the endpoint's reason, and the panel
+  renders the stored profile; 12 a11y, 10 measure - asserted in the shell's own suite, which the measurement runner
   reads as its evidence). Desktop shell 22 Rust tests; P2, P3 and P4 gates
   PASS; **v0.2.0, v0.3.0, v0.3.1, v0.3.2 and v0.3.3
   released** (tags `v0.2.0` on `ec819fc`, `v0.3.0` on `ab56541`, `v0.3.1` on
@@ -127,16 +136,17 @@ requirement-traceability matrix. The full gap analysis is `docs/PRD & UX Conform
   runner green, and the measurement layer 9/9 - the reports the matrix cites as
   its measured evidence, regenerated on the current tree.
 
-- **Next task:** **FIX-PROFILE-008 (W-008)** - the shell POSTs the profile
-  endpoint on every case mount, so opening a case re-profiles its dataset
-  and strict mode's double render makes it two writes. A case with a profile
-  should read it, and POST only when the analyst asks for a re-profile or
-  nothing is stored. Contract in `ai/TASKS.md`; `web/src/CaseWorkspace.tsx`
-  and `web/src/api.ts` only. Then FIX-UPDATES-009 (W-005, Rust) and
-  FIX-VERSION-010 (W-001, `server/app/updates.py`'s resolution order), order
-  free. The carried follow-ups that remain in `ai/TASKS.md` are the DMG
-  bundler, the icon proportion (52%, chosen blind), one fragile web test
-  layout, and two environmental items (signing deferred by DEC-006, CI
+- **Next task:** **FIX-UPDATES-009 (W-005)** - the Check for Updates menu item
+  performs a check and prints the result to stderr, and nothing reports it to
+  the user: three statuses the core distinguishes (up to date, an update
+  available, the feed unreachable) never reach the window. The delivery is
+  added, not substituted - the log line the handler already writes still
+  writes. `desktop/src-tauri/src/main.rs:48-60`, plus desktop tests per
+  status. Then FIX-VERSION-010 (W-001, `server/app/updates.py`'s resolution
+  order - the source's pyproject ahead of the stale installed metadata, the
+  stamp still first). The carried follow-ups that remain in `ai/TASKS.md` are
+  the DMG bundler, the icon proportion (52%, chosen blind), one fragile web
+  test layout, and two environmental items (signing deferred by DEC-006, CI
   billing suspended). P8 is complete (10 of 10) and
   **v0.3.0, v0.3.1, v0.3.2 and v0.3.3 are released** (tags `v0.3.0` on `ab56541`,
   `v0.3.1` on `19cefc1`, `v0.3.2` on `2ff1bca`, `v0.3.3` on `30db6e9`), 686 server tests passing on the

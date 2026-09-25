@@ -575,6 +575,16 @@ export function profileDataset(caseId: string, datasetId: string): Promise<Profi
   })
 }
 
+// W-008 (FIX-PROFILE-008): reading a profile is a GET. Opening a case used to
+// POST the profile endpoint per attached dataset on every mount - twice, under
+// strict mode's double render - so a visit recomputed and rewrote a profile
+// that already existed, and the panel's "profiling…" was the shell completing
+// a step the rail names as the analyst's. Reading is read-only now; the POST
+// is the analyst's explicit ask.
+export function getProfile(caseId: string, datasetId: string): Promise<Profile> {
+  return request<Profile>(`/cases/${caseId}/datasets/${datasetId}/profile`)
+}
+
 export function runSql(
   caseId: string,
   datasetId: string,

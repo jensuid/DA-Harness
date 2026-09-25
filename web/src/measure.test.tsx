@@ -13,6 +13,7 @@ vi.mock('./api', async (importOriginal) => {
     getContext: vi.fn(),
     putContext: vi.fn(),
     getProgress: vi.fn(),
+    getProfile: vi.fn(),
     listDatasets: vi.fn(),
     getPlan: vi.fn(),
     listRuns: vi.fn(),
@@ -123,7 +124,7 @@ function mockWorkedCase() {
     counts: { datasets: 1, runs: 1 },
   })
   vi.mocked(api.listDatasets).mockResolvedValue([dataset])
-  vi.mocked(api.profileDataset).mockResolvedValue(profile)
+  vi.mocked(api.getProfile).mockResolvedValue(profile)
   vi.mocked(api.getPlan).mockRejectedValue(new api.ApiError(404, 'plan not found'))
   vi.mocked(api.listRuns).mockResolvedValue([run])
   vi.mocked(api.getRun).mockResolvedValue({

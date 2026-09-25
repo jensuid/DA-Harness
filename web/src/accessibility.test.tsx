@@ -26,6 +26,7 @@ vi.mock('./api', async (importOriginal) => {
     getContext: vi.fn(),
     putContext: vi.fn(),
     getProgress: vi.fn(),
+    getProfile: vi.fn(),
     listDatasets: vi.fn(),
     getPlan: vi.fn(),
     listRuns: vi.fn(),
@@ -184,7 +185,8 @@ function mockWorkedCase() {
   vi.mocked(api.getPlan).mockRejectedValue(new api.ApiError(404, 'plan not found'))
   vi.mocked(api.getRun).mockRejectedValue(new api.ApiError(404, 'run not found'))
   vi.mocked(api.listDatasets).mockResolvedValue([dataset])
-  vi.mocked(api.profileDataset).mockResolvedValue(profile)
+  // W-008: a worked case's profile is read, not re-profiled on open.
+  vi.mocked(api.getProfile).mockResolvedValue(profile)
   vi.mocked(api.listRuns).mockResolvedValue([
     { id: 'r1', case_id: 'c1', dataset_id: 'd1', kind: 'sql',
       sql: 'SELECT region, SUM(revenue)', code: null, row_count: 3,
