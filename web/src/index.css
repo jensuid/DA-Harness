@@ -329,6 +329,21 @@ button.small {
   font-size: 0.9rem;
 }
 
+/* The core's own SVG, drawn inline. The renderer is deterministic and its
+   output is the evidence artifact, so the shell sizes it to fit and otherwise
+   leaves it alone - redrawing would make the shell a second source of truth
+   for what the chart looks like. */
+.chart {
+  margin: 0.5rem 0;
+  overflow-x: auto;
+}
+
+.chart svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
 .warn {
   color: #a03a2a;
 }

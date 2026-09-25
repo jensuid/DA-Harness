@@ -12,12 +12,40 @@ causal-language guard, the analytical golden suite, the orientation spine,
 question refinement, the decision view, the measurement layer and the
 requirement-traceability matrix. The full gap analysis is `docs/PRD & UX Conformance Evaluation.md`.
 
-- **Active task:** **FIX-PLAN-003 DONE** — W-011 (walk-test finding): the
-  orientation rail names "Generate an analysis plan" and nothing in the shell
-  performed it. The plan panel read a plan and, when there was none, told the
-  analyst to generate one - with no control that does; the endpoint existed
-  and answered 201 while `grep -rn "POST.*plan" web/src` was empty, so the
-  plan stage was only finishable from a terminal.
+- **Active task:** **FIX-CHART-004 DONE** — W-016 (walk-test finding): a chart
+  is an evidence artifact the core renders, stores and exports, and the shell
+  could not produce one. The chart endpoint answered 201 while `web/src` never
+  called it (`grep -c chart web/src/api.ts` was zero); every chart was
+  reachable only through its file path, and the PNG one only through that.
+  The run row now holds the control and the surface. `web/src/api.ts` gained
+  `createChart`, `chartImageUrl` and `getChartImage` (SVG as text, PNG as a
+  URL, both through the image endpoint the core already served), and
+  `RunRow` gained a `ChartPanel`: a "Render a chart" control that only appears
+  once the analyst has opened the run's rows - those columns are the
+  renderer's input and are what its pickers offer, with the measure defaulting
+  to a numeric column. A success POSTs the endpoint that owns the write,
+  fetches the SVG the core drew and renders it inline through
+  `dangerouslySetInnerHTML` - the shell draws what the core already drew, it
+  does not render a second time - and calls the workspace's reload, so the
+  evidence graph's chart count moves with the panel. A refusal shows the
+  renderer's own sentence and the control stands; a bitmap is a link to the
+  persisted artifact rather than a redrawn image.
+  727 server (unchanged), web 173 (+6), tsc clean, build ok, e2e 28/28,
+  trace 48/48.
+  Selanjutnya: **FIX-PYTHON-005 (W-016 juga, pecah karena chart dan python
+  run tidak berbagi kode selain panel tempatnya mendarat)** — the codegen
+  panel generates SQL only and posts to the SQL runs endpoint; a python run
+  is only reachable by curl, so the hard sandbox is untested by anyone using
+  the app. `web/src/api.ts` gains a python run helper and the codegen panel
+  gains a kind, its proposal matching it. Lalu **P9 redesign UI/UX** (npm,
+  light theme, tailwind + shadcn + framer-motion + recharts untuk layar;
+  SVG/PNG server tetap untuk export; 4 fase F1-F4 hijau tiap fase).
+  Sebelumnya: FIX-PLAN-003 (W-011) DONE — the orientation rail names
+  "Generate an analysis plan" and nothing in the shell performed it. The plan
+  panel read a plan and, when there was none, told the analyst to generate
+  one - with no control that does; the endpoint existed and answered 201
+  while the shell never called it, so the plan stage was only finishable
+  from a terminal.
   The empty state's own sentence now has the control that performs it.
   `PlanPanel` gained `createPlan` (a POST to the endpoint that owns the
   write) with a `generating` busy label, and on success it renders the plan
@@ -35,14 +63,6 @@ requirement-traceability matrix. The full gap analysis is `docs/PRD & UX Conform
   404, and a 404 is not the reason a generation failed.
   727 server (unchanged), web 167 (+4), tsc clean, build ok, e2e 28/28,
   trace 48/48.
-  Selanjutnya: **FIX-CHART-004 (W-016)** — a chart is an evidence artifact
-  the core renders, stores and exports, and the shell cannot produce one;
-  `grep -c chart web/src/api.ts` is zero, every chart only reachable through
-  its file path. Lalu FIX-PYTHON-005 (W-016 juga, pecah karena chart dan
-  python run tidak berbagi kode selain panel tempatnya mendarat), lalu
-  **P9 redesign UI/UX** (npm, light theme, tailwind + shadcn +
-  framer-motion + recharts untuk layar; SVG/PNG server tetap untuk export;
-  4 fase F1-F4 hijau tiap fase).
   Sebelumnya: FIX-VERSION-010 (W-001) DONE - a dev checkout answered
   `current: 0.1.0` at `/updates/latest`, four releases wrong, because
   `current_version` read the editable install's stale dist-info before the

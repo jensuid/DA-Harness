@@ -51,6 +51,8 @@ vi.mock('./api', async (importOriginal) => {
     editRefinement: vi.fn(),
     getDecision: vi.fn(),
     putDecision: vi.fn(),
+    createChart: vi.fn(),
+    getChartImage: vi.fn(),
     exportCasePackage: vi.fn(),
   }
 })
@@ -258,6 +260,31 @@ function runFixture(): api.RunSummary {
   return {
     id: 'r1', case_id: 'c1', dataset_id: 'd1', kind: 'sql', sql: 'q', code: null,
     row_count: 2, truncated: false, executed_at: '',
+  }
+}
+
+// A run reopened with its rows: the chart's pickers read its columns, so this
+// is what makes the offer and its choices real.
+function mockRunRows() {
+  vi.mocked(api.getRun).mockResolvedValue({
+    id: 'r1', case_id: 'c1', dataset_id: 'd1', kind: 'sql',
+    sql: 'SELECT region, SUM(revenue) AS total FROM sales GROUP BY region',
+    code: null, dataset_ids: ['d1'],
+    columns: ['region', 'total'], rows: [['north', 120], ['south', 80]],
+    row_count: 2, truncated: false, executed_at: '',
+  })
+}
+
+// The chart the core stored: the response carries its metadata, and the image
+// endpoint carries its bytes. `format` decides which of the two the surface
+// shows - inline SVG, or a link to a persisted bitmap.
+function chartFixture(overrides: object = {}): api.Chart {
+  return {
+    id: 'c9', case_id: 'c1', run_id: 'r1', kind: 'bar',
+    x: 'region', y: 'total', series: null, title: '',
+    stored_path: '/tmp/chart_c9.svg', width: 800, height: 400,
+    format: 'svg', created_at: '',
+    ...overrides,
   }
 }
 
@@ -2282,6 +2309,151 @@ expect(timeline.getByText(/case created/)).toBeInTheDocument()
       render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
       await user.click(await screen.findByRole('button', { name: /show the rows/i }))
       expect(await screen.findByText(/the assistant failed: internal error/i)).toBeInTheDocument()
+    })
+
+    it('offers a chart only once the run has a result to draw from', async () => {
+      mockEmptyCase()
+      vi.mocked(api.listRuns).mockResolvedValue([runFixture()])
+
+      const user = userEvent.setup()
+      render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+      await waitFor(() =>
+        expect(screen.getByRole('button', { name: /show the rows/i })).toBeInTheDocument(),
+      )
+      // The rows are the renderer's input, so the control does not appear
+      // before the analyst has opened the result it would draw from.
+      expect(screen.queryByRole('button', { name: /render a chart/i })).not.toBeInTheDocument()
+
+      mockRunRows()
+      await user.click(screen.getByRole('button', { name: /show the rows/i }))
+      expect(await screen.findByRole('button', { name: /render a chart/i })).toBeInTheDocument()
+    })
+
+    it('renders a chart from a run the analyst can see without leaving the case', async () => {
+      // W-016: the chart endpoint existed and answered 201 while the shell
+      // never called it, so every chart was reachable only through its file
+      // path. The run row now holds the control and the surface.
+      mockEmptyCase()
+      vi.mocked(api.listRuns).mockResolvedValue([runFixture()])
+      mockRunRows()
+      vi.mocked(api.createChart).mockResolvedValue(chartFixture())
+      vi.mocked(api.getChartImage).mockResolvedValue({
+        format: 'svg',
+        svg: '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="400"><rect fill="white"/>'
+          + '<text>the core drew this</text></svg>',
+      })
+
+      const user = userEvent.setup()
+      render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+      await user.click(await screen.findByRole('button', { name: /show the rows/i }))
+      await user.click(screen.getByRole('button', { name: /render a chart/i }))
+      await user.click(screen.getByRole('button', { name: /render the chart/i }))
+
+      // The pickers could only offer the run's own columns.
+      expect(vi.mocked(api.createChart)).toHaveBeenCalledWith('c1', 'r1', {
+        kind: 'bar',
+        x: 'region',
+        y: 'total',
+        series: null,
+        format: 'svg',
+      })
+      // The SVG the response carries is what the shell displays.
+      const surface = await screen.findByTestId('chart-surface')
+      expect(within(surface).getByText(/the core drew this/i)).toBeInTheDocument()
+      expect(within(surface).getByText(/bar chart of total by region/i)).toBeInTheDocument()
+      // The core's own SVG, drawn as-is rather than re-derived.
+      expect(within(surface).getByTestId('chart-svg').querySelector('svg')).not.toBeNull()
+    })
+
+    it('offers only the columns the run produced', async () => {
+      mockEmptyCase()
+      vi.mocked(api.listRuns).mockResolvedValue([runFixture()])
+      mockRunRows()
+      vi.mocked(api.createChart).mockResolvedValue(chartFixture())
+      vi.mocked(api.getChartImage).mockResolvedValue({ format: 'svg', svg: '<svg/>' })
+
+      const user = userEvent.setup()
+      render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+      await user.click(await screen.findByRole('button', { name: /show the rows/i }))
+      await user.click(screen.getByRole('button', { name: /render a chart/i }))
+
+      const x = screen.getByLabelText(/column for the x axis/i) as HTMLSelectElement
+      const y = screen.getByLabelText(/column for the y axis/i) as HTMLSelectElement
+      expect(Array.from(x.options).map((o) => o.value)).toEqual(['region', 'total'])
+      // The measure defaults to the run's numeric column, not the first one.
+      expect(y.value).toBe('total')
+      // A column the run does not have is not among the choices.
+      expect(Array.from(y.options).map((o) => o.value)).not.toContain('revenue')
+    })
+
+    it('reloads the case when a chart lands, so the evidence count moves', async () => {
+      mockEmptyCase()
+      vi.mocked(api.listRuns).mockResolvedValue([runFixture()])
+      mockRunRows()
+      vi.mocked(api.createChart).mockResolvedValue(chartFixture())
+      vi.mocked(api.getChartImage).mockResolvedValue({ format: 'svg', svg: '<svg/>' })
+      const charted = {
+        ...evidenceGraph,
+        counts: { ...evidenceGraph.counts, charts: 2 },
+      }
+      vi.mocked(api.getEvidenceGraph).mockResolvedValueOnce(evidenceGraph).mockResolvedValueOnce(charted)
+
+      const user = userEvent.setup()
+      render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+      await user.click(await screen.findByRole('button', { name: /show the rows/i }))
+      await user.click(screen.getByRole('button', { name: /render a chart/i }))
+      await user.click(screen.getByRole('button', { name: /render the chart/i }))
+
+      // A chart is an evidence artifact, so the case is re-read: the graph's
+      // count moves with the panel rather than waiting for a remount.
+      await waitFor(() =>
+        expect(screen.getByText(/2 charts/i)).toBeInTheDocument(),
+      )
+      expect(vi.mocked(api.createChart)).toHaveBeenCalledTimes(1)
+    })
+
+    it('shows the renderer\'s own reason when a chart is refused', async () => {
+      mockEmptyCase()
+      vi.mocked(api.listRuns).mockResolvedValue([runFixture()])
+      mockRunRows()
+      vi.mocked(api.createChart).mockRejectedValue(
+        new api.ApiError(400, 'column \'revenue\' is not part of the run result'),
+      )
+
+      const user = userEvent.setup()
+      render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+      await user.click(await screen.findByRole('button', { name: /show the rows/i }))
+      await user.click(screen.getByRole('button', { name: /render a chart/i }))
+      await user.click(screen.getByRole('button', { name: /render the chart/i }))
+
+      expect(await screen.findByText(/the chart could not be rendered: column 'revenue' is not part of the run result/i)).toBeInTheDocument()
+      // The control stands: a refusal is the analyst's input, not a reason to
+      // take the chart away.
+      expect(screen.getByRole('button', { name: /render the chart/i })).toBeInTheDocument()
+    })
+
+    it('links to a bitmap the core stored rather than redrawing it', async () => {
+      mockEmptyCase()
+      vi.mocked(api.listRuns).mockResolvedValue([runFixture()])
+      mockRunRows()
+      vi.mocked(api.createChart).mockResolvedValue(chartFixture({ format: 'png' }))
+      vi.mocked(api.getChartImage).mockResolvedValue({
+        format: 'png',
+        url: '/api/cases/c1/charts/c9/image',
+      })
+
+      const user = userEvent.setup()
+      render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+      await user.click(await screen.findByRole('button', { name: /show the rows/i }))
+      await user.click(screen.getByRole('button', { name: /render a chart/i }))
+      await user.click(screen.getByRole('button', { name: /render the chart/i }))
+
+      const link = await screen.findByRole('link', { name: /open the rendered chart/i })
+      expect(link).toHaveAttribute('href', '/api/cases/c1/charts/c9/image')
+      // A bitmap is the artifact the core wrote; the shell does not draw it a
+      // second time, so no inline image sits beside the link.
+      expect(await screen.findByTestId('chart-surface')).toBeInTheDocument()
+      expect(screen.queryByTestId('chart-svg')).not.toBeInTheDocument()
     })
   })
 })

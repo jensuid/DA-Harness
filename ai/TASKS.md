@@ -340,7 +340,7 @@ not reopened for these; the fix's own contract and verification are below.
 | FIX-VERSION-001 | Distribution (the packaged core's own version) | DONE | 8 tests added (694 server, 138 web); the packaged binary answers `current: 0.3.2` at `/updates/latest`; both packaged-core smokes now assert it |
 | FIX-EVIDENCE-002 | Validation (the evidence check's number regex, W-015) | DONE | +5 tests (699 server, 138 web); golden 21/21, e2e all pass, refine AT-04, measure 9/9, trace 48/48 |
 | FIX-PLAN-003 | UX (the plan stage's missing button, W-011) | DONE | 4 tests added (727 server, 167 web); the empty state's own sentence finally has the control that performs it - a POST to the plan endpoint, the plan rendered in place, the rail and the counts reloaded with it, and an existing plan offers nothing |
-| FIX-CHART-004 | UX (a chart surface, W-016) | PENDING | a chart can be rendered and seen from a run |
+| FIX-CHART-004 | UX (a chart surface, W-016) | DONE | 6 tests added (727 server, 173 web); a run with a result can render a chart and see it inline as the core's own SVG, the pickers offer only the run's columns, a refusal shows the renderer's sentence, and the evidence count moves |
 | FIX-PYTHON-005 | UX (a python run surface, W-016) | PENDING | a python run can be generated and executed from the shell |
 | FIX-TIMEOUT-006 | Reliability (the interpret/draft LLM timeout, W-014) | DONE | +24 tests (723 server, 140 web); every adapter posts one configured 120s timeout; a fallback source renders as a sentence; e2e all pass, golden 21/21, refine AT-04, measure 9/9, trace 48/48 |
 | FIX-REFINE-007 | UX (the refinement's rationale, W-009) | DONE | +3 web tests (143 web total); "Why these changes" renders the rationale and grounds the API returns, shown rather than disclosed, and stays readable after an accept |
@@ -456,69 +456,6 @@ STATE UPDATE: TASKS/CURRENT_STATE/HANDOFF gain the fix; the walk-test's
               W-015 closes. No schema change, no version bump.
 ```
 
-### FIX-PLAN-003 contract
-
-```
-TASK ID: FIX-PLAN-003
-MILESTONE: post-phase (the walk-test's findings)
-CAPABILITY: UX (the plan stage's missing button, W-011)
-GOAL: the orientation rail names "Generate an analysis plan" and the endpoint
-      that performs it, and nothing in the shell performs it. The plan panel
-      reads a plan and, when there is none, tells the analyst to generate one
-      - with no control that does. The loop's own to-do list points at a step
-      the shipped UI cannot take, so the plan stage is only finishable from a
-      terminal. The endpoint exists, is schema-validated and answers 201; the
-      shell never calls it.
-CONTEXT: WALK-E2E-001 Fase C reached this by following the rail and finding
-         no control; `grep -rn "POST.*plan" web/src` is empty and
-         `PlanPanel` holds only `getPlan`. The plan is what makes the next
-         action legible, so a case that cannot plan cannot reach the stages
-         after it either - the rail and the shell disagree about where the
-         case stands.
-INPUTS: the plan endpoint's request and response shape (main.py:3750), the
-        rail's next_action and next_endpoint (workflow.py:31), the plan
-        panel's empty state, and the panel's reload contract.
-RELEVANT FILES: web/src/CaseWorkspace.tsx (PlanPanel, the new control),
-                web/src/api.ts (a POST helper), web/src/CaseWorkspace.test.tsx
-                (the tests), ai/HANDOFF.md, ai/TASKS.md, ai/CURRENT_STATE.md
-REQUIRED CHANGE:
-  - The plan panel's empty state gains a control that POSTs the plan
-    endpoint for the dataset it already reads, and busy and error states like
-    every other panel's: a generation in flight is labelled, a 400 (the
-    endpoint refuses to plan an unprofiled dataset) is a sentence, and a
-    success reloads the plan and the case, so the rail and the panel move
-    together.
-  - The generated plan renders in the same panel that reads it, so the
-    analyst sees what was produced without a reload, and the control is what
-    the empty state's own sentence asks for.
-  - A plan that already exists is not regenerated: the control is the empty
-    state's answer, and a case that has planned shows its plan.
-NON-GOALS: auto-generating the plan (the plan is the analyst's to ask for);
-           planning against a dataset other than the first attached one; a
-           plan editor (the planner writes it, the shell reads it).
-CONSTRAINTS: green only. No new dependency. The POST goes to the endpoint
-             that already owns the write; the panel does not fabricate a
-             plan client-side.
-ACCEPTANCE CRITERIA:
-- [x] a case with a profile and no plan offers a control that generates the
-      plan, and the plan renders without a manual reload
-- [x] the rail's next_action and the control agree while generation is in
-      flight and after it lands
-- [x] a generation that fails shows the endpoint's own reason as a sentence
-- [x] a case that already has a plan does not offer to regenerate it
-- [x] the workspace's reload contract is used, so progress counts and the
-      rail move with the plan
-TESTS: CaseWorkspace.test.tsx (+4) - the control generates and the plan
-       renders in place, the reload fires and the rail's stage completes, the
-       400's own sentence surfaces beside an offer that stays, and an existing
-       plan suppresses the control.
-VERIFICATION: `cd server && DAH_LLM_API_KEY= DAH_LLM_BASE_URL= DAH_LLM_MODEL=
-              .venv/bin/python -m pytest -q` green (727);
-              `cd web && npm test && npm run build` green (167, build ok);
-              `verify_e2e.py` green; `verify_trace.py` green (48/48).
-STATE UPDATE: TASKS/CURRENT_STATE/HANDOFF gain the fix; W-011 closes.
-```
-
 ### FIX-CHART-004 contract
 
 ```
@@ -558,19 +495,44 @@ NON-GOALS: a chart gallery or a chart history view (the evidence graph
 CONSTRAINTS: green only. No new dependency. The POST goes to the endpoint
              that owns the write and renders from the stored result.
 ACCEPTANCE CRITERIA:
-- [ ] a run with a result can render a chart, and the chart appears in the
+- [x] a run with a result can render a chart, and the chart appears in the
       shell without leaving the case
-- [ ] the pickers offer only the columns the run produced
-- [ ] an unsupported choice is refused with the endpoint's own sentence
-- [ ] the SVG the response carries is what the shell displays
-- [ ] the evidence graph's chart count moves when a chart is rendered
-TESTS: CaseWorkspace.test.tsx (+~4) - the control renders and the SVG shows,
-       the pickers are the run's columns, a failure surfaces.
-VERIFICATION: `cd server && ... pytest -q` green; `cd web && npm test && npm
-              run build` green (142).
+- [x] the pickers offer only the columns the run produced
+- [x] an unsupported choice is refused with the endpoint's own sentence
+- [x] the SVG the response carries is what the shell displays
+- [x] the evidence graph's chart count moves when a chart is rendered
+TESTS: CaseWorkspace.test.tsx (+6) - the control appears only once the run's
+       rows are open, the SVG shows inline and the payload carries the run's
+       own columns, the measure picker defaults to the numeric column, the
+       case reloads so the evidence count moves, a refusal surfaces the
+       renderer's sentence with the control standing, and a bitmap is a link
+       to the persisted artifact.
+VERIFICATION: `cd server && DAH_LLM_API_KEY= DAH_LLM_BASE_URL= DAH_LLM_MODEL=
+              .venv/bin/python -m pytest -q` green (727);
+              `cd web && npm test && npm run build` green (173, build ok);
+              `verify_e2e.py` green (28/28); `verify_trace.py` green (48/48).
 STATE UPDATE: TASKS/CURRENT_STATE/HANDOFF gain the fix; the chart half of
               W-016 closes.
 ```
+TASK: FIX-CHART-004 - the chart surface
+ID: FIX-CHART-004
+PRIORITY: high
+STATUS: DONE
+SUMMARY: a chart is now evidence the analyst can produce and see. The run row
+         holds a "Render a chart" control that appears once the run's rows are
+         open - those columns are the renderer's input and are exactly what
+         the pickers offer, with the measure defaulting to a numeric column -
+         and it POSTs the endpoint that owns the write. On success the shell
+         fetches the SVG the core drew and renders it inline, because drawing
+         it a second time would make the shell a second source of truth for
+         what the chart looks like; a PNG is a link to the persisted artifact
+         instead. The workspace reloads with a chart, so the evidence graph's
+         count moves with the panel, and a refusal shows the renderer's own
+         sentence with the control standing. Two things the first test run
+         caught: the control was offered before the rows were read, which is
+         before there is anything to draw from, so it now waits on the result;
+         and the surface was asserted as an img role, which jsdom does not
+         give an inline SVG - the assertion reads the element instead.
 
 ### FIX-PYTHON-005 contract
 

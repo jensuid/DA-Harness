@@ -6344,3 +6344,86 @@ SUMMARY: the PRD's thresholds were prose; nine of them are numbers now. One
          delivers SIGXCPU to the suite itself once it has burned more CPU
          seconds than one run allows; the fixture that fakes the setter is
          documented for the same reason.
+
+### FIX-PLAN-003 contract
+
+```
+TASK ID: FIX-PLAN-003
+MILESTONE: post-phase (the walk-test's findings)
+CAPABILITY: UX (the plan stage's missing button, W-011)
+GOAL: the orientation rail names "Generate an analysis plan" and the endpoint
+      that performs it, and nothing in the shell performs it. The plan panel
+      reads a plan and, when there is none, tells the analyst to generate one
+      - with no control that does. The loop's own to-do list points at a step
+      the shipped UI cannot take, so the plan stage is only finishable from
+      a terminal. The endpoint exists, is schema-validated and answers 201; the
+      shell never calls it.
+CONTEXT: WALK-E2E-001 Fase C reached this by following the rail and finding
+         no control; `grep -rn "POST.*plan" web/src` is empty and
+         `PlanPanel` holds only `getPlan`. The plan is what makes the next
+         action legible, so a case that cannot plan cannot reach the stages
+         after it either - the rail and the shell disagree about where the
+         case stands.
+INPUTS: the plan endpoint's request and response shape (main.py:3750), the
+        rail's next_action and next_endpoint (workflow.py:31), the plan
+        panel's empty state, and the panel's reload contract.
+RELEVANT FILES: web/src/CaseWorkspace.tsx (PlanPanel, the new control),
+                web/src/api.ts (a POST helper), web/src/CaseWorkspace.test.tsx
+                (the tests), ai/HANDOFF.md, ai/TASKS.md, ai/CURRENT_STATE.md
+REQUIRED CHANGE:
+  - The plan panel's empty state gains a control that POSTs the plan
+    endpoint for the dataset it already reads, and busy and error states like
+    every other panel's: a generation in flight is labelled, a 400 (the
+    endpoint refuses to plan an unprofiled dataset) is a sentence, and a
+    success reloads the plan and the case, so the rail and the panel move
+    together.
+  - The generated plan renders in the same panel that reads it, so the
+    analyst sees what was produced without a reload, and the control is what
+    the empty state's own sentence asks for.
+  - A plan that already exists is not regenerated: the control is the empty
+    state's answer, and a case that has planned shows its plan.
+NON-GOALS: auto-generating the plan (the plan is the analyst's to ask for);
+           planning against a dataset other than the first attached one; a
+           plan editor (the planner writes it, the shell reads it).
+CONSTRAINTS: green only. No new dependency. The POST goes to the endpoint
+             that already owns the write; the panel does not fabricate a
+             plan client-side.
+ACCEPTANCE CRITERIA:
+- [x] a case with a profile and no plan offers a control that generates the
+      plan, and the plan renders without a manual reload
+- [x] the rail's next_action and the control agree while generation is in
+      flight and after it lands
+- [x] a generation that fails shows the endpoint's own reason as a sentence
+- [x] a case that already has a plan does not offer to regenerate it
+- [x] the workspace's reload contract is used, so progress counts and the
+      rail move with the plan
+TESTS: CaseWorkspace.test.tsx (+4) - the control generates and the plan
+       renders in place, the reload fires and the rail's stage completes, the
+       400's own sentence surfaces beside an offer that stays, and an existing
+       plan suppresses the control.
+VERIFICATION: `cd server && DAH_LLM_API_KEY= DAH_LLM_BASE_URL= DAH_LLM_MODEL=
+              .venv/bin/python -m pytest -q` green (727);
+              `cd web && npm test && npm run build` green (167, build ok);
+              `verify_e2e.py` green; `verify_trace.py` green (48/48).
+STATE UPDATE: TASKS/CURRENT_STATE/HANDOFF gain the fix; W-011 closes.
+```
+
+TASK: FIX-PLAN-003 - the plan stage's missing button
+ID: FIX-PLAN-003
+PRIORITY: high
+STATUS: DONE
+SUMMARY: the empty state's own sentence now has the control that performs it.
+         The button POSTs the endpoint that owns the write, labels itself
+         while the planner works, and on success renders the plan in place and
+         calls the workspace's reload - so the rail's stage, the progress
+         counts and the panel move together, because the plan is what makes
+         the rail's next action legible. A refusal shows the endpoint's own
+         reason as a sentence and the offer stays; a case that has already
+         planned shows its plan and offers nothing. One thing the first test
+         run caught and fixed: the generation's error shared the read's
+         `error` state, and the empty state rendered that only in its
+         non-missing branch - so a 400 in the missing branch was swallowed
+         and the panel stayed silent, exactly the failure the fix exists to
+         remove. The two are separate states now (`generateError`), because
+         they are never both live: the control lives where the read answered
+         404, and a 404 is not the reason a generation failed.

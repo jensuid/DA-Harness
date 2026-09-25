@@ -673,6 +673,114 @@ export function validateFinding(caseId: string, findingId: string): Promise<Vali
   })
 }
 
+// --- charts: a run's result, drawn (P2-ANALYSIS-009 / P3-CHART-002) ---------
+
+// A chart is an evidence artifact the core renders from a persisted run
+// result, not from a live query, so it stays reproducible after the run. The
+// renderer validates its columns against that result, so the pickers can only
+// offer what the run produced - a column the run does not have is a 400 the
+// panel shows as a sentence, not a chart that looks right.
+export type ChartKind = 'bar' | 'line'
+export type ChartFormat = 'svg' | 'png'
+
+export interface ChartSummary {
+  id: string
+  case_id: string
+  run_id: string
+  kind: string
+  x: string
+  y: string
+  series: string | null
+  title: string
+  created_at: string
+}
+
+// The created chart. `stored_path` is where the core wrote the image; the
+// shell never reads a local path (the browser bundle cannot), it fetches the
+// image through the endpoint below.
+export interface Chart extends ChartSummary {
+  stored_path: string
+  width: number
+  height: number
+  format: ChartFormat
+}
+
+// The PNG path is a link rather than an inline image: the shell renders what
+// the core already drew, it does not draw a second time, and a bitmap is
+// honest about being a file the analyst can open or export.
+export type ChartImage =
+  | { format: 'svg'; svg: string }
+  | { format: 'png'; url: string }
+
+export function listCharts(caseId: string, runId: string): Promise<ChartSummary[]> {
+  return request<ChartSummary[]>(`/cases/${caseId}/runs/${runId}/charts`)
+}
+
+// The renderer's refusal is the analyst's input: an unknown kind, a column the
+// result does not have, or a measure with nothing plottable answers 400 with
+// its own sentence, which the panel shows rather than a broken surface.
+export function createChart(
+  caseId: string,
+  runId: string,
+  payload: {
+    kind: ChartKind
+    x: string
+    y: string
+    series?: string | null
+    title?: string
+    format?: ChartFormat
+  },
+): Promise<Chart> {
+  return request<Chart>(`/cases/${caseId}/runs/${runId}/charts`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      kind: payload.kind,
+      x: payload.x,
+      y: payload.y,
+      series: payload.series ?? null,
+      title: payload.title ?? '',
+      format: payload.format ?? 'svg',
+    }),
+  })
+}
+
+// The image endpoint serves the persisted bytes. SVG is fetched as text and
+// drawn inline, because an <img> over inline SVG would be the shell's own
+// second renderer; a bitmap is a plain link to the artifact the core wrote.
+// A fetch that fails is the ApiError the panels already show.
+export async function getChartImage(
+  caseId: string,
+  chart: Pick<Chart, 'id' | 'format'>,
+): Promise<ChartImage> {
+  const url = chartImageUrl(caseId, chart.id)
+  const res = await fetch(url)
+  if (!res.ok) {
+    const text = await res.text()
+    let message = text
+    const contentType = res.headers.get('content-type') ?? ''
+    if (contentType.includes('application/json')) {
+      try {
+        const body = JSON.parse(text) as { detail?: string }
+        if (body.detail) message = body.detail
+      } catch {
+        // An unparseable JSON body keeps its raw text as the message.
+      }
+    }
+    throw new ApiError(res.status, message || `request failed: ${res.status}`)
+  }
+  if (chart.format === 'svg') {
+    return { format: 'svg', svg: await res.text() }
+  }
+  return { format: 'png', url }
+}
+
+// The URL the image endpoint answers, for a link the analyst can open in the
+// browser as well as fetch.
+export function chartImageUrl(caseId: string, chartId: string): string {
+  return `${BASE}/cases/${caseId}/charts/${chartId}/image`
+}
+
 export function listFindings(caseId: string): Promise<Finding[]> {
   return request<Finding[]>(`/cases/${caseId}/findings`)
 }

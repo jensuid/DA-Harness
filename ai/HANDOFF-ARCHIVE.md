@@ -2885,3 +2885,31 @@ now have their fixes committed.
    `CaseWorkspace.tsx`'s 2,501 lines into `web/src/panels/`), F2 the surfaces
    (closing W-011, W-016, W-013, W-017, W-018), F3 motion (respecting
    `prefers-reduced-motion`), F4 the chart surface and a re-walk.
+
+## FIX-PLAN-003
+
+**FIX-PLAN-003 (W-011) DONE.** The orientation rail names "Generate an analysis
+plan" and nothing in the shell performed it. `PlanPanel` read a plan and, when
+there was none, told the analyst to generate one - with no control that does;
+`POST .../plan` existed and answered 201 while the shell never called it, so
+the plan stage was only finishable from a terminal.
+
+The empty state's own sentence now has the control that performs it. The
+button POSTs the endpoint that owns the write, labels itself while the
+planner works, and on success renders the plan in place and calls the
+workspace's reload - so the rail's stage, the progress counts and the panel
+move together, because the plan is what makes the rail's next action
+legible. A refusal shows the endpoint's own reason as a sentence and the
+offer stays; a case that has already planned shows its plan and offers
+nothing.
+
+One thing the first test run caught and fixed: the generation's error shared
+the read's `error` state, and the empty state rendered that only in its
+non-missing branch - so a 400 in the missing branch was swallowed and the
+panel stayed silent, exactly the failure the fix exists to remove. The two
+are separate states now (`generateError`), because they are never both live:
+the control lives where the read answered 404, and a 404 is not the reason a
+generation failed.
+
+**Gates:** 727 server (unchanged), web 167 (+4), tsc clean, build ok,
+e2e 28/28, trace 48/48.
