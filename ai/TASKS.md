@@ -338,6 +338,541 @@ not reopened for these; the fix's own contract and verification are below.
 | Task ID | Capability | Status | Verification |
 |---------|-----------|--------|--------------|
 | FIX-VERSION-001 | Distribution (the packaged core's own version) | DONE | 8 tests added (694 server, 138 web); the packaged binary answers `current: 0.3.2` at `/updates/latest`; both packaged-core smokes now assert it |
+| FIX-EVIDENCE-002 | Validation (the evidence check's number regex, W-015) | PENDING | the regex no longer splits a date token; a `YYYY-MM` finding validates on its evidence axis |
+| FIX-PLAN-003 | UX (the plan stage's missing button, W-011) | PENDING | the rail's named action is reachable from the shell |
+| FIX-CHART-004 | UX (a chart surface, W-016) | PENDING | a chart can be rendered and seen from a run |
+| FIX-PYTHON-005 | UX (a python run surface, W-016) | PENDING | a python run can be generated and executed from the shell |
+| FIX-TIMEOUT-006 | Reliability (the interpret/draft LLM timeout, W-014) | PENDING | the LLM answers before the timeout, and a fallback is announced |
+| FIX-REFINE-007 | UX (the refinement's rationale, W-009) | PENDING | "Why these changes" renders what the API already returns |
+| FIX-PROFILE-008 | Reliability (the automatic re-profiling, W-008) | PENDING | opening a case does not re-POST the profile |
+| FIX-UPDATES-009 | Distribution (the silent update check, W-005) | PENDING | the Check for Updates menu item answers the user |
+| FIX-VERSION-010 | Distribution (the dev checkout's stale version, W-001) | PENDING | the dev checkout reports the source's version, not the stale metadata's |
+
+Prioritas adalah urutan tabel di atas (WALK-E2E-001's report menetapkannya:
+W-015, W-011, W-016, W-014, lalu W-009, W-008, W-005, W-001). Satu commit per
+fix. W-016 pecah jadi dua task (chart, python) karena keduanya tidak berbagi
+kode selain panel tempatnya mendarat. Contract masing-masing di bawah.
+
+Urutan eksekusi untuk session baru: FIX-EVIDENCE-002 dulu (paling terlokalisir,
+hanya `server/app/evaluator.py`, tidak butuh infrastruktur walk-test yang
+masih hidup). Lalu FIX-PLAN-003, FIX-CHART-004, FIX-PYTHON-005 (web), dan
+baru FIX-TIMEOUT-006 (server + web). Empat terakhir (FIX-REFINE-007,
+FIX-PROFILE-008 web; FIX-UPDATES-009 Rust; FIX-VERSION-010 server) bebas
+urutan. Setiap fix: baca contractnya di file ini, implementasi, tes, full
+gate (server pytest + e2e + golden + refine + measure + trace, web test +
+build), lalu commit + push. Walk-test infra (core :8123 pid 84940, web :5273,
+Tauri dah-shell 84919) masih hidup bila perlu memverifikasi ulang; cara
+menjalankannya di `walktest/HANDOFF.md`.
+
+
+### FIX-EVIDENCE-002 contract
+
+```
+TASK ID: FIX-EVIDENCE-002
+MILESTONE: post-phase (the walk-test's findings)
+CAPABILITY: Validation (the evidence check's number regex, W-015)
+GOAL: a finding whose statement names a `YYYY-MM` period - or any value whose
+      digits sit inside a longer token - fails the evidence dimension with
+      "quotes values absent from its own result", and the dimension is HARD,
+      so the verdict is insufficient_evidence. The finding was correct: every
+      magnitude it quoted was a cell value in its own run. The check invented
+      two numbers by splitting a token, then refused the finding for quoting
+      them. This makes the check compare the magnitudes a statement actually
+      quotes against the magnitudes the result actually holds.
+CONTEXT: found by WALK-E2E-001's Fase C, reproduced directly in the
+         interpreter: `_numbers_in("2026-07 has the highest revenue at
+         1526309.57, the largest of 44 grouped value(s)")` returns
+         `[-7.0, 44.0, 2026.0, 1526309.57]`, and `2026.0` and `-7.0` are not
+         in `_allowed_numbers`. The same `_numbers_in` backs
+         `drafter.py:246`, `evaluator.py:379` and `validation.py:220`
+         (check_evidence, the HARD one), so the fix lands once and all four
+         sites stop splitting tokens. A second defect surfaced in the same
+         run: `_allowed_numbers` does not include the row count or the number
+         of groups a result has, so "44 grouped value(s)" - which the
+         deterministic drafter writes and which is true - was also reported
+         invented. Both are the evidence dimension's honesty budget.
+INPUTS: the statement and the run's columns and rows, exactly as check_evidence
+        receives them; the deterministic drafter's own sentence shapes, which
+        are what a correct regex must accept; the EVALUATE corpus, which
+        judges the same field.
+RELEVANT FILES: server/app/evaluator.py (`_numbers_in`, `_allowed_numbers`),
+                server/app/validation.py (no change beyond the behaviour it
+                reads), server/tests/test_validation.py and
+                server/tests/test_evaluator.py (the tests), ai/HANDOFF.md,
+                ai/TASKS.md, ai/CURRENT_STATE.md
+REQUIRED CHANGE:
+  - A numeric token is only a magnitude when it is a token, not a fragment of
+    one. A run of digits that sits inside a longer alphanumeric run - a date
+    like 2026-07, an id like ORD-100331, a code like SKU-4001 - is not a
+    number the statement quotes, so the regex must not emit it. The
+    neighbouring characters are what decide: digits bounded by digits,
+    commas, dots, whitespace or string edges are magnitudes; digits with a
+    letter or a hyphen-then-digit against them are part of something larger.
+    A negative number is only negative when its minus is a sign, not a date's
+    separator, which is the exact confusion that produced -7.
+  - `_allowed_numbers` gains the row count and the number of groups the
+    result has (the distinct count per column already covers frequency, but
+    not the totals the drafter names as "N grouped value(s)" or "N row(s)"),
+    so a statement that names the shape of its own result is quoting a
+    magnitude the result holds.
+  - A claim that names a magnitude a result does not hold still fails - the
+    honesty budget's purpose is unchanged, and a fabricated number in a
+    correct-looking sentence still must not pass.
+NON-GOALS: changing the verdict vocabulary or the HARD/soft classification;
+           re-judging the golden suite's reference claims (they pass and keep
+           passing); teaching the check to parse dates semantically (the fix
+           is that it stops counting them, not that it understands them).
+CONSTRAINTS: green only. No new dependency (DEC-001). Deterministic and
+             offline: the check is pure over its inputs. Read-only: it
+             judges, it never writes.
+ACCEPTANCE CRITERIA:
+- [ ] a finding naming `YYYY-MM` periods with correct magnitudes passes its
+      evidence dimension, where before it failed as insufficient_evidence
+- [ ] a date, an id and a sku are not extracted as magnitudes, verified per
+      shape
+- [ ] a negative number inside a longer token is not emitted as one
+- [ ] a statement naming its result's own row count or group count passes
+- [ ] a genuinely fabricated magnitude still fails, and the failure names the
+      invented number
+- [ ] the golden suite's reference claims still hold their evidence verdicts
+- [ ] the evidence check's sentence, when it fails, still names what the
+      statement quoted that the result does not hold
+TESTS: test_evaluator.py / test_validation.py (+~8) - per shape (date, id,
+       sku, negative-in-token), the group-count and row-count allowance, a
+       fabricated number still failing, the regression from WALK-E2E-001
+       stated as a literal case, and the existing corpus re-green.
+VERIFICATION: `cd server && DAH_LLM_API_KEY= DAH_LLM_BASE_URL= DAH_LLM_MODEL=
+               .venv/bin/python -m pytest -q` green (702);
+               `verification/e2e/verify_e2e.py`, `verify_golden.py`,
+               `verify_refine.py`, `verify_measure.py`, `verify_trace.py`
+               green; `cd web && npm test && npm run build` green.
+STATE UPDATE: TASKS/CURRENT_STATE/HANDOFF gain the fix; the walk-test's
+              W-015 closes. No schema change, no version bump.
+```
+
+### FIX-PLAN-003 contract
+
+```
+TASK ID: FIX-PLAN-003
+MILESTONE: post-phase (the walk-test's findings)
+CAPABILITY: UX (the plan stage's missing button, W-011)
+GOAL: the orientation rail names "Generate an analysis plan" and the endpoint
+      that performs it, and nothing in the shell performs it. The plan panel
+      reads a plan and, when there is none, tells the analyst to generate one
+      - with no control that does. The loop's own to-do list points at a step
+      the shipped UI cannot take, so the plan stage is only finishable from a
+      terminal. The endpoint exists, is schema-validated and answers 201; the
+      shell never calls it.
+CONTEXT: WALK-E2E-001 Fase C reached this by following the rail and finding
+         no control; `grep -rn "POST.*plan" web/src` is empty and
+         `PlanPanel` holds only `getPlan`. The plan is what makes the next
+         action legible, so a case that cannot plan cannot reach the stages
+         after it either - the rail and the shell disagree about where the
+         case stands.
+INPUTS: the plan endpoint's request and response shape (main.py:3750), the
+        rail's next_action and next_endpoint (workflow.py:31), the plan
+        panel's empty state, and the panel's reload contract.
+RELEVANT FILES: web/src/CaseWorkspace.tsx (PlanPanel, the new control),
+                web/src/api.ts (a POST helper), web/src/CaseWorkspace.test.tsx
+                (the tests), ai/HANDOFF.md, ai/TASKS.md, ai/CURRENT_STATE.md
+REQUIRED CHANGE:
+  - The plan panel's empty state gains a control that POSTs the plan
+    endpoint for the dataset it already reads, and busy and error states like
+    every other panel's: a generation in flight is labelled, a 400 (the
+    endpoint refuses to plan an unprofiled dataset) is a sentence, and a
+    success reloads the plan and the case, so the rail and the panel move
+    together.
+  - The generated plan renders in the same panel that reads it, so the
+    analyst sees what was produced without a reload, and the control is what
+    the empty state's own sentence asks for.
+  - A plan that already exists is not regenerated: the control is the empty
+    state's answer, and a case that has planned shows its plan.
+NON-GOALS: auto-generating the plan (the plan is the analyst's to ask for);
+           planning against a dataset other than the first attached one; a
+           plan editor (the planner writes it, the shell reads it).
+CONSTRAINTS: green only. No new dependency. The POST goes to the endpoint
+             that already owns the write; the panel does not fabricate a
+             plan client-side.
+ACCEPTANCE CRITERIA:
+- [ ] a case with a profile and no plan offers a control that generates the
+      plan, and the plan renders without a manual reload
+- [ ] the rail's next_action and the control agree while generation is in
+      flight and after it lands
+- [ ] a generation that fails shows the endpoint's own reason as a sentence
+- [ ] a case that already has a plan does not offer to regenerate it
+- [ ] the workspace's reload contract is used, so progress counts and the
+      rail move with the plan
+TESTS: CaseWorkspace.test.tsx (+~4) - the control generates and the plan
+       renders, the failure surfaces, an existing plan suppresses the
+       control, and the reload fires.
+VERIFICATION: `cd server && ... pytest -q` green; `cd web && npm test && npm
+              run build` green (142).
+STATE UPDATE: TASKS/CURRENT_STATE/HANDOFF gain the fix; W-011 closes.
+```
+
+### FIX-CHART-004 contract
+
+```
+TASK ID: FIX-CHART-004
+MILESTONE: post-phase (the walk-test's findings)
+CAPABILITY: UX (a chart surface, W-016)
+GOAL: a chart is an evidence artifact the core renders, stores and exports,
+      and the shell cannot produce one. The runs panel runs a query and the
+      evidence graph counts the charts, but between them there is no control
+      that asks for a chart, and no surface that shows the one the core drew.
+      Every chart is only reachable through its file path. This closes that
+      gap for the run that produced the numbers.
+CONTEXT: WALK-E2E-001 Fase C created a chart by curl to verify the renderer,
+         and the evidence graph, the history and the export all carried it -
+         only the shell could not. `grep -c chart web/src/api.ts` is zero.
+         The endpoint validates its columns against the run's own result, so
+         the control's pickers can only offer what the run produced.
+INPUTS: the chart endpoint's payload and response (main.py:2884), the chart
+        kinds and formats the renderer supports, the run row's columns, and
+        the stored path the response returns.
+RELEVANT FILES: web/src/api.ts (a chart helper), web/src/CaseWorkspace.tsx
+                (RunRow gains the control and the surface), the renderer and
+                the endpoint (unchanged), web/src/CaseWorkspace.test.tsx,
+                ai/HANDOFF.md, ai/TASKS.md, ai/CURRENT_STATE.md
+REQUIRED CHANGE:
+  - A run row offers "Render a chart" once it has a result, with pickers for
+    the x and y columns the run actually produced and the kind the renderer
+    supports, and the control posts to the endpoint that owns the write.
+  - The response's chart is shown in the shell - as an inline SVG for the
+    default format, and as a link for the others - so a chart is evidence
+    the analyst can see, not a path on disk.
+  - A chart that fails to render shows the endpoint's own reason as a
+    sentence, because the renderer's refusal is the analyst's input.
+NON-GOALS: a chart gallery or a chart history view (the evidence graph
+           counts them and the export carries them); editing a chart; new
+           chart kinds (the renderer's vocabulary is what it is).
+CONSTRAINTS: green only. No new dependency. The POST goes to the endpoint
+             that owns the write and renders from the stored result.
+ACCEPTANCE CRITERIA:
+- [ ] a run with a result can render a chart, and the chart appears in the
+      shell without leaving the case
+- [ ] the pickers offer only the columns the run produced
+- [ ] an unsupported choice is refused with the endpoint's own sentence
+- [ ] the SVG the response carries is what the shell displays
+- [ ] the evidence graph's chart count moves when a chart is rendered
+TESTS: CaseWorkspace.test.tsx (+~4) - the control renders and the SVG shows,
+       the pickers are the run's columns, a failure surfaces.
+VERIFICATION: `cd server && ... pytest -q` green; `cd web && npm test && npm
+              run build` green (142).
+STATE UPDATE: TASKS/CURRENT_STATE/HANDOFF gain the fix; the chart half of
+              W-016 closes.
+```
+
+### FIX-PYTHON-005 contract
+
+```
+TASK ID: FIX-PYTHON-005
+MILESTONE: post-phase (the walk-test's findings)
+CAPABILITY: UX (a python run surface, W-016)
+GOAL: the sandbox executes user Python against an attached dataset and
+      persists the result exactly like a SQL run, and the shell has no way to
+      ask for one. The codegen panel generates SQL only, and the runs
+      endpoint it posts to is the SQL one. A python run is only reachable by
+      curl, so the hardening the sandbox exists to prove is untested by
+      anyone using the app.
+CONTEXT: WALK-E2E-001 Fase C ran python through the endpoint: the seatbelt
+         refused a bad script with a 400 and an honest reason, and a correct
+         one produced a run that the evidence graph, the history and the
+         export all carried. `grep -rn "runs/python" web/src` is empty. The
+         generator already supports kind 'python' and the endpoint and its
+         model already exist; only the shell's request is missing.
+INPUTS: the python run endpoint (main.py:1778), its `PythonRunCreate` model,
+        the generator's kind parameter and its python output, the sandbox's
+        contract (a `dataset` handle, a `result` the run tabulates), and the
+        codegen panel's existing propose-and-run shape.
+RELEVANT FILES: web/src/api.ts (a python run helper), web/src/CaseWorkspace.tsx
+                (the codegen panel gains a kind, the run posts to the python
+                endpoint), web/src/CaseWorkspace.test.tsx, the endpoint and
+                the sandbox (unchanged), ai/HANDOFF.md, ai/TASKS.md,
+                ai/CURRENT_STATE.md
+REQUIRED CHANGE:
+  - The codegen panel offers SQL and Python, and the proposal it generates
+    matches the kind chosen, so a python question is answered with python.
+  - Running a python proposal posts to the python endpoint, and the run it
+    persists is a run like any other - the same runs panel, the same
+    evidence chain, the same validation.
+  - A sandbox refusal is the analyst's input: its detail is the sentence the
+    panel shows, not a broken panel.
+NON-GOALS: a python editor with a console; a package installer; changing the
+           sandbox (its allowlist, its seatbelt profile and its row cap are
+           the contract the surface now exposes).
+CONSTRAINTS: green only. No new dependency. The POST goes to the endpoint
+             that owns the write; the panel does not execute code itself.
+ACCEPTANCE CRITERIA:
+- [ ] the panel generates python for a python question and the code it
+      proposes is what the sandbox accepts
+- [ ] running a python proposal creates a run the runs panel and the
+      evidence graph carry
+- [ ] a script the sandbox refuses answers a 400 whose detail the panel
+      shows as a sentence
+- [ ] the kind persists across proposals in the same panel
+- [ ] the SQL path is unchanged in behaviour and in its tests
+TESTS: CaseWorkspace.test.tsx (+~4) - python generation and its run, the
+       refusal surfaced, SQL unaffected.
+VERIFICATION: `cd server && ... pytest -q` green; `cd web && npm test && npm
+              run build` green (142).
+STATE UPDATE: TASKS/CURRENT_STATE/HANDOFF gain the fix; the python half of
+              W-016 closes and W-016 is done.
+```
+
+### FIX-TIMEOUT-006 contract
+
+```
+TASK ID: FIX-TIMEOUT-006
+MILESTONE: post-phase (the walk-test's findings)
+CAPABILITY: Reliability (the interpret/draft LLM timeout, W-014)
+GOAL: two of the three assistant slices never use the LLM in practice: the
+      interpret and draft endpoints wait exactly thirty seconds, time out,
+      and fall back to deterministic, and the shell shows "Working…" for the
+      whole thirty seconds with no indication that an engine failed and
+      another answered. The planner and refine endpoints, at sixty seconds,
+      finish. The analyst reads a deterministic reading believing it was the
+      LLM's, because the only tell is a small source label.
+CONTEXT: WALK-E2E-001 Fase C reproduced this on every interpret and draft
+         call: the log line is `llm read failed; falling back to
+         deterministic: The read operation timed out` at 30133ms and
+         30184ms, while the generator at 30s and refine at 60s succeeded.
+         The timeouts are interpreter.py:239, drafter.py:312 and
+         assistant.py:576 at 30.0; planner.py:366 and refine.py:595 at 60.0.
+INPUTS: the five LLM call sites and their timeouts, the fallback contract
+        (any failure degrades, the source field records which engine
+        answered), and the panels that render the source label.
+RELEVANT FILES: server/app/interpreter.py, server/app/drafter.py,
+                server/app/assistant.py (the timeouts), the web panels that
+                render `by <source>` (the announcement), the tests for both,
+                ai/HANDOFF.md, ai/TASKS.md, ai/CURRENT_STATE.md
+REQUIRED CHANGE:
+  - The timeouts are one configured value the environment can raise, default
+    high enough that a slow endpoint answers before the harness gives up on
+    it, so the engine a case configured is the engine that answers.
+  - A fallback is announced rather than labelled: the panel says the LLM was
+    unavailable and a deterministic reading was used in its place, in the
+    same place the source label sits, so the analyst knows which engine
+    spoke and that it was not the one asked.
+  - The contract that any failure degrades is untouched: a plan, a reading
+    and a draft are still always returned, and the source still records
+    which engine produced them.
+NON-GOALS: changing the fallback itself (the contract is the point);
+           retrying (a second thirty seconds is not a better answer);
+           streaming (the endpoints answer once, whole).
+CONSTRAINTS: green only. No new dependency. The default is a number, not a
+             behaviour; the tests inject the failure rather than waiting for
+             it, so no test is slower for the change.
+ACCEPTANCE CRITERIA:
+- [ ] the three 30s call sites read the same configured value, and the
+      planner's 60s is the same value's neighbour
+- [ ] a slow endpoint that would have timed out answers before the timeout
+- [ ] the source the response carries still records which engine answered
+- [ ] a panel showing a deterministic answer after an LLM failure says so in
+      a sentence the analyst reads
+- [ ] no test waits the timeout to reach its failure
+TESTS: test_interpreter.py / test_drafter.py (+~4, the timeout is read from
+       the value and a slow engine still answers), the web panel's
+       announcement (+~2).
+VERIFICATION: `cd server && ... pytest -q` green; `cd web && npm test && npm
+              run build` green.
+STATE UPDATE: TASKS/CURRENT_STATE/HANDOFF gain the fix; W-014 closes.
+```
+
+### FIX-REFINE-007 contract
+
+```
+TASK ID: FIX-REFINE-007
+MILESTONE: post-phase (the walk-test's findings)
+CAPABILITY: UX (the refinement's rationale, W-009)
+GOAL: accepting a refinement is a black box. The API returns a rationale and
+      the grounds it rests on, and the panel renders neither, so the analyst
+      approves a change to their own question without being told why the
+      change was proposed or what in the profile supports it. "Why these
+      changes" is the panel's own heading and it sits empty.
+CONTEXT: WALK-E2E-001 Fase B accepted a deterministic refinement and the
+         heading stayed blank; the response carries the fields the panel
+         does not read.
+INPUTS: the refinement response's rationale and grounds fields, the panel's
+        heading and its accepted state.
+RELEVANT FILES: web/src/RefinePanel.tsx, web/src/CaseWorkspace.test.tsx,
+                ai/HANDOFF.md, ai/TASKS.md, ai/CURRENT_STATE.md
+REQUIRED CHANGE:
+  - The proposal renders its rationale as the answer to the heading that
+    asks, and the grounds it names - the profile's own columns and measures,
+    which is what makes the suggestion honest - are listed where the analyst
+    can see what the suggestion rests on.
+  - The accepted state keeps the proposal readable, so the change the
+    analyst accepted stays explained after it is applied.
+NON-GOALS: changing the refinement engines or their output; editing a
+           rationale; re-proposing automatically.
+CONSTRAINTS: green only. No new dependency. The fields are already in the
+             response; this is rendering what the API returns.
+ACCEPTANCE CRITERIA:
+- [ ] a proposal shows its rationale under its own heading
+- [ ] the grounds the proposal names are listed, and they are the response's
+- [ ] an accepted refinement keeps its rationale and grounds readable
+- [ ] a proposal without grounds renders nothing rather than an empty list
+TESTS: CaseWorkspace.test.tsx / RefinePanel (+~3).
+VERIFICATION: `cd server && ... pytest -q` green; `cd web && npm test && npm
+              run build` green.
+STATE UPDATE: TASKS/CURRENT_STATE/HANDOFF gain the fix; W-009 closes.
+```
+
+### FIX-PROFILE-008 contract
+
+```
+TASK ID: FIX-PROFILE-008
+MILESTONE: post-phase (the walk-test's findings)
+CAPABILITY: Reliability (the automatic re-profiling, W-008)
+GOAL: opening a case re-profiles its dataset, twice, every time. The panel
+      POSTs the profile endpoint on every mount, so a profile that already
+      exists is recomputed and rewritten on each visit, and the stage that
+      reads it is ambiguous - the rail can show "profile" current while the
+      panel is the thing that completes it. Profiling is the analyst's step,
+      and the shell takes it for them without being asked.
+CONTEXT: WALK-E2E-001 Fase B watched the core log receive two POST /profile
+         calls each time the case view opened; `profileDataset` in api.ts:572
+         is a POST and the useEffect at CaseWorkspace.tsx:191 calls it on
+         mount. The profile is what the planner and the missing-data check
+         read, so a silent rewrite of it is not free.
+INPUTS: the profile endpoint's GET and POST shapes, the panel's mount effect,
+        and the profile's own read contract.
+RELEVANT FILES: web/src/CaseWorkspace.tsx (the mount effect), web/src/api.ts
+                (a read helper if the endpoint offers none), the tests, the
+                core if a GET is needed, ai/HANDOFF.md, ai/TASKS.md,
+                ai/CURRENT_STATE.md
+REQUIRED CHANGE:
+  - The panel reads the profile it has before asking for one: a case with a
+    profile renders it, and a POST happens when the analyst asks for a
+    re-profile or when there is nothing to read - not on every mount.
+  - The double invocation is one invocation; if the effect must remain, its
+    dependency array and the strict-mode double render no longer both reach
+    the endpoint.
+  - The rail and the panel agree about the profile stage, because the panel
+    no longer completes it by opening.
+NON-GOALS: caching a profile client-side (a read per mount is correct, a
+           write is not); changing the profiler; dropping the re-profile
+           control (a stale profile must be refreshable, on request).
+CONSTRAINTS: green only. No new dependency. A GET is preferred to a POST
+             when the endpoint can answer one; if it cannot, the change adds
+             one and the tests cover it.
+ACCEPTANCE CRITERIA:
+- [ ] opening a case with a profile does not POST the profile endpoint
+- [ ] opening a case without a profile does not fabricate one
+- [ ] an explicit re-profile works and the panel reflects it
+- [ ] the profile the panels render is the stored one
+- [ ] the rail's profile stage and the panel's state agree
+TESTS: CaseWorkspace.test.tsx (+~4) - no POST on mount with a profile, one
+       on request, the panel renders the stored profile.
+VERIFICATION: `cd server && ... pytest -q` green; `cd web && npm test && npm
+              run build` green.
+STATE UPDATE: TASKS/CURRENT_STATE/HANDOFF gain the fix; W-008 closes.
+```
+
+### FIX-UPDATES-009 contract
+
+```
+TASK ID: FIX-UPDATES-009
+MILESTONE: post-phase (the walk-test's findings)
+CAPABILITY: Distribution (the silent update check, W-005)
+GOAL: the Check for Updates menu item performs a check and reports it to a
+      log, and nothing reports it to the user. The item is silent whether it
+      finds an update, finds none, or cannot reach the feed - three outcomes
+      the core distinguishes and the shell never shows. On a private
+      repository the feed is unreachable and the item is permanently,
+      silently dead.
+CONTEXT: WALK-E2E-001 Fase A triggered the item, watched the core receive
+         the request, and saw nothing in the window; the handler prints its
+         result to stderr and stops there (main.rs:48-60). The core already
+         answers three statuses with a reason for every UNKNOWN, so the
+         information exists and is not delivered.
+INPUTS: the core's `/updates/latest` statuses and their reasons, the menu
+        item's handler, and the shell's own surface for reporting to the
+        user.
+RELEVANT FILES: desktop/src-tauri/src/main.rs (the handler and its delivery),
+                the update status vocabulary in server/app/updates.py, the
+                desktop tests, ai/HANDOFF.md, ai/TASKS.md, ai/CURRENT_STATE.md
+REQUIRED CHANGE:
+  - The check's outcome reaches the user as the window's own message - a
+    dialog or an equivalent surface - for each of the three statuses, so the
+    item always answers something and the analyst never waits on a silent
+    one.
+  - An unreachable feed says it is unreachable rather than appearing to have
+    checked nothing, which is the honest reason the vocabulary already
+    carries.
+  - The handler's result still reaches the log; the delivery is added, not
+    substituted.
+NON-GOALS: an updater (the check remains the verifiable half, per DEC-006);
+           a settings pane; polling.
+CONSTRAINTS: green only. No new dependency. The delivery uses the window the
+             app already has; the statuses come from the core.
+ACCEPTANCE CRITERIA:
+- [ ] each of the three statuses produces a visible answer in the window
+- [ ] an unreachable feed answers with its reason, not silence
+- [ ] the core's own status vocabulary is what the message reports
+- [ ] the log line the handler already writes still writes
+TESTS: desktop tests for the handler's delivery per status (+~3).
+VERIFICATION: `cd server && ... pytest -q` green; `cd desktop && cargo test`
+              green; the web build green.
+STATE UPDATE: TASKS/CURRENT_STATE/HANDOFF gain the fix; W-005 closes.
+```
+
+### FIX-VERSION-010 contract
+
+```
+TASK ID: FIX-VERSION-010
+MILESTONE: post-phase (the walk-test's findings)
+CAPABILITY: Distribution (the dev checkout's stale version, W-001)
+GOAL: a dev checkout answers `current: 0.1.0` at `/updates/latest`, which is
+      a specific wrong number the resolution order produced by trusting
+      installed metadata that has gone stale over the pyproject beside the
+      source. FIX-VERSION-001 fixed the bundle's unknown by stamping the
+      build; the dev checkout never sees the stamp, so its half of the answer
+      is still the metadata's, and 0.1.0 is worse than unknown because a
+      wrong number is believed where an absent one is questioned.
+CONTEXT: WALK-E2E-001 Fase A read `current: 0.1.0` from a checkout whose
+         pyproject states 0.3.2; the venv holds `dah_server-0.1.0.dist-info`
+         from an editable install of an older name and version.
+         `current_version` reads the stamp, then the installed metadata, then
+         the pyproject beside the source.
+INPUTS: the resolution order in current_version, the three sources it reads,
+        and the dev checkout's own venv state.
+RELEVANT FILES: server/app/updates.py (the order), server/tests/test_updates.py,
+                ai/HANDOFF.md, ai/TASKS.md, ai/CURRENT_STATE.md
+REQUIRED CHANGE:
+  - In a checkout, the pyproject beside the source is read before the
+    installed metadata, because the source is the truth the checkout is
+    running and the metadata is what an install left behind; the stamp stays
+    first, because it was read from the source of truth at build time.
+  - The installed metadata is not discarded, only demoted: an installed
+    wheel without a pyproject beside it still answers, which is the case the
+    metadata was right for.
+  - A disagreement is not papered over: when the metadata and the source
+    both answer and disagree, the source wins and the reason records it, so
+    a stale install is visible rather than silently believed.
+NON-GOALS: reinstalling or rewriting the venv; changing the bundle's order
+           (the stamp stays first there); detecting editable installs by
+           name.
+CONSTRAINTS: green only. No new dependency. Deterministic and offline: the
+             sources are files. The smoke's assertion on `current` is what a
+             dev checkout now satisfies.
+ACCEPTANCE CRITERIA:
+- [ ] a dev checkout reports its pyproject's version, not the installed
+      metadata's
+- [ ] the stamped bundle still wins, so the packaged path is unchanged
+- [ ] an installed wheel with no pyproject beside the source still answers
+- [ ] a stale metadata disagrees with the source and the source wins, with
+      the reason recorded
+- [ ] the dev-checkout smoke that asserted on `current` passes
+TESTS: test_updates.py (+~3) - the source beats the stale metadata, the
+       stamp still beats both, the wheel-alone case, the disagreement's
+       reason.
+VERIFICATION: `cd server && ... pytest -q` green; `verify_e2e.py` green;
+              the dev checkout's own `/updates/latest` answers 0.3.2.
+STATE UPDATE: TASKS/CURRENT_STATE/HANDOFF gain the fix; W-001 closes and the
+              walk-test's eight MAJOR findings are all resolved.
+```
 
 ### FIX-VERSION-001 contract
 
