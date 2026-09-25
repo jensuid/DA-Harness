@@ -11,6 +11,55 @@ next.
 
 ## Next action
 
+**FIX-CHART-004 (W-016) DONE.** A chart is an evidence artifact the core
+renders, stores and exports, and the shell could not produce one. The chart
+endpoint answered 201 while `web/src` never called it - `grep -c chart
+web/src/api.ts` was zero - so every chart was reachable only through its file
+path and every PNG only through that.
+
+The run row now holds the control and the surface. `web/src/api.ts` gained
+`createChart`, `chartImageUrl` and `getChartImage`; `RunRow` gained a
+`ChartPanel`. The control appears once the analyst has opened the run's rows,
+because those columns are the renderer's input and are exactly what its
+pickers offer - a column the run does not have is not among the choices, and
+the measure defaults to a numeric column. A success POSTs the endpoint that
+owns the write, fetches the SVG the core drew and renders it inline through
+`dangerouslySetInnerHTML`: the shell draws what the core already drew rather
+than re-rendering it, because a second renderer would be a second source of
+truth for what the chart looks like. A PNG is a link to the persisted artifact
+instead of a redrawn image. The workspace reloads with a chart, so the
+evidence graph's count moves with the panel; a refusal shows the renderer's
+own sentence and the control stands.
+
+Two things the first test run caught: the control was offered before the rows
+were read, which is before there is anything to draw from, so it now waits on
+the result; and the surface was asserted as an img role, which jsdom does not
+give an inline SVG - the assertion reads the element instead.
+
+**Gates:** 727 server (unchanged), web 173 (+6), tsc clean, build ok,
+e2e 28/28, trace 48/48.
+
+**Next, in priority order:**
+
+1. **FIX-PYTHON-005 (W-016)** - the other half. The codegen panel generates
+   SQL only and posts to the SQL runs endpoint; a python run is only
+   reachable by curl, so the hard sandbox (P3-SEC-001, the hardening the
+   sandbox exists to prove) is untested by anyone using the app. The
+   generator already supports kind 'python' and the endpoint and its
+   `PythonRunCreate` model already exist; only the shell's request is
+   missing. `web/src/api.ts` gains a python run helper and the codegen panel
+   gains a kind, its proposal matching it. Contract in `ai/TASKS.md`.
+2. **Then P9, the UI/UX redesign** the user asked for: npm (CI hardcodes
+   `npm ci`), light theme first, recharts on screen because the server's chart
+   SVG bakes a white background and is static, while its layout engine and PNG
+   export stay for the export path. Four phases, green at each: F1 the
+   foundation (tailwind, shadcn, framer-motion, recharts, splitting
+   `CaseWorkspace.tsx`'s 2,800 lines into `web/src/panels/`), F2 the surfaces
+   (closing what remains of W-013, W-017, W-018 - W-011 and W-016 are now
+   closed), F3 motion (respecting `prefers-reduced-motion`), F4 the chart
+   surface and a re-walk.
+
+
 **FIX-PROFILE-008 (W-008) DONE.** Opening a case no longer writes to it. The
 mount effect called `profileDataset` - a POST - per attached dataset on every
 visit, and strict mode's double render made it two, so a profile that already

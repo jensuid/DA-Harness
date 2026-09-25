@@ -12,129 +12,38 @@ causal-language guard, the analytical golden suite, the orientation spine,
 question refinement, the decision view, the measurement layer and the
 requirement-traceability matrix. The full gap analysis is `docs/PRD & UX Conformance Evaluation.md`.
 
-- **Active task:** **FIX-CHART-004 DONE** — W-016 (walk-test finding): a chart
-  is an evidence artifact the core renders, stores and exports, and the shell
-  could not produce one. The chart endpoint answered 201 while `web/src` never
-  called it (`grep -c chart web/src/api.ts` was zero); every chart was
-  reachable only through its file path, and the PNG one only through that.
-  The run row now holds the control and the surface. `web/src/api.ts` gained
-  `createChart`, `chartImageUrl` and `getChartImage` (SVG as text, PNG as a
-  URL, both through the image endpoint the core already served), and
-  `RunRow` gained a `ChartPanel`: a "Render a chart" control that only appears
-  once the analyst has opened the run's rows - those columns are the
-  renderer's input and are what its pickers offer, with the measure defaulting
-  to a numeric column. A success POSTs the endpoint that owns the write,
-  fetches the SVG the core drew and renders it inline through
-  `dangerouslySetInnerHTML` - the shell draws what the core already drew, it
-  does not render a second time - and calls the workspace's reload, so the
-  evidence graph's chart count moves with the panel. A refusal shows the
-  renderer's own sentence and the control stands; a bitmap is a link to the
-  persisted artifact rather than a redrawn image.
-  727 server (unchanged), web 173 (+6), tsc clean, build ok, e2e 28/28,
-  trace 48/48.
-  Selanjutnya: **FIX-PYTHON-005 (W-016 juga, pecah karena chart dan python
-  run tidak berbagi kode selain panel tempatnya mendarat)** — the codegen
-  panel generates SQL only and posts to the SQL runs endpoint; a python run
-  is only reachable by curl, so the hard sandbox is untested by anyone using
-  the app. `web/src/api.ts` gains a python run helper and the codegen panel
-  gains a kind, its proposal matching it. Lalu **P9 redesign UI/UX** (npm,
-  light theme, tailwind + shadcn + framer-motion + recharts untuk layar;
-  SVG/PNG server tetap untuk export; 4 fase F1-F4 hijau tiap fase).
-  Sebelumnya: FIX-PLAN-003 (W-011) DONE — the orientation rail names
-  "Generate an analysis plan" and nothing in the shell performed it. The plan
-  panel read a plan and, when there was none, told the analyst to generate
-  one - with no control that does; the endpoint existed and answered 201
-  while the shell never called it, so the plan stage was only finishable
-  from a terminal.
-  The empty state's own sentence now has the control that performs it.
-  `PlanPanel` gained `createPlan` (a POST to the endpoint that owns the
-  write) with a `generating` busy label, and on success it renders the plan
-  in place and calls the workspace's reload, so the rail's stage, the
-  progress counts and the panel move together - the plan is what makes the
-  rail's next action legible. A refusal shows the endpoint's own reason as a
-  sentence (a 400 is an unprofiled dataset, so the refusal names the step
-  before this one) and the offer stays; a case that has already planned shows
-  its plan and offers nothing. One thing the first test run caught: the
-  generation's error shared the read's `error` state, and the empty state
-  rendered that only in its non-missing branch - so a 400 in the missing
-  branch was swallowed and the panel stayed silent, exactly the failure the
-  fix is there to remove. The two are separate states now (`generateError`),
-  because they are never both live: the control lives where the read answered
-  404, and a 404 is not the reason a generation failed.
-  727 server (unchanged), web 167 (+4), tsc clean, build ok, e2e 28/28,
-  trace 48/48.
-  Sebelumnya: FIX-VERSION-010 (W-001) DONE - a dev checkout answered
-  `current: 0.1.0` at `/updates/latest`, four releases wrong, because
-  `current_version` read the editable install's stale dist-info before the
-  pyproject beside the source. Order became stamp > pyproject > metadata;
-  the metadata demoted not discarded (a wheel with no pyproject beside it
-  still answers), a disagreement logged at WARNING rather than silently
-  believed. 727 server (+4), web 163, e2e 28/28, golden 21/21, refine
-  AT-04, measure 9/9, trace 48/48. W-001 was the walk-test's last MAJOR
-  finding, so all eight are resolved.
-  Sebelumnya: FIX-UPDATES-009 (W-005) DONE - menu "Check for Updates..."
-  melakukan check tapi hanya `eprintln!` ke stderr; tiga status (available /
-  current / unknown) tidak pernah sampai ke window. Shell adalah satu-satunya
-  host dengan menu bar, dan `tauri-plugin-dialog` di Tauri 2 adalah plugin
-  yang di-fetch dari network (app offline setelah install), jadi delivery-nya
-  adalah surface bundle sendiri: posting `CustomEvent('dah-notice')` yang
-  detail-nya adalah JSON body core sendiri (unreachable feed tetap "could not
-  tell", bukan silent "up to date"). 723 server (tak berubah), web 163
-  (+16), Rust 25 (+6), tsc bersih, build ok, e2e, golden 21/21, refine
-  AT-04, measure 9/9, trace 48/48.
-  Sebelumnya: FIX-PROFILE-008 (W-008) DONE - membuka case POST `/profile`
-  untuk tiap dataset di setiap mount (StrictMode double render = 2 write),
-  sehingga profile yang sudah ada direcompute-ditulis ulang, dan shell
-  diam-diam menyelesaikan langkah yang rail namakan milik analyst; mount
-  sekarang GET via `getProfile` di `web/src/api.ts`, POST jadi control di
-  panel Data. 723 server, 147 web (+4).
-  Sebelumnya: FIX-REFINE-007 (W-009) DONE - panel refinement sudah punya
-  "Why these changes" diklik dan tidak muncul apa-apa. Widget disclosure
-  bukan primitive yang tepat untuk jawaban atas pertanyaan panelnya sendiri,
-  jadi diganti blok yang selalu terlihat: `<h4>Why these changes</h4>`,
-  paragraf rationale, daftar grounds; tetap dirender setelah accept.
-  `.rationale` di `web/src/index.css` memakai left rule + ground yang sama
-  dengan proposal, dan `.panel h4` baru (belum ada panel pakai h4).
-  723 server (tak berubah), 143 web (+3), tsc bersih, build ok, e2e, golden,
-  refine AT-04, measure 9/9, trace 48/48.
-  Sebelumnya: FIX-TIMEOUT-006 (W-014) DONE - satu
-  `LLM_TIMEOUT_SECONDS` (`DAH_LLM_TIMEOUT_SECONDS`, default 120) di
-  `server/app/timeouts.py` dipakai semua 6 call site; fallback diumumkan
-  lewat vocabulary `source` baru — `SOURCE_DETERMINISTIC_FALLBACK` +
-  `source_sentence` di tiap modul, dan `web/src/sourceLabel.ts` di 7 panel
-  (interpret, draft, chat, plan, generate-code, agent proposal, refinement).
-  723 server (+24), 140 web (+2), build ok, golden 21/21, e2e, refine
-  AT-04, measure 9/9, trace 48/48; v0.3.3 dirilis membawanya.
-  Sebelumnya: FIX-EVIDENCE-002 (W-015) DONE - regex `_numbers_in`
-  (`server/app/evaluator.py`) `-?\d[\d,]*\.?\d*` memotong token "2026-07"
-  menjadi `2026` dan `-7`; keduanya absen dari `_allowed_numbers`, jadi
-  verdict `insufficient_evidence` pada HARD check — setiap analisis
-  time-series `YYYY-MM` gagal validasi. Sekarang run-regex + accept step
-  yang membaca karakter di kedua sisi: digit / huruf / hyphen di tepi =
-  bagian token lebih panjang, minus hanya tanda saat memulai.
-  `_allowed_numbers` juga mendapat panjang kolom sendiri (bentuk "N
-  grouped value(s)"). 699 server, 138 web, golden 21/21, e2e, refine
-  AT-04, measure 9/9, trace 48/48.
-  Sebelumnya: WALK-E2E-001 (walk-test end-to-end) SELESAI - 19 temuan
-  (8 MAJOR, 8 MINOR, 3 OBS) di `walktest/FINDINGS.md`, laporan
-  `walktest/REPORT.md`, state mesin live `walktest/HANDOFF.md`; hasilnya
-  jadi post-phase fix, satu commit per temuan.
-  Sebelum itu: FIX-VERSION-001 DONE - the packaged core reports its own
-  version. Since v0.2.0 a bundled core answered `current: unknown` at
-  `/updates/latest`, because neither the installed distribution's metadata
-  nor `pyproject.toml` survives a one-file PyInstaller bundle, and
-  PyInstaller ships no stdlib `importlib.metadata` hook. `dah-core.spec`
-  now reads the version from pyproject with tomllib and stamps
-  `dah-build-version.txt` into the bundle root, where `current_version`
-  finds it through `sys._MEIPASS` - ahead of installed metadata, which goes
-  stale when a version is bumped without reinstalling. A version the spec
-  cannot read aborts the build, and both packaged-core smokes now assert
-  the number, which is what makes the recurrence fail a build instead of
-  hiding for four releases. Verified against the binary `build_sidecar.sh`
-  produces: `current: 0.3.2`.
-  Before it: P8-TRACE-010, P8-MEASURE-009, P8-DECISION-008, P8-REFINE-007,
-  P8-SHELL-006, P8-GOLDEN-005, P8-CAUSAL-004, P8-VALID-003, P8-QUALITY-002,
-  P8-CONTEXT-001, the v0.2.0 release.
+- **Active task:** **FIX-PYTHON-005 DONE** — W-016 (walk-test finding): the
+  codegen panel generated SQL only and posted to the SQL runs endpoint, so a
+  python run was reachable only by curl and the hard sandbox (P3-SEC-001) -
+  the hardening the sandbox exists to prove - was untested by anyone using the
+  app. `grep -rn "runs/python" web/src` was empty; the generator, the
+  endpoint and its `PythonRunCreate` model already existed.
+
+  The panel now offers an engine. A kind selector (SQL the default, Python)
+  picks the code `generateCode` is asked for and persists across proposals in
+  the same panel. `web/src/api.ts` gained `runPython`, and the run posts to
+  the endpoint matching the *proposal's* kind rather than the selector's
+  current value, so the code the analyst read is the code that executes. A
+  python run persists exactly like a SQL one, so the runs panel, the evidence
+  graph and the validation are shared. A sandbox refusal is the analyst's
+  input: its 400 detail is the sentence the panel shows, and the proposal
+  stands to be fixed and retried. Two things the first test run caught: two
+  radios named python and sql on the same page (the EVAL panel's own
+  kind-toggle) matched every /python/i query, so the codegen radios carry
+  their own aria-label and the audit test scopes its click to its panel; and
+  a multi-line script does not survive getByText's whitespace normalisation,
+  so the pre's own textContent is what the assertion reads.
+  727 server (unchanged), web 177 (+4), tsc clean, build ok, e2e 28/28,
+  golden both thresholds, refine AT-04, measure 9/9, trace 48/48.
+  W-016 closed (both halves: FIX-CHART-004, FIX-PYTHON-005).
+  Sebelumnya: FIX-CHART-004 (W-016) DONE — the run row gained the chart
+  control and surface: pickers offering only the run's own columns, a POST to
+  the endpoint that owns the write, the core's own SVG inlined rather than
+  re-rendered, and a bitmap as a link to the persisted artifact. 727 server,
+  web 173 (+6). Sebelum itu: FIX-VERSION-010 (W-001), FIX-UPDATES-009
+  (W-005), FIX-PROFILE-008 (W-008), FIX-REFINE-007 (W-009), FIX-TIMEOUT-006
+  (W-014), FIX-PLAN-003 (W-011), FIX-EVIDENCE-002 (W-015),
+  WALK-E2E-001 — all eight MAJOR walk-test findings are resolved.
 
 - **Done before that:** P8-TRACE-010 - the requirement-traceability matrix
   (AT-48). The PRD's section 59 control artifact is code: 48 rows, one per
@@ -180,35 +89,33 @@ requirement-traceability matrix. The full gap analysis is `docs/PRD & UX Conform
   proves the exact Intel triple a local build produces. Restoring that needs a
   self-hosted Intel runner.
 - **Test status:** server 727 passed (unchanged by this web-only fix - the
-  plan endpoint and its 400 are already covered by the server suite). The
-  web suite is 167 (+4 for FIX-PLAN-003 - the control generates and the plan
-  renders in place, the reload moves the rail's stage, the 400's own sentence
-  surfaces beside an offer that stays, and an existing plan suppresses the
-  control). Desktop shell 25 Rust tests; P2, P3 and P4 gates
-  PASS; **v0.2.0, v0.3.0, v0.3.1, v0.3.2 and v0.3.3
+  python run endpoint and its 400 are already covered by the server suite).
+  The web suite is 177 (+4 for FIX-PYTHON-005 - python generation posts the
+  kind it was asked for, the run goes to the python endpoint and not the SQL
+  one, the engine persists across a second proposal, a refused script shows
+  the sandbox's own sentence with the proposal still standing, and SQL stays
+  the default with its path unchanged). Desktop shell 25 Rust tests; P2, P3
+  and P4 gates PASS; **v0.2.0, v0.3.0, v0.3.1, v0.3.2 and v0.3.3
   released** (tags `v0.2.0` on `ec819fc`, `v0.3.0` on `ab56541`, `v0.3.1` on
   `19cefc1`, `v0.3.2` on `2ff1bca`, `v0.3.3` on `30db6e9`).
 - **e2e:** all 28 real-server steps PASS; the golden suite and the refinement
   runner green, and the measurement layer 9/9 - the reports the matrix cites as
   its measured evidence, regenerated on the current tree.
 
-- **Next task:** **FIX-CHART-004 (W-016)** - a chart is an evidence artifact
-  the core renders, stores and exports, and the shell cannot produce one.
-  The runs panel runs a query and the evidence graph counts the charts, but
-  between them there is no control that asks for a chart and no surface that
-  shows the one the core drew; every chart is reachable only through its file
-  path. `web/src/api.ts` gains a chart helper and `RunRow` gains the control
-  and the surface (an inline SVG for the default format, a link for the
-  others). Then FIX-PYTHON-005 (W-016 juga). The carried follow-ups that
-  remain in `ai/TASKS.md` are the DMG bundler, the icon proportion (52%,
-  chosen blind), one fragile web test layout, and two environmental items
-  (signing deferred by DEC-006, CI billing suspended). P8 is complete
-  (10 of 10); after FIX-CHART-004 and FIX-PYTHON-005, the walk-test's
-  findings are all closed and the next thing is **P9, the UI/UX redesign**.
-  The release is done: **v0.2.0** is tagged on `ec819fc`. GitHub Actions is
-  still refusing to start any job with "recent account payments have failed";
-  that is an account billing problem (Settings > Billing & plans), not a code
-  problem, and until it is fixed no push is verified by CI.
+- **Next task:** **P9, the UI/UX redesign** the user asked for. npm (CI
+  hardcodes `npm ci`), light theme first, recharts on screen because the
+  server's chart SVG bakes a white background and is static, while its layout
+  engine and PNG export stay for the export path. Four phases, green at each:
+  F1 the foundation (tailwind, shadcn, framer-motion, recharts, splitting
+  `CaseWorkspace.tsx`'s 2,900 lines into `web/src/panels/`), F2 the surfaces
+  (closing what remains of W-013, W-017, W-018 - W-011 and W-016 are now
+  closed), F3 motion (respecting `prefers-reduced-motion`), F4 the chart
+  surface and a re-walk. The walk-test's findings are all closed now
+  (W-001, W-005, W-008, W-009, W-011, W-014, W-015, W-016), and the carried
+  follow-ups that remain in `ai/TASKS.md` are the DMG bundler, the icon
+  proportion (52%, chosen blind), one fragile web test layout, and two
+  environmental items (signing deferred by DEC-006, CI billing suspended).
+
 
 - **Blockers:** none.
 

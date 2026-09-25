@@ -24,6 +24,7 @@ vi.mock('./api', async (importOriginal) => {
     attachDataset: vi.fn(),
     generateCode: vi.fn(),
     runSql: vi.fn(),
+    runPython: vi.fn(),
     interpretRun: vi.fn(),
     draftFinding: vi.fn(),
     acceptFinding: vi.fn(),
@@ -620,6 +621,146 @@ describe('CaseWorkspace', () => {
       'SELECT region, SUM(revenue) FROM read_csv_auto(?) GROUP BY region'))
   })
 
+  it('generates python for a python question and runs it in the sandbox', async () => {
+    // W-016: a python run was reachable only by curl, so the hard sandbox the
+    // product exists to prove (P3-SEC-001) was never exercised from the app.
+    // The panel now offers the engine, and the run posts to its own endpoint.
+    mockEmptyCase()
+    const script = 'totals = {}\nfor row in dataset.rows:\n    pass\nresult = []'
+    vi.mocked(api.generateCode).mockResolvedValue({
+      dataset_id: 'd1', case_id: 'c1', kind: 'python',
+      code: script,
+      explanation: 'Totals revenue per region in the sandbox.',
+      columns_used: ['region', 'revenue'],
+      source: 'deterministic',
+    })
+    vi.mocked(api.runPython).mockResolvedValue({
+      id: 'r2', case_id: 'c1', dataset_id: 'd1', kind: 'python', sql: null,
+      code: script, row_count: 2, truncated: false, executed_at: '',
+    })
+
+    const user = userEvent.setup()
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+    await screen.findByText(/ask for the computation/i)
+
+    await user.click(screen.getByRole('radio', { name: /python for code generation/i }))
+    await user.type(screen.getByLabelText(/question for code generation/i), 'revenue per region')
+    await user.click(screen.getByRole('button', { name: /generate code/i }))
+
+    // The kind the analyst picked is the kind the generator was asked for.
+    await waitFor(() => expect(api.generateCode).toHaveBeenCalledWith('c1', 'd1',
+      'revenue per region', 'python'))
+    expect(await screen.findByText('Totals revenue per region in the sandbox.')).toBeInTheDocument()
+    // The proposed script is rendered verbatim: a pre keeps its newlines, so
+    // the assertion reads it back off the node rather than off normalised text.
+    expect(document.querySelector('pre')?.textContent).toBe(script)
+
+    await user.click(screen.getByRole('button', { name: /run this/i }))
+    // A python run posts to the python endpoint and persists a run like any
+    // other - the runs panel, the evidence chain and the validation are shared.
+    await waitFor(() => expect(api.runPython).toHaveBeenCalledWith('c1', 'd1', script))
+    expect(api.runSql).not.toHaveBeenCalled()
+  })
+
+  it('keeps the engine across proposals in the same panel', async () => {
+    // The kind is panel state, not per-proposal: a second python question is
+    // answered with python without the analyst having to re-choose it.
+    mockEmptyCase()
+    vi.mocked(api.generateCode).mockResolvedValue({
+      dataset_id: 'd1', case_id: 'c1', kind: 'python',
+      code: 'result = []',
+      explanation: 'Second reading.',
+      columns_used: ['region'],
+      source: 'deterministic',
+    })
+    vi.mocked(api.runPython).mockResolvedValue({
+      id: 'r3', case_id: 'c1', dataset_id: 'd1', kind: 'python', sql: null,
+      code: 'result = []', row_count: 1, truncated: false, executed_at: '',
+    })
+
+    const user = userEvent.setup()
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+    await screen.findByText(/ask for the computation/i)
+
+    await user.click(screen.getByRole('radio', { name: /python for code generation/i }))
+    await user.type(screen.getByLabelText(/question for code generation/i), 'first')
+    await user.click(screen.getByRole('button', { name: /generate code/i }))
+    await screen.findByText('Second reading.')
+    await user.click(screen.getByRole('button', { name: /run this/i }))
+    await waitFor(() => expect(api.runPython).toHaveBeenCalledTimes(1))
+
+    // The selector still holds python, so the next question is python too.
+    expect(screen.getByRole('radio', { name: /python for code generation/i })).toBeChecked()
+    await user.type(screen.getByLabelText(/question for code generation/i), ' second')
+    await user.click(screen.getByRole('button', { name: /generate code/i }))
+    await waitFor(() => expect(api.generateCode).toHaveBeenLastCalledWith('c1', 'd1',
+      expect.stringMatching(/second/), 'python'))
+  })
+
+  it("shows the sandbox's own sentence when a script is refused", async () => {
+    // A 400 from the seatbelt is the analyst's input - a forbidden import, a
+    // write outside scratch - not a broken panel, so the run's detail is what
+    // the panel renders and the proposal stands to be fixed and retried.
+    mockEmptyCase()
+    vi.mocked(api.generateCode).mockResolvedValue({
+      dataset_id: 'd1', case_id: 'c1', kind: 'python',
+      code: 'import os\nresult = []',
+      explanation: 'Reads the filesystem.',
+      columns_used: [],
+      source: 'deterministic',
+    })
+    vi.mocked(api.runPython).mockRejectedValue(
+      new api.ApiError(400, "module 'os' is not on the allowlist"),
+    )
+
+    const user = userEvent.setup()
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+    await screen.findByText(/ask for the computation/i)
+
+    await user.click(screen.getByRole('radio', { name: /python for code generation/i }))
+    await user.type(screen.getByLabelText(/question for code generation/i), 'read a file')
+    await user.click(screen.getByRole('button', { name: /generate code/i }))
+    await screen.findByText('Reads the filesystem.')
+
+    await user.click(screen.getByRole('button', { name: /run this/i }))
+    expect(await screen.findByText(/module 'os' is not on the allowlist/i)).toBeInTheDocument()
+    // The refused proposal stays: the sandbox's refusal names what to change.
+    expect(screen.getByRole('button', { name: /run this/i })).toBeInTheDocument()
+  })
+
+  it('defaults to SQL and keeps the SQL path unchanged', async () => {
+    // The engine SQL is the default, and a proposal the generator answered as
+    // sql posts to the SQL endpoint whatever the selector happens to hold -
+    // the proposal's own kind decides the run, not the current selection.
+    mockEmptyCase()
+    vi.mocked(api.generateCode).mockResolvedValue({
+      dataset_id: 'd1', case_id: 'c1', kind: 'sql',
+      code: 'SELECT region FROM sales',
+      explanation: 'Reads the regions.',
+      columns_used: ['region'],
+      source: 'deterministic',
+    })
+    vi.mocked(api.runSql).mockResolvedValue({
+      id: 'r4', case_id: 'c1', dataset_id: 'd1', kind: 'sql', sql: 'SELECT region FROM sales',
+      code: null, row_count: 2, truncated: false, executed_at: '',
+    })
+
+    const user = userEvent.setup()
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+    await screen.findByText(/ask for the computation/i)
+
+    // SQL is the default, so the first proposal asks for it without a click.
+    expect(screen.getByRole('radio', { name: /sql for code generation/i })).toBeChecked()
+    await user.type(screen.getByLabelText(/question for code generation/i), 'which regions')
+    await user.click(screen.getByRole('button', { name: /generate code/i }))
+    await screen.findByText('Reads the regions.')
+
+    await user.click(screen.getByRole('button', { name: /run this/i }))
+    await waitFor(() => expect(api.runSql).toHaveBeenCalledWith('c1', 'd1',
+      'SELECT region FROM sales'))
+    expect(api.runPython).not.toHaveBeenCalled()
+  })
+
   it('interprets a run and shows what it says', async () => {
     mockEmptyCase()
     vi.mocked(api.listRuns).mockResolvedValue([runFixture()])
@@ -918,7 +1059,8 @@ describe('CaseWorkspace', () => {
     render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
     await screen.findByText(/audit submitted work/i)
 
-    await user.click(screen.getByLabelText(/python/i))
+    const auditPanel = screen.getByText(/audit submitted work/i).parentElement!
+    await user.click(within(auditPanel).getByText('Python'))
     await user.type(screen.getByLabelText(/artifact's code/i), 'result = 42')
     await user.type(screen.getByLabelText(/the claim it supports/i), 'A python claim')
     await user.click(screen.getByRole('button', { name: /audit this work/i }))

@@ -341,7 +341,7 @@ not reopened for these; the fix's own contract and verification are below.
 | FIX-EVIDENCE-002 | Validation (the evidence check's number regex, W-015) | DONE | +5 tests (699 server, 138 web); golden 21/21, e2e all pass, refine AT-04, measure 9/9, trace 48/48 |
 | FIX-PLAN-003 | UX (the plan stage's missing button, W-011) | DONE | 4 tests added (727 server, 167 web); the empty state's own sentence finally has the control that performs it - a POST to the plan endpoint, the plan rendered in place, the rail and the counts reloaded with it, and an existing plan offers nothing |
 | FIX-CHART-004 | UX (a chart surface, W-016) | DONE | 6 tests added (727 server, 173 web); a run with a result can render a chart and see it inline as the core's own SVG, the pickers offer only the run's columns, a refusal shows the renderer's sentence, and the evidence count moves |
-| FIX-PYTHON-005 | UX (a python run surface, W-016) | PENDING | a python run can be generated and executed from the shell |
+| FIX-PYTHON-005 | UX (a python run surface, W-016) | DONE | 4 tests added (727 server, 177 web); a python run can be generated and executed from the shell - the panel offers SQL and Python, the proposal matches the kind, and the run posts to the sandbox's own endpoint |
 | FIX-TIMEOUT-006 | Reliability (the interpret/draft LLM timeout, W-014) | DONE | +24 tests (723 server, 140 web); every adapter posts one configured 120s timeout; a fallback source renders as a sentence; e2e all pass, golden 21/21, refine AT-04, measure 9/9, trace 48/48 |
 | FIX-REFINE-007 | UX (the refinement's rationale, W-009) | DONE | +3 web tests (143 web total); "Why these changes" renders the rationale and grounds the API returns, shown rather than disclosed, and stays readable after an accept |
 | FIX-PROFILE-008 | Reliability (the automatic re-profiling, W-008) | DONE | +4 web tests (147 web total); the mount GETs the profile and the analyst's POST is on request - no write on open, an offer when there is none, a re-profile when there is |
@@ -575,20 +575,51 @@ NON-GOALS: a python editor with a console; a package installer; changing the
 CONSTRAINTS: green only. No new dependency. The POST goes to the endpoint
              that owns the write; the panel does not execute code itself.
 ACCEPTANCE CRITERIA:
-- [ ] the panel generates python for a python question and the code it
+- [x] the panel generates python for a python question and the code it
       proposes is what the sandbox accepts
-- [ ] running a python proposal creates a run the runs panel and the
+- [x] running a python proposal creates a run the runs panel and the
       evidence graph carry
-- [ ] a script the sandbox refuses answers a 400 whose detail the panel
+- [x] a script the sandbox refuses answers a 400 whose detail the panel
       shows as a sentence
-- [ ] the kind persists across proposals in the same panel
-- [ ] the SQL path is unchanged in behaviour and in its tests
-TESTS: CaseWorkspace.test.tsx (+~4) - python generation and its run, the
-       refusal surfaced, SQL unaffected.
-VERIFICATION: `cd server && ... pytest -q` green; `cd web && npm test && npm
-              run build` green (142).
+- [x] the kind persists across proposals in the same panel
+- [x] the SQL path is unchanged in behaviour and in its tests
+TESTS: CaseWorkspace.test.tsx (+4) - python generation and its run, the
+       engine persisting across proposals, the refusal surfaced, SQL
+       unaffected (its own test still asserts the run posts to the SQL
+       endpoint and never the python one).
+VERIFICATION: `cd server && ... pytest -q` green (727);
+              `cd web && npm test && npm run build` green (177, build ok);
+              verification/e2e, golden, refine (AT-04), measure (9/9) and
+              trace (48/48) all green.
 STATE UPDATE: TASKS/CURRENT_STATE/HANDOFF gain the fix; the python half of
               W-016 closes and W-016 is done.
+```
+
+### FIX-PYTHON-005 done-record
+
+```
+TASK: FIX-PYTHON-005 - a python run surface
+ID: FIX-PYTHON-005
+PRIORITY: high
+STATUS: DONE
+SUMMARY: the codegen panel now offers two engines where it offered one. A
+         kind selector (SQL, the default, and Python) picks the code the
+         generator is asked for and persists across proposals in the same
+         panel, and the run posts to the endpoint matching the proposal's own
+         kind rather than the selector's current value - the code the analyst
+         read is the code that executes. `runPython` posts to the sandbox's
+         own endpoint, which was reachable only by curl before, so the hard
+         sandbox P3-SEC-001 exists to prove is now exercised by someone using
+         the app. A persisted python run is a run like any other: the same
+         runs panel, the same evidence chain, the same validation. The
+         seatbelt's 400 detail renders as a sentence and the proposal stands
+         to be fixed and retried. Two things the first test run caught: two
+         radios named python/sql on the same page (the EVAL panel's own
+         kind-toggle) matched every /python/i query, so the codegen radios
+         carry their own aria-label and the audit test now scopes its click to
+         its panel; and a multi-line script does not survive getByText's
+         whitespace normalisation, so the pre's own textContent is what the
+         assertion reads.
 ```
 
 ### FIX-TIMEOUT-006 contract

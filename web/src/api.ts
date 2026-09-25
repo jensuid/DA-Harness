@@ -597,6 +597,26 @@ export function runSql(
   })
 }
 
+// W-016 (FIX-PYTHON-005): the sandbox's own endpoint. A python run persists
+// exactly like a SQL one - same runs panel, same evidence chain, same
+// validation - so the only difference at the wire is the field the code
+// travels in and the path that owns the write. The seatbelt's refusals answer
+// 400 with their own sentence, which the panel shows rather than a broken run.
+export function runPython(
+  caseId: string,
+  datasetId: string,
+  code: string,
+): Promise<RunSummary> {
+  return request<RunSummary>(
+    `/cases/${caseId}/datasets/${datasetId}/runs/python`,
+    {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ code }),
+    },
+  )
+}
+
 // The three assistant slices. Each returns a proposal and writes nothing
 // except interpret, which persists a reading of an already-persisted result.
 // The latest plan for a dataset (P8-SHELL-006): the loop's plan stage is a

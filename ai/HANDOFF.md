@@ -1,58 +1,52 @@
 ## Next action
 
-**FIX-CHART-004 (W-016) DONE.** A chart is an evidence artifact the core
-renders, stores and exports, and the shell could not produce one. The chart
-endpoint answered 201 while `web/src` never called it - `grep -c chart
-web/src/api.ts` was zero - so every chart was reachable only through its file
-path and every PNG only through that.
+**FIX-PYTHON-005 (W-016) DONE.** The codegen panel generated SQL only and
+posted to the SQL runs endpoint; a python run was reachable only by curl, so
+the hard sandbox (P3-SEC-001) - the hardening the sandbox exists to prove -
+was untested by anyone using the app. `grep -rn "runs/python" web/src` was
+empty; the generator, the endpoint and its `PythonRunCreate` model already
+existed.
 
-The run row now holds the control and the surface. `web/src/api.ts` gained
-`createChart`, `chartImageUrl` and `getChartImage`; `RunRow` gained a
-`ChartPanel`. The control appears once the analyst has opened the run's rows,
-because those columns are the renderer's input and are exactly what its
-pickers offer - a column the run does not have is not among the choices, and
-the measure defaults to a numeric column. A success POSTs the endpoint that
-owns the write, fetches the SVG the core drew and renders it inline through
-`dangerouslySetInnerHTML`: the shell draws what the core already drew rather
-than re-rendering it, because a second renderer would be a second source of
-truth for what the chart looks like. A PNG is a link to the persisted artifact
-instead of a redrawn image. The workspace reloads with a chart, so the
-evidence graph's count moves with the panel; a refusal shows the renderer's
-own sentence and the control stands.
+The panel now offers an engine, and the choice is what it carries. A kind
+selector (SQL the default, Python) picks the code `generateCode` is asked for
+and persists across proposals in the same panel. `runPython` in
+`web/src/api.ts` posts to the sandbox's own endpoint, and the run posts to the
+endpoint matching the *proposal's* kind, not the selector's current value -
+the code the analyst read is the code that executes, so a proposal the panel
+is still showing cannot be sent to the other engine. A python run persists
+exactly like a SQL one, so the runs panel, the evidence graph and the
+validation are all shared. A sandbox refusal is the analyst's input: its 400
+detail is the sentence the panel shows and the proposal stands to be fixed.
 
-Two things the first test run caught: the control was offered before the rows
-were read, which is before there is anything to draw from, so it now waits on
-the result; and the surface was asserted as an img role, which jsdom does not
-give an inline SVG - the assertion reads the element instead.
+Two things the first test run caught: two radios named python and sql on the
+same page - the EVAL panel's own kind-toggle - matched every `/python/i`
+query, so the codegen radios carry their own aria-label and the audit test now
+scopes its click to its own panel; and a multi-line script does not survive
+`getByText`'s whitespace normalisation, so the `pre`'s own textContent is what
+the assertion reads.
 
-**Gates:** 727 server (unchanged), web 173 (+6), tsc clean, build ok,
-e2e 28/28, trace 48/48.
+**Gates:** 727 server (unchanged), web 177 (+4), tsc clean, build ok,
+e2e 28/28, golden both thresholds, refine AT-04, measure 9/9, trace 48/48.
 
 **Next, in priority order:**
 
-1. **FIX-PYTHON-005 (W-016)** - the other half. The codegen panel generates
-   SQL only and posts to the SQL runs endpoint; a python run is only
-   reachable by curl, so the hard sandbox (P3-SEC-001, the hardening the
-   sandbox exists to prove) is untested by anyone using the app. The
-   generator already supports kind 'python' and the endpoint and its
-   `PythonRunCreate` model already exist; only the shell's request is
-   missing. `web/src/api.ts` gains a python run helper and the codegen panel
-   gains a kind, its proposal matching it. Contract in `ai/TASKS.md`.
-2. **Then P9, the UI/UX redesign** the user asked for: npm (CI hardcodes
-   `npm ci`), light theme first, recharts on screen because the server's chart
-   SVG bakes a white background and is static, while its layout engine and PNG
-   export stay for the export path. Four phases, green at each: F1 the
-   foundation (tailwind, shadcn, framer-motion, recharts, splitting
-   `CaseWorkspace.tsx`'s 2,800 lines into `web/src/panels/`), F2 the surfaces
-   (closing what remains of W-013, W-017, W-018 - W-011 and W-016 are now
-   closed), F3 motion (respecting `prefers-reduced-motion`), F4 the chart
-   surface and a re-walk.
+1. **P9, the UI/UX redesign** the user asked for: npm (CI hardcodes `npm ci`),
+   light theme first, recharts on screen because the server's chart SVG bakes
+   a white background and is static, while its layout engine and PNG export
+   stay for the export path. Four phases, green at each: F1 the foundation
+   (tailwind, shadcn, framer-motion, recharts, splitting `CaseWorkspace.tsx`'s
+   2,900 lines into `web/src/panels/`), F2 the surfaces (closing what remains
+   of W-013, W-017, W-018 - W-011 and W-016 are now closed), F3 motion
+   (respecting `prefers-reduced-motion`), F4 the chart surface and a re-walk.
 
 ## Recent completions
 
 The last tasks to land, newest first. The contract and done-record for each
 is in `ai/TASKS.md` (rolling window) or `ai/TASKS-ARCHIVE.md`.
 
+- **FIX-PYTHON-005** - the python run surface: the codegen panel offers an
+  engine, the proposal matches it, the run posts to the sandbox's own endpoint
+  and its refusal is a sentence. Closes W-016.
 - **FIX-CHART-004** - the chart surface: a run row renders a chart the core
   draws, sees it inline as the core's own SVG, the pickers offer only the
   run's columns, and the evidence count moves with it.

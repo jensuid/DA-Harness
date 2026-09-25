@@ -65,6 +65,7 @@ import {
   rejectAgentStep,
   rejectRoleAgentStep,
   runSql,
+  runPython,
   validateFinding,
 } from './api'
 import { ApiError } from './api'
@@ -74,6 +75,17 @@ import { RefinePanel } from './RefinePanel'
 import { DecisionPanel } from './DecisionPanel'
 import { PromoteTemplate } from './Templates'
 import { sourceLabel } from './sourceLabel'
+
+// The engines the codegen panel proposes for (W-016 / FIX-PYTHON-005). SQL is
+// the default and Python is the sandbox's own surface; the server's generator
+// accepts exactly these two (RUN_KINDS), so the selector's vocabulary is the
+// core's, and the run posts to the endpoint matching the proposal's own kind.
+type GenerateKind = 'sql' | 'python'
+const GENERATE_KINDS: GenerateKind[] = ['sql', 'python']
+const GENERATE_KIND_LABELS: Record<GenerateKind, string> = {
+  sql: 'SQL',
+  python: 'Python',
+}
 
 // One case as the loop the core walks: attach and profile data, propose the
 // computation that would answer the question, run it, read what it shows,
@@ -749,6 +761,14 @@ function DataPanel({
 // A question yields the read-only computation that would answer it. The
 // proposal writes nothing; Run is the analyst's explicit decision and posts to
 // the only endpoint that persists a run.
+//
+// W-016 (FIX-PYTHON-005): the panel offers SQL and Python, and the kind it
+// carries picks both the code the generator proposes and the endpoint the run
+// posts to. A python run is the hard sandbox's own surface (P3-SEC-001) - it
+// persists exactly like a SQL one, so the runs panel, the evidence graph and
+// the validation are all shared, and the only thing that changes is who
+// executed the code. The kind persists across proposals in the same panel, so
+// a sequence of python questions stays python.
 function GeneratePanel({
   caseId,
   dataset,
@@ -760,6 +780,7 @@ function GeneratePanel({
 }) {
   const [question, setQuestion] = useState('')
   const [proposal, setProposal] = useState<GeneratedCode | null>(null)
+  const [kind, setKind] = useState<GenerateKind>('sql')
   const [busy, setBusy] = useState(false)
   const [running, setRunning] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -771,7 +792,7 @@ function GeneratePanel({
     setBusy(true)
     setError(null)
     try {
-      setProposal(await generateCode(caseId, dataset.id, text))
+      setProposal(await generateCode(caseId, dataset.id, text, kind))
     } catch (err) {
       setError(messageOf(err))
     } finally {
@@ -784,7 +805,14 @@ function GeneratePanel({
     setRunning(true)
     setError(null)
     try {
-      await runSql(caseId, dataset.id, proposal.code)
+      // The proposal's own kind decides the endpoint, not the selector's
+      // current value: a proposal is generated once and the code in it is
+      // for one engine, so the run always matches what the analyst read.
+      if (proposal.kind === 'python') {
+        await runPython(caseId, dataset.id, proposal.code)
+      } else {
+        await runSql(caseId, dataset.id, proposal.code)
+      }
       setProposal(null)
       setQuestion('')
     } catch (err) {
@@ -801,6 +829,23 @@ function GeneratePanel({
   return (
     <div className="subpanel">
       <h3>Ask for the computation</h3>
+      <fieldset>
+        <legend className="muted">Engine</legend>
+        {GENERATE_KINDS.map((option) => (
+          <label key={option}>
+            <input
+              type="radio"
+              name="generate-kind"
+              aria-label={`${GENERATE_KIND_LABELS[option]} for code generation`}
+              value={option}
+              checked={kind === option}
+              onChange={() => setKind(option)}
+              disabled={busy}
+            />{' '}
+            {GENERATE_KIND_LABELS[option]}
+          </label>
+        ))}
+      </fieldset>
       <form onSubmit={propose}>
         <input
           aria-label="Question for code generation"
