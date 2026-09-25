@@ -23,6 +23,7 @@ carrying a reason the menu can show, never a silent `CURRENT`.
 from __future__ import annotations
 
 import json
+import logging
 import sys
 from dataclasses import dataclass
 from importlib import metadata
@@ -110,7 +111,7 @@ def _read_pyproject_version(path: Path) -> str | None:
         if stripped.startswith("version") and "=" in stripped:
             _, _, raw = stripped.partition("=")
             version = raw.strip().strip('"').strip("'")
-            if version:
+            if version and version != "0.0.0":
                 return version
     return None
 
@@ -134,6 +135,22 @@ def _frozen_build_version() -> str | None:
     return version or None
 
 
+def _installed_version() -> str | None:
+    """The version the distribution's metadata records, or None.
+
+    None when the package is not installed at all, and when the metadata's
+    number is the placeholder a build never replaced - both of which mean the
+    metadata has nothing trustworthy to say, and the caller falls through.
+    """
+    try:
+        version = metadata.version(PACKAGE_NAME)
+    except metadata.PackageNotFoundError:
+        return None
+    if version and version != "0.0.0":
+        return version
+    return None
+
+
 def current_version(
     pyproject: Path = _PYPROJECT, build_version: str | None = None
 ) -> str:
@@ -142,10 +159,22 @@ def current_version(
     Resolved in order of trustworthiness: the version the spec stamped into the
     bundle at build time (what a packaged sidecar reports - read from
     pyproject, so it is the number the release tag was checked against), the
-    installed distribution's metadata (a venv that installed the wheel), the
-    pyproject beside the source (a dev checkout that is not installed), then
+    pyproject beside the source (what a checkout is actually running), the
+    installed distribution's metadata (a venv that installed the wheel), then
     "unknown" - never a guessed number, because a wrong version here is a wrong
     answer to the whole question.
+
+    The source comes before the metadata because the metadata is what an
+    install left behind and it goes stale the moment a version is bumped
+    without reinstalling - an editable install of 0.1.0 in a checkout whose
+    pyproject states 0.3.3 would otherwise answer a number that is not merely
+    imprecise but four releases wrong, and a wrong number is believed where an
+    absent one is questioned. The metadata is not discarded, only demoted: an
+    installed wheel with no pyproject beside it still answers, which is the
+    case the metadata was right for.
+
+    When both answer and disagree, the source wins and the disagreement is
+    logged, so a stale install is visible rather than silently believed.
 
     `build_version` is a seam a test supplies instead of having to fake a
     frozen interpreter; in the product it is the stamp the spec wrote.
@@ -153,15 +182,22 @@ def current_version(
     stamped = build_version if build_version is not None else _frozen_build_version()
     if stamped:
         return stamped
-    try:
-        version = metadata.version(PACKAGE_NAME)
-        if version and version != "0.0.0":
-            return version
-    except metadata.PackageNotFoundError:
-        pass
     from_source = _read_pyproject_version(pyproject)
+    installed = _installed_version()
     if from_source:
+        if installed is not None and installed != from_source:
+            logging.getLogger(__name__).warning(
+                "the installed %s metadata states version %s while the source's "
+                "pyproject states %s; the source is what this checkout is "
+                "running, so %s is the answer",
+                PACKAGE_NAME,
+                installed,
+                from_source,
+                from_source,
+            )
         return from_source
+    if installed is not None:
+        return installed
     return "unknown"
 
 

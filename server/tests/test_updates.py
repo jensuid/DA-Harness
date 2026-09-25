@@ -7,6 +7,7 @@ malformed body are all `unknown` with a reason, never a silent `current`.
 """
 
 import json
+import logging
 from pathlib import Path
 
 from fastapi.testclient import TestClient
@@ -100,6 +101,57 @@ def test_the_spec_stamps_the_file_the_app_reads():
     `unknown` and nothing else would catch it."""
     spec = Path(__file__).resolve().parent.parent / "dah-core.spec"
     assert f'"{updates.BUILD_VERSION_FILE}"' in spec.read_text(encoding="utf-8")
+
+
+def test_a_dev_checkout_reports_the_source_not_the_stale_metadata(
+    tmp_path, monkeypatch
+):
+    """W-001: a checkout's venv holds `dah_server-0.1.0.dist-info` from an
+    editable install that was never refreshed, so the metadata answers 0.1.0
+    while the pyproject beside the source states four releases more. The
+    source is what the checkout is running, so it is the answer - a wrong
+    number is believed where an absent one is questioned."""
+    pyproject = tmp_path / "pyproject.toml"
+    pyproject.write_text('[project]\nversion = "0.3.3"\n', encoding="utf-8")
+    monkeypatch.setattr(updates, "_installed_version", lambda: "0.1.0")
+    assert updates.current_version(pyproject=pyproject) == "0.3.3"
+
+
+def test_a_stale_metadata_disagreeing_with_the_source_is_recorded(
+    tmp_path, monkeypatch, caplog
+):
+    """The disagreement is not papered over: the source wins, and the reason a
+    stale install stopped being believed is in the log, so the drift is
+    visible rather than silently swallowed."""
+    pyproject = tmp_path / "pyproject.toml"
+    pyproject.write_text('[project]\nversion = "0.3.3"\n', encoding="utf-8")
+    with monkeypatch.context() as stash:
+        stash.setattr(updates, "_installed_version", lambda: "0.1.0")
+        with caplog.at_level(logging.WARNING, logger="app.updates"):
+            resolved = updates.current_version(pyproject=pyproject)
+    assert resolved == "0.3.3"
+    assert "0.1.0" in caplog.text and "0.3.3" in caplog.text
+
+
+def test_an_installed_wheel_with_no_pyproject_beside_the_source_still_answers(
+    tmp_path, monkeypatch
+):
+    """The metadata is demoted, not discarded: an installed wheel is the case
+    it was right for, so a source that cannot be read still answers."""
+    missing = tmp_path / "no-such-pyproject.toml"
+    monkeypatch.setattr(updates, "_installed_version", lambda: "0.3.3")
+    assert updates.current_version(pyproject=missing) == "0.3.3"
+
+
+def test_the_stamp_still_wins_over_the_source_and_the_metadata(tmp_path):
+    """FIX-VERSION-001's order for the packaged path is unchanged: the stamp
+    was read from pyproject at build time, so it outranks both the source a
+    checkout reads and the metadata an install left behind."""
+    pyproject = tmp_path / "pyproject.toml"
+    pyproject.write_text('[project]\nversion = "0.3.3"\n', encoding="utf-8")
+    assert updates.current_version(pyproject=pyproject, build_version="0.3.2") == (
+        "0.3.2"
+    )
 
 
 def test_the_endpoint_carries_the_stamped_version(monkeypatch):

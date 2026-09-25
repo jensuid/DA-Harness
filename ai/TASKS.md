@@ -346,7 +346,7 @@ not reopened for these; the fix's own contract and verification are below.
 | FIX-REFINE-007 | UX (the refinement's rationale, W-009) | DONE | +3 web tests (143 web total); "Why these changes" renders the rationale and grounds the API returns, shown rather than disclosed, and stays readable after an accept |
 | FIX-PROFILE-008 | Reliability (the automatic re-profiling, W-008) | DONE | +4 web tests (147 web total); the mount GETs the profile and the analyst's POST is on request - no write on open, an offer when there is none, a re-profile when there is |
 | FIX-UPDATES-009 | Distribution (the silent update check, W-005) | DONE | web 163 (+16), Rust 25 (+6); the three statuses reach the window as the shell's own notice, the log line still writes, the browser still opens an available build |
-| FIX-VERSION-010 | Distribution (the dev checkout's stale version, W-001) | PENDING | the dev checkout reports the source's version, not the stale metadata's |
+| FIX-VERSION-010 | Distribution (the dev checkout's stale version, W-001) | DONE | 4 tests added (727 server, 163 web); a dev checkout answers `current: 0.3.3` at `/updates/latest`, the source's number, with a stale metadata's drift logged rather than silently believed |
 
 Prioritas adalah urutan tabel di atas (WALK-E2E-001's report menetapkannya:
 W-015, W-011, W-016, W-014, lalu W-009, W-008, W-005, W-001). Satu commit per
@@ -358,7 +358,9 @@ hanya `server/app/evaluator.py`, tidak butuh infrastruktur walk-test yang
 masih hidup). Lalu FIX-PLAN-003, FIX-CHART-004, FIX-PYTHON-005 (web), dan
 baru FIX-TIMEOUT-006 (server + web). Empat terakhir (FIX-REFINE-007,
 FIX-PROFILE-008 web; FIX-UPDATES-009 Rust; FIX-VERSION-010 server) bebas
-urutan. Setiap fix: baca contractnya di file ini, implementasi, tes, full
+urutan, dan ketiganya selain FIX-VERSION-010 sudah selesai; FIX-VERSION-010
+selesai juga sekarang - urutan resolusinya menjadi stamp > pyproject >
+metadata. Setiap fix: baca contractnya di file ini, implementasi, tes, full
 gate (server pytest + e2e + golden + refine + measure + trace, web test +
 build), lalu commit + push. Walk-test infra (core :8123 pid 84940, web :5273,
 Tauri dah-shell 84919) masih hidup bila perlu memverifikasi ulang; cara
@@ -938,18 +940,23 @@ CONSTRAINTS: green only. No new dependency. Deterministic and offline: the
              sources are files. The smoke's assertion on `current` is what a
              dev checkout now satisfies.
 ACCEPTANCE CRITERIA:
-- [ ] a dev checkout reports its pyproject's version, not the installed
+- [x] a dev checkout reports its pyproject's version, not the installed
       metadata's
-- [ ] the stamped bundle still wins, so the packaged path is unchanged
-- [ ] an installed wheel with no pyproject beside the source still answers
-- [ ] a stale metadata disagrees with the source and the source wins, with
+- [x] the stamped bundle still wins, so the packaged path is unchanged
+- [x] an installed wheel with no pyproject beside the source still answers
+- [x] a stale metadata disagrees with the source and the source wins, with
       the reason recorded
-- [ ] the dev-checkout smoke that asserted on `current` passes
-TESTS: test_updates.py (+~3) - the source beats the stale metadata, the
-       stamp still beats both, the wheel-alone case, the disagreement's
-       reason.
-VERIFICATION: `cd server && ... pytest -q` green; `verify_e2e.py` green;
-              the dev checkout's own `/updates/latest` answers 0.3.2.
+- [x] the dev-checkout smoke that asserted on `current` passes
+TESTS: test_updates.py (+4, 33 in the file) - the source beats the stale
+       metadata, the stamp still beats both, the wheel-alone case, and the
+       disagreement's log.
+VERIFICATION: `cd server && DAH_LLM_API_KEY= DAH_LLM_BASE_URL= DAH_LLM_MODEL=
+              .venv/bin/python -m pytest -q` green (727);
+              `verify_e2e.py` green (28/28); `verify_golden.py` green
+              (21/21 both); `verify_refine.py` green (AT-04);
+              `verify_measure.py` green (9/9); `verify_trace.py` green
+              (48/48); `cd web && npm test && npm run build` green (163);
+              and this checkout: `current: 0.3.3`, not the metadata's 0.1.0.
 STATE UPDATE: TASKS/CURRENT_STATE/HANDOFF gain the fix; W-001 closes and the
               walk-test's eight MAJOR findings are all resolved.
 ```

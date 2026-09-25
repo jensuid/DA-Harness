@@ -12,34 +12,45 @@ causal-language guard, the analytical golden suite, the orientation spine,
 question refinement, the decision view, the measurement layer and the
 requirement-traceability matrix. The full gap analysis is `docs/PRD & UX Conformance Evaluation.md`.
 
-- **Active task:** **FIX-UPDATES-009 DONE** — W-005 (walk-test finding): menu
-  "Check for Updates..." melakukan check tapi hanya `eprintln!` ke stderr; tiga
-  status yang core bedakan (available / current / unknown) tidak pernah sampai
-  ke window. Di repo privat feed selalu 404, jadi item ini selalu diam dan
-  terlihat mati. Delivery ditambahkan, bukan menggantikan: log line masih
-  tetap ditulis, dan jawaban juga sampai ke window. Shell adalah satu-satunya
-  host dengan menu bar, dan `tauri-plugin-dialog` di Tauri 2 adalah plugin
-  yang di-fetch dari network (app offline setelah install), jadi native dialog
-  tidak bisa dipakai tanpa melanggar DEC-001 — jadi delivery-nya adalah
-  surface bundle sendiri: shell mengevaluasi script di webview yang sudah
-  dipegangnya, posting `CustomEvent('dah-notice')` yang detail-nya adalah JSON
-  body core sendiri (tidak direword shell — unreachable feed tetap
-  "could not tell", bukan silent "up to date", persis kebohongan yang
-  P6-UPDATE-005 cegah). `web/src/shell.ts` `describeUpdate` mirror
-  `update_summary` di Rust. Satu hal yang tes tangkap dan diperbaiki: body
-  yang bukan JSON tidak bisa ditanam di script (eval akan throw
-  `SyntaxError` dan item diam untuk kedua kalinya), jadi `notice_script`
-  memvalidasi body dan fallback ke body yang dibangun dari parsed answer —
-  jalur yang sama untuk transport yang tidak menyimpan body sama sekali.
-  723 server (tak berubah), web 163 (+16), Rust 25 (+6), tsc bersih, build
-  ok, e2e, golden 21/21, refine AT-04, measure 9/9, trace 48/48.
-  Selanjutnya: **FIX-VERSION-010 (W-001)** —
-  `server/app/updates.py` `current_version` baca metadata stale (0.1.0) dari
-  editable install sebelum pyproject di sisi source; urutannya jadi: stamp >
-  pyproject > metadata. Lalu FIX-PLAN-003 / FIX-CHART-004 / FIX-PYTHON-005,
-  lalu **P9 redesign UI/UX** (npm, light theme, tailwind + shadcn +
+- **Active task:** **FIX-VERSION-010 DONE** — W-001 (walk-test finding): a
+  dev checkout answered `current: 0.1.0` at `/updates/latest`, four releases
+  wrong, because `current_version` read the editable install's stale
+  `dah_server-0.1.0.dist-info` before the pyproject beside the source it was
+  actually running. The order is now stamp > pyproject > metadata: the stamp
+  still wins (FIX-VERSION-001's packaged path is unchanged, and is retested
+  explicitly), the source answers in a checkout, and the metadata is demoted
+  not discarded — an installed wheel with no pyproject beside it still
+  answers, which is the case the metadata was right for. A disagreement is
+  not papered over: when both answer and disagree the source wins and the
+  two numbers plus the reason are logged at WARNING, so a stale install is
+  visible rather than silently believed. `_read_pyproject_version` and the
+  new `_installed_version` also treat `0.0.0` as "no answer" (a placeholder
+  a build never replaced is not a version), so both sources degrade to
+  `unknown` instead of answering zero. This checkout: `current: 0.3.3`.
+  727 server (+4), web 163 unchanged, build ok, e2e 28/28, golden 21/21,
+  refine AT-04, measure 9/9, trace 48/48. **W-001 closes, so all eight
+  MAJOR findings of WALK-E2E-001 are resolved** (W-015, W-011x2, W-014,
+  W-009, W-008, W-005, W-001); what remains PENDING is FIX-PLAN-003 /
+  FIX-CHART-004 / FIX-PYTHON-005, the three surface gaps the rail names but
+  no control performs.
+  Selanjutnya: **FIX-PLAN-003 (W-011)** — the plan panel's empty state tells
+  the analyst to generate a plan and no control performs it; `POST .../plan`
+  exists and answers 201, `grep -rn "POST.*plan" web/src` is empty. Lalu
+  FIX-CHART-004 / FIX-PYTHON-005 (W-016, the chart and python run surfaces
+  — split because they share no code but the panel they land in), lalu
+  **P9 redesign UI/UX** (npm, light theme, tailwind + shadcn +
   framer-motion + recharts untuk layar; SVG/PNG server tetap untuk export;
   4 fase F1-F4 hijau tiap fase).
+  Sebelumnya: FIX-UPDATES-009 (W-005) DONE - menu "Check for Updates..."
+  melakukan check tapi hanya `eprintln!` ke stderr; tiga status (available /
+  current / unknown) tidak pernah sampai ke window. Shell adalah satu-satunya
+  host dengan menu bar, dan `tauri-plugin-dialog` di Tauri 2 adalah plugin
+  yang di-fetch dari network (app offline setelah install), jadi delivery-nya
+  adalah surface bundle sendiri: posting `CustomEvent('dah-notice')` yang
+  detail-nya adalah JSON body core sendiri (unreachable feed tetap "could not
+  tell", bukan silent "up to date"). 723 server (tak berubah), web 163
+  (+16), Rust 25 (+6), tsc bersih, build ok, e2e, golden 21/21, refine
+  AT-04, measure 9/9, trace 48/48.
   Sebelumnya: FIX-PROFILE-008 (W-008) DONE - membuka case POST `/profile`
   untuk tiap dataset di setiap mount (StrictMode double render = 2 write),
   sehingga profile yang sudah ada direcompute-ditulis ulang, dan shell
@@ -137,11 +148,10 @@ requirement-traceability matrix. The full gap analysis is `docs/PRD & UX Conform
   documented minimum but is no longer enforced by CI, and a green run no longer
   proves the exact Intel triple a local build produces. Restoring that needs a
   self-hosted Intel runner.
-- **Test status:** server 723 passed (unchanged by this fix, which is
-  web-only). The web suite is 163 (+16 for FIX-UPDATES-009 - the three
-  statuses the update check distinguishes each reach the window, the layer is
-  inert until one arrives, a stashed pre-mount notice is read once, and the
-  vocabulary is the core's own). Desktop shell 25 Rust tests; P2, P3 and P4 gates
+- **Test status:** server 727 passed (+4 for FIX-VERSION-010 - the source
+  beats the stale metadata, the stamp still beats both, the wheel-alone case,
+  and the disagreement's log). The web suite is 163 (unchanged by this fix,
+  which is server-only). Desktop shell 25 Rust tests; P2, P3 and P4 gates
   PASS; **v0.2.0, v0.3.0, v0.3.1, v0.3.2 and v0.3.3
   released** (tags `v0.2.0` on `ec819fc`, `v0.3.0` on `ab56541`, `v0.3.1` on
   `19cefc1`, `v0.3.2` on `2ff1bca`, `v0.3.3` on `30db6e9`).
@@ -149,37 +159,20 @@ requirement-traceability matrix. The full gap analysis is `docs/PRD & UX Conform
   runner green, and the measurement layer 9/9 - the reports the matrix cites as
   its measured evidence, regenerated on the current tree.
 
-- **Next task:** **FIX-UPDATES-009 (W-005)** - the Check for Updates menu item
-  performs a check and prints the result to stderr, and nothing reports it to
-  the user: three statuses the core distinguishes (up to date, an update
-  available, the feed unreachable) never reach the window. The delivery is
-  added, not substituted - the log line the handler already writes still
-  writes. `desktop/src-tauri/src/main.rs:48-60`, plus desktop tests per
-  status. Then FIX-VERSION-010 (W-001, `server/app/updates.py`'s resolution
-  order - the source's pyproject ahead of the stale installed metadata, the
-  stamp still first). The carried follow-ups that remain in `ai/TASKS.md` are
-  the DMG bundler, the icon proportion (52%, chosen blind), one fragile web
-  test layout, and two environmental items (signing deferred by DEC-006, CI
-  billing suspended). P8 is complete (10 of 10) and
-  **v0.3.0, v0.3.1, v0.3.2 and v0.3.3 are released** (tags `v0.3.0` on `ab56541`,
-  `v0.3.1` on `19cefc1`, `v0.3.2` on `2ff1bca`, `v0.3.3` on `30db6e9`), 686 server tests passing on the
-  tag. Both were built locally from
-  the same steps `release.yml` runs - CI's billing is still suspended - with the
-  packaged core proven on an isolated store and the ditto zip plus its sha256
-  published as flagged pre-releases. v0.3.1 re-masks the app icon to the
-  standard macOS squircle: the icon had been a full-bleed 1024 square with 60px
-  corners, so it rendered as a tile rather than a native Ventura icon. The
-  artwork is unchanged inside the mask (verified numerically - zero RGB pixels
-  changed inside it, zero opaque pixels left outside), and `icon.icns` was
-  regenerated through `iconutil` with every standard size.
-  One defect the packaging surfaced, present in v0.2.0 and v0.3.0 too and not
-  fixed here: the packaged core answers `current: unknown` at
-  `/updates/latest`, because neither the distribution's metadata nor
-  `pyproject.toml` is reachable inside the PyInstaller bundle. The update
-  check therefore cannot compare versions until the bundle is taught to carry
-  one. The DMG also bundles only when the local `create-dmg` happens to be the
-  tool Tauri's bundler expects; the published artifact is the zip, which is
-  what the workflow ships.
+- **Next task:** **FIX-PLAN-003 (W-011)** - the orientation rail names
+  "Generate an analysis plan", the plan panel's empty state tells the analyst
+  to generate one, and no control in the shell performs it - the endpoint
+  exists and answers 201, the shell never calls it, so the plan stage is only
+  finishable from a terminal. `web/src/CaseWorkspace.tsx` (PlanPanel gains
+  the control) and `web/src/api.ts` (a POST helper). Then FIX-CHART-004 and
+  FIX-PYTHON-005 (W-016, the chart and python run surfaces - split because
+  they share no code but the panel they land in). The carried follow-ups that
+  remain in `ai/TASKS.md` are the DMG bundler, the icon proportion (52%,
+  chosen blind), one fragile web test layout, and two environmental items
+  (signing deferred by DEC-006, CI billing suspended). P8 is complete
+  (10 of 10) and **W-001's closure resolves the walk-test's last MAJOR
+  finding**; the three PENDING post-phase fixes are the rail's named
+  actions no control performs.
   The release is done: **v0.2.0** is tagged on `ec819fc`. GitHub Actions is
   still refusing to start any job with "recent account payments have failed";
   that is an account billing problem (Settings > Billing & plans), not a code
