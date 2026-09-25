@@ -1,7 +1,7 @@
 # End-to-End Verification (real server)
 
-Run: 2026-09-25T05:49:38.454353+00:00
-Outcome: PASS (12.0s)
+Run: 2026-09-25T08:31:54.785123+00:00
+Outcome: PASS (3.5s)
 
 A fresh uvicorn server on a free port with an isolated data dir, driven
 over real HTTP. No LLM key is passed to the server, so the deterministic
@@ -23,7 +23,7 @@ engines answer and the run is reproducible offline.
 | The reviewer's GET proposes nothing | PASS | pending is null on a read |
 | The reviewer proposes the finding's audit | PASS | kind=evaluate, claim is the finding's own statement |
 | A cross-role approval is refused | PASS | HTTP 409, names the analyst's own pending step |
-| The approved audit records its verdict | PASS | audited finding 24185d80-ee33-4ef3-a67c-7554ac0711d8: 9 axes, 7 pass, 2 concern, 0 fail |
+| The approved audit records its verdict | PASS | audited finding 4b39f57c-2ea5-42db-9c55-9461d667f9b1: 9 axes, 7 pass, 2 concern, 0 fail |
 | An audited finding is not re-audited | PASS | the reviewer's next derivation has nothing pending |
 | An unknown role is named, not guessed | PASS | HTTP 400 names the roles |
 | The evidence graph traces the claim | PASS | counts={'datasets': 1, 'runs': 3, 'charts': 1, 'plans': 1, 'findings': 1, 'edges': 6} |
@@ -32,7 +32,7 @@ engines answer and the run is reproducible offline.
 | The case answers with citations | PASS | source=deterministic, 2 ground(s) |
 | The decision view reads the loop's exit | PASS | loop_closed, 1 key finding(s), 3 unresolved check(s) |
 | The analyst writes the decision's implications | PASS | 2 written; a bad entry is a 400 that names it |
-| The case round-trips through export | PASS | restored as 0283cb81 with fresh ids, its verdicts and its decision |
+| The case round-trips through export | PASS | restored as d5c3e3c8 with fresh ids, its verdicts and its decision |
 | The analyst agent drives the loop to a stop | PASS | approved=7, rejected=0, steps=profile->plan->analyze->interpret->accept->chart->validate; stopped: no further step |
 | Every agent step names its engine | PASS | sources=['deterministic'], 7 step(s) recorded |
 | The agent-run case reaches a stated stage | PASS | stage=validated, loop_closed=True |

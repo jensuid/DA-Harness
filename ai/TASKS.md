@@ -343,7 +343,7 @@ not reopened for these; the fix's own contract and verification are below.
 | FIX-CHART-004 | UX (a chart surface, W-016) | PENDING | a chart can be rendered and seen from a run |
 | FIX-PYTHON-005 | UX (a python run surface, W-016) | PENDING | a python run can be generated and executed from the shell |
 | FIX-TIMEOUT-006 | Reliability (the interpret/draft LLM timeout, W-014) | DONE | +24 tests (723 server, 140 web); every adapter posts one configured 120s timeout; a fallback source renders as a sentence; e2e all pass, golden 21/21, refine AT-04, measure 9/9, trace 48/48 |
-| FIX-REFINE-007 | UX (the refinement's rationale, W-009) | PENDING | "Why these changes" renders what the API already returns |
+| FIX-REFINE-007 | UX (the refinement's rationale, W-009) | DONE | +3 web tests (143 web total); "Why these changes" renders the rationale and grounds the API returns, shown rather than disclosed, and stays readable after an accept |
 | FIX-PROFILE-008 | Reliability (the automatic re-profiling, W-008) | PENDING | opening a case does not re-POST the profile |
 | FIX-UPDATES-009 | Distribution (the silent update check, W-005) | PENDING | the Check for Updates menu item answers the user |
 | FIX-VERSION-010 | Distribution (the dev checkout's stale version, W-001) | PENDING | the dev checkout reports the source's version, not the stale metadata's |
@@ -713,15 +713,36 @@ NON-GOALS: changing the refinement engines or their output; editing a
 CONSTRAINTS: green only. No new dependency. The fields are already in the
              response; this is rendering what the API returns.
 ACCEPTANCE CRITERIA:
-- [ ] a proposal shows its rationale under its own heading
-- [ ] the grounds the proposal names are listed, and they are the response's
-- [ ] an accepted refinement keeps its rationale and grounds readable
-- [ ] a proposal without grounds renders nothing rather than an empty list
+- [x] a proposal shows its rationale under its own heading
+- [x] the grounds the proposal names are listed, and they are the response's
+- [x] an accepted refinement keeps its rationale and grounds readable
+- [x] a proposal without grounds renders nothing rather than an empty list
 TESTS: CaseWorkspace.test.tsx / RefinePanel (+~3).
 VERIFICATION: `cd server && ... pytest -q` green; `cd web && npm test && npm
               run build` green.
 STATE UPDATE: TASKS/CURRENT_STATE/HANDOFF gain the fix; W-009 closes.
 ```
+
+TASK: FIX-REFINE-007 - the refinement's rationale is rendered
+ID: FIX-REFINE-007
+PRIORITY: high
+STATUS: DONE
+SUMMARY: accepting a refinement was a black box. The API returned a
+         `rationale` and the `grounds` it rests on - the profile's own
+         columns and measured ranges, which is what makes a suggestion
+         honest - and `RefinePanel` had both inside a `<details>` that
+         renders collapsed, so "Why these changes" read as inert text and
+         the analyst approved a change to their own question without being
+         told why it was proposed or what supports it. The disclosure is
+         gone: the rationale sits under a real `<h4>` heading of its own,
+         the grounds list below it, both always visible, and both still
+         rendered after an accept so a change the analyst made stays
+         explained. `.rationale` carries the proposals' left rule and
+         ground so the block reads as support rather than another paragraph,
+         and `.panel h4` exists because no panel had used a fourth-level
+         heading. Three tests cover it: the proposal shows its rationale and
+         both grounds under the heading, an accepted proposal keeps them
+         readable, and a proposal without grounds renders no empty list.
 
 ### FIX-PROFILE-008 contract
 

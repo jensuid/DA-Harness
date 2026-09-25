@@ -266,6 +266,27 @@ code {
   padding-top: 0.75rem;
 }
 
+.panel h4 {
+  font-size: 0.95rem;
+  margin: 0 0 0.35rem;
+}
+
+/* W-009: the refinement's rationale is the answer to the panel's own "why"
+   heading, and it is shown rather than collapsed behind a disclosure widget
+   the analyst has to know to open. A left rule marks it as the proposal's
+   support rather than another paragraph of the panel. */
+.rationale {
+  border-top: none;
+  border-left: 3px solid #4a6fa5;
+  background: #f7f9fc;
+  margin: 0.75rem 0 0.5rem;
+  padding: 0.5rem 0.75rem;
+}
+
+.rationale p {
+  margin: 0 0 0.35rem;
+}
+
 .file-button {
   display: inline-block;
   font: inherit;

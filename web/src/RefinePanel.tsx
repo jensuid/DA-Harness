@@ -183,8 +183,15 @@ export function RefinePanel({
               )}
 
               {proposal.rationale && (
-                <details>
-                  <summary>Why these changes</summary>
+                // W-009: the rationale answers the heading that asks, and it
+                // is shown rather than disclosed. A <details> that ships
+                // collapsed hides the why behind a click whose open state the
+                // panel never announced, so the analyst approved a change
+                // without ever reading what supports it. The grounds are the
+                // profile's own columns and measures - the measured basis that
+                // makes the suggestion honest - listed where they can be read.
+                <div className="subpanel rationale">
+                  <h4>Why these changes</h4>
                   <p>{proposal.rationale}</p>
                   {proposal.grounds.length > 0 && (
                     <ul className="items">
@@ -195,7 +202,7 @@ export function RefinePanel({
                       ))}
                     </ul>
                   )}
-                </details>
+                </div>
               )}
 
               {pending && !editing && (

@@ -12,24 +12,34 @@ causal-language guard, the analytical golden suite, the orientation spine,
 question refinement, the decision view, the measurement layer and the
 requirement-traceability matrix. The full gap analysis is `docs/PRD & UX Conformance Evaluation.md`.
 
-- **Active task:** **FIX-TIMEOUT-006 DONE** — W-014 (walk-test finding):
-  interpret/draft/assistant/generator menunggu 30s hardcoded dan planner/refine
-  60s, lalu timeout → fallback deterministic diam-diam; UI "Working…" 30s
-  dan label `by deterministic` tidak bilang LLM-nya gagal. Sekarang satu
+- **Active task:** **FIX-REFINE-007 DONE** — W-009 (walk-test finding): panel
+  refinement `web/src/RefinePanel.tsx` sudah punya `rationale` + `grounds`
+  dari API tapi merendernya di dalam `<details>` yang selalu collapsed, jadi
+  "Why these changes" diklik dan tidak muncul apa-apa. Widget disclosure
+  bukan primitive yang tepat untuk jawaban atas pertanyaan panelnya sendiri,
+  jadi diganti blok yang selalu terlihat: `<h4>Why these changes</h4>`,
+  paragraf rationale, daftar grounds; tetap dirender setelah accept.
+  `.rationale` di `web/src/index.css` memakai left rule + ground yang sama
+  dengan proposal, dan `.panel h4` baru (belum ada panel pakai h4).
+  723 server (tak berubah), 143 web (+3), tsc bersih, build ok, e2e semua
+  langkah, golden kedua threshold, refine AT-04, measure 9/9, trace 48/48.
+  Selanjutnya: **FIX-PROFILE-008 (W-008)** — `web/src/CaseWorkspace.tsx:191`
+  POST `/profile` di setiap mount, StrictMode double render = 2 write per
+  buka case; GET profile dulu, POST hanya saat analyst minta re-profile.
+  Lalu FIX-UPDATES-009 (W-005, Rust + surface pesan) dan
+  FIX-VERSION-010 (W-001, urutan resolusi `server/app/updates.py` baca
+  metadata stale sebelum pyproject di sisi source), bebas urutan. Lalu
+  **P9 redesign UI/UX** (npm, light theme, tailwind + shadcn +
+  framer-motion + recharts untuk layar; SVG/PNG server tetap untuk export;
+  4 fase F1-F4 hijau tiap fase).
+  Sebelumnya: FIX-TIMEOUT-006 (W-014) DONE - satu
   `LLM_TIMEOUT_SECONDS` (`DAH_LLM_TIMEOUT_SECONDS`, default 120) di
   `server/app/timeouts.py` dipakai semua 6 call site; fallback diumumkan
   lewat vocabulary `source` baru — `SOURCE_DETERMINISTIC_FALLBACK` +
   `source_sentence` di tiap modul, dan `web/src/sourceLabel.ts` di 7 panel
   (interpret, draft, chat, plan, generate-code, agent proposal, refinement).
   723 server (+24), 140 web (+2), build ok, golden 21/21, e2e, refine
-  AT-04, measure 9/9, trace 48/48.
-  Selanjutnya: **tag v0.3.3 SELESAI** (release published: zip + sha256,
-  flagged pre-release; packaged core terverifikasi `current: 0.3.3`,
-  `CFBundleShortVersionString` 0.3.3, CI billing masih suspended jadi
-  build+publish local). Lalu **FIX-REFINE-007 (W-009)**, lalu FIX-PROFILE-008 / FIX-UPDATES-009 /
-  FIX-VERSION-010 (bebas urutan), lalu **P9 redesign UI/UX** (npm, light
-  theme, tailwind + shadcn + framer-motion + recharts untuk layar;
-  SVG/PNG server tetap untuk export; 4 fase F1-F4 hijau tiap fase).
+  AT-04, measure 9/9, trace 48/48; v0.3.3 dirilis membawanya.
   Sebelumnya: FIX-EVIDENCE-002 (W-015) DONE - regex `_numbers_in`
   (`server/app/evaluator.py`) `-?\d[\d,]*\.?\d*` memotong token "2026-07"
   menjadi `2026` dan `-7`; keduanya absen dari `_allowed_numbers`, jadi
@@ -104,29 +114,32 @@ requirement-traceability matrix. The full gap analysis is `docs/PRD & UX Conform
   documented minimum but is no longer enforced by CI, and a green run no longer
   proves the exact Intel triple a local build produces. Restoring that needs a
   self-hosted Intel runner.
-- **Test status:** server 723 passed (+24 for FIX-TIMEOUT-006, in
-  test_llm_adapters.py - the one configured timeout every adapter posts, the
-  environment read and its misconfigurations ignored, a slow endpoint
-  answering before the budget runs out, and a fallback source rendering as a
-  sentence per module). The web suite is 140 (12 a11y, 10 measure -
-  asserted in the shell's own suite, which the measurement runner reads as
-  its evidence). Desktop shell 22 Rust tests; P2, P3 and P4 gates PASS;
-  **v0.2.0 and v0.3.0
+- **Test status:** server 723 passed (unchanged by this fix, which is
+  web-only). The web suite is 143 (+3 for FIX-REFINE-007 - the rationale and
+  both grounds under their own heading, the accepted state keeping them
+  readable, and a proposal without grounds rendering no list; 12 a11y, 10
+  measure - asserted in the shell's own suite, which the measurement runner
+  reads as its evidence). Desktop shell 22 Rust tests; P2, P3 and P4 gates
+  PASS; **v0.2.0, v0.3.0, v0.3.1, v0.3.2 and v0.3.3
   released** (tags `v0.2.0` on `ec819fc`, `v0.3.0` on `ab56541`, `v0.3.1` on
-  `19cefc1`, `v0.3.2` on `2ff1bca`).
+  `19cefc1`, `v0.3.2` on `2ff1bca`, `v0.3.3` on `30db6e9`).
 - **e2e:** all 28 real-server steps PASS; the golden suite and the refinement
   runner green, and the measurement layer 9/9 - the reports the matrix cites as
   its measured evidence, regenerated on the current tree.
 
-- **Next task:** none open, and no phase is open. The packaged-core version
-  follow-up is closed; the carried follow-ups that remain in `ai/TASKS.md` are
-  the DMG bundler, the icon proportion (52%, chosen blind), one fragile web
-  test layout, and two environmental items (signing deferred by DEC-006, CI
-  billing suspended). The one action worth taking next is a **v0.3.3 tag**: the
-  fix is on master but no published binary carries it, and v0.2.0-v0.3.2 cannot
-  be repaired without rebuilding. P8 is complete (10 of 10) and
-  **v0.3.0, v0.3.1 and v0.3.2 are released** (tags `v0.3.0` on `ab56541`,
-  `v0.3.1` on `19cefc1`, `v0.3.2` on `2ff1bca`), 686 server tests passing on the
+- **Next task:** **FIX-PROFILE-008 (W-008)** - the shell POSTs the profile
+  endpoint on every case mount, so opening a case re-profiles its dataset
+  and strict mode's double render makes it two writes. A case with a profile
+  should read it, and POST only when the analyst asks for a re-profile or
+  nothing is stored. Contract in `ai/TASKS.md`; `web/src/CaseWorkspace.tsx`
+  and `web/src/api.ts` only. Then FIX-UPDATES-009 (W-005, Rust) and
+  FIX-VERSION-010 (W-001, `server/app/updates.py`'s resolution order), order
+  free. The carried follow-ups that remain in `ai/TASKS.md` are the DMG
+  bundler, the icon proportion (52%, chosen blind), one fragile web test
+  layout, and two environmental items (signing deferred by DEC-006, CI
+  billing suspended). P8 is complete (10 of 10) and
+  **v0.3.0, v0.3.1, v0.3.2 and v0.3.3 are released** (tags `v0.3.0` on `ab56541`,
+  `v0.3.1` on `19cefc1`, `v0.3.2` on `2ff1bca`, `v0.3.3` on `30db6e9`), 686 server tests passing on the
   tag. Both were built locally from
   the same steps `release.yml` runs - CI's billing is still suspended - with the
   packaged core proven on an isolated store and the ditto zip plus its sha256

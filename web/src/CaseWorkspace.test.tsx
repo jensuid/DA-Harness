@@ -2346,6 +2346,46 @@ expect(timeline.getByText(/case created/)).toBeInTheDocument()
       const intelligence = screen.getByRole('region', { name: /intelligence/i })
       expect(intelligence).not.toContainElement(panel)
     })
+
+    // W-009 (FIX-REFINE-007): the rationale and the grounds are what makes the
+    // suggestion honest - the profile's own columns and measured ranges - and
+    // they are the answer to the panel's own "why" heading. A disclosure that
+    // ships collapsed hides them behind a click the analyst has to know to
+    // make, so the why is shown, not disclosed.
+    it('shows the rationale and its grounds under their own heading', async () => {
+      const { panel } = await openWithProposal()
+
+      // No disclosure to open: the heading is a real heading, not a summary.
+      const why = within(panel).getByRole('heading', { name: /why these changes/i })
+      expect(within(panel).getByText(proposal.rationale)).toBeInTheDocument()
+      // The grounds the response names are the ones listed, each with the
+      // measured detail the profile actually reported. Each entry renders as
+      // "name - detail" inside one list item, so the detail is matched as a
+      // substring of the entry rather than as a whole element.
+      const support = why.parentElement as HTMLElement
+      expect(within(support).getByText('revenue')).toBeInTheDocument()
+      expect(within(support).getByText(/numeric column, 1,200 to 9,800/)).toBeInTheDocument()
+      expect(within(support).getByText('region')).toBeInTheDocument()
+    })
+
+    it('keeps the rationale readable after the proposal is accepted', async () => {
+      const { user, panel } = await openWithProposal()
+      vi.mocked(api.acceptRefinement).mockResolvedValue({ ...proposal, status: 'accepted' })
+
+      await user.click(within(panel).getByRole('button', { name: /accept/i }))
+
+      // The change the analyst accepted stays explained after it is applied.
+      expect(await within(panel).findByText(proposal.rationale)).toBeInTheDocument()
+      expect(within(panel).getByText(/numeric column, 1,200 to 9,800/)).toBeInTheDocument()
+    })
+
+    it('renders no list when the proposal has no grounds', async () => {
+      const { panel } = await openWithProposal({ grounds: [] })
+
+      expect(within(panel).getByText(proposal.rationale)).toBeInTheDocument()
+      // The rationale stands alone rather than beside an empty list.
+      expect(within(panel).queryByRole('list')).toBeNull()
+    })
   })
 
   describe('the decision view', () => {
