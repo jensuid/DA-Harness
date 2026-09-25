@@ -46,6 +46,7 @@ import {
   getProfile,
   getProgress,
   getRun,
+  createPlan,
   interpretRun,
   listChat,
   listDatasets,
@@ -289,7 +290,11 @@ export function CaseWorkspace({
             profiles={profiles}
             onChanged={() => void load()}
           />
-          <PlanPanel caseId={caseId} datasets={datasets} />
+          <PlanPanel
+            caseId={caseId}
+            datasets={datasets}
+            onChanged={() => void load()}
+          />
           <EdaPanel caseId={caseId} datasets={datasets} profiles={profiles} />
           <RunsPanel
             caseId={caseId}
@@ -826,37 +831,46 @@ function GeneratePanel({
 // tells the analyst what to run next - the plan is the loop's to-do list, and
 // until it was rendered here it was written but never read back.
 //
-// Read-only: generating a plan is a POST the Data stage owns, and this panel
-// only reads the latest one. A dataset without a plan yet says so plainly,
-// because a missing plan is guidance ("generate one") rather than a failure.
+// W-011 (FIX-PLAN-003): a case with no plan was told to "generate one" by a
+// panel that offered no control, so the plan stage was only finishable from a
+// terminal. The POST is the panel's own now - busy while the planner works,
+// the endpoint's own reason as a sentence on a refusal (a 400 is an
+// unprofiled dataset, the step before this one), and a success that reloads
+// the plan and the case so the rail and the panel move together.
 function PlanPanel({
   caseId,
   datasets,
+  onChanged,
 }: {
   caseId: string
   datasets: Dataset[]
+  onChanged: () => void
 }) {
   const [plan, setPlan] = useState<Plan | null>(null)
   const [missing, setMissing] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [generateError, setGenerateError] = useState<string | null>(null)
+  const [generating, setGenerating] = useState(false)
+
+  const datasetId = datasets.length > 0 ? datasets[0].id : null
 
   useEffect(() => {
-    if (datasets.length === 0) {
+    if (datasetId === null) {
       setPlan(null)
       setMissing(false)
       setError(null)
       return
     }
     let cancelled = false
-    setError(null)
     // The plan belongs to a dataset; the first attached one is the one the
     // workspace generates code against, so its plan is the one the analyst is
     // working from.
-    getPlan(caseId, datasets[0].id)
+    getPlan(caseId, datasetId)
       .then((result) => {
         if (cancelled) return
         setPlan(result)
         setMissing(false)
+        setError(null)
       })
       .catch((err) => {
         if (cancelled) return
@@ -869,7 +883,32 @@ function PlanPanel({
     return () => {
       cancelled = true
     }
-  }, [caseId, datasets])
+  }, [caseId, datasetId])
+
+  async function generate() {
+    if (generating || datasetId === null) return
+    setGenerating(true)
+    setError(null)
+    setGenerateError(null)
+    try {
+      const created = await createPlan(caseId, datasetId)
+      setPlan(created)
+      setMissing(false)
+      // The plan is what makes the rail's next action legible, so the case's
+      // stage and counts are re-read - the rail moves with the panel rather
+      // than waiting for the next mount.
+      onChanged()
+    } catch (err) {
+      // The endpoint refuses to plan an unprofiled dataset, and that refusal
+      // is the sentence the analyst needs: it names the step before this one.
+      // This is held separately from the read's error because the two are
+      // never both live: the empty state the control lives in means the read
+      // answered 404, and a 404 is not the reason a generation failed.
+      setGenerateError(messageOf(err))
+    } finally {
+      setGenerating(false)
+    }
+  }
 
   if (datasets.length === 0) {
     return (
@@ -885,10 +924,27 @@ function PlanPanel({
       <div className="panel">
         <h2>Plan</h2>
         {missing ? (
-          <p className="muted">
-            No plan for {datasets[0].filename} yet - generate one to get
-            sub-questions, hypotheses and the steps that answer them.
-          </p>
+          <>
+            <p className="muted">
+              No plan for {datasets[0].filename} yet - generate one to get
+              sub-questions, hypotheses and the steps that answer them.
+            </p>
+            <div className="row">
+              <button
+                type="button"
+                onClick={() => void generate()}
+                disabled={generating}
+              >
+                {generating ? 'Generating the plan…' : 'Generate an analysis plan'}
+              </button>
+            </div>
+            {generateError && (
+              // The endpoint's own reason, as a sentence: a 400 is an
+              // unprofiled dataset, so the refusal names the step before this
+              // one rather than reading as a fault in the panel.
+              <p role="alert">{generateError}</p>
+            )}
+          </>
         ) : error ? (
           <p role="alert">The plan could not be read: {error}</p>
         ) : (

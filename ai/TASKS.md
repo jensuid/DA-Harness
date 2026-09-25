@@ -339,7 +339,7 @@ not reopened for these; the fix's own contract and verification are below.
 |---------|-----------|--------|--------------|
 | FIX-VERSION-001 | Distribution (the packaged core's own version) | DONE | 8 tests added (694 server, 138 web); the packaged binary answers `current: 0.3.2` at `/updates/latest`; both packaged-core smokes now assert it |
 | FIX-EVIDENCE-002 | Validation (the evidence check's number regex, W-015) | DONE | +5 tests (699 server, 138 web); golden 21/21, e2e all pass, refine AT-04, measure 9/9, trace 48/48 |
-| FIX-PLAN-003 | UX (the plan stage's missing button, W-011) | PENDING | the rail's named action is reachable from the shell |
+| FIX-PLAN-003 | UX (the plan stage's missing button, W-011) | DONE | 4 tests added (727 server, 167 web); the empty state's own sentence finally has the control that performs it - a POST to the plan endpoint, the plan rendered in place, the rail and the counts reloaded with it, and an existing plan offers nothing |
 | FIX-CHART-004 | UX (a chart surface, W-016) | PENDING | a chart can be rendered and seen from a run |
 | FIX-PYTHON-005 | UX (a python run surface, W-016) | PENDING | a python run can be generated and executed from the shell |
 | FIX-TIMEOUT-006 | Reliability (the interpret/draft LLM timeout, W-014) | DONE | +24 tests (723 server, 140 web); every adapter posts one configured 120s timeout; a fallback source renders as a sentence; e2e all pass, golden 21/21, refine AT-04, measure 9/9, trace 48/48 |
@@ -500,19 +500,22 @@ CONSTRAINTS: green only. No new dependency. The POST goes to the endpoint
              that already owns the write; the panel does not fabricate a
              plan client-side.
 ACCEPTANCE CRITERIA:
-- [ ] a case with a profile and no plan offers a control that generates the
+- [x] a case with a profile and no plan offers a control that generates the
       plan, and the plan renders without a manual reload
-- [ ] the rail's next_action and the control agree while generation is in
+- [x] the rail's next_action and the control agree while generation is in
       flight and after it lands
-- [ ] a generation that fails shows the endpoint's own reason as a sentence
-- [ ] a case that already has a plan does not offer to regenerate it
-- [ ] the workspace's reload contract is used, so progress counts and the
+- [x] a generation that fails shows the endpoint's own reason as a sentence
+- [x] a case that already has a plan does not offer to regenerate it
+- [x] the workspace's reload contract is used, so progress counts and the
       rail move with the plan
-TESTS: CaseWorkspace.test.tsx (+~4) - the control generates and the plan
-       renders, the failure surfaces, an existing plan suppresses the
-       control, and the reload fires.
-VERIFICATION: `cd server && ... pytest -q` green; `cd web && npm test && npm
-              run build` green (142).
+TESTS: CaseWorkspace.test.tsx (+4) - the control generates and the plan
+       renders in place, the reload fires and the rail's stage completes, the
+       400's own sentence surfaces beside an offer that stays, and an existing
+       plan suppresses the control.
+VERIFICATION: `cd server && DAH_LLM_API_KEY= DAH_LLM_BASE_URL= DAH_LLM_MODEL=
+              .venv/bin/python -m pytest -q` green (727);
+              `cd web && npm test && npm run build` green (167, build ok);
+              `verify_e2e.py` green; `verify_trace.py` green (48/48).
 STATE UPDATE: TASKS/CURRENT_STATE/HANDOFF gain the fix; W-011 closes.
 ```
 

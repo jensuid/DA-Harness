@@ -12,35 +12,46 @@ causal-language guard, the analytical golden suite, the orientation spine,
 question refinement, the decision view, the measurement layer and the
 requirement-traceability matrix. The full gap analysis is `docs/PRD & UX Conformance Evaluation.md`.
 
-- **Active task:** **FIX-VERSION-010 DONE** — W-001 (walk-test finding): a
-  dev checkout answered `current: 0.1.0` at `/updates/latest`, four releases
-  wrong, because `current_version` read the editable install's stale
-  `dah_server-0.1.0.dist-info` before the pyproject beside the source it was
-  actually running. The order is now stamp > pyproject > metadata: the stamp
-  still wins (FIX-VERSION-001's packaged path is unchanged, and is retested
-  explicitly), the source answers in a checkout, and the metadata is demoted
-  not discarded — an installed wheel with no pyproject beside it still
-  answers, which is the case the metadata was right for. A disagreement is
-  not papered over: when both answer and disagree the source wins and the
-  two numbers plus the reason are logged at WARNING, so a stale install is
-  visible rather than silently believed. `_read_pyproject_version` and the
-  new `_installed_version` also treat `0.0.0` as "no answer" (a placeholder
-  a build never replaced is not a version), so both sources degrade to
-  `unknown` instead of answering zero. This checkout: `current: 0.3.3`.
-  727 server (+4), web 163 unchanged, build ok, e2e 28/28, golden 21/21,
-  refine AT-04, measure 9/9, trace 48/48. **W-001 closes, so all eight
-  MAJOR findings of WALK-E2E-001 are resolved** (W-015, W-011x2, W-014,
-  W-009, W-008, W-005, W-001); what remains PENDING is FIX-PLAN-003 /
-  FIX-CHART-004 / FIX-PYTHON-005, the three surface gaps the rail names but
-  no control performs.
-  Selanjutnya: **FIX-PLAN-003 (W-011)** — the plan panel's empty state tells
-  the analyst to generate a plan and no control performs it; `POST .../plan`
-  exists and answers 201, `grep -rn "POST.*plan" web/src` is empty. Lalu
-  FIX-CHART-004 / FIX-PYTHON-005 (W-016, the chart and python run surfaces
-  — split because they share no code but the panel they land in), lalu
+- **Active task:** **FIX-PLAN-003 DONE** — W-011 (walk-test finding): the
+  orientation rail names "Generate an analysis plan" and nothing in the shell
+  performed it. The plan panel read a plan and, when there was none, told the
+  analyst to generate one - with no control that does; the endpoint existed
+  and answered 201 while `grep -rn "POST.*plan" web/src` was empty, so the
+  plan stage was only finishable from a terminal.
+  The empty state's own sentence now has the control that performs it.
+  `PlanPanel` gained `createPlan` (a POST to the endpoint that owns the
+  write) with a `generating` busy label, and on success it renders the plan
+  in place and calls the workspace's reload, so the rail's stage, the
+  progress counts and the panel move together - the plan is what makes the
+  rail's next action legible. A refusal shows the endpoint's own reason as a
+  sentence (a 400 is an unprofiled dataset, so the refusal names the step
+  before this one) and the offer stays; a case that has already planned shows
+  its plan and offers nothing. One thing the first test run caught: the
+  generation's error shared the read's `error` state, and the empty state
+  rendered that only in its non-missing branch - so a 400 in the missing
+  branch was swallowed and the panel stayed silent, exactly the failure the
+  fix is there to remove. The two are separate states now (`generateError`),
+  because they are never both live: the control lives where the read answered
+  404, and a 404 is not the reason a generation failed.
+  727 server (unchanged), web 167 (+4), tsc clean, build ok, e2e 28/28,
+  trace 48/48.
+  Selanjutnya: **FIX-CHART-004 (W-016)** — a chart is an evidence artifact
+  the core renders, stores and exports, and the shell cannot produce one;
+  `grep -c chart web/src/api.ts` is zero, every chart only reachable through
+  its file path. Lalu FIX-PYTHON-005 (W-016 juga, pecah karena chart dan
+  python run tidak berbagi kode selain panel tempatnya mendarat), lalu
   **P9 redesign UI/UX** (npm, light theme, tailwind + shadcn +
   framer-motion + recharts untuk layar; SVG/PNG server tetap untuk export;
   4 fase F1-F4 hijau tiap fase).
+  Sebelumnya: FIX-VERSION-010 (W-001) DONE - a dev checkout answered
+  `current: 0.1.0` at `/updates/latest`, four releases wrong, because
+  `current_version` read the editable install's stale dist-info before the
+  pyproject beside the source. Order became stamp > pyproject > metadata;
+  the metadata demoted not discarded (a wheel with no pyproject beside it
+  still answers), a disagreement logged at WARNING rather than silently
+  believed. 727 server (+4), web 163, e2e 28/28, golden 21/21, refine
+  AT-04, measure 9/9, trace 48/48. W-001 was the walk-test's last MAJOR
+  finding, so all eight are resolved.
   Sebelumnya: FIX-UPDATES-009 (W-005) DONE - menu "Check for Updates..."
   melakukan check tapi hanya `eprintln!` ke stderr; tiga status (available /
   current / unknown) tidak pernah sampai ke window. Shell adalah satu-satunya
@@ -148,10 +159,12 @@ requirement-traceability matrix. The full gap analysis is `docs/PRD & UX Conform
   documented minimum but is no longer enforced by CI, and a green run no longer
   proves the exact Intel triple a local build produces. Restoring that needs a
   self-hosted Intel runner.
-- **Test status:** server 727 passed (+4 for FIX-VERSION-010 - the source
-  beats the stale metadata, the stamp still beats both, the wheel-alone case,
-  and the disagreement's log). The web suite is 163 (unchanged by this fix,
-  which is server-only). Desktop shell 25 Rust tests; P2, P3 and P4 gates
+- **Test status:** server 727 passed (unchanged by this web-only fix - the
+  plan endpoint and its 400 are already covered by the server suite). The
+  web suite is 167 (+4 for FIX-PLAN-003 - the control generates and the plan
+  renders in place, the reload moves the rail's stage, the 400's own sentence
+  surfaces beside an offer that stays, and an existing plan suppresses the
+  control). Desktop shell 25 Rust tests; P2, P3 and P4 gates
   PASS; **v0.2.0, v0.3.0, v0.3.1, v0.3.2 and v0.3.3
   released** (tags `v0.2.0` on `ec819fc`, `v0.3.0` on `ab56541`, `v0.3.1` on
   `19cefc1`, `v0.3.2` on `2ff1bca`, `v0.3.3` on `30db6e9`).
@@ -159,20 +172,19 @@ requirement-traceability matrix. The full gap analysis is `docs/PRD & UX Conform
   runner green, and the measurement layer 9/9 - the reports the matrix cites as
   its measured evidence, regenerated on the current tree.
 
-- **Next task:** **FIX-PLAN-003 (W-011)** - the orientation rail names
-  "Generate an analysis plan", the plan panel's empty state tells the analyst
-  to generate one, and no control in the shell performs it - the endpoint
-  exists and answers 201, the shell never calls it, so the plan stage is only
-  finishable from a terminal. `web/src/CaseWorkspace.tsx` (PlanPanel gains
-  the control) and `web/src/api.ts` (a POST helper). Then FIX-CHART-004 and
-  FIX-PYTHON-005 (W-016, the chart and python run surfaces - split because
-  they share no code but the panel they land in). The carried follow-ups that
+- **Next task:** **FIX-CHART-004 (W-016)** - a chart is an evidence artifact
+  the core renders, stores and exports, and the shell cannot produce one.
+  The runs panel runs a query and the evidence graph counts the charts, but
+  between them there is no control that asks for a chart and no surface that
+  shows the one the core drew; every chart is reachable only through its file
+  path. `web/src/api.ts` gains a chart helper and `RunRow` gains the control
+  and the surface (an inline SVG for the default format, a link for the
+  others). Then FIX-PYTHON-005 (W-016 juga). The carried follow-ups that
   remain in `ai/TASKS.md` are the DMG bundler, the icon proportion (52%,
   chosen blind), one fragile web test layout, and two environmental items
   (signing deferred by DEC-006, CI billing suspended). P8 is complete
-  (10 of 10) and **W-001's closure resolves the walk-test's last MAJOR
-  finding**; the three PENDING post-phase fixes are the rail's named
-  actions no control performs.
+  (10 of 10); after FIX-CHART-004 and FIX-PYTHON-005, the walk-test's
+  findings are all closed and the next thing is **P9, the UI/UX redesign**.
   The release is done: **v0.2.0** is tagged on `ec819fc`. GitHub Actions is
   still refusing to start any job with "recent account payments have failed";
   that is an account billing problem (Settings > Billing & plans), not a code

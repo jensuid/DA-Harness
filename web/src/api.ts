@@ -605,6 +605,17 @@ export function getPlan(caseId: string, datasetId: string): Promise<Plan> {
   return request<Plan>(`/cases/${caseId}/datasets/${datasetId}/plan`)
 }
 
+// W-011 (FIX-PLAN-003): generating the plan is a POST, the planner's own
+// write. The panel reads the latest plan and, when there is none, offers this
+// - the rail names "Generate an analysis plan" and before this control the
+// shell never called the endpoint that performs it, so the stage was only
+// finishable from a terminal.
+export function createPlan(caseId: string, datasetId: string): Promise<Plan> {
+  return request<Plan>(`/cases/${caseId}/datasets/${datasetId}/plan`, {
+    method: 'POST',
+  })
+}
+
 export function generateCode(
   caseId: string,
   datasetId: string,

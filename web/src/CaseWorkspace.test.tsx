@@ -15,6 +15,7 @@ vi.mock('./api', async (importOriginal) => {
     getProfile: vi.fn(),
     listDatasets: vi.fn(),
     getPlan: vi.fn(),
+    createPlan: vi.fn(),
     listRuns: vi.fn(),
     getRun: vi.fn(),
     listFindings: vi.fn(),
@@ -2088,6 +2089,128 @@ expect(timeline.getByText(/case created/)).toBeInTheDocument()
       mockEmptyCase()
       render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
       expect(await screen.findByText(/no plan for sales\.csv yet/i)).toBeInTheDocument()
+    })
+
+    it('generates the plan when the analyst asks, and renders it without a reload', async () => {
+      // W-011: the rail names "Generate an analysis plan" and nothing in the
+      // shell performed it - the panel's empty state told the analyst to
+      // generate a plan and offered no control, so the stage was only
+      // finishable from a terminal.
+      mockEmptyCase()
+      const created = {
+        id: 'p2', case_id: 'c1', dataset_id: 'd1',
+        question: 'Why did revenue decline?',
+        plan: {
+          objective: 'Explain the Q2 revenue decline.',
+          primary_question: 'Why did revenue decline?',
+          sub_questions: ['How does revenue differ across region?'],
+          hypotheses: [],
+          data_requirements: [],
+          analysis_steps: [{ action: 'grouped comparison', detail: 'Aggregate revenue per region' }],
+          context_basis: [],
+        },
+        source: 'deterministic',
+        created_at: '',
+      }
+      vi.mocked(api.createPlan).mockResolvedValue(created)
+
+      const user = userEvent.setup()
+      render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+      await user.click(
+        await screen.findByRole('button', { name: /generate an analysis plan/i }),
+      )
+
+      expect(vi.mocked(api.createPlan)).toHaveBeenCalledWith('c1', 'd1')
+      // The panel renders what the planner produced, without a manual reload.
+      expect(await screen.findByText(/objective: explain the q2 revenue decline\./i)).toBeInTheDocument()
+      expect(screen.getByText('How does revenue differ across region?')).toBeInTheDocument()
+      // The control is the empty state's answer, so it leaves once a plan
+      // exists - a case that has planned shows its plan, not an offer.
+      expect(screen.queryByRole('button', { name: /generate an analysis plan/i })).not.toBeInTheDocument()
+    })
+
+    it('reloads the case when a plan lands, so the rail moves with the panel', async () => {
+      mockEmptyCase()
+      vi.mocked(api.createPlan).mockResolvedValue({
+        id: 'p2', case_id: 'c1', dataset_id: 'd1',
+        question: 'Why did revenue decline?',
+        plan: {
+          objective: 'Explain the Q2 revenue decline.',
+          primary_question: 'Why did revenue decline?',
+          sub_questions: [], hypotheses: [], data_requirements: [],
+          analysis_steps: [], context_basis: [],
+        },
+        source: 'deterministic',
+        created_at: '',
+      })
+      const progressed = {
+        ...progress,
+        stages: [
+          { name: 'question', completed: true },
+          { name: 'data', completed: true },
+          { name: 'profile', completed: true },
+          { name: 'plan', completed: true },
+          { name: 'analyze', completed: false },
+        ],
+        next_action: 'Run an analysis',
+      }
+      // The reload the workspace performs is what re-reads the case's stage,
+      // so the second progress answer is the one the plan stage completed.
+      vi.mocked(api.getProgress)
+        .mockResolvedValueOnce(progress)
+        .mockResolvedValueOnce(progressed)
+
+      const user = userEvent.setup()
+      render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+      await user.click(
+        await screen.findByRole('button', { name: /generate an analysis plan/i }),
+      )
+      expect(await screen.findByText(/objective: explain the q2 revenue decline\./i)).toBeInTheDocument()
+
+      expect(vi.mocked(api.getCase)).toHaveBeenCalledTimes(2)
+      expect(vi.mocked(api.getProgress)).toHaveBeenCalledTimes(2)
+      expect(screen.getByLabelText('stage plan: complete')).toBeInTheDocument()
+    })
+
+    it("shows the endpoint's own reason when the planner refuses", async () => {
+      // The endpoint refuses to plan an unprofiled dataset, and that sentence
+      // is the analyst's guidance: it names the step before this one.
+      mockEmptyCase()
+      vi.mocked(api.createPlan).mockRejectedValue(
+        new api.ApiError(400, 'profile the dataset before planning'),
+      )
+
+      const user = userEvent.setup()
+      render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+      await user.click(
+        await screen.findByRole('button', { name: /generate an analysis plan/i }),
+      )
+
+      expect(await screen.findByText(/profile the dataset before planning/i)).toBeInTheDocument()
+      // The offer stands: a refusal is the analyst's next step, not a reason
+      // to take the control away.
+      expect(screen.getByRole('button', { name: /generate an analysis plan/i })).toBeInTheDocument()
+    })
+
+    it('does not offer to regenerate a plan the case already has', async () => {
+      mockEmptyCase()
+      vi.mocked(api.getPlan).mockResolvedValue({
+        id: 'p1', case_id: 'c1', dataset_id: 'd1',
+        question: 'Why did revenue decline?',
+        plan: {
+          objective: 'Explain the Q2 revenue decline.',
+          primary_question: 'Why did revenue decline?',
+          sub_questions: [], hypotheses: [], data_requirements: [],
+          analysis_steps: [], context_basis: [],
+        },
+        source: 'deterministic',
+        created_at: '',
+      })
+
+      render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+      expect(await screen.findByText(/objective: explain the q2 revenue decline\./i)).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: /generate an analysis plan/i })).not.toBeInTheDocument()
+      expect(vi.mocked(api.createPlan)).not.toHaveBeenCalled()
     })
 
     it('shows a run\'s result rows and the query that produced them', async () => {
