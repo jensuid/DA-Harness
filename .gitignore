@@ -21,7 +21,7 @@ dist/
 .idea/
 
 # graphify artifacts (regenerated)
-graphify-out/graph.html
+graphify-out/
 
 # Local env
 .env
