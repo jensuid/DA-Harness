@@ -319,7 +319,7 @@ def test_a_malformed_llm_memory_answer_falls_back_to_deterministic(tmp_path, mon
         json={"message": "Why did revenue decline in the Q2 sales file?"},
     ).json()
 
-    assert turn["source"] == "deterministic"
+    assert turn["source"] == "deterministic fallback"
     assert "Duplicate rows" in turn["answer"]
 
 

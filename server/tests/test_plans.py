@@ -164,7 +164,7 @@ def test_llm_failure_falls_back_to_deterministic(tmp_path, monkeypatch) -> None:
         response = client.post(f"/cases/{case_id}/datasets/{dataset_id}/plan")
 
     assert response.status_code == 201
-    assert response.json()["source"] == planner_module.SOURCE_DETERMINISTIC
+    assert response.json()["source"] == planner_module.SOURCE_DETERMINISTIC_FALLBACK
 
 
 def test_malformed_llm_output_falls_back(tmp_path, monkeypatch) -> None:
@@ -176,7 +176,7 @@ def test_malformed_llm_output_falls_back(tmp_path, monkeypatch) -> None:
         response = client.post(f"/cases/{case_id}/datasets/{dataset_id}/plan")
 
     assert response.status_code == 201
-    assert response.json()["source"] == planner_module.SOURCE_DETERMINISTIC
+    assert response.json()["source"] == planner_module.SOURCE_DETERMINISTIC_FALLBACK
 
 
 def test_valid_llm_output_is_persisted_as_llm(tmp_path, monkeypatch) -> None:

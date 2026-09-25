@@ -145,7 +145,7 @@ def test_llm_failure_falls_back(tmp_path, monkeypatch) -> None:
         response = client.post(f"/cases/{case_id}/runs/{run_id}/interpret")
 
     assert response.status_code == 201
-    assert response.json()["source"] == interpreter_module.SOURCE_DETERMINISTIC
+    assert response.json()["source"] == interpreter_module.SOURCE_DETERMINISTIC_FALLBACK
 
 
 def test_malformed_llm_output_falls_back(tmp_path, monkeypatch) -> None:
@@ -158,7 +158,7 @@ def test_malformed_llm_output_falls_back(tmp_path, monkeypatch) -> None:
         response = client.post(f"/cases/{case_id}/runs/{run_id}/interpret")
 
     assert response.status_code == 201
-    assert response.json()["source"] == interpreter_module.SOURCE_DETERMINISTIC
+    assert response.json()["source"] == interpreter_module.SOURCE_DETERMINISTIC_FALLBACK
 
 
 def test_interpretation_survives_a_restart_and_lists_newest_first(

@@ -198,7 +198,7 @@ def test_an_llm_answer_that_invents_a_citation_falls_back(tmp_path, monkeypatch)
 
     # run:does-not-exist points at evidence the case does not have, so the LLM
     # cannot be the voice of this answer.
-    assert body["source"] == assistant_module.SOURCE_DETERMINISTIC
+    assert body["source"] == assistant_module.SOURCE_DETERMINISTIC_FALLBACK
     assert body["grounds"] != ["run:does-not-exist"]
 
 
@@ -212,7 +212,7 @@ def test_an_llm_failure_falls_back(tmp_path, monkeypatch) -> None:
         )
 
     assert response.status_code == 201, response.text
-    assert response.json()["source"] == assistant_module.SOURCE_DETERMINISTIC
+    assert response.json()["source"] == assistant_module.SOURCE_DETERMINISTIC_FALLBACK
 
 
 def test_malformed_llm_output_falls_back(tmp_path, monkeypatch) -> None:
@@ -227,7 +227,7 @@ def test_malformed_llm_output_falls_back(tmp_path, monkeypatch) -> None:
         )
 
     assert response.status_code == 201
-    assert response.json()["source"] == assistant_module.SOURCE_DETERMINISTIC
+    assert response.json()["source"] == assistant_module.SOURCE_DETERMINISTIC_FALLBACK
 
 
 def test_the_conversation_persists_oldest_first(tmp_path, monkeypatch) -> None:

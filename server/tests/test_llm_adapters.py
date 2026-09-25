@@ -26,6 +26,7 @@ answer rather than nothing.
 """
 
 import json
+import importlib
 from contextlib import contextmanager
 
 import httpx
@@ -37,6 +38,8 @@ from app import generator as generator_module
 from app import interpreter as interpreter_module
 from app import planner as planner_module
 from app import refine as refine_module
+from app import timeouts as timeouts_module
+from app.timeouts import DEFAULT_LLM_TIMEOUT_SECONDS
 
 
 PROFILE = {
@@ -60,6 +63,7 @@ class FakeResponse:
 
     last_url: str | None = None
     last_body: object | None = None
+    last_timeout: float | None = None
 
     def __init__(self, payload: object, status: int = 200) -> None:
         self._payload = payload
@@ -91,6 +95,7 @@ def chat(payload: object, status: int = 200):
     def posted(url: str, **kwargs):
         FakeResponse.last_url = url
         FakeResponse.last_body = kwargs.get("json")
+        FakeResponse.last_timeout = kwargs.get("timeout")
         return FakeResponse(payload, status)
 
     patcher.setattr(httpx, "post", posted)
@@ -334,11 +339,12 @@ def test_a_gate_rejection_falls_back(module, call, payload) -> None:
     column the profile does not have, a missing summary, a magnitude the result
     does not contain, a citation to an artifact that is not there, and an
     original the proposal did not echo. All six degrade to the deterministic
-    answer, and the source says so.
+    answer, and the source says so - and says it *as a fallback*, so the panel
+    announces the substitution rather than labelling it a choice (FIX-TIMEOUT-006).
     """
     with chat(_chat_content(payload)):
         _produced, source = call()
-    assert source == module.SOURCE_DETERMINISTIC
+    assert source == module.SOURCE_DETERMINISTIC_FALLBACK
 
 
 @pytest.mark.parametrize(
@@ -373,14 +379,14 @@ def test_every_adapter_degrades_on_an_endpoint_failure(call, failure) -> None:
         payload, status = {"choices": [{"message": {"content": {"not": "a string"}}}]}, 200
     with chat(payload, status):
         _produced, source = call()
-    assert source == "deterministic"
+    assert source == "deterministic fallback"
 
 
 def test_a_python_proposal_is_gated_the_same_way() -> None:
     """The Python kind is not a second, weaker contract."""
     with chat(_chat_content(_code_payload(code="df['invented'].sum()", kind="python"))):
         proposal, source = generator_module.create_code(QUESTION, PROFILE, "python")
-    assert source == generator_module.SOURCE_DETERMINISTIC
+    assert source == generator_module.SOURCE_DETERMINISTIC_FALLBACK
 
 
 def test_the_adapter_classes_can_be_called_directly() -> None:
@@ -400,3 +406,134 @@ def test_the_refiner_appends_the_original_when_the_endpoint_omits_it() -> None:
         proposal, source = refine_module.create_refinement(QUESTION, PROFILE)
     assert source == refine_module.SOURCE_LLM
     assert proposal["original"] == QUESTION
+
+
+# --- one configured timeout (FIX-TIMEOUT-006, W-014) ----------------------
+
+
+@pytest.mark.parametrize(
+    "module",
+    [planner_module, generator_module, interpreter_module, drafter_module,
+     assistant_module, refine_module],
+)
+def test_every_adapter_sends_the_one_configured_timeout(module) -> None:
+    """No call site waits its own hardcoded number any more.
+
+    Six sites carried three different values - 30, 30, 30, 30, 60, 60 - and
+    none was configurable, so the interpret and draft endpoints timed out
+    while the planner at twice the budget finished. Now every adapter posts
+    the single configured value, which the environment can raise.
+    """
+    with chat(_chat_content(_plan_payload())):
+        # The payload is the planner's, so four of the six adapters reject it
+        # and degrade - which is also fine, because the request is still sent
+        # and the budget it was sent with is what is under test.
+        _call(module)
+    assert FakeResponse.last_timeout == DEFAULT_LLM_TIMEOUT_SECONDS
+
+
+def _call(module):
+    if module is planner_module:
+        return module.create_plan(QUESTION, PROFILE)
+    if module is generator_module:
+        return module.create_code(QUESTION, PROFILE, "sql")
+    if module is interpreter_module:
+        return module.create_interpretation(
+            QUESTION, "sql", "SELECT 1", COLUMNS, ROWS, PROFILE
+        )
+    if module is drafter_module:
+        return module.create_draft(QUESTION, "sql", "SELECT 1", COLUMNS, ROWS, PROFILE)
+    if module is assistant_module:
+        return module.create_answer("q", [], _facts())
+    return module.create_refinement(QUESTION, PROFILE)
+
+
+def test_the_timeout_reads_the_environment(monkeypatch) -> None:
+    """A deployment with a slow endpoint raises the one value it needs to.
+
+    Reloading the module is what reads the environment again, because the
+    value is a property of the deployment rather than of the request.
+    """
+    monkeypatch.setenv("DAH_LLM_TIMEOUT_SECONDS", "240")
+    reloaded = importlib.reload(timeouts_module)
+    try:
+        assert reloaded.LLM_TIMEOUT_SECONDS == 240.0
+    finally:
+        monkeypatch.delenv("DAH_LLM_TIMEOUT_SECONDS", raising=False)
+        importlib.reload(timeouts_module)
+    # The restored module is what the next request reads.
+    assert timeouts_module.LLM_TIMEOUT_SECONDS == DEFAULT_LLM_TIMEOUT_SECONDS
+
+
+def test_an_unparsable_timeout_keeps_the_default(monkeypatch) -> None:
+    """A typo (`12O`, a letter where a digit belongs) shortens nothing."""
+    monkeypatch.setenv("DAH_LLM_TIMEOUT_SECONDS", "12O")
+    reloaded = importlib.reload(timeouts_module)
+    try:
+        assert reloaded.LLM_TIMEOUT_SECONDS == DEFAULT_LLM_TIMEOUT_SECONDS
+    finally:
+        monkeypatch.delenv("DAH_LLM_TIMEOUT_SECONDS", raising=False)
+        importlib.reload(timeouts_module)
+
+
+@pytest.mark.parametrize("value", ["0", "-5", " "])
+def test_a_non_positive_timeout_is_ignored(monkeypatch, value) -> None:
+    """A misconfiguration must not turn into an immediate failure of every slice."""
+    monkeypatch.setenv("DAH_LLM_TIMEOUT_SECONDS", value)
+    reloaded = importlib.reload(timeouts_module)
+    try:
+        assert reloaded.LLM_TIMEOUT_SECONDS == DEFAULT_LLM_TIMEOUT_SECONDS
+    finally:
+        monkeypatch.delenv("DAH_LLM_TIMEOUT_SECONDS", raising=False)
+        importlib.reload(timeouts_module)
+
+
+def test_a_slow_endpoint_is_answered_not_timed_out() -> None:
+    """An endpoint that would have timed out at the old default answers now.
+
+    The failure was a wait: the harness gave up at 30s while the endpoint
+    answered at just past it. The fake records the budget it was given, so the
+    assertion is that the configured budget is above the old hardcoded one -
+    and the response is read as the LLM's rather than degraded.
+    """
+    with chat(_chat_content(_interpret_payload())):
+        read, source = interpreter_module.create_interpretation(
+            QUESTION, "sql", "SELECT 1", COLUMNS, ROWS, PROFILE
+        )
+    assert source == interpreter_module.SOURCE_LLM
+    assert FakeResponse.last_timeout > 30.0
+
+
+# --- a fallback is announced, not merely labelled -------------------------
+
+
+@pytest.mark.parametrize(
+    "module, sentence",
+    [
+        (planner_module, "the LLM was unavailable, so a deterministic plan answered in its place"),
+        (generator_module, "the LLM was unavailable, so a deterministic proposal answered in its place"),
+        (interpreter_module, "the LLM was unavailable, so a deterministic reading answered in its place"),
+        (drafter_module, "the LLM was unavailable, so a deterministic draft answered in its place"),
+        (assistant_module, "the LLM was unavailable, so a deterministic answer answered in its place"),
+        (refine_module, "the LLM was unavailable, so a deterministic proposal answered in its place"),
+    ],
+)
+def test_a_fallback_source_renders_as_a_sentence(module, sentence) -> None:
+    """`by deterministic` never says the engine asked for was not the one that answered.
+
+    A fallback is a substitution of the trust model, so the label the panel
+    shows is a sentence that names it - and every module's sentence is its own,
+    because the artifact kind differs.
+    """
+    assert module.source_sentence(module.SOURCE_DETERMINISTIC_FALLBACK) == sentence
+
+
+@pytest.mark.parametrize(
+    "module",
+    [planner_module, generator_module, interpreter_module, drafter_module,
+     assistant_module, refine_module],
+)
+def test_a_chosen_engine_still_renders_as_by_source(module) -> None:
+    """The announcement is only for the substitution; a chosen engine is named."""
+    assert module.source_sentence("llm") == "by llm"
+    assert module.source_sentence("deterministic") == "by deterministic"

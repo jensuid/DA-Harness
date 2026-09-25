@@ -148,7 +148,7 @@ def test_an_llm_draft_that_invents_a_magnitude_falls_back(tmp_path, monkeypatch)
     assert response.status_code == 200
     body = response.json()
     # 9999 is nowhere in the result, so the LLM cannot be the basis of a finding.
-    assert body["source"] == drafter_module.SOURCE_DETERMINISTIC
+    assert body["source"] == drafter_module.SOURCE_DETERMINISTIC_FALLBACK
     assert "9999" not in body["statement"]
     assert "9999" not in " ".join(body["grounds"])
 
@@ -161,7 +161,7 @@ def test_an_llm_failure_falls_back(tmp_path, monkeypatch) -> None:
         response = client.post(f"/cases/{case_id}/runs/{run_id}/draft-finding")
 
     assert response.status_code == 200
-    assert response.json()["source"] == drafter_module.SOURCE_DETERMINISTIC
+    assert response.json()["source"] == drafter_module.SOURCE_DETERMINISTIC_FALLBACK
 
 
 def test_malformed_llm_output_falls_back(tmp_path, monkeypatch) -> None:
@@ -172,7 +172,7 @@ def test_malformed_llm_output_falls_back(tmp_path, monkeypatch) -> None:
         response = client.post(f"/cases/{case_id}/runs/{run_id}/draft-finding")
 
     assert response.status_code == 200
-    assert response.json()["source"] == drafter_module.SOURCE_DETERMINISTIC
+    assert response.json()["source"] == drafter_module.SOURCE_DETERMINISTIC_FALLBACK
 
 
 def test_drafting_writes_nothing_to_the_findings_table(tmp_path, monkeypatch) -> None:

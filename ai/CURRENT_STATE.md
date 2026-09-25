@@ -12,8 +12,24 @@ causal-language guard, the analytical golden suite, the orientation spine,
 question refinement, the decision view, the measurement layer and the
 requirement-traceability matrix. The full gap analysis is `docs/PRD & UX Conformance Evaluation.md`.
 
-- **Active task:** **FIX-EVIDENCE-002 DONE** — W-015 (walk-test finding):
-  check evidence menolak finding yang benar. Regex `_numbers_in`
+- **Active task:** **FIX-TIMEOUT-006 DONE** — W-014 (walk-test finding):
+  interpret/draft/assistant/generator menunggu 30s hardcoded dan planner/refine
+  60s, lalu timeout → fallback deterministic diam-diam; UI "Working…" 30s
+  dan label `by deterministic` tidak bilang LLM-nya gagal. Sekarang satu
+  `LLM_TIMEOUT_SECONDS` (`DAH_LLM_TIMEOUT_SECONDS`, default 120) di
+  `server/app/timeouts.py` dipakai semua 6 call site; fallback diumumkan
+  lewat vocabulary `source` baru — `SOURCE_DETERMINISTIC_FALLBACK` +
+  `source_sentence` di tiap modul, dan `web/src/sourceLabel.ts` di 7 panel
+  (interpret, draft, chat, plan, generate-code, agent proposal, refinement).
+  723 server (+24), 140 web (+2), build ok, golden 21/21, e2e, refine
+  AT-04, measure 9/9, trace 48/48.
+  Selanjutnya: **tag v0.3.3** (dua fix backend belum ada di binary yang
+  dipublikasikan; CI billing masih suspended jadi smokes local), lalu
+  **FIX-REFINE-007 (W-009)**, lalu FIX-PROFILE-008 / FIX-UPDATES-009 /
+  FIX-VERSION-010 (bebas urutan), lalu **P9 redesign UI/UX** (npm, light
+  theme, tailwind + shadcn + framer-motion + recharts untuk layar;
+  SVG/PNG server tetap untuk export; 4 fase F1-F4 hijau tiap fase).
+  Sebelumnya: FIX-EVIDENCE-002 (W-015) DONE - regex `_numbers_in`
   (`server/app/evaluator.py`) `-?\d[\d,]*\.?\d*` memotong token "2026-07"
   menjadi `2026` dan `-7`; keduanya absen dari `_allowed_numbers`, jadi
   verdict `insufficient_evidence` pada HARD check — setiap analisis
@@ -23,12 +39,6 @@ requirement-traceability matrix. The full gap analysis is `docs/PRD & UX Conform
   `_allowed_numbers` juga mendapat panjang kolom sendiri (bentuk "N
   grouped value(s)"). 699 server, 138 web, golden 21/21, e2e, refine
   AT-04, measure 9/9, trace 48/48.
-  Selanjutnya: **FIX-TIMEOUT-006 (W-014)** — interpret/draft LLM timeout
-  30s hardcoded (`interpreter.py:239`, `drafter.py:312`) + fallback
-  deterministic diam-diam; UI "Working…" 30s. Contract sudah ada di
-  `ai/TASKS.md`. Lalu tag **v0.3.3**, lalu **P9 redesign UI/UX** (npm,
-  light theme, tailwind + shadcn + framer-motion + recharts untuk layar;
-  SVG/PNG server tetap untuk export; 4 fase F1-F4 hijau tiap fase).
   Sebelumnya: WALK-E2E-001 (walk-test end-to-end) SELESAI - 19 temuan
   (8 MAJOR, 8 MINOR, 3 OBS) di `walktest/FINDINGS.md`, laporan
   `walktest/REPORT.md`, state mesin live `walktest/HANDOFF.md`; hasilnya
@@ -93,11 +103,11 @@ requirement-traceability matrix. The full gap analysis is `docs/PRD & UX Conform
   documented minimum but is no longer enforced by CI, and a green run no longer
   proves the exact Intel triple a local build produces. Restoring that needs a
   self-hosted Intel runner.
-- **Test status:** server 699 passed (+5 for FIX-EVIDENCE-002, in
-  test_validation.py - the WALK-E2E-001 regression as a literal `YYYY-MM`
-  case, a date / id / sku shape emitting no magnitude, a negative inside a
-  token versus a real negative, the group-count allowance, and a fabricated
-  magnitude still failing). The web suite is 138 (12 a11y, 10 measure -
+- **Test status:** server 723 passed (+24 for FIX-TIMEOUT-006, in
+  test_llm_adapters.py - the one configured timeout every adapter posts, the
+  environment read and its misconfigurations ignored, a slow endpoint
+  answering before the budget runs out, and a fallback source rendering as a
+  sentence per module). The web suite is 140 (12 a11y, 10 measure -
   asserted in the shell's own suite, which the measurement runner reads as
   its evidence). Desktop shell 22 Rust tests; P2, P3 and P4 gates PASS;
   **v0.2.0 and v0.3.0

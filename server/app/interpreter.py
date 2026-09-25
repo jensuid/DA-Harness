@@ -26,6 +26,8 @@ import logging
 import os
 from typing import Any
 
+from app.timeouts import LLM_TIMEOUT_SECONDS
+
 _MAX_OBSERVATIONS = 4
 _MAX_CAVEATS = 3
 _MAX_LLM_CHARS = 12_000
@@ -33,6 +35,24 @@ _MAX_ROWS_IN_PROMPT = 25
 
 SOURCE_DETERMINISTIC = "deterministic"
 SOURCE_LLM = "llm"
+SOURCE_DETERMINISTIC_FALLBACK = "deterministic fallback"
+SOURCE_FALLBACK_SENTENCE = (
+    "the LLM was unavailable, so a deterministic reading answered in its place"
+)
+
+
+def source_sentence(source: str) -> str:
+    """The sentence a panel renders next to an engine's answer.
+
+    `by {source}` names the engine but never says it was not the one asked
+    for. A fallback after an LLM failure is a substitution of the trust model,
+    so it is announced as one: the sentence sits where the source label sits,
+    reads as a sentence, and is what stops an analyst crediting a deterministic
+    read to the LLM they configured (FIX-TIMEOUT-006).
+    """
+    if source == SOURCE_DETERMINISTIC_FALLBACK:
+        return SOURCE_FALLBACK_SENTENCE
+    return f"by {source}"
 
 
 def _is_number(value: Any) -> bool:
@@ -236,7 +256,7 @@ class LLMInterpreter:
                 ],
                 "response_format": {"type": "json_object"},
             },
-            timeout=30.0,
+            timeout=LLM_TIMEOUT_SECONDS,
         )
         response.raise_for_status()
         content = response.json()["choices"][0]["message"]["content"]
@@ -292,8 +312,10 @@ def create_interpretation(
         # read rather than producing nothing. The breadth stays - the contract
         # is "any failure falls back" - but the reason is logged, so a fallback
         # caused by a bug in our own code surfaces instead of vanishing into
-        # source=deterministic (P4-RELIABILITY-002).
+        # source=deterministic (P4-RELIABILITY-002). The source carries it too:
+        # the panel's own label is what tells the analyst the engine they
+        # configured did not answer and another one did (FIX-TIMEOUT-006).
         logging.getLogger(__name__).warning(
             "llm read failed; falling back to deterministic: %s", error,
         )
-        return deterministic, SOURCE_DETERMINISTIC
+        return deterministic, SOURCE_DETERMINISTIC_FALLBACK

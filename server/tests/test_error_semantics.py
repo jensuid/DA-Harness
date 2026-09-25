@@ -237,7 +237,7 @@ def test_llm_fallback_logs_the_reason(tmp_path, monkeypatch, caplog) -> None:
             response = client.post(f"/cases/{case_id}/datasets/{dataset_id}/plan")
 
     assert response.status_code == 201
-    assert response.json()["source"] == planner_module.SOURCE_DETERMINISTIC
+    assert response.json()["source"] == planner_module.SOURCE_DETERMINISTIC_FALLBACK
     assert any(
         "falling back to deterministic" in record.message and record.levelno == logging.WARNING
         for record in caplog.records

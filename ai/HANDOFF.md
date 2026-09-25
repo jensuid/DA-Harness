@@ -1,53 +1,54 @@
 ## Next action
 
-**FIX-EVIDENCE-002 (W-015) DONE.** The evidence check no longer splits a
-token and refuses the finding for quoting the fragments. `_numbers_in`
-(`server/app/evaluator.py`) matched `-?\d[\d,]*\.?\d*`, which cut `2026-07`
-into `2026` and `-7`; neither was in `_allowed_numbers`, so a correct
-`YYYY-MM` finding answered `insufficient_evidence` on a HARD check and every
-time-series analysis failed validation. The run is a regex that finds a digit
-run and an accept step that reads the characters at both edges: a digit, a
-letter or a hyphen against either side means the run is part of a longer
-token, and the minus is only a sign when it starts one. `_allowed_numbers`
-also gained the column's own length, the shape the deterministic drafter
-names as "N grouped value(s)".
+**FIX-TIMEOUT-006 (W-014) DONE.** The assistant slices no longer wait a
+hardcoded thirty seconds and then silently answer as the other engine. Six
+call sites carried three different numbers - `interpreter.py`,
+`drafter.py`, `generator.py` and `assistant.py` at `30.0`, `planner.py` and
+`refine.py` at `60.0` - and none was configurable, so the interpret and draft
+endpoints timed out while the planner at twice the budget finished, and the
+shell showed "Working..." for the whole wait and then `by deterministic`,
+which never says the engine the analyst configured had failed.
 
-**Gates:** 699 server (+5 in test_validation.py), 138 web + build, golden
-21/21, e2e all steps, refine AT-04, measure 9/9, trace 48/48.
+One value now: `server/app/timeouts.py` exports `LLM_TIMEOUT_SECONDS`
+(`DAH_LLM_TIMEOUT_SECONDS`, default 120, non-numeric and non-positive values
+ignored with a warning), and every adapter posts it. The fallback is announced
+rather than labelled: the six modules gained `SOURCE_DETERMINISTIC_FALLBACK`
+(`"deterministic fallback"`) and `source_sentence`, and the web panels -
+interpret, draft, chat, plan, generate-code, agent proposal, refinement -
+render `web/src/sourceLabel.ts`, so a fallback reads "The LLM was unavailable,
+so a deterministic ... answered in its place" where the source label sat.
 
-A scope correction worth carrying: the first attempt wrote its own ad-hoc
-shape suite and looped for ~40 iterations chasing five edge cases that were
-never in the contract - European decimal commas, broken comma runs, sentence
-dots, version strings, dotted ranges. Two of them are mutually inconsistent
-and one (a bare year at a sentence end) is a magnitude the check *should*
-extract, since it is a real cell value in a time-series result. The contract
-is the boundary; when a regex's edge cases fight each other, the answer is to
-stop widening the spec, not to keep tuning it.
+**Gates:** 723 server (+24 in test_llm_adapters.py), 140 web (+2), build ok,
+golden 21/21, e2e all steps, refine AT-04, measure 9/9, trace 48/48.
+
+A scope decision worth carrying: announcing the fallback by widening the
+`source` vocabulary rather than adding a field keeps every stored artifact
+readable - the export, the evidence graph and the timeline all carry `source`
+as a string, and a new field would have made every one of them learn a new
+shape for one panel's sentence. The web suite's text assertions took the
+vocabulary change without a single `className` or test-structure edit, which
+is the P9 restyle-safety property the tests were written for.
 
 **Next, in priority order:**
 
-1. **FIX-TIMEOUT-006 (W-014)** — the interpret and draft LLM calls wait a
-   hardcoded 30s, time out, and fall back to deterministic silently while the
-   UI shows "Working…" for the whole thirty seconds. Contract already written
-   in `ai/TASKS.md`; the five call sites are `interpreter.py:239`,
-   `drafter.py:312`, `assistant.py:576` at 30.0 and `planner.py:366`,
-   `refine.py:595` at 60.0. Server + the web panel that renders the source
-   label. `test_llm_adapters.py` patches `httpx.post`, so a timeout is
-   injected as a raised `httpx.ReadTimeout`, not waited for.
-2. **Tag v0.3.3** once the two backend fixes are on master; nothing since
-   `c73118c` has run in CI (billing suspended), so the smokes are local.
-3. **Then P9, the UI/UX redesign** the user asked for, decided in this order:
-   npm (CI hardcodes `npm ci`, Tauri's beforeDevCommand uses `npm --prefix`),
-   light theme first, and recharts on screen because the server's chart SVG
-   bakes a white background into the image (a white box on a light page) and
-   is static - while its layout engine and PNG export stay for the export
-   path. Four phases, green at each: F1 the foundation (tailwind, shadcn,
-   framer-motion, recharts, splitting `CaseWorkspace.tsx`'s 2,501 lines into
-   `web/src/panels/`), F2 the surfaces (which also closes W-011, W-016, W-013,
-   W-009, W-017, W-018), F3 motion (respecting `prefers-reduced-motion`), F4
-   the chart surface and a re-walk. A new DEC records the dependency change;
-   the tests use role/text/label queries with zero `className` references, so
-   a restyle does not break them.
+1. **Tag v0.3.3** - the two backend fixes are on master but no published
+   binary carries them, and v0.2.0-v0.3.2 cannot be repaired without
+   rebuilding. CI's billing is still suspended, so the smokes are local.
+2. **Then FIX-REFINE-007 (W-009)** - the refinement's rationale and grounds
+   are returned by the API and rendered by neither; the "Why these changes"
+   heading sits empty. Contract in `ai/TASKS.md`; `RefinePanel.tsx` only.
+3. **Then FIX-PROFILE-008 (W-008)**, **FIX-UPDATES-009 (W-005)** and
+   **FIX-VERSION-010 (W-001)**, order free. FIX-PLAN-003 / FIX-CHART-004 /
+   FIX-PYTHON-005 precede none of these in the table but FIX-PLAN-003 is the
+   next of them in priority.
+4. **Then P9, the UI/UX redesign** the user asked for: npm (CI hardcodes
+   `npm ci`), light theme first, recharts on screen because the server's chart
+   SVG bakes a white background and is static, while its layout engine and PNG
+   export stay for the export path. Four phases, green at each: F1 the
+   foundation (tailwind, shadcn, framer-motion, recharts, splitting
+   `CaseWorkspace.tsx`'s 2,501 lines into `web/src/panels/`), F2 the surfaces
+   (closing W-011, W-016, W-013, W-009, W-017, W-018), F3 motion (respecting
+   `prefers-reduced-motion`), F4 the chart surface and a re-walk.
 
 ## Recent completions
 

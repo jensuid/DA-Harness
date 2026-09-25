@@ -66,6 +66,7 @@ import { ContextPanel } from './ContextPanel'
 import { RefinePanel } from './RefinePanel'
 import { DecisionPanel } from './DecisionPanel'
 import { PromoteTemplate } from './Templates'
+import { sourceLabel } from './sourceLabel'
 
 // One case as the loop the core walks: attach and profile data, propose the
 // computation that would answer the question, run it, read what it shows,
@@ -756,9 +757,9 @@ function GeneratePanel({
       {error && <p role="alert">Generation failed: {error}</p>}
       {proposal && (
         <div className="proposal">
-          // One text node, so the sentence is matchable and screen-reader friendly.
           <p className="muted">
-            proposed by {proposal.source} — reads {proposal.columns_used.join(', ')}
+            {sourceLabel(proposal.source, 'proposal')} — reads{' '}
+            {proposal.columns_used.join(', ')}
           </p>
           <p>{proposal.explanation}</p>
           <pre>{proposal.code}</pre>
@@ -853,7 +854,7 @@ function PlanPanel({
     <div className="panel">
       <h2>Plan</h2>
       <p className="muted">
-        planned by {plan.source} for {datasets[0].filename}
+        {sourceLabel(plan.source, 'plan')} for {datasets[0].filename}
         {body.context_basis.length > 0 &&
           ` — read from ${body.context_basis.join(', ')}`}
       </p>
@@ -1054,7 +1055,7 @@ function RunRow({
       {error && <p role="alert">The assistant failed: {error}</p>}
       {reading && (
         <div className="proposal">
-          <p className="muted">read by {reading.source}</p>
+          <p className="muted">{sourceLabel(reading.source, 'interpretation')}</p>
           <p>{reading.summary}</p>
           {reading.observations.length > 0 && (
             <ul className="items">
@@ -1165,7 +1166,7 @@ function DraftPanel({
   return (
     <div className="proposal">
       <p className="muted">
-        drafted by {draft.source} — accepting records a real finding,
+        {sourceLabel(draft.source, 'draft')} — accepting records a real finding,
         not_evaluated until validated
       </p>
       <p>{draft.statement}</p>
@@ -1387,7 +1388,7 @@ function Chat({
           <li key={turn.id} className="turn">
             <p className="question">{turn.message}</p>
             <p>{turn.answer}</p>
-            <p className="muted">answered by {turn.source}</p>
+            <p className="muted">{sourceLabel(turn.source, 'answer')}</p>
             {turn.grounds.length > 0 && (
               <ul className="grounds">
                 {turn.grounds.map((ground) => (
@@ -2393,8 +2394,8 @@ function AgentPanel({
       {pending ? (
         <div className="proposal">
           <p className="muted">
-            proposed by {pending.source} — approve to run it, or reject with your
-            reason
+            {sourceLabel(pending.source, 'proposal')} — approve to run it, or
+            reject with your reason
           </p>
           <p><strong>{stepSentence(pending)}</strong></p>
           <div className="row">

@@ -36,11 +36,28 @@ import os
 import re
 from typing import Any
 
+from app.timeouts import LLM_TIMEOUT_SECONDS
+
 _MAX_HISTORY_TURNS = 10
 _MAX_LLM_CHARS = 16_000
 
 SOURCE_DETERMINISTIC = "deterministic"
 SOURCE_LLM = "llm"
+SOURCE_DETERMINISTIC_FALLBACK = "deterministic fallback"
+SOURCE_FALLBACK_SENTENCE = (
+    "the LLM was unavailable, so a deterministic answer answered in its place"
+)
+
+
+def source_sentence(source: str) -> str:
+    """The sentence a panel renders next to an engine's answer.
+
+    A fallback is announced rather than labelled, so the analyst knows the
+    answer they are reading is not the LLM's (FIX-TIMEOUT-006).
+    """
+    if source == SOURCE_DETERMINISTIC_FALLBACK:
+        return SOURCE_FALLBACK_SENTENCE
+    return f"by {source}"
 
 KIND_DATASET = "dataset"
 KIND_RUN = "run"
@@ -573,7 +590,7 @@ class LLMAssistant:
                 ],
                 "response_format": {"type": "json_object"},
             },
-            timeout=30.0,
+            timeout=LLM_TIMEOUT_SECONDS,
         )
         response.raise_for_status()
         content = response.json()["choices"][0]["message"]["content"]
@@ -619,8 +636,10 @@ def create_answer(message: str, history: list[dict], facts: dict) -> tuple[dict,
         # answer rather than producing nothing. The breadth stays - the contract
         # is "any failure falls back" - but the reason is logged, so a fallback
         # caused by a bug in our own code surfaces instead of vanishing into
-        # source=deterministic (P4-RELIABILITY-002).
+        # source=deterministic (P4-RELIABILITY-002). The source carries it too:
+        # the panel's own label is what tells the analyst the engine they
+        # configured did not answer and another one did (FIX-TIMEOUT-006).
         logging.getLogger(__name__).warning(
             "llm answer failed; falling back to deterministic: %s", error,
         )
-        return deterministic, SOURCE_DETERMINISTIC
+        return deterministic, SOURCE_DETERMINISTIC_FALLBACK

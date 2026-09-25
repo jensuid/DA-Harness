@@ -43,11 +43,28 @@ import os
 import re
 from typing import Any
 
+from app.timeouts import LLM_TIMEOUT_SECONDS
+
 _MAX_QUESTION_CHARS = 500
 _MAX_LLM_CHARS = 8_000
 
 SOURCE_DETERMINISTIC = "deterministic"
 SOURCE_LLM = "llm"
+SOURCE_DETERMINISTIC_FALLBACK = "deterministic fallback"
+SOURCE_FALLBACK_SENTENCE = (
+    "the LLM was unavailable, so a deterministic proposal answered in its place"
+)
+
+
+def source_sentence(source: str) -> str:
+    """The sentence a panel renders next to an engine's proposal.
+
+    A fallback is announced rather than labelled, so the analyst knows the
+    proposal they are reading is not the LLM's (FIX-TIMEOUT-006).
+    """
+    if source == SOURCE_DETERMINISTIC_FALLBACK:
+        return SOURCE_FALLBACK_SENTENCE
+    return f"by {source}"
 
 # Words that express a direction the question wants explained but not the
 # reference frame it would be measured against - "down" says what, not "than
@@ -592,7 +609,7 @@ class LLMRefiner:
                 "temperature": 0.2,
                 "response_format": {"type": "json_object"},
             },
-            timeout=60.0,
+            timeout=LLM_TIMEOUT_SECONDS,
         )
         response.raise_for_status()
         content = response.json()["choices"][0]["message"]["content"]
@@ -641,7 +658,10 @@ def create_refinement(question: str, profile: dict | None,
             )
         return candidate, SOURCE_LLM
     except Exception as error:
+        # The source carries the fallback as well as logging it, so the panel's
+        # own label is what tells the analyst the engine they configured did not
+        # answer and another one did (FIX-TIMEOUT-006).
         logging.getLogger(__name__).warning(
             "llm refinement failed; falling back to deterministic: %s", error,
         )
-        return deterministic, SOURCE_DETERMINISTIC
+        return deterministic, SOURCE_DETERMINISTIC_FALLBACK

@@ -221,7 +221,7 @@ def test_an_llm_proposal_that_invents_a_column_falls_back(tmp_path, monkeypatch)
 
     # lifetime_value is nowhere in the dataset, so the LLM cannot be trusted to
     # write the computation that answers the question.
-    assert response["source"] == generator_module.SOURCE_DETERMINISTIC
+    assert response["source"] == generator_module.SOURCE_DETERMINISTIC_FALLBACK
     assert "lifetime_value" not in response["code"]
 
 
@@ -235,7 +235,7 @@ def test_an_llm_proposal_that_is_not_read_only_falls_back(tmp_path, monkeypatch)
             json={"question": "Clean up?"},
         ).json()
 
-    assert response["source"] == generator_module.SOURCE_DETERMINISTIC
+    assert response["source"] == generator_module.SOURCE_DETERMINISTIC_FALLBACK
     assert "DELETE" not in response["code"]
 
 
@@ -250,7 +250,7 @@ def test_an_llm_failure_falls_back(tmp_path, monkeypatch) -> None:
         )
 
     assert response.status_code == 200
-    assert response.json()["source"] == generator_module.SOURCE_DETERMINISTIC
+    assert response.json()["source"] == generator_module.SOURCE_DETERMINISTIC_FALLBACK
 
 
 def test_malformed_llm_output_falls_back(tmp_path, monkeypatch) -> None:
@@ -264,7 +264,7 @@ def test_malformed_llm_output_falls_back(tmp_path, monkeypatch) -> None:
         )
 
     assert response.status_code == 200
-    assert response.json()["source"] == generator_module.SOURCE_DETERMINISTIC
+    assert response.json()["source"] == generator_module.SOURCE_DETERMINISTIC_FALLBACK
 
 
 def test_generation_writes_no_state(tmp_path, monkeypatch) -> None:

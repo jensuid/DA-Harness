@@ -342,7 +342,7 @@ not reopened for these; the fix's own contract and verification are below.
 | FIX-PLAN-003 | UX (the plan stage's missing button, W-011) | PENDING | the rail's named action is reachable from the shell |
 | FIX-CHART-004 | UX (a chart surface, W-016) | PENDING | a chart can be rendered and seen from a run |
 | FIX-PYTHON-005 | UX (a python run surface, W-016) | PENDING | a python run can be generated and executed from the shell |
-| FIX-TIMEOUT-006 | Reliability (the interpret/draft LLM timeout, W-014) | PENDING | the LLM answers before the timeout, and a fallback is announced |
+| FIX-TIMEOUT-006 | Reliability (the interpret/draft LLM timeout, W-014) | DONE | +24 tests (723 server, 140 web); every adapter posts one configured 120s timeout; a fallback source renders as a sentence; e2e all pass, golden 21/21, refine AT-04, measure 9/9, trace 48/48 |
 | FIX-REFINE-007 | UX (the refinement's rationale, W-009) | PENDING | "Why these changes" renders what the API already returns |
 | FIX-PROFILE-008 | Reliability (the automatic re-profiling, W-008) | PENDING | opening a case does not re-POST the profile |
 | FIX-UPDATES-009 | Distribution (the silent update check, W-005) | PENDING | the Check for Updates menu item answers the user |

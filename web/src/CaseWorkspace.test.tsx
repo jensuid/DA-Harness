@@ -508,7 +508,7 @@ describe('CaseWorkspace', () => {
     await user.click(screen.getByRole('button', { name: /generate code/i }))
 
     expect(await screen.findByText('Sums revenue per region.')).toBeInTheDocument()
-    expect(screen.getByText(/proposed by deterministic/i)).toBeInTheDocument()
+    expect(screen.getByText(/by deterministic/i)).toBeInTheDocument()
     expect(screen.getByText(/region, revenue/i)).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: /run this/i }))
@@ -536,7 +536,31 @@ describe('CaseWorkspace', () => {
     expect(await screen.findByText('North leads on revenue.')).toBeInTheDocument()
     expect(screen.getByText('north: 325.0')).toBeInTheDocument()
     expect(screen.getByText(/caveat: two rows only/i)).toBeInTheDocument()
-    expect(screen.getByText(/read by llm/i)).toBeInTheDocument()
+    expect(screen.getByText(/by llm/i)).toBeInTheDocument()
+  })
+
+  it('announces a reading that fell back to the deterministic engine', async () => {
+    mockEmptyCase()
+    vi.mocked(api.listRuns).mockResolvedValue([runFixture()])
+    vi.mocked(api.interpretRun).mockResolvedValue({
+      id: 'i1', run_id: 'r1', case_id: 'c1',
+      summary: 'North leads on revenue.',
+      observations: ['north: 325.0'],
+      caveats: ['two rows only'],
+      source: 'deterministic fallback',
+      created_at: '',
+    })
+
+    const user = userEvent.setup()
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+    await user.click(await screen.findByRole('button', { name: /interpret/i }))
+
+    // The reading is still offered, but the analyst is told the engine they
+    // configured did not produce it (FIX-TIMEOUT-006, W-014).
+    expect(await screen.findByText('North leads on revenue.')).toBeInTheDocument()
+    expect(screen.getByText(
+      /The LLM was unavailable, so a deterministic reading answered in its place/i
+    )).toBeInTheDocument()
   })
 
   it('drafts a finding and accepts it through the findings endpoint', async () => {
@@ -832,7 +856,7 @@ describe('CaseWorkspace', () => {
 
     render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
     expect(await screen.findByText(/north leads revenue/i)).toBeInTheDocument()
-    expect(screen.getByText(/proposed by deterministic/i)).toBeInTheDocument()
+    expect(screen.getByText(/by deterministic/i)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /approve and run/i })).toBeInTheDocument()
   })
 
@@ -1981,7 +2005,7 @@ expect(timeline.getByText(/case created/)).toBeInTheDocument()
       expect(screen.getByText(/how to check: group revenue by region/i)).toBeInTheDocument()
       expect(screen.getByText(/grouped comparison/i)).toBeInTheDocument()
       expect(screen.getByText(/completeness: revenue: 33.33% null/i)).toBeInTheDocument()
-      expect(screen.getByText(/planned by deterministic/i)).toBeInTheDocument()
+      expect(screen.getByText(/by deterministic/i)).toBeInTheDocument()
     })
 
     it('says plainly when no plan exists yet, rather than failing', async () => {
@@ -2228,13 +2252,24 @@ expect(timeline.getByText(/case created/)).toBeInTheDocument()
       expect(within(orientation).getByText('Refined question')).toBeInTheDocument()
       expect(within(orientation).getByText(proposal.refined_question)).toBeInTheDocument()
       // The refinement says which engine spoke and what it is grounded in.
-      expect(within(orientation).getByText(/AI suggestion \(deterministic\)/)).toBeInTheDocument()
+      expect(within(orientation).getByText(/AI suggestion \(by deterministic\)/)).toBeInTheDocument()
       // The grounds and the refined question both carry the measured range;
       // what matters is that a measured range appears at all.
       expect(within(orientation).getAllByText(/1,200 to 9,800/).length).toBeGreaterThan(0)
       expect(within(orientation).getByRole('button', { name: /accept/i })).toBeInTheDocument()
       expect(within(orientation).getByRole('button', { name: /^edit$/i })).toBeInTheDocument()
       expect(within(orientation).getByRole('button', { name: /keep original/i })).toBeInTheDocument()
+    })
+
+    it('announces when the LLM fell back instead of just naming an engine', async () => {
+      // The source the server records when the LLM failed is not a choice the
+      // analyst made: the panel has to say so, or a deterministic refinement
+      // reads as the LLM's (FIX-TIMEOUT-006, W-014).
+      const { panel } = await openWithProposal({ source: 'deterministic fallback' })
+
+      expect(within(panel).getByText(
+        /The LLM was unavailable, so a deterministic proposal answered in its place/i
+      )).toBeInTheDocument()
     })
 
     it('accept moves the question and keeps the original visible', async () => {

@@ -29,6 +29,7 @@ import {
   rejectRefinement,
 } from './api'
 import { messageOf } from './CaseList'
+import { sourceLabel } from './sourceLabel'
 
 // The two input boxes the walkthrough found near-identical are in different
 // zones; this one is not a chat box, so its label says what it does.
@@ -160,7 +161,7 @@ export function RefinePanel({
           ) : (
             <>
               <p className="muted" aria-label="AI suggestion">
-                ↓ AI suggestion ({proposal.source})
+                ↓ AI suggestion ({sourceLabel(proposal.source, 'proposal')})
               </p>
               <h3>Refined question</h3>
               {editing ? (
