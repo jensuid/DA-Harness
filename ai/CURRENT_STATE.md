@@ -12,26 +12,40 @@ causal-language guard, the analytical golden suite, the orientation spine,
 question refinement, the decision view, the measurement layer and the
 requirement-traceability matrix. The full gap analysis is `docs/PRD & UX Conformance Evaluation.md`.
 
-- **Active task:** **FIX-PROFILE-008 DONE** — W-008 (walk-test finding): membuka
-  case POST `/profile` untuk tiap dataset di setiap mount (StrictMode double
-  render = 2 write), sehingga profile yang sudah ada direcompute-ditulis ulang,
-  dan shell diam-diam menyelesaikan langkah yang rail namakan milik analyst.
-  GET endpoint sudah ada (`server/app/main.py:1654`, 404 kalau belum stored),
-  jadi mount sekarang baca lewat `getProfile` baru di `web/src/api.ts`;
-  POST jadi control di panel Data — "Re-profile" untuk dataset berprofile,
-  "Profile this dataset" untuk yang belum (menggantikan placeholder
-  "profiling…" yang adalah shell menyelesaikan langkah). Rail dan panel kini
-  sepakat soal stage profile.
-  723 server (tak berubah), 147 web (+4), tsc bersih, build ok.
-  Selanjutnya: **FIX-UPDATES-009 (W-005)** — handler
-  `desktop/src-tauri/src/main.rs:48-60` hanya print ke stderr; tiga status
-  yang core bedakan (up to date / update / unreachable) harus sampai ke
-  window sebagai pesan. Lalu **FIX-VERSION-010 (W-001)** —
-  `server/app/updates.py` baca metadata stale (0.1.0) sebelum pyproject di
-  sisi source; urutannya: stamp > pyproject > metadata. Lalu
-  FIX-PLAN-003 / FIX-CHART-004 / FIX-PYTHON-005, lalu **P9 redesign UI/UX**
-  (npm, light theme, tailwind + shadcn + framer-motion + recharts untuk
-  layar; SVG/PNG server tetap untuk export; 4 fase F1-F4 hijau tiap fase).
+- **Active task:** **FIX-UPDATES-009 DONE** — W-005 (walk-test finding): menu
+  "Check for Updates..." melakukan check tapi hanya `eprintln!` ke stderr; tiga
+  status yang core bedakan (available / current / unknown) tidak pernah sampai
+  ke window. Di repo privat feed selalu 404, jadi item ini selalu diam dan
+  terlihat mati. Delivery ditambahkan, bukan menggantikan: log line masih
+  tetap ditulis, dan jawaban juga sampai ke window. Shell adalah satu-satunya
+  host dengan menu bar, dan `tauri-plugin-dialog` di Tauri 2 adalah plugin
+  yang di-fetch dari network (app offline setelah install), jadi native dialog
+  tidak bisa dipakai tanpa melanggar DEC-001 — jadi delivery-nya adalah
+  surface bundle sendiri: shell mengevaluasi script di webview yang sudah
+  dipegangnya, posting `CustomEvent('dah-notice')` yang detail-nya adalah JSON
+  body core sendiri (tidak direword shell — unreachable feed tetap
+  "could not tell", bukan silent "up to date", persis kebohongan yang
+  P6-UPDATE-005 cegah). `web/src/shell.ts` `describeUpdate` mirror
+  `update_summary` di Rust. Satu hal yang tes tangkap dan diperbaiki: body
+  yang bukan JSON tidak bisa ditanam di script (eval akan throw
+  `SyntaxError` dan item diam untuk kedua kalinya), jadi `notice_script`
+  memvalidasi body dan fallback ke body yang dibangun dari parsed answer —
+  jalur yang sama untuk transport yang tidak menyimpan body sama sekali.
+  723 server (tak berubah), web 163 (+16), Rust 25 (+6), tsc bersih, build
+  ok, e2e, golden 21/21, refine AT-04, measure 9/9, trace 48/48.
+  Selanjutnya: **FIX-VERSION-010 (W-001)** —
+  `server/app/updates.py` `current_version` baca metadata stale (0.1.0) dari
+  editable install sebelum pyproject di sisi source; urutannya jadi: stamp >
+  pyproject > metadata. Lalu FIX-PLAN-003 / FIX-CHART-004 / FIX-PYTHON-005,
+  lalu **P9 redesign UI/UX** (npm, light theme, tailwind + shadcn +
+  framer-motion + recharts untuk layar; SVG/PNG server tetap untuk export;
+  4 fase F1-F4 hijau tiap fase).
+  Sebelumnya: FIX-PROFILE-008 (W-008) DONE - membuka case POST `/profile`
+  untuk tiap dataset di setiap mount (StrictMode double render = 2 write),
+  sehingga profile yang sudah ada direcompute-ditulis ulang, dan shell
+  diam-diam menyelesaikan langkah yang rail namakan milik analyst; mount
+  sekarang GET via `getProfile` di `web/src/api.ts`, POST jadi control di
+  panel Data. 723 server, 147 web (+4).
   Sebelumnya: FIX-REFINE-007 (W-009) DONE - panel refinement sudah punya
   "Why these changes" diklik dan tidak muncul apa-apa. Widget disclosure
   bukan primitive yang tepat untuk jawaban atas pertanyaan panelnya sendiri,
@@ -124,11 +138,10 @@ requirement-traceability matrix. The full gap analysis is `docs/PRD & UX Conform
   proves the exact Intel triple a local build produces. Restoring that needs a
   self-hosted Intel runner.
 - **Test status:** server 723 passed (unchanged by this fix, which is
-  web-only). The web suite is 147 (+4 for FIX-PROFILE-008 - the mount reads a
-  profile and never writes one, an unprofiled dataset is offered rather than
-  fabricated, a failed profiling surfaces the endpoint's reason, and the panel
-  renders the stored profile; 12 a11y, 10 measure - asserted in the shell's own suite, which the measurement runner
-  reads as its evidence). Desktop shell 22 Rust tests; P2, P3 and P4 gates
+  web-only). The web suite is 163 (+16 for FIX-UPDATES-009 - the three
+  statuses the update check distinguishes each reach the window, the layer is
+  inert until one arrives, a stashed pre-mount notice is read once, and the
+  vocabulary is the core's own). Desktop shell 25 Rust tests; P2, P3 and P4 gates
   PASS; **v0.2.0, v0.3.0, v0.3.1, v0.3.2 and v0.3.3
   released** (tags `v0.2.0` on `ec819fc`, `v0.3.0` on `ab56541`, `v0.3.1` on
   `19cefc1`, `v0.3.2` on `2ff1bca`, `v0.3.3` on `30db6e9`).

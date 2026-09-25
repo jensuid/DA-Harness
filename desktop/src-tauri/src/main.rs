@@ -14,11 +14,14 @@ mod updates;
 use std::path::PathBuf;
 use std::sync::Mutex;
 
-use core_server::{health_url, resolve_server_command, wait_for_health, PORT, ServerChild};
+use core_server::{health_url, resolve_server_command, wait_for_health, ServerChild, PORT};
 use logs::reveal_core_logs;
-use updates::{check_for_update, open_in_browser, update_summary, UpdateAnswer};
 use tauri::menu::{Menu, SubmenuBuilder};
 use tauri::{Manager, WindowEvent};
+use updates::{
+    check_for_update_with_body, deliver_update_notice, open_in_browser, update_summary,
+    UpdateAnswer,
+};
 
 /// The menu items' ids; the event handler matches on these.
 const REVEAL_LOGS_ID: &str = "reveal_logs";
@@ -47,16 +50,20 @@ fn main() {
                 let _ = app;
             } else if event.id().as_ref() == CHECK_UPDATES_ID {
                 // Ask the core, which alone has the network egress and the
-                // version, then put the answer in front of the user.
-                match check_for_update(PORT) {
-                    UpdateAnswer::Available { page_url, .. } => {
-                        match open_in_browser(&page_url) {
-                            Ok(url) => eprintln!("DAH shell: opened the release page at {url}"),
-                            Err(err) => eprintln!("DAH shell: {err}"),
-                        }
+                // version, then put the answer in front of the user
+                // (FIX-UPDATES-009, W-005). For a private repository the feed
+                // is always unreachable, and before this the item's three
+                // outcomes reached stderr only - so the menu looked dead while
+                // the core was answering honestly.
+                let (answer, body) = check_for_update_with_body(PORT);
+                eprintln!("DAH shell: {}", update_summary(&answer));
+                if let UpdateAnswer::Available { page_url, .. } = &answer {
+                    match open_in_browser(page_url) {
+                        Ok(url) => eprintln!("DAH shell: opened the release page at {url}"),
+                        Err(err) => eprintln!("DAH shell: {err}"),
                     }
-                    answer => eprintln!("DAH shell: {}", update_summary(&answer)),
                 }
+                deliver_update_answer(app, &answer, body.as_deref());
             }
         })
         .setup(|app| {
@@ -153,6 +160,28 @@ fn current_exe_dir() -> Result<PathBuf, Box<dyn std::error::Error>> {
         .parent()
         .map(PathBuf::from)
         .ok_or_else(|| Box::<dyn std::error::Error>::from("current_exe has no parent directory"))
+}
+
+/// Put the update check's answer in front of the user (FIX-UPDATES-009, W-005).
+///
+/// The menu item is silent no matter which of the core's three statuses it
+/// found, so the answer goes to the window the item was pulled from - and to
+/// the log first, because the delivery is added rather than substituted: the
+/// stderr line is the one place the answer always reached, and a window that
+/// replaced it would hide the answer from anyone reading the shell's output.
+///
+/// A delivery that cannot reach the window is reported to the log rather than
+/// swallowed, so the menu item degrades to what it did before instead of to
+/// silence without a trace.
+fn deliver_update_answer(app: &tauri::AppHandle, answer: &UpdateAnswer, body: Option<&str>) {
+    let Some(window) = app.get_webview_window("main") else {
+        eprintln!("DAH shell: could not deliver the update answer - the main window is gone");
+        return;
+    };
+    match deliver_update_notice(&window, answer, body) {
+        Ok(delivered) => eprintln!("DAH shell: delivered to the window: {delivered}"),
+        Err(err) => eprintln!("DAH shell: {err}"),
+    }
 }
 
 /// Stop the core if it is running. Called when the window closes and when the

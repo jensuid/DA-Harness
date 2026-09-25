@@ -345,7 +345,7 @@ not reopened for these; the fix's own contract and verification are below.
 | FIX-TIMEOUT-006 | Reliability (the interpret/draft LLM timeout, W-014) | DONE | +24 tests (723 server, 140 web); every adapter posts one configured 120s timeout; a fallback source renders as a sentence; e2e all pass, golden 21/21, refine AT-04, measure 9/9, trace 48/48 |
 | FIX-REFINE-007 | UX (the refinement's rationale, W-009) | DONE | +3 web tests (143 web total); "Why these changes" renders the rationale and grounds the API returns, shown rather than disclosed, and stays readable after an accept |
 | FIX-PROFILE-008 | Reliability (the automatic re-profiling, W-008) | DONE | +4 web tests (147 web total); the mount GETs the profile and the analyst's POST is on request - no write on open, an offer when there is none, a re-profile when there is |
-| FIX-UPDATES-009 | Distribution (the silent update check, W-005) | PENDING | the Check for Updates menu item answers the user |
+| FIX-UPDATES-009 | Distribution (the silent update check, W-005) | DONE | web 163 (+16), Rust 25 (+6); the three statuses reach the window as the shell's own notice, the log line still writes, the browser still opens an available build |
 | FIX-VERSION-010 | Distribution (the dev checkout's stale version, W-001) | PENDING | the dev checkout reports the source's version, not the stale metadata's |
 
 Prioritas adalah urutan tabel di atas (WALK-E2E-001's report menetapkannya:
@@ -854,15 +854,49 @@ NON-GOALS: an updater (the check remains the verifiable half, per DEC-006);
 CONSTRAINTS: green only. No new dependency. The delivery uses the window the
              app already has; the statuses come from the core.
 ACCEPTANCE CRITERIA:
-- [ ] each of the three statuses produces a visible answer in the window
-- [ ] an unreachable feed answers with its reason, not silence
-- [ ] the core's own status vocabulary is what the message reports
-- [ ] the log line the handler already writes still writes
-TESTS: desktop tests for the handler's delivery per status (+~3).
-VERIFICATION: `cd server && ... pytest -q` green; `cd desktop && cargo test`
-              green; the web build green.
-STATE UPDATE: TASKS/CURRENT_STATE/HANDOFF gain the fix; W-005 closes.
+- [x] each of the three statuses produces a visible answer in the window
+- [x] an unreachable feed answers with its reason, not silence
+- [x] the core's own status vocabulary is what the message reports
+- [x] the log line the handler already writes still writes
+TESTS: NoticeLayer.test.tsx (+8) and shell.test.ts (+8) on the web side;
+       notice_tests in updates.rs (+6) on the Rust side - the event-name
+       agreement, the body riding along, the no-body and non-JSON cases, and
+       each of the three statuses.
+VERIFICATION: `cd server && DAH_LLM_API_KEY= DAH_LLM_BASE_URL= DAH_LLM_MODEL=
+              .venv/bin/python -m pytest -q` green (723, unchanged);
+              `cd desktop/src-tauri && cargo test` green (25, +6);
+              `cd web && npm test && npm run build` green (163, +16);
+              `verify_e2e.py` green; `verify_golden.py` green (21/21);
+              `verify_refine.py` green (AT-04); `verify_trace.py` green
+              (48/48).
+STATE UPDATE: TASKS/CURRENT_STATE/HANDOFF gain the fix; W-005 closes. No
+              schema change, no version bump.
 ```
+
+TASK: FIX-UPDATES-009 - the silent update check reaches the window
+ID: FIX-UPDATES-009
+PRIORITY: high
+STATUS: DONE
+SUMMARY: the Check for Updates menu item performed a check the core
+         distinguishes three ways and told only stderr about it, so on this
+         private repository - where the feed always answers 404 - the item was
+         permanently, silently dead. The delivery is the bundle's own surface,
+         because the shell is the only host with a menu bar and a native dialog
+         was not available: `tauri-plugin-dialog` is a network-fetched plugin
+         on Tauri 2 and the app is offline once installed, so depending on it
+         would break DEC-001. The shell evaluates a script in the webview it
+         already holds, posting a `dah-notice` event whose detail is the core's
+         own JSON body - never a sentence the shell reworded, so an unreachable
+         feed stays "could not tell" instead of becoming the silent "up to
+         date" P6-UPDATE-005 built the check to avoid. The bundle's
+         `describeUpdate` mirrors the shell's `update_summary`, so the window
+         and the log line always say the same thing about the same answer.
+         One thing the tests caught and fixed: a body that is not JSON cannot
+         be embedded in the script, because the eval would throw a
+         `SyntaxError` and silence the item a second time - so `notice_script`
+         validates the body and falls back to a body the shell rebuilds from
+         the parsed answer, which is also how a transport that kept no body at
+         all still reaches the window.
 
 ### FIX-VERSION-010 contract
 

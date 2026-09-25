@@ -542,3 +542,52 @@ button.danger:hover {
 .quality-clean {
   margin: 0.35rem 0 0;
 }
+
+/* FIX-UPDATES-009 (W-005): the surface that answers the native Check for
+   Updates menu item. The shell is the only host with a menu bar, so it owns
+   the delivery, and the delivery is the bundle's own surface - no new
+   dependency (DEC-001) and no network-fetched native dialog.
+
+   Fixed at the top of the viewport rather than inline, because the notice can
+   arrive on any screen and the analyst's place in the page is not where an
+   answer to a menu item belongs; a notice scrolled out of view is stderr with
+   better styling. The bottom edge is the panel border that already ships, so
+   it reads as the shell's own surface rather than a third-party toast. */
+.shell-notice {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  max-width: 48rem;
+  margin: 0 auto;
+  padding: 0.6rem 0.9rem;
+  border: 1px solid #d9c48a;
+  border-top: none;
+  border-radius: 0 0 0.4rem 0.4rem;
+  background: #faf6ec;
+  color: #6a5410;
+  font-size: 0.92rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* The concern tone is deliberate: the answer the private repository always
+   gives is "could not tell", which is a state to report, not an error to
+   shout. The same surface carries an available build without restyling,
+   because the tone is the sentence's, not the status's. */
+.shell-notice button {
+  flex: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shell-notice {
+    /* Nothing animates here; the rule is explicit so a future motion pass
+       cannot add a slide-in without deciding about it. */
+    animation: none;
+    transition: none;
+  }
+}

@@ -116,14 +116,33 @@ pub fn parse_update_answer(body: &str) -> UpdateAnswer {
 /// yet, and a core older than this endpoint 404s. Both are the same thing from
 /// a menu's point of view - nothing to show but a sentence.
 pub fn check_for_update(port: u16) -> UpdateAnswer {
+    check_for_update_with_body(port).0
+}
+
+/// Ask the core, and keep the body it answered with.
+///
+/// The parsed answer is what the log line summarises; the body is what the
+/// window needs, because the vocabulary the notice renders is the core's own
+/// - the shell hands the whole body to the bundle rather than rewording it,
+/// which keeps `unknown`'s reason from becoming a silent "up to date" (the
+/// exact lie P6-UPDATE-005 built this check to avoid). A transport failure
+/// carries no body, and the shell reports that to the window in its own
+/// sentence instead of dropping the event.
+pub fn check_for_update_with_body(port: u16) -> (UpdateAnswer, Option<String>) {
     match ureq::get(&updates_url(port))
         .timeout(REQUEST_TIMEOUT)
         .call()
     {
-        Ok(response) => parse_update_answer(&response.into_string().unwrap_or_default()),
-        Err(err) => UpdateAnswer::Unknown {
-            reason: format!("the core could not be reached ({err})"),
-        },
+        Ok(response) => {
+            let body = response.into_string().unwrap_or_default();
+            (parse_update_answer(&body), Some(body))
+        }
+        Err(err) => (
+            UpdateAnswer::Unknown {
+                reason: format!("the core could not be reached ({err})"),
+            },
+            None,
+        ),
     }
 }
 
@@ -137,6 +156,192 @@ pub fn open_in_browser(url: &str) -> Result<String, String> {
         .spawn()
         .map_err(|err| format!("could not open the browser: {err}"))?;
     Ok(url.to_string())
+}
+
+/// The custom event name the bundle's notice layer listens for
+/// (`web/src/shell.ts`).
+///
+/// FIX-UPDATES-009 (W-005): the shell had the check and the log line and no
+/// delivery, so on a private repository - where the feed always answers 404 -
+/// the item was permanently, silently dead. The delivery is the bundle's own
+/// surface because that is the one the window already has: the shell gains no
+/// dependency (DEC-001), and `tauri-plugin-dialog` on Tauri 2 is a
+/// network-fetched plugin the offline app cannot install.
+const NOTICE_EVENT: &str = "dah-notice";
+
+/// The JavaScript the shell evaluates in its own webview to hand the answer to
+/// the bundle.
+///
+/// `body` is the core's own JSON when the transport kept a body that is
+/// actually JSON, and `None` otherwise - the shell then rebuilds the body from
+/// the parsed answer. Both halves matter: a body that is not JSON cannot be
+/// embedded in the script, because the eval would throw a `SyntaxError` and the
+/// menu item would be silent a second time, and a shell-rebuilt body still
+/// carries the core's own vocabulary rather than a sentence the shell reworded
+/// - so an unreachable feed stays "could not tell" rather than becoming a
+/// silent "up to date", the lie P6-UPDATE-005 built this check to avoid.
+/// `describeUpdate` in the bundle mirrors `update_summary` here, so the window
+/// and the log line always say the same thing about the same answer.
+pub fn notice_script(answer: &UpdateAnswer, body: Option<&str>) -> String {
+    let payload = body
+        .filter(|raw| serde_json::from_str::<serde_json::Value>(raw).is_ok())
+        .map(str::to_string)
+        .unwrap_or_else(|| answer.to_json_string());
+    format!("window.dispatchEvent(new CustomEvent('{NOTICE_EVENT}',{{detail:{payload}}}))")
+}
+
+impl UpdateAnswer {
+    /// The core's own body shape, for the case the transport kept no body.
+    fn to_json_string(&self) -> String {
+        match self {
+            UpdateAnswer::Available { current, latest, page_url } => format!(
+                r#"{{"status":"available","current":{},"latest":{},"page_url":{}}}"#,
+                json_string(current),
+                json_string(latest),
+                json_string(page_url),
+            ),
+            UpdateAnswer::Current { current, latest } => format!(
+                r#"{{"status":"current","current":{},"latest":{}}}"#,
+                json_string(current),
+                json_string(latest),
+            ),
+            UpdateAnswer::Unknown { reason } => format!(
+                r#"{{"status":"unknown","current":"unknown","reason":{}}}"#,
+                json_string(reason),
+            ),
+        }
+    }
+}
+
+/// A quoted JSON string. The values come from the shell's own parsed answer,
+/// never from the analyst, so a quote inside one is escaped rather than
+/// trusted.
+fn json_string(value: &str) -> String {
+    let mut out = String::with_capacity(value.len() + 2);
+    out.push('"');
+    for ch in value.chars() {
+        match ch {
+            '"' => out.push_str(r#"\""#),
+            '\\' => out.push_str(r"\\"),
+            '\n' => out.push_str(r"\n"),
+            '\r' => out.push_str(r"\r"),
+            '\t' => out.push_str(r"\t"),
+            _ => out.push(ch),
+        }
+    }
+    out.push('"');
+    out
+}
+
+/// Deliver the check's answer to the window the menu item was pulled from.
+///
+/// Returns the sentence that was delivered (for the log) or the reason the
+/// delivery failed (also for the log) - the caller still writes both, because
+/// a delivery that silently replaced the log line would hide the answer from
+/// the one place it always reached.
+pub fn deliver_update_notice(
+    window: &tauri::WebviewWindow,
+    answer: &UpdateAnswer,
+    body: Option<&str>,
+) -> Result<String, String> {
+    let script = notice_script(answer, body);
+    window
+        .eval(&script)
+        // The script is the shell's own string, built from the core's JSON;
+        // a failure here is the webview's, and it names itself rather than the
+        // answer the analyst is still waiting on.
+        .map_err(|err| format!("could not reach the window with the update answer: {err}"))?;
+    Ok(update_summary(answer))
+}
+
+#[cfg(test)]
+mod notice_tests {
+    use super::*;
+
+    /// The event name is the one thing the Rust side and the TypeScript side
+    /// must agree on, and nothing else in the codebase checks it - a rename in
+    /// the bundle would make the menu item silent again, which is the exact
+    /// defect this task closes.
+    #[test]
+    fn the_script_dispatches_the_event_the_bundle_listens_for() {
+        let source = include_str!("../../../web/src/shell.ts");
+        assert!(
+            source.contains(&format!("'{NOTICE_EVENT}'")),
+            "web/src/shell.ts no longer listens on the event notice_script emits"
+        );
+    }
+
+    #[test]
+    fn the_script_carries_the_core_body_unmodified() {
+        let script = notice_script(
+            &UpdateAnswer::Unknown { reason: "because".to_string() },
+            Some(r#"{"status":"unknown","reason":"because"}"#),
+        );
+        assert!(script.contains("dah-notice"));
+        // The body rides along as the event's detail, so the vocabulary the
+        // window shows is the core's own.
+        assert!(script.contains(r#""status":"unknown""#));
+        assert!(script.contains(r#""reason":"because""#));
+    }
+
+    /// An answer whose body never arrived - the core would not answer, or
+    /// answered something the transport could not read - still reaches the
+    /// window. The shell builds the body itself from the parsed answer, so the
+    /// notice the analyst sees is the same sentence the log line wrote.
+    #[test]
+    fn an_answer_without_a_body_still_reaches_the_window() {
+        let script = notice_script(
+            &UpdateAnswer::Unknown { reason: "the core could not be reached".to_string() },
+            None,
+        );
+        assert!(script.contains("dah-notice"));
+        assert!(script.contains(r#""status":"unknown""#));
+        assert!(script.contains("the core could not be reached"));
+    }
+
+    /// A body the shell cannot parse still dispatches: the eval is built from
+    /// the parsed answer, so an unparseable body becomes the parsed `Unknown`
+    /// rather than a JavaScript syntax error that would have made the menu
+    /// item silent a second time.
+    #[test]
+    fn an_unparseable_body_still_dispatches() {
+        let script = notice_script(
+            &parse_update_answer("<html>not json</html>"),
+            Some("<html>not json</html>"),
+        );
+        assert!(script.contains("dah-notice"));
+        assert!(script.contains(r#""status":"unknown""#));
+        // The layer's describeUpdate degrades the rest.
+    }
+
+    #[test]
+    fn an_available_build_carries_its_page_and_opens() {
+        let answer = UpdateAnswer::Available {
+            current: "0.1.0".to_string(),
+            latest: "v0.2.0".to_string(),
+            page_url: "https://example.test/v0.2.0".to_string(),
+        };
+        let script = notice_script(
+            &answer,
+            Some(r#"{"status":"available","current":"0.1.0","latest":"v0.2.0","page_url":"https://example.test/v0.2.0"}"#),
+        );
+        assert!(script.contains("dah-notice"));
+        assert!(script.contains(r#""status":"available""#));
+        // The delivery names the download page; the browser still opens it.
+        assert_eq!(
+            update_summary(&answer),
+            "DAH v0.2.0 is available - download it"
+        );
+    }
+
+    #[test]
+    fn a_current_build_reaches_the_window_too() {
+        let script = notice_script(
+            &UpdateAnswer::Current { current: "0.1.0".to_string(), latest: "v0.1.0".to_string() },
+            Some(r#"{"status":"current","current":"0.1.0","latest":"v0.1.0"}"#),
+        );
+        assert!(script.contains(r#""status":"current""#));
+    }
 }
 
 #[cfg(test)]
