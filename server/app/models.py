@@ -349,6 +349,12 @@ class Chart(BaseModel):
     stored_path: str
     width: int
     height: int
+    # The artifact's own format, sniffed from the bytes the core wrote. It is
+    # what the shell reads to decide whether a chart is inline SVG or a
+    # bitmap link, so a response without it reads as neither. The default is
+    # SVG because that is what charts before P3-CHART-002 are, and the image
+    # endpoint sniffs the same way.
+    format: str = "svg"
     created_at: datetime
 
 

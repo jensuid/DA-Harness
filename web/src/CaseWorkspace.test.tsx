@@ -2601,12 +2601,14 @@ expect(timeline.getByText(/case created/)).toBeInTheDocument()
         series: null,
         format: 'svg',
       })
-      // The SVG the response carries is what the shell displays.
+      // The label the surface carries, naming what the chart plots.
       const surface = await screen.findByTestId('chart-surface')
-      expect(within(surface).getByText(/the core drew this/i)).toBeInTheDocument()
       expect(within(surface).getByText(/bar chart of total by region/i)).toBeInTheDocument()
-      // The core's own SVG, drawn as-is rather than re-derived.
-      expect(within(surface).getByTestId('chart-svg').querySelector('svg')).not.toBeNull()
+      // P9-F4-001: the chart on screen is recharts drawing the same stored
+      // result the core drew its artifact from, so the tree is what the shell
+      // shows; the core's own SVG stays the persisted artifact.
+      expect(within(surface).getByTestId('chart-tree')).toBeInTheDocument()
+      expect(within(surface).queryByTestId('chart-svg')).not.toBeInTheDocument()
     })
 
     it('offers only the columns the run produced', async () => {

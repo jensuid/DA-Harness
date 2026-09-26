@@ -237,7 +237,6 @@ def test_render_chart_direct_is_deterministic() -> None:
     args = ("bar", columns, rows, "region", "total")
     assert render_chart(*args) == render_chart(*args)
 
-
 def test_bar_geometry_is_anchored_and_proportional() -> None:
     """Bars sit on the zero baseline and scale linearly with their values."""
     import xml.etree.ElementTree as ET
@@ -270,3 +269,38 @@ def test_bar_geometry_is_anchored_and_proportional() -> None:
     # Height is linear in value: the ratio is the same for every bar.
     ratios = [height / value for height, value in zip(heights, sorted(values))]
     assert max(ratios) - min(ratios) < 0.01
+
+
+def test_created_chart_answers_its_own_format(tmp_path) -> None:
+    """The create response carries the artifact's format.
+
+    P9-F4: the shell reads `format` to decide what it is drawing - inline SVG
+    on screen, or a link to the core's bitmap. A response without it read as
+    neither, and every chart rendered as a link, so the on-screen chart never
+    appeared at all.
+    """
+    _temp_env(tmp_path)
+
+    with TestClient(app) as client:
+        case_id, run_id = _case_with_run(client)
+        svg = client.post(
+            f"/cases/{case_id}/runs/{run_id}/charts",
+            json={"kind": "bar", "x": "region", "y": "total", "format": "svg"},
+        )
+        png = client.post(
+            f"/cases/{case_id}/runs/{run_id}/charts",
+            json={"kind": "bar", "x": "region", "y": "total", "format": "png"},
+        )
+        # A request that names no format still answers the default, so the
+        # field is present for a chart the older shell creates too.
+        default = client.post(
+            f"/cases/{case_id}/runs/{run_id}/charts",
+            json={"kind": "bar", "x": "region", "y": "total"},
+        )
+
+    assert svg.status_code == 201, svg.text
+    assert png.status_code == 201, png.text
+    assert default.status_code == 201, default.text
+    assert svg.json()["format"] == "svg"
+    assert png.json()["format"] == "png"
+    assert default.json()["format"] == "svg"

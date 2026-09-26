@@ -288,6 +288,22 @@ button.small {
   height: auto;
 }
 
+/* P9-F4-001: the on-screen chart is a React tree now, and a container whose
+   height the tree sets collapses to nothing when the tree does not render -
+   a dropped frame, a measure column with nothing plottable, a shape recharts
+   rejected. The core's own image falls back into this container, so the
+   container holds the room the chart needs rather than the room it happens
+   to have. `chart-tree` is the recharts surface, `chart-svg` the fallback. */
+.chart[data-testid='chart-tree'] {
+  min-height: 300px;
+}
+
+.chart[data-testid='chart-tree'] svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
 .warn {
   color: #a03a2a;
 }

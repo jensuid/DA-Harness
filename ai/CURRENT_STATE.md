@@ -12,34 +12,38 @@ causal-language guard, the analytical golden suite, the orientation spine,
 question refinement, the decision view, the measurement layer and the
 requirement-traceability matrix. The full gap analysis is `docs/PRD & UX Conformance Evaluation.md`.
 
-- **Active task:** **P9-F3-001 (the motion layer and its gate) DONE** - the
-  last of F1's unused dependencies is used. framer-motion@13 drives the
-  motion the surfaces were missing, and `web/src/lib/motion.tsx` is the
-  vocabulary: three transitions (`surface` 0.18s for what a click opens,
-  `enter` 0.28s for what a case loads, `arrive` a spring for what a verdict
-  does) and three variants to match, each a `hidden` and a `shown` state
-  with the transition riding inside the target. The movement is 4-6px and
-  never an element's own height - layout shift is the frame AT-27 counts.
-  The gate is `prefers-reduced-motion`, and the collapse is this layer's
-  own: the library makes positional keys instant under reduced motion but
-  still fades opacity, so `MotionSurface` reads `useReducedMotionConfig()`
-  and sets `initial={false}`, rendering the shown state with no animation at
-  all. A second CSS rule holds a `[data-motion-surface]` visible, because a
-  surface that starts hidden and is never animated to shown is invisible
-  content - the failure the JS gate cannot see itself out of. `ReducedMotion`
-  mounts once at the root in `App.tsx`, and a `matchMedia` shim in
-  `setup-tests.ts` is what makes the gate behave in jsdom the way it behaves
-  in a browser.
-  Gates: web 197 (185 + 12), tsc clean, build ok (CSS 15.11 kB, JS 347 kB,
-  still resolving the focus rule), trace 48/48. Web-only: no line outside
-  `web/` moved, so the server (727), e2e (28/28), golden (21/21), refine
-  (AT-04) and measure (9/9) gates are not re-run.
-  Sebelumnya: P9-F2-002 (the restyle onto the tokens), P9-F2-001 (the
-  walk-test's last three findings), P9-F1-001 (the redesign's foundation),
-  FIX-PYTHON-005 (W-016), FIX-CHART-004 (W-016), FIX-VERSION-010 (W-001),
-  FIX-UPDATES-009 (W-005), FIX-PROFILE-008 (W-008), FIX-REFINE-007 (W-009),
-  FIX-TIMEOUT-006 (W-014), FIX-PLAN-003 (W-011), FIX-EVIDENCE-002 (W-015),
-  WALK-E2E-001 — all nineteen walk-test findings are resolved.
+- **Active task:** **P9-F4-001 (the on-screen chart and a re-walk) DONE** -
+  the last of F1's three dependencies is used, and the phase closes with it.
+  `web/src/lib/chart.tsx` is the chart the analyst *looks at*: recharts@3
+  drawing the same stored result the core's own renderer drew the artifact
+  from. The difference between the two is deliberate - a static image cannot
+  answer "what is this point", and a trust chain cannot be an interactive
+  widget. So the artifact stays the core's (the persisted SVG, the PNG, the
+  export package, the evidence), and the screen becomes recharts'.
+  `chartGeometry` is the shared half: the series split, the
+  plottable-points filter and the palette are the core's own rules copied
+  into the shell, so what the analyst sees and what the case holds answer
+  the same question the same way. A bar is zero-anchored because bar length
+  reads as magnitude; the legend appears only with more than one series;
+  the tooltip is a keyboard-reachable live region, which is the thing the
+  static SVG could not give.
+  The re-walk is what found the bug the suite could not: the core's `Chart`
+  model never returned `format`, so the shell read `undefined` and took the
+  PNG-link branch for *every* chart - the recharts tree rendered in jsdom,
+  where a fixture supplies the field, and nowhere else. One field in
+  `models.py` (`format: str = "svg"`, the default the image endpoint already
+  sniffs) plus a regression test in `test_charts.py` pin it, and the walk
+  then confirmed the tooltip in a real browser: hovering a bar answers its
+  own values ("north", "total_total : 270").
+  Gates: web 216 (197 + 19), server 728 (727 + 1), tsc clean, build ok
+  (CSS 16.46 kB, JS 744 kB), trace 48/48, e2e 28/28.
+  Sebelumnya: P9-F3-001 (the motion layer), P9-F2-002 (the restyle),
+  P9-F2-001 (the walk-test's last three findings), P9-F1-001 (the redesign's
+  foundation), FIX-PYTHON-005 (W-016), FIX-CHART-004 (W-016),
+  FIX-VERSION-010 (W-001), FIX-UPDATES-009 (W-005), FIX-PROFILE-008 (W-008),
+  FIX-REFINE-007 (W-009), FIX-TIMEOUT-006 (W-014), FIX-PLAN-003 (W-011),
+  FIX-EVIDENCE-002 (W-015), WALK-E2E-001 — all nineteen walk-test findings
+  are resolved.
 
 - **Done before that:** P8-TRACE-010 - the requirement-traceability matrix
   (AT-48). The PRD's section 59 control artifact is code: 48 rows, one per
@@ -84,10 +88,11 @@ requirement-traceability matrix. The full gap analysis is `docs/PRD & UX Conform
   documented minimum but is no longer enforced by CI, and a green run no longer
   proves the exact Intel triple a local build produces. Restoring that needs a
   self-hosted Intel runner.
-- **Test status:** server 727 passed (unchanged - F3-001 is web-only). The
-  web suite is 197 (+12 for P9-F3-001 - the motion layer's own contract:
-  the vocabulary is the budget, the gate closes, the content survives the
-  motion, the root wraps every screen).
+- **Test status:** server 728 passed (727 + 1 for the chart format field
+  P9-F4's re-walk found). The web suite is 216 (+19 for P9-F4-001 - the
+  chart's own contract: the geometry is the core's rules, the two kinds each
+  render their tree, the tooltip is the live region, the fallback holds the
+  artifact, and the PNG stays a link).
   Desktop shell 25 Rust tests; P2, P3 and P4 gates
   PASS; **v0.2.0, v0.3.0, v0.3.1, v0.3.2 and v0.3.3 released** (tags
   `v0.2.0` on `ec819fc`, `v0.3.0` on `ab56541`, `v0.3.1` on `19cefc1`,
@@ -96,20 +101,13 @@ requirement-traceability matrix. The full gap analysis is `docs/PRD & UX Conform
   runner green, and the measurement layer 9/9 - the reports the matrix cites as
   its measured evidence, regenerated on the current tree.
 
-- **Next task:** **P9, the UI/UX redesign** the user asked for. npm (CI
-  hardcodes `npm ci`), light theme first, recharts on screen because the
-  server's chart SVG bakes a white background and is static, while its layout
-  engine and PNG export stay for the export path. Four phases, green at each:
-  F1 the foundation (tailwind, shadcn, framer-motion, recharts, splitting
-  `CaseWorkspace.tsx`'s 2,900 lines into `web/src/panels/`), F2-001 the
-  surfaces' findings (done - W-013/W-017/W-018 closed), F2-002 the restyle
-  onto the tokens (done - every panel renders through `surfaces`, 109 lines
-  of hand-written CSS retired), F3 motion (done - framer-motion used, and
-  `prefers-reduced-motion` honoured by the JS-driven motion as well as the
-  CSS-driven kind), F4 the chart surface (recharts, installed and still
-  unused - the last of F1's three dependencies at zero imports) plus a
-  re-walk. The walk-test's findings are all closed now (W-001, W-005, W-008,
-  W-009, W-011, W-013, W-014, W-015, W-016, W-017, W-018), and the carried
+- **Next task:** **P9 is now COMPLETE** - all four phases green: F1 the
+  foundation, F2 the surfaces, F3 the motion, F4 the chart surface and the
+  re-walk. Every dependency F1 installed is used, every walk-test finding is
+  closed, and 48/48 requirements still trace. What follows is whatever the
+  re-walk found - and it found one thing this phase fixed as it stood (the
+  missing `format` field), so the phase closes with the shell's own surface
+  verified in a browser rather than only in the suite. The carried
   follow-ups that remain in `ai/TASKS.md` are the DMG bundler, the icon
   proportion (52%, chosen blind), one fragile web test layout, and two
   environmental items (signing deferred by DEC-006, CI billing suspended).

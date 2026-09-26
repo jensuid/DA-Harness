@@ -24,6 +24,7 @@ import { sourceLabel } from '../sourceLabel'
 import { messageOf } from '../CaseList'
 import { Button, surfaces } from '../lib/ui'
 import { MotionSurface } from '../lib/motion'
+import { ChartSurface } from '../lib/chart'
 import { DraftPanel } from './DraftPanel'
 
 export function RunsPanel({
@@ -350,7 +351,20 @@ export function ChartPanel({
       {error && (
         <p role="alert">The chart could not be rendered: {error}</p>
       )}
-      {image && <ChartSurface chart={chart} image={image} />}
+      {image && chart && rows && (
+        // The surface reads the run's own result, so the on-screen chart and
+        // the stored artifact answer the same question from the same numbers;
+        // the chart's metadata carries the axes the analyst picked.
+        <ChartSurface
+          kind={chart.kind as ChartKind}
+          run={rows}
+          x={chart.x}
+          y={chart.y}
+          series={chart.series}
+          title={chart.title}
+          image={image}
+        />
+      )}
     </div>
   )
 }
@@ -375,52 +389,11 @@ export function pickOf(value: string, choices: string[]): string {
   return choices.includes(value) ? value : (choices[0] ?? '')
 }
 
-// The drawn chart: the core's own SVG inline, because an <img> over it would
-// be the shell drawing a second time from a renderer it does not have; or a
-// link to the persisted bitmap, which is the artifact the core wrote.
-export function ChartSurface({
-  chart,
-  image,
-}: {
-  chart: ChartSummary | null
-  image: ChartImage
-}) {
-  const label = chart ? chartLabel(chart) : 'the chart'
-  if (image.format === 'svg') {
-    return (
-      <MotionSurface
-        variant="arrive"
-        className={surfaces.proposal}
-        data-testid="chart-surface"
-      >
-        <p className={surfaces.note}>
-          {label} — drawn by the core from the run's stored result
-        </p>
-        <div
-          className="chart"
-          data-testid="chart-svg"
-          // The SVG is the core's own output, rendered from the same stored
-          // result the finding rests on; the shell draws it as-is rather than
-          // re-deriving the geometry.
-          dangerouslySetInnerHTML={{ __html: image.svg }}
-        />
-      </MotionSurface>
-    )
-  }
-  return (
-    <MotionSurface
-      variant="arrive"
-      className={surfaces.proposal}
-      data-testid="chart-surface"
-    >
-      <p className={surfaces.note}>{label}</p>
-      <p>
-        <a href={image.url}>Open the rendered chart</a>
-      </p>
-    </MotionSurface>
-  )
-}
-
+// The drawn chart: on screen it is recharts drawing the same stored result
+// the core drew its artifact from (P9-F4-001), because a static image cannot
+// answer "what is this point"; the artifact the case holds is still the
+// core's own SVG, and a chart with nothing plottable falls back to it. A PNG
+// chart is the core's bitmap, so it stays the link it always was.
 export function chartLabel(chart: ChartSummary): string {
   const title = chart.title.trim()
   return title

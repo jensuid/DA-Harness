@@ -385,6 +385,7 @@ F2 the surfaces, F3 motion, F4 the chart surface and a re-walk.
 | P9-F2-001 | Surfaces (the walk-test's last three findings) | DONE | web 184 (+3), build ok, tsc clean, trace 48/48; W-013/W-017/W-018 closed |
 | P9-F2-002 | Surfaces (the restyle onto the tokens) | DONE | web 185 (+1), tsc clean, build ok (CSS 14.44 kB), trace 48/48; 109 lines of hand-written CSS retired |
 | P9-F3-001 | Motion (the motion layer and its gate) | DONE | web 197 (+12), tsc clean, build ok (CSS 15.11 kB, JS 347 kB), trace 48/48; framer-motion used, `prefers-reduced-motion` honoured by the JS-driven motion too |
+| P9-F4-001 | Charts (the on-screen chart and a re-walk) | DONE | web 216 (+19), server 728 (+1), tsc clean, build ok (CSS 16.46 kB, JS 744 kB), trace 48/48, e2e 28/28; recharts used, the re-walk found the missing `format` field and the tooltip is verified in a browser |
 
 ### P9-F3-001 contract
 
@@ -535,6 +536,172 @@ SUMMARY: the motion the surfaces were missing, and the one gate that decides
          is a context, not a global, and the two are not interchangeable.
 
 
+### P9-F4-001 contract
+
+```
+TASK ID: P9-F4-001
+MILESTONE: P9 UI/UX Redesign (phase F4, charts)
+CAPABILITY: Charts (the on-screen chart, and a re-walk)
+GOAL: recharts@3 is the last of F1's three dependencies still at zero
+      imports. The chart the shell shows is the core's own static SVG -
+      white background baked in, no tooltip, no hover - because the shell
+      draws what the core already drew rather than drawing a second time.
+      This phase changes the renderer of what the analyst *looks at*, not
+      of what the case *holds*: recharts draws the on-screen chart from the
+      run's stored result, and the core's SVG and PNG stay the persisted
+      artifact, the exported package and the evidence. What the new
+      renderer adds is what a static image cannot: a tooltip that reads a
+      point's own values, and a hover state that names what is under the
+      cursor. What it must not add is a second source of truth for the
+      numbers.
+CONTEXT: F1 shipped the toolchain and the tokens, F2 the surfaces, F3 the
+         motion. The chart surface this phase replaces is `ChartSurface` in
+         `web/src/panels/RunsPanel.tsx`, which draws the core's SVG inline
+         through `dangerouslySetInnerHTML` for an SVG chart and a link for a
+         PNG one. The renderer the shell uses reads the same run result the
+         core's renderer reads - `GET /cases/{id}/runs/{id}` gives the
+         columns and the rows, which is what the chart controls already
+         offer - so the geometry comes from the same stored numbers the
+         finding rests on. F3's motion layer wraps the surface, and the
+         surface keeps its `arrive` variant.
+INPUTS: recharts@3 (installed, unused), the run result the chart controls
+        read (`Run` in `web/src/api.ts`: `columns`, `rows`, `truncated`),
+        `ChartModel`'s own rules in `server/app/charts.py` (the series
+        split, the plottable-points filter, the palette, the
+        zero-anchored bar scale), and the measurement suite that pins
+        AT-27's 200ms budget.
+RELEVANT FILES: web/src/lib/chart.tsx (new - the recharts surface, the
+                shared geometry: series splitting, plottable points, the
+                palette), web/src/panels/RunsPanel.tsx (ChartSurface
+                replaced; the pickers, the refusal path and the PNG link
+                stay), web/src/chart.test.tsx (new), web/src/index.css (a
+                rule that holds the chart readable when recharts does not
+                run - the CSS-side of the same failure F3's gate covers),
+                ai/HANDOFF.md, ai/TASKS.md, ai/CURRENT_STATE.md.
+REQUIRED CHANGE:
+  - One geometry, two renderers. The series split, the plottable-points
+    filter and the palette are the core's own rules, so they live in one
+    module the shell and the tests read, and a divergence between what the
+    analyst sees and what the core drew is a named failure rather than a
+    drift. The module exports the shape recharts takes - one record per x
+    category, one key per series - and nothing else.
+  - The surface: `bar` is a `BarChart` with `BarChart`'s bars at the
+    palette's colours; `line` is a `LineChart` with `Line` and its points.
+    Both carry `XAxis`, `YAxis`, `CartesianGrid`, `Tooltip` and `Legend`
+    when there is more than one series. The axes name themselves with the
+    columns they plot, and the y axis is zero-anchored for a bar, because
+    bar length reads as magnitude. The chart's own title and its source
+    line stay where the static surface had them, and the surface keeps
+    F3's motion wrapper and its `data-testid`.
+  - What a chart must never do here: invent a series, drop a category the
+    result had, or plot a point the measure column did not have. The
+    transformation is the core's `_series_of`, not recharts' own
+    grouping, so the on-screen chart and the stored SVG answer the same
+    question the same way.
+  - The fallback: the recharts surface is a React tree, and a React tree
+    can fail to render - a measure column with no plottable points, a
+    category list that came back empty, a shape recharts rejected. A
+    surface that renders nothing is the static-SVG failure mode without
+    the static SVG's saving grace, so the surface falls back to the
+    core's own image the moment its own geometry is empty, and a CSS
+    rule holds the container's height so the panel does not collapse.
+  - The artifact is untouched: the PNG chart stays a link to the artifact
+    the core wrote, the SVG chart is still stored by the core, and the
+    export package and the evidence graph still carry the core's own
+    image. No new endpoint, no new persistence, no server line moves.
+NON-GOALS: new chart kinds (the PRD's `bar` and `line` are what the core
+           renders; a third kind is a change to the core's contract, not
+           to the shell), the export path (the core's SVG and PNG are the
+           exported artifact and stay so - a chart that changes shape
+           between the screen and the export is not evidence), touching
+           the server, restyling anything outside the chart surface, and
+           any measurement that is not the AT-27 budget the suite already
+           asserts.
+CONSTRAINTS: green only. No new dependency (recharts is F1's, now used).
+             Deterministic and offline: the chart is drawn from a stored
+             result, not from a live query, so a re-render is the same
+             chart. Web-only: no line outside `web/` moves, so the server
+             suite (727), e2e (28/28), golden (21/21), refine (AT-04) and
+             measure (9/9) gates are not re-run. The accessibility audit
+             is structural and does not read pixels; the tooltip is a
+             keyboard-reachable element or it is not shipped.
+ACCEPTANCE CRITERIA:
+- [x] recharts is imported and the on-screen chart is its tree: a bar
+      chart for `bar`, a line chart for `line`, with axes, gridlines, a
+      tooltip and a legend when there is more than one series
+- [x] the geometry is the core's own rules: the same result renders the
+      same series, the same categories and the same points the core's SVG
+      does, and a divergence is a test that names it
+- [x] the tooltip reads a point's own values and the hover state names
+      what is under the cursor - the thing the static SVG could not give
+- [x] the axes name themselves with the columns they plot, and a bar's y
+      axis is anchored at zero
+- [x] the surface falls back to the core's own image when its geometry is
+      empty, and the container's height is held by CSS when the tree does
+      not render
+- [x] the PNG chart is still a link to the core's artifact, and nothing
+      about the stored chart, the export or the evidence graph changed
+- [x] the disclosure the measurement layer times is inside its budget
+      with the recharts tree mounted, and no existing assertion moved
+TESTS: `web/src/chart.test.tsx` (19) - the two kinds each render their
+       recharts tree from a fixture result, the geometry matches the
+       core's own series split and point set for single- and multi-series
+       results, a duplicated category keeps both points, a non-plottable
+       measure drops a point but keeps its category, the tooltip is the
+       live region a hovered point reaches, the axes carry the column
+       names and a bar's height is proportional to its value (the
+       zero-anchor, measured as a ratio because jsdom has no SVG getBBox),
+       the legend appears only with more than one series and names the
+       series, the palette agrees with the core's own, the fallback shows
+       the core's image when there is nothing plottable, the CSS rule
+       resolves from the shipped stylesheet, the PNG path is still a link,
+       and a truncated result draws the rows it carries. Plus the existing
+       chart assertions in `CaseWorkspace.test.tsx` pass (one updated: the
+       source sentence and the testid, both changed by the renderer swap).
+VERIFICATION: `cd web && npm test && npm run build` green (216 = 197 + 19,
+               tsc clean, build ok - the emitted CSS is 16.46 kB and still
+               resolves the focus rule, the JS 744 kB carrying recharts);
+               `cd server && .venv/bin/python -m pytest -q` green (728 =
+               727 + 1 - the `format` regression);
+               `server/.venv/bin/python verification/trace/verify_trace.py`
+               green (48/48); `verification/e2e/verify_e2e.py` green
+               (28/28). F4 is not web-only as contracted: the re-walk
+               found the core's `Chart` response missing `format`, which
+               is why the recharts tree rendered in jsdom and nowhere
+               else, so the server moved one field and one test.
+STATE UPDATE: TASKS/CURRENT_STATE gain the task; the P9 table closes at
+              F4, and the phase closes with a re-walk. No schema change.
+```
+
+TASK: P9-F4-001 - the on-screen chart, and a re-walk
+ID: P9-F4-001
+PRIORITY: high
+STATUS: DONE
+SUMMARY: recharts@3, the last of F1's three dependencies, draws the chart
+         the analyst looks at, and the core's own SVG and PNG stay the
+         chart the case holds. `web/src/lib/chart.tsx` is both halves: a
+         geometry that is the core's `_series_of`/`_numeric`/palette copied
+         into the shell, so the screen and the artifact cannot drift, and a
+         recharts surface that carries axes naming their own columns, a
+         zero-anchored bar, a legend only when there is more than one
+         series, and a tooltip that is a live region. The fallback is the
+         discipline: a geometry with nothing plottable shows the core's own
+         image, because a chart the analyst cannot see is worse than a
+         chart the analyst cannot hover, and a CSS rule holds the
+         container's height when the tree does not render.
+         The re-walk is what the task will be remembered for. The shell
+         rendered every chart as a link - the recharts tree appeared in the
+         suite and nowhere else, because the core's `Chart` model never
+         returned `format` and the shell read `undefined` straight into the
+         PNG branch. A jsdom fixture had supplied the field, which is why
+         185 tests said green while the feature was dark. One field
+         (`format: str = "svg"`, the default the image endpoint already
+         sniffs), one regression test, and a browser confirmation: hovering
+         a bar answers its own values, "north" and "total_total : 270".
+         The lesson: a contract tested only against a fixture the test
+         itself builds is a contract the fixture keeps, not the server.
+
+
 ### P9-F2-002 contract
 
 ```
@@ -664,221 +831,6 @@ SUMMARY: the token layer is the vocabulary the panels use, and the
          size with the colour. The panels test now asserts the debt stays
          paid, reading every source file raw and naming the file and the
          class if a literal comes back.
-
-
-### P9-F2-001 contract
-
-```
-TASK ID: P9-F2-001
-MILESTONE: P9 UI/UX Redesign (phase F2, the surfaces)
-CAPABILITY: Surfaces (the walk-test's last three findings)
-GOAL: the redesign's first delivered surface change, and the last of
-      WALK-E2E-001's findings. F1 made the redesign possible and moved
-      nothing the analyst sees; F2 pays the first part of the debt by
-      fixing the three findings that were left open because they were
-      defects a redesign had to own rather than patches on the old CSS:
-      a run that landed but never appeared until a reopen (W-013), an
-      error message that named the artifact when the field was empty
-      (W-017), and a capability that worked but the shell never said
-      it had (W-018). The full restyle of the panels onto the tokens is
-      F2's second half, P9-F2-002.
-CONTEXT: W-013 is `GeneratePanel.run()`, which posted to the runs
-         endpoint and cleared its proposal but never called `onChanged`,
-         so the workspace never re-read the case and the runs panel kept
-         answering the state before the run; the finding's own report
-         names the double-run it caused. W-017 is the EVALUATE panel's
-         single catch, which showed `messageOf(err)` verbatim: three
-         different causes answer 400 (`the artifact's code is empty`, `no
-         claim was submitted to audit`, `not a single read-only query`)
-         and the core's sentences all name the artifact, so an analyst
-         who left a field blank read it as their SQL being refused.
-         W-018 is the chat panel, whose memory recalls findings from the
-         analyst's other cases (P6-MEMORY-001) and whose shell said
-         nothing about it. The three are together because none needs a
-         new endpoint, a new component or a new dependency - each is one
-         panel's own surface, and the constraint they share is the one
-         the panels test pins: the split's exports stay a complete set.
-INPUTS: `web/src/panels/GeneratePanel.tsx` (the run), `DataPanel.tsx`
-        (the only render of it), `EvaluatePanel.tsx` (the catch), and
-        `Chat.tsx` (the hint), plus `CaseWorkspace.test.tsx`'s existing
-        assertions, which are the behaviour contract.
-RELEVANT FILES: the four panels above, `web/src/CaseWorkspace.test.tsx`
-                (+3 tests), `web/src/panels/panels.test.tsx` (the two
-                new exports the split test now resolves), and
-                `ai/HANDOFF.md`, `ai/TASKS.md`, `ai/CURRENT_STATE.md`.
-REQUIRED CHANGE:
-  - W-013: `GeneratePanel` accepts `onChanged` and calls it once the run
-    endpoint answers, before it clears the proposal, so the workspace
-    re-reads the case and the runs panel, the rail and the evidence
-    graph pick the run up without a reopen. The panel stays pure: the
-    workspace owns the reload, exactly as `RunsPanel`, `DataPanel` and
-    `FindingsPanel` already do. The kind selector is untouched - the
-    proposal's own kind still decides the endpoint.
-  - W-017: a named map, `EVALUATE_REFUSALS`, carries each 400 the audit
-    endpoint raises to its own sentence, and `evaluateRefusal(error)` is
-    the single place the panel's catch goes. The key is the core's own
-    detail string, not an invented code, so a core that rewords a
-    refusal reads as an unknown 400 and is shown verbatim: the honesty
-    budget is not paid by hiding a reason the map stops recognising. A
-    non-400 and a network failure still take the path they always did.
-  - W-018: one muted sentence under the chat panel's heading says the
-    memory is cross-case and names what it cannot do. No new control, no
-    new endpoint, and no claim the hint itself measures - the capability
-    was already tested; the hint is the discoverability.
-  - The token layer `lib/ui.tsx` gains the `surfaces` strings and an
-    `accent` that is a class rather than a hex, so F2-002's restyle
-    composes them. Nothing imports them yet, by the same rule that let
-    F1 ship its dependencies unused.
-NON-GOALS: restyling any panel onto the tokens (F2-002), motion (F3),
-           the on-screen chart (F4), changing any endpoint or its
-           response shape, changing any verdict vocabulary, and touching
-           the server at all - the three findings are the shell's.
-CONSTRAINTS: green only. No new dependency (DEC-001 - the three fixes
-             are plain React). Deterministic and offline. The
-             accessibility audit's STATUS_CLASSES contract is unchanged:
-             no status class is added or removed, and nothing new carries
-             a status by colour alone.
-ACCEPTANCE CRITERIA:
-- [x] a run posted from the generate panel appears in the runs panel
-      without reopening the case, and the proposal clears so the same
-      code is not offered twice
-- [x] the three causes that answer 400 each show their own sentence,
-      naming the field that is wrong rather than the artifact
-- [x] a 400 the map does not recognise is shown verbatim, not swallowed
-- [x] the chat panel states that its memory reaches across cases
-- [x] the panel split's completeness test still resolves every export
-      the workspace renders, including the two new ones
-- [x] no other behaviour moved: the existing 181 assertions pass
-      unchanged
-TESTS: `CaseWorkspace.test.tsx` (+3) - the run landing reloads the case
-       (the workspace's own `listRuns` is called again and the "Run
-       this" button is gone), the three EVALUATE causes are named
-       separately in one flow, and the chat hint renders.
-VERIFICATION: `cd web && npm test && npm run build` green (184 = 181
-               + 3, tsc clean, build ok);
-               `server/.venv/bin/python verification/trace/verify_trace.py`
-               green (48/48 rows, AT-48 PASS - the symbols the matrix
-               cites still resolve). The change is web-only, so the
-               server suite, the e2e, golden, refine and measure gates
-               are not re-run: no line outside `web/` moved (verified by
-               `git status`), and their last runs are green at 727,
-               28/28, 21/21, AT-04 and 9/9.
-STATE UPDATE: TASKS/CURRENT_STATE/HANDOFF gain the task; the P9 table
-              opens at F2-001. No schema change, no version bump. The
-              walk-test's open findings are all closed: W-013, W-017,
-              W-018 here, W-001/W-005/W-008/W-009/W-011/W-014/W-015/W-016
-              before it.
-```
-
-TASK: P9-F2-001 - the walk-test's last three findings
-ID: P9-F2-001
-PRIORITY: high
-STATUS: DONE
-SUMMARY: F1 moved nothing the analyst sees; this is the first surface
-         change of the redesign and it closes the walk-test's last
-         three. W-013: a run the generate panel posted landed in the
-         core and the panel cleared its proposal, but the panel never
-         told the workspace to re-read the case, so the runs panel kept
-         saying no analysis had run until the case was reopened - and
-         the finding's own report records the analyst double-running it.
-         The panel now calls `onChanged` the way every other writing
-         panel does, and the run appears where it landed. W-017: three
-         causes answer 400 from the audit endpoint and the core's
-         sentences name the artifact in all three, so an empty field
-         read as the SQL being refused. `EVALUATE_REFUSALS` maps each
-         detail string to its own sentence naming the field, and
-         `evaluateRefusal` is the one place the catch reads; the key is
-         the core's own wording, so a reworded refusal is an unknown 400
-         shown verbatim rather than hidden. W-018: the chat memory
-         recalls other cases' findings and the shell never said so; one
-         muted sentence under the heading is the surface. The token
-         layer gained the `surfaces` strings F2-002 composes, imported
-         nowhere yet, by the same rule that let F1 ship its deps unused.
-```
-TASK ID: FIX-EVIDENCE-002
-MILESTONE: post-phase (the walk-test's findings)
-CAPABILITY: Validation (the evidence check's number regex, W-015)
-GOAL: a finding whose statement names a `YYYY-MM` period - or any value whose
-      digits sit inside a longer token - fails the evidence dimension with
-      "quotes values absent from its own result", and the dimension is HARD,
-      so the verdict is insufficient_evidence. The finding was correct: every
-      magnitude it quoted was a cell value in its own run. The check invented
-      two numbers by splitting a token, then refused the finding for quoting
-      them. This makes the check compare the magnitudes a statement actually
-      quotes against the magnitudes the result actually holds.
-CONTEXT: found by WALK-E2E-001's Fase C, reproduced directly in the
-         interpreter: `_numbers_in("2026-07 has the highest revenue at
-         1526309.57, the largest of 44 grouped value(s)")` returns
-         `[-7.0, 44.0, 2026.0, 1526309.57]`, and `2026.0` and `-7.0` are not
-         in `_allowed_numbers`. The same `_numbers_in` backs
-         `drafter.py:246`, `evaluator.py:379` and `validation.py:220`
-         (check_evidence, the HARD one), so the fix lands once and all four
-         sites stop splitting tokens. A second defect surfaced in the same
-         run: `_allowed_numbers` does not include the row count or the number
-         of groups a result has, so "44 grouped value(s)" - which the
-         deterministic drafter writes and which is true - was also reported
-         invented. Both are the evidence dimension's honesty budget.
-INPUTS: the statement and the run's columns and rows, exactly as check_evidence
-        receives them; the deterministic drafter's own sentence shapes, which
-        are what a correct regex must accept; the EVALUATE corpus, which
-        judges the same field.
-RELEVANT FILES: server/app/evaluator.py (`_numbers_in`, `_allowed_numbers`),
-                server/app/validation.py (no change beyond the behaviour it
-                reads), server/tests/test_validation.py and
-                server/tests/test_evaluator.py (the tests), ai/HANDOFF.md,
-                ai/TASKS.md, ai/CURRENT_STATE.md
-REQUIRED CHANGE:
-  - A numeric token is only a magnitude when it is a token, not a fragment of
-    one. A run of digits that sits inside a longer alphanumeric run - a date
-    like 2026-07, an id like ORD-100331, a code like SKU-4001 - is not a
-    number the statement quotes, so the regex must not emit it. The
-    neighbouring characters are what decide: digits bounded by digits,
-    commas, dots, whitespace or string edges are magnitudes; digits with a
-    letter or a hyphen-then-digit against them are part of something larger.
-    A negative number is only negative when its minus is a sign, not a date's
-    separator, which is the exact confusion that produced -7.
-  - `_allowed_numbers` gains the row count and the number of groups the
-    result has (the distinct count per column already covers frequency, but
-    not the totals the drafter names as "N grouped value(s)" or "N row(s)"),
-    so a statement that names the shape of its own result is quoting a
-    magnitude the result holds.
-  - A claim that names a magnitude a result does not hold still fails - the
-    honesty budget's purpose is unchanged, and a fabricated number in a
-    correct-looking sentence still must not pass.
-NON-GOALS: changing the verdict vocabulary or the HARD/soft classification;
-           re-judging the golden suite's reference claims (they pass and keep
-           passing); teaching the check to parse dates semantically (the fix
-           is that it stops counting them, not that it understands them).
-CONSTRAINTS: green only. No new dependency (DEC-001). Deterministic and
-             offline: the check is pure over its inputs. Read-only: it
-             judges, it never writes.
-ACCEPTANCE CRITERIA:
-- [x] a finding naming `YYYY-MM` periods with correct magnitudes passes its
-      evidence dimension, where before it failed as insufficient_evidence
-- [x] a date, an id and a sku are not extracted as magnitudes, verified per
-      shape
-- [x] a negative number inside a longer token is not emitted as one
-- [x] a statement naming its result's own row count or group count passes
-- [x] a genuinely fabricated magnitude still fails, and the failure names the
-      invented number
-- [x] the golden suite's reference claims still hold their evidence verdicts
-- [x] the evidence check's sentence, when it fails, still names what the
-      statement quoted that the result does not hold
-TESTS: test_validation.py (+5) - the WALK-E2E-001 regression as a literal case
-       (a `YYYY-MM` statement over twelve monthly rows passes evidence), a
-       date / id / sku shape emitting no magnitude, a negative inside a token
-       versus a real negative, the group-count allowance, and a fabricated
-       magnitude still failing.
-VERIFICATION: `cd server && DAH_LLM_API_KEY= DAH_LLM_BASE_URL= DAH_LLM_MODEL=
-               .venv/bin/python -m pytest -q` green (694 + 5 = 699);
-               `verification/e2e/verify_e2e.py` green (all steps);
-               `verify_golden.py` green (21/21 reference, 21/21 workflow);
-               `verify_refine.py` green (AT-04);
-               `verify_measure.py` green (9/9);
-               `verify_trace.py` green (48/48);
-               `cd web && npm test && npm run build` green (138).
-STATE UPDATE: TASKS/CURRENT_STATE/HANDOFF gain the fix; the walk-test's
-              W-015 closes. No schema change, no version bump.
 ```
 
 ### FIX-CHART-004 contract

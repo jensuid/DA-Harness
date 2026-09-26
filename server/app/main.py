@@ -2943,6 +2943,10 @@ async def create_chart(
         stored_path=str(stored_path),
         width=DEFAULT_WIDTH,
         height=DEFAULT_HEIGHT,
+        # The artifact's own format: the shell reads it to decide whether a
+        # chart is drawn on screen as the core's SVG or linked as its bitmap,
+        # so a response without it answers neither.
+        format=fmt,
         created_at=datetime.now(timezone.utc),
     )
     db.execute(

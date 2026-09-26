@@ -85,7 +85,6 @@ import { LearnPanel, PHASE_TITLES, WalkBody } from './LearnPanel'
 import { PlanPanel } from './PlanPanel'
 import {
   ChartPanel,
-  ChartSurface,
   RunRow,
   RunRowsTable,
   RunsPanel,
@@ -94,6 +93,9 @@ import {
   measureChoices,
   pickOf,
 } from './RunsPanel'
+// P9-F4-001: the chart surface moved to `lib/chart.tsx`, where the geometry
+// the core's own renderer uses lives with the tree that draws it.
+import { ChartSurface } from '../lib/chart'
 import { STAGE_MARKS, WorkflowRail, stageStatus } from './WorkflowRail'
 
 /** The panels this directory ships, keyed by file: each entry's value is the

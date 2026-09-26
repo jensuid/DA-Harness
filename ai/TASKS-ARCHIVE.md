@@ -6672,3 +6672,219 @@ SUMMARY: the empty state's own sentence now has the control that performs it.
          remove. The two are separate states now (`generateError`), because
          they are never both live: the control lives where the read answered
          404, and a 404 is not the reason a generation failed.
+
+
+### P9-F2-001 contract
+
+```
+TASK ID: P9-F2-001
+MILESTONE: P9 UI/UX Redesign (phase F2, the surfaces)
+CAPABILITY: Surfaces (the walk-test's last three findings)
+GOAL: the redesign's first delivered surface change, and the last of
+      WALK-E2E-001's findings. F1 made the redesign possible and moved
+      nothing the analyst sees; F2 pays the first part of the debt by
+      fixing the three findings that were left open because they were
+      defects a redesign had to own rather than patches on the old CSS:
+      a run that landed but never appeared until a reopen (W-013), an
+      error message that named the artifact when the field was empty
+      (W-017), and a capability that worked but the shell never said
+      it had (W-018). The full restyle of the panels onto the tokens is
+      F2's second half, P9-F2-002.
+CONTEXT: W-013 is `GeneratePanel.run()`, which posted to the runs
+         endpoint and cleared its proposal but never called `onChanged`,
+         so the workspace never re-read the case and the runs panel kept
+         answering the state before the run; the finding's own report
+         names the double-run it caused. W-017 is the EVALUATE panel's
+         single catch, which showed `messageOf(err)` verbatim: three
+         different causes answer 400 (`the artifact's code is empty`, `no
+         claim was submitted to audit`, `not a single read-only query`)
+         and the core's sentences all name the artifact, so an analyst
+         who left a field blank read it as their SQL being refused.
+         W-018 is the chat panel, whose memory recalls findings from the
+         analyst's other cases (P6-MEMORY-001) and whose shell said
+         nothing about it. The three are together because none needs a
+         new endpoint, a new component or a new dependency - each is one
+         panel's own surface, and the constraint they share is the one
+         the panels test pins: the split's exports stay a complete set.
+INPUTS: `web/src/panels/GeneratePanel.tsx` (the run), `DataPanel.tsx`
+        (the only render of it), `EvaluatePanel.tsx` (the catch), and
+        `Chat.tsx` (the hint), plus `CaseWorkspace.test.tsx`'s existing
+        assertions, which are the behaviour contract.
+RELEVANT FILES: the four panels above, `web/src/CaseWorkspace.test.tsx`
+                (+3 tests), `web/src/panels/panels.test.tsx` (the two
+                new exports the split test now resolves), and
+                `ai/HANDOFF.md`, `ai/TASKS.md`, `ai/CURRENT_STATE.md`.
+REQUIRED CHANGE:
+  - W-013: `GeneratePanel` accepts `onChanged` and calls it once the run
+    endpoint answers, before it clears the proposal, so the workspace
+    re-reads the case and the runs panel, the rail and the evidence
+    graph pick the run up without a reopen. The panel stays pure: the
+    workspace owns the reload, exactly as `RunsPanel`, `DataPanel` and
+    `FindingsPanel` already do. The kind selector is untouched - the
+    proposal's own kind still decides the endpoint.
+  - W-017: a named map, `EVALUATE_REFUSALS`, carries each 400 the audit
+    endpoint raises to its own sentence, and `evaluateRefusal(error)` is
+    the single place the panel's catch goes. The key is the core's own
+    detail string, not an invented code, so a core that rewords a
+    refusal reads as an unknown 400 and is shown verbatim: the honesty
+    budget is not paid by hiding a reason the map stops recognising. A
+    non-400 and a network failure still take the path they always did.
+  - W-018: one muted sentence under the chat panel's heading says the
+    memory is cross-case and names what it cannot do. No new control, no
+    new endpoint, and no claim the hint itself measures - the capability
+    was already tested; the hint is the discoverability.
+  - The token layer `lib/ui.tsx` gains the `surfaces` strings and an
+    `accent` that is a class rather than a hex, so F2-002's restyle
+    composes them. Nothing imports them yet, by the same rule that let
+    F1 ship its dependencies unused.
+NON-GOALS: restyling any panel onto the tokens (F2-002), motion (F3),
+           the on-screen chart (F4), changing any endpoint or its
+           response shape, changing any verdict vocabulary, and touching
+           the server at all - the three findings are the shell's.
+CONSTRAINTS: green only. No new dependency (DEC-001 - the three fixes
+             are plain React). Deterministic and offline. The
+             accessibility audit's STATUS_CLASSES contract is unchanged:
+             no status class is added or removed, and nothing new carries
+             a status by colour alone.
+ACCEPTANCE CRITERIA:
+- [x] a run posted from the generate panel appears in the runs panel
+      without reopening the case, and the proposal clears so the same
+      code is not offered twice
+- [x] the three causes that answer 400 each show their own sentence,
+      naming the field that is wrong rather than the artifact
+- [x] a 400 the map does not recognise is shown verbatim, not swallowed
+- [x] the chat panel states that its memory reaches across cases
+- [x] the panel split's completeness test still resolves every export
+      the workspace renders, including the two new ones
+- [x] no other behaviour moved: the existing 181 assertions pass
+      unchanged
+TESTS: `CaseWorkspace.test.tsx` (+3) - the run landing reloads the case
+       (the workspace's own `listRuns` is called again and the "Run
+       this" button is gone), the three EVALUATE causes are named
+       separately in one flow, and the chat hint renders.
+VERIFICATION: `cd web && npm test && npm run build` green (184 = 181
+               + 3, tsc clean, build ok);
+               `server/.venv/bin/python verification/trace/verify_trace.py`
+               green (48/48 rows, AT-48 PASS - the symbols the matrix
+               cites still resolve). The change is web-only, so the
+               server suite, the e2e, golden, refine and measure gates
+               are not re-run: no line outside `web/` moved (verified by
+               `git status`), and their last runs are green at 727,
+               28/28, 21/21, AT-04 and 9/9.
+STATE UPDATE: TASKS/CURRENT_STATE/HANDOFF gain the task; the P9 table
+              opens at F2-001. No schema change, no version bump. The
+              walk-test's open findings are all closed: W-013, W-017,
+              W-018 here, W-001/W-005/W-008/W-009/W-011/W-014/W-015/W-016
+              before it.
+```
+
+TASK: P9-F2-001 - the walk-test's last three findings
+ID: P9-F2-001
+PRIORITY: high
+STATUS: DONE
+SUMMARY: F1 moved nothing the analyst sees; this is the first surface
+         change of the redesign and it closes the walk-test's last
+         three. W-013: a run the generate panel posted landed in the
+         core and the panel cleared its proposal, but the panel never
+         told the workspace to re-read the case, so the runs panel kept
+         saying no analysis had run until the case was reopened - and
+         the finding's own report records the analyst double-running it.
+         The panel now calls `onChanged` the way every other writing
+         panel does, and the run appears where it landed. W-017: three
+         causes answer 400 from the audit endpoint and the core's
+         sentences name the artifact in all three, so an empty field
+         read as the SQL being refused. `EVALUATE_REFUSALS` maps each
+         detail string to its own sentence naming the field, and
+         `evaluateRefusal` is the one place the catch reads; the key is
+         the core's own wording, so a reworded refusal is an unknown 400
+         shown verbatim rather than hidden. W-018: the chat memory
+         recalls other cases' findings and the shell never said so; one
+         muted sentence under the heading is the surface. The token
+         layer gained the `surfaces` strings F2-002 composes, imported
+         nowhere yet, by the same rule that let F1 ship its deps unused.
+```
+TASK ID: FIX-EVIDENCE-002
+MILESTONE: post-phase (the walk-test's findings)
+CAPABILITY: Validation (the evidence check's number regex, W-015)
+GOAL: a finding whose statement names a `YYYY-MM` period - or any value whose
+      digits sit inside a longer token - fails the evidence dimension with
+      "quotes values absent from its own result", and the dimension is HARD,
+      so the verdict is insufficient_evidence. The finding was correct: every
+      magnitude it quoted was a cell value in its own run. The check invented
+      two numbers by splitting a token, then refused the finding for quoting
+      them. This makes the check compare the magnitudes a statement actually
+      quotes against the magnitudes the result actually holds.
+CONTEXT: found by WALK-E2E-001's Fase C, reproduced directly in the
+         interpreter: `_numbers_in("2026-07 has the highest revenue at
+         1526309.57, the largest of 44 grouped value(s)")` returns
+         `[-7.0, 44.0, 2026.0, 1526309.57]`, and `2026.0` and `-7.0` are not
+         in `_allowed_numbers`. The same `_numbers_in` backs
+         `drafter.py:246`, `evaluator.py:379` and `validation.py:220`
+         (check_evidence, the HARD one), so the fix lands once and all four
+         sites stop splitting tokens. A second defect surfaced in the same
+         run: `_allowed_numbers` does not include the row count or the number
+         of groups a result has, so "44 grouped value(s)" - which the
+         deterministic drafter writes and which is true - was also reported
+         invented. Both are the evidence dimension's honesty budget.
+INPUTS: the statement and the run's columns and rows, exactly as check_evidence
+        receives them; the deterministic drafter's own sentence shapes, which
+        are what a correct regex must accept; the EVALUATE corpus, which
+        judges the same field.
+RELEVANT FILES: server/app/evaluator.py (`_numbers_in`, `_allowed_numbers`),
+                server/app/validation.py (no change beyond the behaviour it
+                reads), server/tests/test_validation.py and
+                server/tests/test_evaluator.py (the tests), ai/HANDOFF.md,
+                ai/TASKS.md, ai/CURRENT_STATE.md
+REQUIRED CHANGE:
+  - A numeric token is only a magnitude when it is a token, not a fragment of
+    one. A run of digits that sits inside a longer alphanumeric run - a date
+    like 2026-07, an id like ORD-100331, a code like SKU-4001 - is not a
+    number the statement quotes, so the regex must not emit it. The
+    neighbouring characters are what decide: digits bounded by digits,
+    commas, dots, whitespace or string edges are magnitudes; digits with a
+    letter or a hyphen-then-digit against them are part of something larger.
+    A negative number is only negative when its minus is a sign, not a date's
+    separator, which is the exact confusion that produced -7.
+  - `_allowed_numbers` gains the row count and the number of groups the
+    result has (the distinct count per column already covers frequency, but
+    not the totals the drafter names as "N grouped value(s)" or "N row(s)"),
+    so a statement that names the shape of its own result is quoting a
+    magnitude the result holds.
+  - A claim that names a magnitude a result does not hold still fails - the
+    honesty budget's purpose is unchanged, and a fabricated number in a
+    correct-looking sentence still must not pass.
+NON-GOALS: changing the verdict vocabulary or the HARD/soft classification;
+           re-judging the golden suite's reference claims (they pass and keep
+           passing); teaching the check to parse dates semantically (the fix
+           is that it stops counting them, not that it understands them).
+CONSTRAINTS: green only. No new dependency (DEC-001). Deterministic and
+             offline: the check is pure over its inputs. Read-only: it
+             judges, it never writes.
+ACCEPTANCE CRITERIA:
+- [x] a finding naming `YYYY-MM` periods with correct magnitudes passes its
+      evidence dimension, where before it failed as insufficient_evidence
+- [x] a date, an id and a sku are not extracted as magnitudes, verified per
+      shape
+- [x] a negative number inside a longer token is not emitted as one
+- [x] a statement naming its result's own row count or group count passes
+- [x] a genuinely fabricated magnitude still fails, and the failure names the
+      invented number
+- [x] the golden suite's reference claims still hold their evidence verdicts
+- [x] the evidence check's sentence, when it fails, still names what the
+      statement quoted that the result does not hold
+TESTS: test_validation.py (+5) - the WALK-E2E-001 regression as a literal case
+       (a `YYYY-MM` statement over twelve monthly rows passes evidence), a
+       date / id / sku shape emitting no magnitude, a negative inside a token
+       versus a real negative, the group-count allowance, and a fabricated
+       magnitude still failing.
+VERIFICATION: `cd server && DAH_LLM_API_KEY= DAH_LLM_BASE_URL= DAH_LLM_MODEL=
+               .venv/bin/python -m pytest -q` green (694 + 5 = 699);
+               `verification/e2e/verify_e2e.py` green (all steps);
+               `verify_golden.py` green (21/21 reference, 21/21 workflow);
+               `verify_refine.py` green (AT-04);
+               `verify_measure.py` green (9/9);
+               `verify_trace.py` green (48/48);
+               `cd web && npm test && npm run build` green (138).
+STATE UPDATE: TASKS/CURRENT_STATE/HANDOFF gain the fix; the walk-test's
+              W-015 closes. No schema change, no version bump.
+```
