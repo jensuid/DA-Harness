@@ -8,6 +8,7 @@ import {
   updateCase,
 } from './api'
 import { Templates } from './Templates'
+import { Button, surfaces } from './lib/ui'
 
 // The list is the front door: find a case again, or start a new one. The search
 // box is the API's q parameter - a literal substring over question and dataset.
@@ -43,16 +44,16 @@ export function CaseList({
   return (
     <section>
       <h1>Analysis Cases</h1>
-      <div className="row">
+      <div className={surfaces.rowGap}>
         <input
           aria-label="Search cases"
           value={term}
           onChange={(e) => setTerm(e.target.value)}
           placeholder="Search by question or dataset…"
         />
-        <button type="button" onClick={onCreate}>
+        <Button type="button" onClick={onCreate}>
           New case
-        </button>
+        </Button>
       </div>
       {error && <p role="alert">Failed to load cases: {error}</p>}
       {loading && <p>Loading…</p>}
@@ -184,13 +185,13 @@ function CaseRow({
           onChange={(e) => setDataset(e.target.value)}
           disabled={busy}
         />
-        <div className="row">
-          <button type="submit" className="small" disabled={busy || !question.trim() || !dataset.trim()}>
+        <div className={surfaces.buttonRow}>
+          <Button type="submit" variant="small" disabled={busy || !question.trim() || !dataset.trim()}>
             {busy ? 'Saving…' : 'Save'}
-          </button>
-          <button type="button" className="small" onClick={cancelEdit} disabled={busy}>
+          </Button>
+          <Button type="button" variant="small" onClick={cancelEdit} disabled={busy}>
             Cancel
-          </button>
+          </Button>
         </div>
         {error && (
           <p role="alert" className="warn">
@@ -210,60 +211,60 @@ function CaseRow({
       {armed ? (
         // The second click names what it removes: the question is the thing the
         // user would be sorry to lose, so it is the confirmation's subject.
-        <div className="row">
-          <button
+        <div className={surfaces.buttonRow}>
+          <Button
             type="button"
             onClick={() => void remove()}
-            className="small danger"
+            variant="smallDanger"
             disabled={busy}
             aria-label={`Confirm deleting ${caseRow.question}`}
           >
             {busy ? 'Deleting…' : `Delete “${caseRow.question}” for good`}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             onClick={() => setArmed(false)}
-            className="small"
+            variant="small"
             disabled={busy}
           >
             Keep it
-          </button>
+          </Button>
         </div>
       ) : (
-        <div className="row case-actions">
-          <button
+        <div className={surfaces.buttonRow}>
+          <Button
             type="button"
             onClick={() => {
               setEditing(true)
               setArmed(false)
             }}
-            className="small"
+            variant="small"
             disabled={busy}
             aria-label={`Rename ${caseRow.question}`}
           >
             Rename
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             onClick={() => void duplicate()}
-            className="small"
+            variant="small"
             disabled={busy}
             aria-label={`Duplicate ${caseRow.question}`}
           >
             {busy ? 'Copying…' : 'Duplicate'}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             onClick={() => {
               setArmed(true)
               setError(null)
             }}
-            className="small danger"
+            variant="smallDanger"
             disabled={busy}
             aria-label={`Delete ${caseRow.question}`}
           >
             Delete
-          </button>
+          </Button>
         </div>
       )}
       {error && (

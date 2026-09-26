@@ -1,9 +1,11 @@
 /**
- * P9-F1-001: this panel moved out of CaseWorkspace.tsx verbatim.
- * The workspace holds the state; the panel is pure over its props.
+ * P9-F2-002: this panel is built on the token layer, not on the class names
+ * the hand-written CSS defined. The workspace still holds the state; the
+ * panel is still pure over its props.
  */
 
 import { type CaseProgress } from '../api'
+import { surfaces } from '../lib/ui'
 
 export function WorkflowRail({
   progress,
@@ -12,10 +14,10 @@ export function WorkflowRail({
   progress: CaseProgress | null
   qualityWarning: boolean
 }) {
-  if (!progress) return <p>Loading workflow…</p>
+  if (!progress) return <p className={surfaces.note}>Loading workflow…</p>
   return (
-    <div className="panel workflow-rail">
-      <h2>Where this case stands</h2>
+    <div className={surfaces.panel + ' workflow-rail'}>
+      <h2 className={surfaces.heading}>Where this case stands</h2>
       {/* One text node: the sentence stays readable in the DOM and in a screen
           reader, and a test can assert on it without reaching across elements. */}
       <p>
@@ -33,7 +35,7 @@ export function WorkflowRail({
       ) : (
         <p>Every stage has an artifact behind it.</p>
       )}
-      <ul className="stages">
+      <ul className={surfaces.panelList}>
         {progress.stages.map((stage) => {
           const status = stageStatus(stage.name, progress, qualityWarning)
           return (

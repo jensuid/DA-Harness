@@ -1,12 +1,14 @@
 /**
- * P9-F1-001: this panel moved out of CaseWorkspace.tsx verbatim.
- * The workspace holds the state; the panel is pure over its props.
+ * P9-F2-002: this panel is built on the token layer, not on the class names
+ * the hand-written CSS defined. The workspace still holds the state; the
+ * panel is still pure over its props.
  */
 
 import { useState } from 'react'
 import { type DraftFinding, acceptFinding } from '../api'
 import { sourceLabel } from '../sourceLabel'
 import { messageOf } from '../CaseList'
+import { Button, surfaces } from '../lib/ui'
 
 export function DraftPanel({
   caseId,
@@ -36,16 +38,16 @@ export function DraftPanel({
   }
 
   return (
-    <div className="proposal">
-      <p className="muted">
+    <div className={surfaces.proposal}>
+      <p className={surfaces.note}>
         {sourceLabel(draft.source, 'draft')} — accepting records a real finding,
         not_evaluated until validated
       </p>
       <p>{draft.statement}</p>
-      <p className="muted">{draft.interpretation}</p>
-      {draft.caveat && <p className="muted">caveat: {draft.caveat}</p>}
+      <p className={surfaces.note}>{draft.interpretation}</p>
+      {draft.caveat && <p className={surfaces.note}>caveat: {draft.caveat}</p>}
       {draft.grounds.length > 0 && (
-        <ul className="grounds">
+        <ul className={surfaces.panelList}>
           {draft.grounds.map((ground) => (
             <li key={ground} className="chip">
               {ground}
@@ -53,9 +55,9 @@ export function DraftPanel({
           ))}
         </ul>
       )}
-      <button type="button" onClick={accept} disabled={busy}>
+      <Button type="button" onClick={accept} disabled={busy}>
         {busy ? 'Recording…' : 'Accept as a finding'}
-      </button>
+      </Button>
       {error && <p role="alert">Could not record the finding: {error}</p>}
     </div>
   )

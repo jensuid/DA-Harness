@@ -18,6 +18,7 @@
 
 import { useEffect, useState } from 'react'
 import { describeUpdate, NOTICE_ATTR, NOTICE_EVENT } from './shell'
+import { Button } from './lib/ui'
 
 export function NoticeLayer() {
   const [notice, setNotice] = useState<string | null>(null)
@@ -46,14 +47,14 @@ export function NoticeLayer() {
   return (
     <div className="shell-notice" role="status" aria-live="polite">
       <span>{notice}</span>
-      <button
+      <Button
         type="button"
-        className="small"
+        variant="small"
         onClick={() => setNotice(null)}
         aria-label="Dismiss the update notice"
       >
         Dismiss
-      </button>
+      </Button>
     </div>
   )
 }

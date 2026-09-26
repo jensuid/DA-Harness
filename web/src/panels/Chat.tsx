@@ -1,12 +1,14 @@
 /**
- * P9-F1-001: this panel moved out of CaseWorkspace.tsx verbatim.
- * The workspace holds the state; the panel is pure over its props.
+ * P9-F2-002: this panel is built on the token layer, not on the class names
+ * the hand-written CSS defined. The workspace still holds the state; the
+ * panel is still pure over its props.
  */
 
 import { useEffect, useState } from 'react'
 import { type ConversationTurn, getCase, postChat } from '../api'
 import { sourceLabel } from '../sourceLabel'
 import { messageOf } from '../CaseList'
+import { Button, surfaces } from '../lib/ui'
 
 export function Chat({
   caseId,
@@ -81,9 +83,9 @@ export function Chat({
   }
 
   return (
-    <div className="panel">
-      <h2>Ask this case</h2>
-      <p className="muted">
+    <div className={surfaces.panel}>
+      <h2 className={surfaces.heading}>Ask this case</h2>
+      <p className={surfaces.note}>
         Answers come from this case's artifacts. The memory is cross-case: it
         may recall findings from your other cases, and it says when it cannot
         compare across them.
@@ -96,19 +98,19 @@ export function Chat({
           placeholder="How many datasets does this case have?"
           disabled={busy}
         />
-        <button type="submit" disabled={busy || !message.trim()}>
+        <Button type="submit" disabled={busy || !message.trim()}>
           {busy ? 'Asking…' : 'Ask'}
-        </button>
+        </Button>
       </form>
       {error && <p role="alert">The assistant could not answer: {error}</p>}
-      <ul className="chat">
+      <ul className={surfaces.panelList}>
         {turns.map((turn) => (
-          <li key={turn.id} className="turn">
+          <li key={turn.id} className={surfaces.turn}>
             <p className="question">{turn.message}</p>
             <p>{turn.answer}</p>
-            <p className="muted">{sourceLabel(turn.source, 'answer')}</p>
+            <p className={surfaces.note}>{sourceLabel(turn.source, 'answer')}</p>
             {turn.grounds.length > 0 && (
-              <ul className="grounds">
+              <ul className={surfaces.panelList}>
                 {turn.grounds.map((ground) => (
                   <li key={ground}>
                     <Ground

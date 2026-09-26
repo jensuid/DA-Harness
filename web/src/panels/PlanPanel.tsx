@@ -1,12 +1,14 @@
 /**
- * P9-F1-001: this panel moved out of CaseWorkspace.tsx verbatim.
- * The workspace holds the state; the panel is pure over its props.
+ * P9-F2-002: this panel is built on the token layer, not on the class names
+ * the hand-written CSS defined. The workspace still holds the state; the
+ * panel is still pure over its props.
  */
 
 import { useEffect, useState } from 'react'
 import { ApiError, type Dataset, type Plan, createPlan, getPlan } from '../api'
 import { sourceLabel } from '../sourceLabel'
 import { messageOf } from '../CaseList'
+import { Button, surfaces } from '../lib/ui'
 
 export function PlanPanel({
   caseId,
@@ -83,31 +85,31 @@ export function PlanPanel({
 
   if (datasets.length === 0) {
     return (
-      <div className="panel">
-        <h2>Plan</h2>
-        <p className="muted">Attach a dataset before planning the analysis.</p>
+      <div className={surfaces.panel}>
+        <h2 className={surfaces.heading}>Plan</h2>
+        <p className={surfaces.note}>Attach a dataset before planning the analysis.</p>
       </div>
     )
   }
 
   if (!plan) {
     return (
-      <div className="panel">
-        <h2>Plan</h2>
+      <div className={surfaces.panel}>
+        <h2 className={surfaces.heading}>Plan</h2>
         {missing ? (
           <>
-            <p className="muted">
+            <p className={surfaces.note}>
               No plan for {datasets[0].filename} yet - generate one to get
               sub-questions, hypotheses and the steps that answer them.
             </p>
-            <div className="row">
-              <button
+            <div className={surfaces.buttonRow}>
+              <Button
                 type="button"
                 onClick={() => void generate()}
                 disabled={generating}
               >
                 {generating ? 'Generating the plan…' : 'Generate an analysis plan'}
-              </button>
+              </Button>
             </div>
             {generateError && (
               // The endpoint's own reason, as a sentence: a 400 is an
@@ -119,7 +121,7 @@ export function PlanPanel({
         ) : error ? (
           <p role="alert">The plan could not be read: {error}</p>
         ) : (
-          <p className="muted">Loading the plan…</p>
+          <p className={surfaces.note}>Loading the plan…</p>
         )}
       </div>
     )
@@ -127,44 +129,44 @@ export function PlanPanel({
 
   const body = plan.plan
   return (
-    <div className="panel">
-      <h2>Plan</h2>
-      <p className="muted">
+    <div className={surfaces.panel}>
+      <h2 className={surfaces.heading}>Plan</h2>
+      <p className={surfaces.note}>
         {sourceLabel(plan.source, 'plan')} for {datasets[0].filename}
         {body.context_basis.length > 0 &&
           ` — read from ${body.context_basis.join(', ')}`}
       </p>
-      <h3>Objective</h3>
+      <h3 className={surfaces.subheading}>Objective</h3>
       <p>Objective: {body.objective}</p>
-      <h3>Sub-questions</h3>
-      <ol className="items">
+      <h3 className={surfaces.subheading}>Sub-questions</h3>
+      <ol className={surfaces.panelList}>
         {body.sub_questions.map((item, i) => (
           <li key={i}>{item}</li>
         ))}
       </ol>
-      <h3>Hypotheses</h3>
-      <ul className="items">
+      <h3 className={surfaces.subheading}>Hypotheses</h3>
+      <ul className={surfaces.panelList}>
         {body.hypotheses.map((hypothesis, i) => (
-          <li key={i} className="run">
+          <li key={i} className={surfaces.row}>
             <p><strong>{hypothesis.statement}</strong></p>
-            <p className="muted">why: {hypothesis.rationale}</p>
-            <p className="muted">how to check: {hypothesis.check}</p>
+            <p className={surfaces.note}>why: {hypothesis.rationale}</p>
+            <p className={surfaces.note}>how to check: {hypothesis.check}</p>
           </li>
         ))}
       </ul>
-      <h3>Steps</h3>
-      <ol className="items">
+      <h3 className={surfaces.subheading}>Steps</h3>
+      <ol className={surfaces.panelList}>
         {body.analysis_steps.map((step, i) => (
           <li key={i}>
             <strong>{step.action}</strong>
-            <span className="muted"> — {step.detail}</span>
+            <span className={surfaces.note}> — {step.detail}</span>
           </li>
         ))}
       </ol>
-      <h3>Data requirements</h3>
-      <ul className="items">
+      <h3 className={surfaces.subheading}>Data requirements</h3>
+      <ul className={surfaces.panelList}>
         {body.data_requirements.map((requirement, i) => (
-          <li key={i} className="muted">
+          <li key={i} className={surfaces.note}>
             {requirement.requirement}: {requirement.detail}
           </li>
         ))}

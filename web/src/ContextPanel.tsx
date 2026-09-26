@@ -12,6 +12,7 @@ import { useEffect, useState } from 'react'
 
 import { type CaseContext, getContext, putContext } from './api'
 import { messageOf } from './CaseList'
+import { Button, surfaces } from './lib/ui'
 
 type Lists = 'sub_questions' | 'hypotheses' | 'constraints'
 
@@ -82,15 +83,15 @@ export function ContextPanel({ caseId, onChanged }: { caseId: string; onChanged:
   }
 
   return (
-    <div className="panel">
-      <h2>Context</h2>
-      <p className="muted">
+    <div className={surfaces.panel}>
+      <h2 className={surfaces.heading}>Context</h2>
+      <p className={surfaces.note}>
         What this case is for. The planner reads it, so a plan is built from
         stated intent rather than from a question string alone.
       </p>
 
-      <label className="subpanel">
-        <h3>Purpose</h3>
+      <label className={surfaces.subpanel}>
+        <h3 className={surfaces.subheading}>Purpose</h3>
         <textarea
           aria-label="Purpose"
           value={context.purpose}
@@ -102,11 +103,11 @@ export function ContextPanel({ caseId, onChanged }: { caseId: string; onChanged:
       </label>
 
       {FIELDS.map((field) => (
-        <div className="subpanel" key={field.key}>
-          <h3>{field.label}</h3>
-          <ul className="items">
+        <div className={surfaces.subpanel} key={field.key}>
+          <h3 className={surfaces.subheading}>{field.label}</h3>
+          <ul className={surfaces.panelList}>
             {context[field.key].map((entry, index) => (
-              <li key={index} className="row">
+              <li key={index} className={surfaces.rowGap}>
                 <input
                   aria-label={`${field.noun} ${index + 1}`}
                   value={entry}
@@ -115,37 +116,37 @@ export function ContextPanel({ caseId, onChanged }: { caseId: string; onChanged:
                   }
                   disabled={busy}
                 />
-                <button
+                <Button
                   type="button"
                   onClick={() => setList(field.key, context[field.key].filter((_, i) => i !== index))}
                   disabled={busy}
-                  className="small"
+                  variant="small"
                   aria-label={`Remove ${field.noun} ${index + 1}`}
                 >
                   Remove
-                </button>
+                </Button>
               </li>
             ))}
           </ul>
-          <button
+          <Button
             type="button"
             onClick={() => setList(field.key, [...context[field.key], ''])}
             disabled={busy}
-            className="small"
+            variant="small"
           >
             Add {field.noun}
-          </button>
+          </Button>
         </div>
       ))}
 
       {error && <p role="alert">Could not save the context: {error}</p>}
-      <div className="row">
-        <button type="button" onClick={save} disabled={busy || !dirty}>
+      <div className={surfaces.rowGap}>
+        <Button type="button" onClick={save} disabled={busy || !dirty}>
           {busy ? 'Saving…' : 'Save context'}
-        </button>
-        {dirty && <span className="muted">unsaved edits</span>}
+        </Button>
+        {dirty && <span className={surfaces.note}>unsaved edits</span>}
         {context.updated_at && !dirty && (
-          <span className="muted">saved</span>
+          <span className={surfaces.note}>saved</span>
         )}
       </div>
     </div>

@@ -29,6 +29,7 @@ import {
   rejectRefinement,
 } from './api'
 import { messageOf } from './CaseList'
+import { Button, surfaces } from './lib/ui'
 import { sourceLabel } from './sourceLabel'
 
 // The two input boxes the walkthrough found near-identical are in different
@@ -119,9 +120,9 @@ export function RefinePanel({
     proposal && (proposal.status === 'accepted' || proposal.status === 'rejected' || proposal.status === 'edited')
 
   return (
-    <div className="panel">
-      <h2>Refine the question</h2>
-      <p className="muted">
+    <div className={surfaces.panel}>
+      <h2 className={surfaces.heading}>Refine the question</h2>
+      <p className={surfaces.note}>
         A vague question is sharpened with what the profile measured - real
         columns, measured ranges - and nothing is changed until you decide.
       </p>
@@ -129,17 +130,17 @@ export function RefinePanel({
       {error && <p role="alert">Something went wrong: {error}</p>}
 
       {!proposal && (
-        <div className="row">
-          <button
+        <div className={surfaces.buttonRow}>
+          <Button
             type="button"
             onClick={() => void propose()}
             disabled={busy || !question.trim()}
             aria-label="Propose a refinement of the question"
           >
             {busy ? 'Reading the profile…' : 'Propose a refinement'}
-          </button>
+          </Button>
           {!question.trim() && (
-            <span className="muted">the case has no question yet</span>
+            <span className={surfaces.note}>the case has no question yet</span>
           )}
         </div>
       )}
@@ -149,23 +150,23 @@ export function RefinePanel({
           {/* UX 12: the transformation is shown, both halves of it. The
               original is never replaced in place, even after an accept that
               moved the case's question to the refined one. */}
-          <h3>Your question</h3>
+          <h3 className={surfaces.subheading}>Your question</h3>
           <p className="question">{proposal.original_question}</p>
 
           {declined ? (
-            <p className="muted">
+            <p className={surfaces.note}>
               DAH looked at the question and the profiled data and had nothing
               to add: the question is already specific enough, or the data
               offers nothing that would make it more answerable.
             </p>
           ) : (
             <>
-              <p className="muted" aria-label="AI suggestion">
+              <p className={surfaces.note} aria-label="AI suggestion">
                 ↓ AI suggestion ({sourceLabel(proposal.source, 'proposal')})
               </p>
-              <h3>Refined question</h3>
+              <h3 className={surfaces.subheading}>Refined question</h3>
               {editing ? (
-                <label className="subpanel">
+                <label className={surfaces.subpanel}>
                   <textarea
                     aria-label={EDIT_LABEL}
                     value={draft}
@@ -190,11 +191,11 @@ export function RefinePanel({
                 // without ever reading what supports it. The grounds are the
                 // profile's own columns and measures - the measured basis that
                 // makes the suggestion honest - listed where they can be read.
-                <div className="subpanel rationale">
-                  <h4>Why these changes</h4>
+                <div className={surfaces.rationale}>
+                  <h4 className={surfaces.labelheading}>Why these changes</h4>
                   <p>{proposal.rationale}</p>
                   {proposal.grounds.length > 0 && (
-                    <ul className="items">
+                    <ul className={surfaces.panelList}>
                       {proposal.grounds.map((ground, index) => (
                         <li key={index}>
                           <strong>{ground.name}</strong> - {ground.detail}
@@ -208,8 +209,8 @@ export function RefinePanel({
               {pending && !editing && (
                 // The three paths AT-04 names, and no fourth: there is no
                 // button that rewrites the original without asking first.
-                <div className="row">
-                  <button
+                <div className={surfaces.buttonRow}>
+                  <Button
                     type="button"
                     onClick={() => void decide(
                       () => acceptRefinement(caseId, proposal.id),
@@ -218,8 +219,8 @@ export function RefinePanel({
                     disabled={busy}
                   >
                     Accept
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
                     onClick={() => {
                       setDraft(proposal.refined_question)
@@ -228,8 +229,8 @@ export function RefinePanel({
                     disabled={busy}
                   >
                     Edit
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
                     onClick={() => void decide(
                       () => rejectRefinement(caseId, proposal.id),
@@ -238,31 +239,31 @@ export function RefinePanel({
                     disabled={busy}
                   >
                     Keep original
-                  </button>
+                  </Button>
                 </div>
               )}
 
               {pending && editing && (
-                <div className="row">
-                  <button
+                <div className={surfaces.buttonRow}>
+                  <Button
                     type="button"
                     onClick={() => void saveEdit()}
                     disabled={busy || !draft.trim()}
                   >
                     {busy ? 'Applying…' : 'Apply my edit'}
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
                     onClick={() => setEditing(false)}
                     disabled={busy}
                   >
                     Cancel
-                  </button>
+                  </Button>
                 </div>
               )}
 
               {decided && (
-                <p className="muted">
+                <p className={surfaces.note}>
                   {proposal.status === 'accepted' &&
                     'Accepted - the case now carries the refined question.'}
                   {proposal.status === 'edited' &&
@@ -275,14 +276,14 @@ export function RefinePanel({
               )}
 
               {decided && (
-                <div className="row">
-                  <button
+                <div className={surfaces.buttonRow}>
+                  <Button
                     type="button"
                     onClick={() => void propose()}
                     disabled={busy}
                   >
                     Propose again
-                  </button>
+                  </Button>
                 </div>
               )}
             </>

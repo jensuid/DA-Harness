@@ -1,11 +1,13 @@
 /**
- * P9-F1-001: this panel moved out of CaseWorkspace.tsx verbatim.
- * The workspace holds the state; the panel is pure over its props.
+ * P9-F2-002: this panel is built on the token layer, not on the class names
+ * the hand-written CSS defined. The workspace still holds the state; the
+ * panel is still pure over its props.
  */
 
 import { useState } from 'react'
 import { type Finding, type ValidationResult, validateFinding } from '../api'
 import { messageOf } from '../CaseList'
+import { Button, surfaces } from '../lib/ui'
 
 export function FindingsPanel({
   caseId,
@@ -18,16 +20,16 @@ export function FindingsPanel({
 }) {
   if (findings.length === 0) {
     return (
-      <div className="panel">
-        <h2>Findings</h2>
-        <p className="muted">No findings yet - a run can draft one.</p>
+      <div className={surfaces.panel}>
+        <h2 className={surfaces.heading}>Findings</h2>
+        <p className={surfaces.note}>No findings yet - a run can draft one.</p>
       </div>
     )
   }
   return (
-    <div className="panel">
-      <h2>Findings</h2>
-      <ul className="items">
+    <div className={surfaces.panel}>
+      <h2 className={surfaces.heading}>Findings</h2>
+      <ul className={surfaces.panelList}>
         {findings.map((finding) => (
           <li key={finding.id}>
             <FindingRow caseId={caseId} finding={finding} onChanged={onChanged} />
@@ -67,11 +69,11 @@ export function FindingRow({
   }
 
   return (
-    <div className="run">
+    <div className={surfaces.row}>
       <p>{finding.statement}</p>
-      <p className="muted">status: {finding.validation_status}</p>
+      <p className={surfaces.note}>status: {finding.validation_status}</p>
       {verdict && (
-        <div className="proposal">
+        <div className={surfaces.proposal}>
           <p><strong>Verdict: {verdict.status}</strong></p>
           {/* P8-CAUSAL-004: a guard refusal is the message, not a footnote on a
               pass. The verdict names the sentence to fix, so a finding that
@@ -84,11 +86,11 @@ export function FindingRow({
               sentence above is what to change.
             </p>
           )}
-          <ul className="items">
+          <ul className={surfaces.panelList}>
             {verdict.checks.map((check) => (
               <li
                 key={check.name}
-                className={check.passed ? 'muted' : check.hard ? 'fail' : 'warn'}
+                className={check.passed ? surfaces.note : check.hard ? 'fail' : 'warn'}
               >
                 {/* A concern is not a failure: the numbers reproduce and the
                     claim is phrased within them, but the analysis carries a
@@ -101,9 +103,9 @@ export function FindingRow({
           </ul>
         </div>
       )}
-      <button type="button" onClick={validate} disabled={busy} className="small">
+      <Button type="button" onClick={validate} disabled={busy} variant="small">
         {busy ? 'Validating…' : 'Validate'}
-      </button>
+      </Button>
       {error && <p role="alert">Validation failed: {error}</p>}
     </div>
   )
@@ -127,7 +129,7 @@ export function Verdict({
   return (
     <p>
       <span className={`verdict ${verdict}`}>{mark} {axis}</span>
-      <span className="muted"> — {detail}</span>
+      <span className={surfaces.note}> — {detail}</span>
     </p>
   )
 }

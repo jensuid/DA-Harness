@@ -1,11 +1,13 @@
 /**
- * P9-F1-001: this panel moved out of CaseWorkspace.tsx verbatim.
- * The workspace holds the state; the panel is pure over its props.
+ * P9-F2-002: this panel is built on the token layer, not on the class names
+ * the hand-written CSS defined. The workspace still holds the state; the
+ * panel is still pure over its props.
  */
 
 import { useState } from 'react'
 import { ApiError, type Dataset, type Evaluation, type Profile, evaluateDataset } from '../api'
 import { messageOf } from '../CaseList'
+import { Button, surfaces } from '../lib/ui'
 import { Verdict } from './FindingsPanel'
 
 // W-017: a 400 from the audit endpoint is the contract naming what to fix, but
@@ -63,9 +65,9 @@ export function EvaluatePanel({
 
   if (profiled.length === 0) {
     return (
-      <div className="panel">
-        <h2>Audit submitted work (EVALUATE)</h2>
-        <p className="muted">
+      <div className={surfaces.panel}>
+        <h2 className={surfaces.heading}>Audit submitted work (EVALUATE)</h2>
+        <p className={surfaces.note}>
           Attach and profile a dataset first - an audit judges the work against
           the data it claims to read.
         </p>
@@ -99,9 +101,9 @@ export function EvaluatePanel({
   const prior = evaluations.filter((e) => e.dataset_id === datasetId)
 
   return (
-    <div className="panel">
-      <h2>Audit submitted work (EVALUATE)</h2>
-      <p className="muted">
+    <div className={surfaces.panel}>
+      <h2 className={surfaces.heading}>Audit submitted work (EVALUATE)</h2>
+      <p className={surfaces.note}>
         Paste work that came from elsewhere and the claim it was offered to
         support. DAH runs it against the data and answers nine questions, each
         with a verdict and a sentence.
@@ -126,7 +128,7 @@ export function EvaluatePanel({
         </label>
       )}
       <form onSubmit={submit}>
-        <div className="row">
+        <div className={surfaces.rowGap}>
           <label className="kind-toggle">
             <input
               type="radio"
@@ -173,16 +175,16 @@ export function EvaluatePanel({
             disabled={busy}
           />
         </label>
-        <button type="submit" disabled={busy || !code.trim() || !claim.trim()}>
+        <Button type="submit" disabled={busy || !code.trim() || !claim.trim()}>
           {busy ? 'Auditing…' : 'Audit this work'}
-        </button>
+        </Button>
       </form>
       {error && <p role="alert">The audit could not run: {error}</p>}
       {audit && <Audit evaluation={audit} />}
       {prior.length > 0 && (
-        <div className="subpanel">
-          <h3>Recorded audits</h3>
-          <ul className="items">
+        <div className={surfaces.subpanel}>
+          <h3 className={surfaces.subheading}>Recorded audits</h3>
+          <ul className={surfaces.panelList}>
             {prior.map((evaluation) => (
               <li key={evaluation.id}>
                 <RecordedAudit evaluation={evaluation} />
@@ -205,12 +207,12 @@ export const AXES = [
 export function Audit({ evaluation }: { evaluation: Evaluation }) {
   const byAxis = new Map(evaluation.findings.map((f) => [f.axis, f]))
   return (
-    <div className="proposal" data-testid="audit">
-      <p className="muted">
+    <div className={surfaces.proposal} data-testid="audit">
+      <p className={surfaces.note}>
         audited by {evaluation.source} — the artifact is stored as a run and can
         be re-read in the Runs panel
       </p>
-      <ul className="items">
+      <ul className={surfaces.panelList}>
         {AXES.map((axis) => {
           const finding = byAxis.get(axis)
           if (!finding) return null
@@ -234,9 +236,9 @@ export function RecordedAudit({ evaluation }: { evaluation: Evaluation }) {
     .filter((f) => f.verdict !== 'pass')
     .map((f) => `${f.axis}: ${f.verdict}`)
   return (
-    <div className="run">
+    <div className={surfaces.row}>
       <p><strong>{evaluation.claim}</strong></p>
-      <p className="muted">
+      <p className={surfaces.note}>
         {evaluation.artifact_kind} —{' '}
         {summary.length > 0 ? summary.join(', ') : 'every axis passed'}
       </p>

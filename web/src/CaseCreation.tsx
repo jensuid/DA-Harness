@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { createCase, getHealth } from './api'
 import { messageOf } from './CaseList'
+import { Button } from './lib/ui'
 
 export function CaseCreation({
   onCreated,
@@ -39,9 +40,9 @@ export function CaseCreation({
 
   return (
     <section>
-      <button type="button" onClick={onCancel} className="link">
-        ← Back to cases
-      </button>
+      <Button type="button" onClick={onCancel} variant="link">
+        ← Cancel
+      </Button>
       <h1>New Analysis Case</h1>
       <p>Core status: {coreStatus}</p>
       <form onSubmit={handleSubmit}>
@@ -61,9 +62,9 @@ export function CaseCreation({
           placeholder="sales.csv"
           required
         />
-        <button type="submit" disabled={saving}>
+        <Button type="submit" disabled={saving}>
           {saving ? 'Saving…' : 'Create case'}
-        </button>
+        </Button>
         {error && <p role="alert">Failed: {error}</p>}
       </form>
     </section>

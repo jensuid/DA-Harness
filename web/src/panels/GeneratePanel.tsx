@@ -1,6 +1,7 @@
 /**
- * P9-F1-001: this panel moved out of CaseWorkspace.tsx verbatim.
- * The workspace holds the state; the panel is pure over its props.
+ * P9-F2-002: this panel is built on the token layer, not on the class names
+ * the hand-written CSS defined. The workspace still holds the state; the
+ * panel is still pure over its props.
  */
 
 import { useState } from 'react'
@@ -14,6 +15,7 @@ import {
 } from "../api"
 import { sourceLabel } from '../sourceLabel'
 import { messageOf } from '../CaseList'
+import { Button, surfaces } from '../lib/ui'
 
 type GenerateKind = 'sql' | 'python'
 export const GENERATE_KINDS: GenerateKind[] = ['sql', 'python']
@@ -93,14 +95,14 @@ export function GeneratePanel({
   }
 
   if (!profile) {
-    return <p className="muted">Profile the dataset before generating code.</p>
+    return <p className={surfaces.note}>Profile the dataset before generating code.</p>
   }
 
   return (
-    <div className="subpanel">
-      <h3>Ask for the computation</h3>
+    <div className={surfaces.subpanel}>
+      <h3 className={surfaces.subheading}>Ask for the computation</h3>
       <fieldset>
-        <legend className="muted">Engine</legend>
+        <legend className={surfaces.note}>Engine</legend>
         {GENERATE_KINDS.map((option) => (
           <label key={option}>
             <input
@@ -124,22 +126,22 @@ export function GeneratePanel({
           placeholder="What would you like to know?"
           disabled={busy}
         />
-        <button type="submit" disabled={busy || !question.trim()}>
+        <Button type="submit" disabled={busy || !question.trim()}>
           {busy ? 'Generating…' : 'Generate code'}
-        </button>
+        </Button>
       </form>
       {error && <p role="alert">Generation failed: {error}</p>}
       {proposal && (
-        <div className="proposal">
-          <p className="muted">
+        <div className={surfaces.proposal}>
+          <p className={surfaces.note}>
             {sourceLabel(proposal.source, 'proposal')} — reads{' '}
             {proposal.columns_used.join(', ')}
           </p>
           <p>{proposal.explanation}</p>
           <pre>{proposal.code}</pre>
-          <button type="button" onClick={run} disabled={running}>
+          <Button type="button" onClick={run} disabled={running}>
             {running ? 'Running…' : 'Run this'}
-          </button>
+          </Button>
         </div>
       )}
     </div>

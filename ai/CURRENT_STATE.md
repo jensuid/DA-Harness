@@ -12,31 +12,36 @@ causal-language guard, the analytical golden suite, the orientation spine,
 question refinement, the decision view, the measurement layer and the
 requirement-traceability matrix. The full gap analysis is `docs/PRD & UX Conformance Evaluation.md`.
 
-- **Active task:** **P9-F2-001 (the walk-test's last three findings) DONE** -
-  the redesign's first surface change, and the last of
-  WALK-E2E-001's findings. F1 made the redesign possible and moved nothing
-  the analyst sees; F2's first half fixes the three findings that stayed
-  open because they were the shell's, not the CSS's, and leaves the restyle
-  to F2-002. W-013: `GeneratePanel` now calls `onChanged` after the run
-  endpoint answers, so the runs panel, the rail and the evidence graph pick
-  the run up without a reopen - the walk-test's own report records the
-  double-run the missing call caused. W-017: `EVALUATE_REFUSALS` maps each
-  of the audit endpoint's own 400 detail strings to its own sentence naming
-  the field that is wrong, and `evaluateRefusal` is the one place the catch
-  reads; the key is the core's wording, so a reworded refusal is an unknown
-  400 shown verbatim rather than hidden. W-018: one muted sentence under the
-  chat heading says the memory is cross-case. The token layer gained the
-  `surfaces` strings F2-002 composes - imported nowhere yet, by the rule
-  that let F1 ship its deps unused.
-  Gates: web 184 (181 + 3), tsc clean, build ok, trace 48/48. Web-only: no
-  line outside `web/` moved, so the server (727), e2e (28/28), golden
-  (21/21), refine (AT-04) and measure (9/9) gates are not re-run.
-  Sebelumnya: P9-F1-001 (the redesign's foundation) DONE — the toolchain,
-  the tokens, the 15-panel split. Sebelum itu: FIX-PYTHON-005 (W-016),
-  FIX-CHART-004 (W-016), FIX-VERSION-010 (W-001), FIX-UPDATES-009 (W-005),
+- **Active task:** **P9-F2-002 (the restyle onto the tokens) DONE** - the
+  debt F1 and F2-001 took on is paid. Every panel and every screen renders
+  through the `surfaces` strings in `web/src/lib/ui.tsx`, and 109 lines of
+  the hand-written CSS that named those surfaces retired with the class
+  names it defined (`.panel h2/h3/h4`, `.muted`, `.stages`/`.items`/
+  `.chat`/`.grounds`, `.turn`, `.subpanel`, `.rationale`, `.proposal`,
+  `.run`, `.row`, `.case-actions`). The restyle is parity by contract: a
+  surface is the CSS rule it replaced, as utility classes, with the same
+  values, so nothing looks different and the palette is one set of names in
+  one file. What stays is the layout no token can own - the three-zone grid,
+  the sticky rail, the verdict and chip shapes the status vocabulary renders
+  as text-plus-chip, the quality and notice surfaces, and the literal
+  `:focus-visible` the accessibility audit resolves.
+  Two literals survived the move and lost their rules, caught by auditing
+  every deleted rule against the source that used it: `LearnPanel`'s
+  `className="stage done"` (the rule is kept - a completed stage is the one
+  green status, and the word is the rail's and the ladder's shared
+  vocabulary) and `FindingsPanel`'s `className="muted"`, which moved to
+  `surfaces.note`. The panels test now reads every source file raw and fails
+  by name if a literal comes back.
+  Gates: web 185 (184 + 1), tsc clean, build ok (the emitted CSS is 14.44 kB
+  and still resolves the focus rule), trace 48/48. Web-only: no line outside
+  `web/` moved, so the server (727), e2e (28/28), golden (21/21), refine
+  (AT-04) and measure (9/9) gates are not re-run.
+  Sebelumnya: P9-F2-001 (the walk-test's last three findings), P9-F1-001
+  (the redesign's foundation), FIX-PYTHON-005 (W-016), FIX-CHART-004
+  (W-016), FIX-VERSION-010 (W-001), FIX-UPDATES-009 (W-005),
   FIX-PROFILE-008 (W-008), FIX-REFINE-007 (W-009), FIX-TIMEOUT-006 (W-014),
   FIX-PLAN-003 (W-011), FIX-EVIDENCE-002 (W-015), WALK-E2E-001 — all
-  nineteen walk-test findings are now resolved.
+  nineteen walk-test findings are resolved.
 
 - **Done before that:** P8-TRACE-010 - the requirement-traceability matrix
   (AT-48). The PRD's section 59 control artifact is code: 48 rows, one per
@@ -81,10 +86,10 @@ requirement-traceability matrix. The full gap analysis is `docs/PRD & UX Conform
   documented minimum but is no longer enforced by CI, and a green run no longer
   proves the exact Intel triple a local build produces. Restoring that needs a
   self-hosted Intel runner.
-- **Test status:** server 727 passed (unchanged - F2-001 is web-only). The
-  web suite is 184 (+3 for P9-F2-001 - a run now reloads the case, the
-  three EVALUATE refusals are named per cause, and the chat states its
-  memory is cross-case). Desktop shell 25 Rust tests; P2, P3 and P4 gates
+- **Test status:** server 727 passed (unchanged - F2-002 is web-only). The
+  web suite is 185 (+1 for P9-F2-002 - the token layer is the vocabulary the
+  panels use, and a literal className that comes back fails by name).
+  Desktop shell 25 Rust tests; P2, P3 and P4 gates
   PASS; **v0.2.0, v0.3.0, v0.3.1, v0.3.2 and v0.3.3 released** (tags
   `v0.2.0` on `ec819fc`, `v0.3.0` on `ab56541`, `v0.3.1` on `19cefc1`,
   `v0.3.2` on `2ff1bca`, `v0.3.3` on `30db6e9`).
@@ -99,13 +104,16 @@ requirement-traceability matrix. The full gap analysis is `docs/PRD & UX Conform
   F1 the foundation (tailwind, shadcn, framer-motion, recharts, splitting
   `CaseWorkspace.tsx`'s 2,900 lines into `web/src/panels/`), F2-001 the
   surfaces' findings (done - W-013/W-017/W-018 closed), F2-002 the restyle
-  onto the tokens, F3 motion (respecting `prefers-reduced-motion`), F4 the
-  chart surface and a re-walk. The walk-test's findings are all closed now
-  (W-001, W-005, W-008, W-009, W-011, W-013, W-014, W-015, W-016, W-017,
-  W-018), and the carried follow-ups that remain in `ai/TASKS.md` are the
-  DMG bundler, the icon proportion (52%, chosen blind), one fragile web
-  test layout, and two environmental items (signing deferred by DEC-006, CI
-  billing suspended).
+  onto the tokens (done - every panel renders through `surfaces`, 109 lines
+  of hand-written CSS retired), F3 motion (respecting
+  `prefers-reduced-motion`) - the next task, and the discipline is that
+  framer-motion is installed and still imported nowhere; F4 the chart
+  surface (recharts, installed and unused) and a re-walk. The walk-test's
+  findings are all closed now (W-001, W-005, W-008, W-009, W-011, W-013,
+  W-014, W-015, W-016, W-017, W-018), and the carried follow-ups that
+  remain in `ai/TASKS.md` are the DMG bundler, the icon proportion (52%,
+  chosen blind), one fragile web test layout, and two environmental items
+  (signing deferred by DEC-006, CI billing suspended).
 
 
 - **Blockers:** none.

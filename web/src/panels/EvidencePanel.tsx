@@ -1,9 +1,11 @@
 /**
- * P9-F1-001: this panel moved out of CaseWorkspace.tsx verbatim.
- * The workspace holds the state; the panel is pure over its props.
+ * P9-F2-002: this panel is built on the token layer, not on the class names
+ * the hand-written CSS defined. The workspace still holds the state; the
+ * panel is still pure over its props.
  */
 
 import { type ClaimTrace, type EvidenceGraph, type EvidenceNode } from '../api'
+import { surfaces } from '../lib/ui'
 
 export function EvidencePanel({
   evidence,
@@ -15,14 +17,14 @@ export function EvidencePanel({
   empty: boolean
 }) {
   return (
-    <div className="panel">
-      <h2>Evidence graph</h2>
+    <div className={surfaces.panel}>
+      <h2 className={surfaces.heading}>Evidence graph</h2>
       {empty ? (
         // A 400 is the case having no artifacts to graph. The core's sentence
         // names what would build one, and a young case is not a failed review.
-        <p className="muted">{error}</p>
+        <p className={surfaces.note}>{error}</p>
       ) : !evidence ? (
-        <p className="muted">Loading the graph…</p>
+        <p className={surfaces.note}>Loading the graph…</p>
       ) : (
         <GraphBody graph={evidence} />
       )}
@@ -47,18 +49,18 @@ export function GraphBody({ graph }: { graph: EvidenceGraph }) {
 
   return (
     <>
-      <p className="muted">
+      <p className={surfaces.note}>
         {graph.counts.datasets} dataset{graph.counts.datasets === 1 ? '' : 's'},{' '}
         {graph.counts.runs} run{graph.counts.runs === 1 ? '' : 's'},{' '}
         {graph.counts.findings} finding{graph.counts.findings === 1 ? '' : 's'},{' '}
         {graph.counts.charts} chart{graph.counts.charts === 1 ? '' : 's'},{' '}
         {graph.counts.plans} plan{graph.counts.plans === 1 ? '' : 's'}
       </p>
-      <h3>Claims and what they rest on</h3>
+      <h3 className={surfaces.subheading}>Claims and what they rest on</h3>
       {graph.traces.length === 0 ? (
-        <p className="muted">No findings yet, so nothing to trace.</p>
+        <p className={surfaces.note}>No findings yet, so nothing to trace.</p>
       ) : (
-        <ul className="items">
+        <ul className={surfaces.panelList}>
           {graph.traces.map((trace) => (
             <li key={trace.finding_id}>
               <ClaimTraceRow
@@ -69,13 +71,13 @@ export function GraphBody({ graph }: { graph: EvidenceGraph }) {
           ))}
         </ul>
       )}
-      <h3>How each artifact was derived</h3>
+      <h3 className={surfaces.subheading}>How each artifact was derived</h3>
       {graph.edges.length === 0 ? (
-        <p className="muted">No derivations yet.</p>
+        <p className={surfaces.note}>No derivations yet.</p>
       ) : (
-        <ul className="items">
+        <ul className={surfaces.panelList}>
           {graph.edges.map((edge, i) => (
-            <li key={i} className="muted">
+            <li key={i} className={surfaces.note}>
               {nodePhrase(byId.get(edge.source))}{' '}
               {RELATIONS[edge.relation] ?? edge.relation}{' '}
               {nodePhrase(byId.get(edge.target))}
@@ -85,10 +87,10 @@ export function GraphBody({ graph }: { graph: EvidenceGraph }) {
       )}
       {isolated.length > 0 && (
         <>
-          <h3>Attached but not used yet</h3>
-          <ul className="items">
+          <h3 className={surfaces.subheading}>Attached but not used yet</h3>
+          <ul className={surfaces.panelList}>
             {isolated.map((node) => (
-              <li key={node.id} className="muted">
+              <li key={node.id} className={surfaces.note}>
                 {node.kind}: {node.label}
               </li>
             ))}
@@ -109,17 +111,17 @@ export function ClaimTraceRow({
   orphan: boolean
 }) {
   return (
-    <div className="run">
+    <div className={surfaces.row}>
       <p>
         <strong>{trace.statement}</strong>
       </p>
-      <p className="muted">
+      <p className={surfaces.note}>
         status: {trace.validation_status}
         {orphan && (
           <span className="warn"> — a claim with no source: its run is gone</span>
         )}
       </p>
-      <ul className="grounds chain">
+      <ul className="chain">
         {trace.hops.map((hop, i) => (
           <li key={`${hop.id}-${i}`} className="chip">
             {hop.kind}: {hop.label}

@@ -1,9 +1,11 @@
 /**
- * P9-F1-001: this panel moved out of CaseWorkspace.tsx verbatim.
- * The workspace holds the state; the panel is pure over its props.
+ * P9-F2-002: this panel is built on the token layer, not on the class names
+ * the hand-written CSS defined. The workspace still holds the state; the
+ * panel is still pure over its props.
  */
 
 import { CaseProgress, QualityIssue } from '../api'
+import { surfaces } from '../lib/ui'
 
 export function CaseOverview({
   question,
@@ -31,8 +33,8 @@ export function CaseOverview({
   const validated = progress ? progress.counts['validated_findings'] ?? 0 : 0
 
   return (
-    <div className="panel case-overview">
-      <h2>Case overview</h2>
+    <div className={surfaces.panel + ' case-overview'}>
+      <h2 className={surfaces.heading}>Case overview</h2>
       {/* One text node per fact: the label and its value stay in the same
           element, so each sentence reads whole in the DOM and in a screen
           reader, and nothing has to reach across elements to match one. */}
@@ -66,7 +68,7 @@ export function CaseOverview({
 // "this data is clean".
 export function QualityList({ quality }: { quality: QualityIssue[] }) {
   if (!quality || quality.length === 0) {
-    return <p className="muted quality-clean">No data-quality issues detected.</p>
+    return <p className={surfaces.note + ' quality-clean'}>No data-quality issues detected.</p>
   }
   return (
     <ul className="quality-issues">

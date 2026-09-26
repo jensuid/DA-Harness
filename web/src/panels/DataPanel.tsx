@@ -1,11 +1,13 @@
 /**
- * P9-F1-001: this panel moved out of CaseWorkspace.tsx verbatim.
- * The workspace holds the state; the panel is pure over its props.
+ * P9-F2-002: this panel is built on the token layer, not on the class names
+ * the hand-written CSS defined. The workspace still holds the state; the
+ * panel is still pure over its props.
  */
 
 import { useState } from 'react'
 import { type Dataset, type Profile, attachDataset, profileDataset } from '../api'
 import { messageOf } from '../CaseList'
+import { Button, surfaces } from '../lib/ui'
 import { QualityList } from './CaseOverview'
 import { GeneratePanel } from './GeneratePanel'
 
@@ -61,8 +63,8 @@ export function DataPanel({
   }
 
   return (
-    <div className="panel">
-      <h2>Data</h2>
+    <div className={surfaces.panel}>
+      <h2 className={surfaces.heading}>Data</h2>
       <label className="file-button">
         {busy ? 'Attaching…' : 'Attach a CSV, Parquet or Excel file'}
         <input
@@ -75,45 +77,45 @@ export function DataPanel({
       </label>
       {error && <p role="alert">Attach failed: {error}</p>}
       {datasets.length === 0 ? (
-        <p className="muted">No data attached yet - this is where the loop starts.</p>
+        <p className={surfaces.note}>No data attached yet - this is where the loop starts.</p>
       ) : (
-        <ul className="items">
+        <ul className={surfaces.panelList}>
           {datasets.map((d) => {
             const profile = profiles[d.id]
             return (
               <li key={d.id}>
-                <strong>{d.filename}</strong> <span className="muted">({d.format})</span>
+                <strong>{d.filename}</strong> <span className={surfaces.note}>({d.format})</span>
                 {profile ? (
                   <>
-                    <span className="muted">
+                    <span className={surfaces.note}>
                       {' '}— {profile.rows} rows, {profile.columns.length} columns,{' '}
                       {profile.duplicate_rows} duplicate
                     </span>
-                    <div className="row">
-                      <button
+                    <div className={surfaces.buttonRow}>
+                      <Button
                         type="button"
                         onClick={() => void profileDatasetNow(d.id)}
                         disabled={busy}
                         aria-label={`Re-profile ${d.filename}`}
                       >
                         {busy ? 'Profiling…' : 'Re-profile'}
-                      </button>
+                      </Button>
                     </div>
                   </>
                 ) : (
                   // W-008: an unprofiled dataset is offered a profile rather
                   // than silently profiled on open. The rail's profile stage
                   // is the analyst's step; the shell takes it when asked.
-                  <div className="row">
-                    <button
+                  <div className={surfaces.buttonRow}>
+                    <Button
                       type="button"
                       onClick={() => void profileDatasetNow(d.id)}
                       disabled={busy}
                       aria-label={`Profile ${d.filename}`}
                     >
                       {busy ? 'Profiling…' : 'Profile this dataset'}
-                    </button>
-                    <span className="muted">unprofiled - the generator and the planner read this</span>
+                    </Button>
+                    <span className={surfaces.note}>unprofiled - the generator and the planner read this</span>
                   </div>
                 )}
                 {profile && <QualityList quality={profile.quality} />}
@@ -161,11 +163,11 @@ export function ColumnNulls({ profile }: { profile: Profile }) {
     )
   if (rows.length === 0) return null
   return (
-    <ul className="items column-nulls">
+    <ul className={surfaces.panelList + ' column-nulls'}>
       {rows.map(({ column, stat }) => (
         <li
           key={column}
-          className={stat.null_count > 0 ? 'warn' : 'muted'}
+          className={stat.null_count > 0 ? 'warn' : surfaces.note}
           aria-label={`${column}: ${stat.null_count} null (${stat.null_percentage}%)`}
         >
           {column}: {stat.null_count} null{stat.null_count === 1 ? '' : 's'} ({stat.null_percentage}%)

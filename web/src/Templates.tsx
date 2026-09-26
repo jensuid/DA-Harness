@@ -8,6 +8,7 @@ import {
   promoteCaseToTemplate,
 } from './api'
 import { messageOf } from './CaseList'
+import { Button, surfaces } from './lib/ui'
 
 // Templates are the other thing a user comes to the front door for: the shape
 // of an investigation that was worked out once, offered to the next one. They
@@ -39,17 +40,17 @@ export function Templates({ onOpen }: { onOpen: (caseId: string) => void }) {
   }, [])
 
   return (
-    <section className="panel">
-      <h2>Templates</h2>
-      <p className="muted">
+    <section className={surfaces.panel}>
+      <h2 className={surfaces.heading}>Templates</h2>
+      <p className={surfaces.note}>
         A saved case's plan, proposals and findings, offered to the next case
         that asks the same kind of question. Only the shape travels - no data,
         runs or findings - and every step it proposes is still yours to accept.
       </p>
       {error && <p role="alert">Failed to load templates: {error}</p>}
-      {loading && <p className="muted">Loading…</p>}
+      {loading && <p className={surfaces.note}>Loading…</p>}
       {!loading && !error && templates.length === 0 && (
-        <p className="muted">No templates yet - save one from a case.</p>
+        <p className={surfaces.note}>No templates yet - save one from a case.</p>
       )}
       <ul className="case-list">
         {templates.map((template) => (
@@ -114,25 +115,25 @@ function TemplateRow({
         {template.question} — {template.dataset}
       </p>
       <ShapeSummary shape={template.shape} />
-      <div className="row case-actions">
-        <button
+      <div className={surfaces.buttonRow}>
+        <Button
           type="button"
           onClick={start}
-          className="small"
+          variant="small"
           disabled={busy}
           aria-label={`Start a case from ${template.name}`}
         >
           {busy ? 'Starting…' : 'Start a case from this'}
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
           onClick={retire}
-          className="small danger"
+          variant="smallDanger"
           disabled={busy}
           aria-label={`Retire the template ${template.name}`}
         >
           Retire
-        </button>
+        </Button>
       </div>
       {error && (
         <p role="alert" className="warn">
@@ -149,7 +150,7 @@ function TemplateRow({
 // unrecorded one.
 function ShapeSummary({ shape }: { shape: TemplateShape | null }) {
   if (!shape) {
-    return <p className="muted">A question-only skeleton - no shape was captured.</p>
+    return <p className={surfaces.note}>A question-only skeleton - no shape was captured.</p>
   }
   const parts = [
     `${shape.proposals.length} proposal${shape.proposals.length === 1 ? '' : 's'}`,
@@ -171,7 +172,7 @@ function ShapeSummary({ shape }: { shape: TemplateShape | null }) {
         .join(', ')})`,
     )
   }
-  return <p className="muted">Carries {parts.join(', ')}</p>
+  return <p className={surfaces.note}>Carries {parts.join(', ')}</p>
 }
 
 // The workspace's promotion affordance (P7-SHELL-005). The name is optional -
@@ -200,9 +201,9 @@ export function PromoteTemplate({ caseId, question }: { caseId: string; question
   }
 
   return (
-    <div className="panel">
-      <h2>Save as a template</h2>
-      <p className="muted">
+    <div className={surfaces.panel}>
+      <h2 className={surfaces.heading}>Save as a template</h2>
+      <p className={surfaces.note}>
         Another case can start from this one's plan, proposals and findings.
         Nothing is copied but the shape - the next case still decides whether to
         accept each step.
@@ -219,9 +220,9 @@ export function PromoteTemplate({ caseId, question }: { caseId: string; question
           placeholder={question}
           disabled={busy}
         />
-        <button type="submit" disabled={busy}>
+        <Button type="submit" disabled={busy}>
           {busy ? 'Saving…' : 'Save as a template'}
-        </button>
+        </Button>
       </form>
       {saved && (
         <p role="status">

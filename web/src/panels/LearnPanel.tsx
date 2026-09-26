@@ -1,9 +1,11 @@
 /**
- * P9-F1-001: this panel moved out of CaseWorkspace.tsx verbatim.
- * The workspace holds the state; the panel is pure over its props.
+ * P9-F2-002: this panel is built on the token layer, not on the class names
+ * the hand-written CSS defined. The workspace still holds the state; the
+ * panel is still pure over its props.
  */
 
 import { type LearnWalk } from '../api'
+import { surfaces } from '../lib/ui'
 
 export function LearnPanel({
   walk,
@@ -15,15 +17,15 @@ export function LearnPanel({
   missing: boolean
 }) {
   return (
-    <div className="panel">
-      <h2>Learn this case</h2>
+    <div className={surfaces.panel}>
+      <h2 className={surfaces.heading}>Learn this case</h2>
       {missing ? (
         // A 404 means the case is unknown. The workspace loads its own case on
         // mount, so the header already reports it - this panel says so once,
         // as guidance, rather than reporting the same failure twice.
-        <p className="muted">The walk could not be read: {error}</p>
+        <p className={surfaces.note}>The walk could not be read: {error}</p>
       ) : !walk ? (
-        <p className="muted">Loading the walk…</p>
+        <p className={surfaces.note}>Loading the walk…</p>
       ) : (
         <WalkBody walk={walk} />
       )}
@@ -37,7 +39,7 @@ export function LearnPanel({
 export function WalkBody({ walk }: { walk: LearnWalk }) {
   return (
     <>
-      <p className="muted">
+      <p className={surfaces.note}>
         A guided walk: why ask it, what the data says, how you test it, and
         whether it holds.
       </p>
@@ -45,7 +47,7 @@ export function WalkBody({ walk }: { walk: LearnWalk }) {
         // The core's own discipline: a closed loop means the loop ran, not that
         // the answer is right - so the panel does not graduate the learner on a
         // stronger claim than the artifacts support.
-        <p className="muted">
+        <p className={surfaces.note}>
           The walk is complete: every phase is done and a finding has been
           validated. That says the trust loop ran, not that the answer is right.
         </p>
@@ -59,16 +61,16 @@ export function WalkBody({ walk }: { walk: LearnWalk }) {
           <code>{walk.next_endpoint}</code>
         </p>
       )}
-      <ul className="items">
+      <ul className={surfaces.panelList}>
         {walk.steps.map((step) => (
           <li key={step.name} aria-label={`phase ${step.name}: ${step.status}`}>
-            <h3>{PHASE_TITLES[step.name] ?? step.name}</h3>
-            <p className="muted">status: {step.status}</p>
-            <p className="muted">{step.purpose}</p>
+            <h3 className={surfaces.subheading}>{PHASE_TITLES[step.name] ?? step.name}</h3>
+            <p className={surfaces.note}>status: {step.status}</p>
+            <p className={surfaces.note}>{step.purpose}</p>
             <p>
               Can you answer: <strong>{step.prompt}</strong>
             </p>
-            <ul className="stages">
+            <ul className={surfaces.panelList}>
               {step.stages.map((stage) => (
                 <li
                   key={stage.name}
@@ -76,7 +78,7 @@ export function WalkBody({ walk }: { walk: LearnWalk }) {
                   aria-label={`${stage.action}: ${stage.completed ? 'done' : 'to do'}`}
                 >
                   {stage.completed ? '✓' : '○'} {stage.action}
-                  <span className="muted"> — {stage.hint}</span>
+                  <span className={surfaces.note}> — {stage.hint}</span>
                 </li>
               ))}
             </ul>

@@ -24,6 +24,7 @@ import {
   putDecision,
 } from './api'
 import { messageOf } from './CaseList'
+import { Button, surfaces } from './lib/ui'
 
 const STATUS_MARKS: Record<string, string> = {
   supported: '✓',
@@ -61,9 +62,9 @@ export function DecisionPanel({
 
   if (missing) {
     return (
-      <div className="panel">
-        <h2>Decision</h2>
-        <p className="muted">
+      <div className={surfaces.panel}>
+        <h2 className={surfaces.heading}>Decision</h2>
+        <p className={surfaces.note}>
           The decision view could not be read: {error ?? 'the case has no decision yet'}
         </p>
       </div>
@@ -71,9 +72,9 @@ export function DecisionPanel({
   }
   if (!view) {
     return (
-      <div className="panel">
-        <h2>Decision</h2>
-        <p className="muted">Reading the case's decision…</p>
+      <div className={surfaces.panel}>
+        <h2 className={surfaces.heading}>Decision</h2>
+        <p className={surfaces.note}>Reading the case's decision…</p>
       </div>
     )
   }
@@ -85,34 +86,34 @@ export function DecisionPanel({
   )
 
   return (
-    <div className="panel">
-      <h2>Decision</h2>
-      <p className="muted">
+    <div className={surfaces.panel}>
+      <h2 className={surfaces.heading}>Decision</h2>
+      <p className={surfaces.note}>
         What this case established, and what it did not. DAH informs decisions;
         it does not make them.
       </p>
 
-      <div className="subpanel">
-        <h3>Question</h3>
+      <div className={surfaces.subpanel}>
+        <h3 className={surfaces.subheading}>Question</h3>
         <p>{view.question}</p>
-        {view.purpose && <p className="muted">Purpose: {view.purpose}</p>}
+        {view.purpose && <p className={surfaces.note}>Purpose: {view.purpose}</p>}
       </div>
 
-      <div className="subpanel">
-        <h3>Key findings</h3>
+      <div className={surfaces.subpanel}>
+        <h3 className={surfaces.subheading}>Key findings</h3>
         {keyFindings.length === 0 ? (
-          <p className="muted">
+          <p className={surfaces.note}>
             No finding validation has stood behind yet. {guidance(view)}
           </p>
         ) : (
-          <ol className="items">
+          <ol className={surfaces.panelList}>
             {keyFindings.map((finding) => (
-              <li key={finding.id} className="run">
+              <li key={finding.id} className={surfaces.row}>
                 <p>
                   <strong>{STATUS_MARKS[finding.validation_status] ?? '●'}</strong>{' '}
                   {finding.statement}
                 </p>
-                <p className="muted">validation: {finding.validation_status}</p>
+                <p className={surfaces.note}>validation: {finding.validation_status}</p>
                 {finding.caveat && (
                   <p className="warn">caveat: {finding.caveat}</p>
                 )}
@@ -122,15 +123,15 @@ export function DecisionPanel({
         )}
       </div>
 
-      <div className="subpanel">
-        <h3>Uncertainty</h3>
+      <div className={surfaces.subpanel}>
+        <h3 className={surfaces.subheading}>Uncertainty</h3>
         {unresolved === 0 ? (
-          <p className="muted">
+          <p className={surfaces.note}>
             Every check validation measured passed. Nothing here is a score -
             it is the checks that did not pass, and there are none.
           </p>
         ) : (
-          <ul className="items">
+          <ul className={surfaces.panelList}>
             {keyFindings
               .flatMap((finding) =>
                 finding.uncertainty.map((check) => ({ finding, check })),
@@ -141,20 +142,20 @@ export function DecisionPanel({
                   className={check.hard ? 'fail' : 'warn'}
                 >
                   {check.hard ? '✗' : '⚠'} {check.dimension} — {check.detail}
-                  <span className="muted"> (from “{finding.statement}”)</span>
+                  <span className={surfaces.note}> (from “{finding.statement}”)</span>
                 </li>
               ))}
           </ul>
         )}
         {view.open_items.length > 0 && (
           <>
-            <h3>Still open</h3>
-            <ul className="items">
+            <h3 className={surfaces.subheading}>Still open</h3>
+            <ul className={surfaces.panelList}>
               {view.open_items.map((item) => (
-                <li key={item.id} className="run">
+                <li key={item.id} className={surfaces.row}>
                   <p>{item.statement}</p>
-                  <p className="muted">validation: {item.validation_status}</p>
-                  <ul className="items">
+                  <p className={surfaces.note}>validation: {item.validation_status}</p>
+                  <ul className={surfaces.panelList}>
                     {item.reasons.map((reason, index) => (
                       <li key={index} className="warn">
                         ⚠ {reason}
@@ -232,14 +233,14 @@ function Implications({
   }
 
   return (
-    <div className="subpanel">
-      <h3>Potential implications</h3>
-      <p className="muted">
+    <div className={surfaces.subpanel}>
+      <h3 className={surfaces.subheading}>Potential implications</h3>
+      <p className={surfaces.note}>
         Yours to write - the analysis informs them, it does not draft them.
       </p>
-      <ul className="items">
+      <ul className={surfaces.panelList}>
         {draft.map((entry, index) => (
-          <li key={index} className="row">
+          <li key={index} className={surfaces.rowGap}>
             <input
               aria-label={`Implication ${index + 1}`}
               value={entry}
@@ -248,34 +249,34 @@ function Implications({
               }
               disabled={busy}
             />
-            <button
+            <Button
               type="button"
               onClick={() => setDraft(draft.filter((_, at) => at !== index))}
               disabled={busy}
-              className="small"
+              variant="small"
               aria-label={`Remove implication ${index + 1}`}
             >
               Remove
-            </button>
+            </Button>
           </li>
         ))}
       </ul>
-      <button
+      <Button
         type="button"
         onClick={() => setDraft([...draft, ''])}
         disabled={busy}
-        className="small"
+        variant="small"
       >
         Add implication
-      </button>
+      </Button>
       {error && <p role="alert">Could not save the implications: {error}</p>}
-      <div className="row">
-        <button type="button" onClick={save} disabled={busy || !dirty}>
+      <div className={surfaces.rowGap}>
+        <Button type="button" onClick={save} disabled={busy || !dirty}>
           {busy ? 'Saving…' : 'Save implications'}
-        </button>
-        {dirty && <span className="muted">unsaved edits</span>}
+        </Button>
+        {dirty && <span className={surfaces.note}>unsaved edits</span>}
         {saved && saved.length > 0 && !dirty && (
-          <span className="muted">{saved.length} saved</span>
+          <span className={surfaces.note}>{saved.length} saved</span>
         )}
       </div>
     </div>
@@ -310,15 +311,15 @@ function Export({ caseId, question }: { caseId: string; question: string }) {
   }
 
   return (
-    <div className="subpanel">
-      <h3>Export</h3>
-      <p className="muted">
+    <div className={surfaces.subpanel}>
+      <h3 className={surfaces.subheading}>Export</h3>
+      <p className={surfaces.note}>
         A self-contained package: the findings, their validation, the evidence
         and the decision - restorable anywhere with fresh IDs.
       </p>
-      <button type="button" onClick={download} disabled={busy}>
+      <Button type="button" onClick={download} disabled={busy}>
         {busy ? 'Exporting…' : 'Export analysis case'}
-      </button>
+      </Button>
       {error && <p role="alert">Export failed: {error}</p>}
     </div>
   )

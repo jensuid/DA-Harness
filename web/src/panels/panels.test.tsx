@@ -17,6 +17,49 @@ import { describe, expect, it } from 'vitest'
 
 import { CaseWorkspace } from '../CaseWorkspace'
 
+// The source text of every panel the workspace renders, read through Vite's
+// `?raw` so the debt-paid test below asserts over the file as it stands rather
+// than over a module's evaluated shape.
+import { default as agentSource } from './AgentPanel.tsx?raw'
+import { default as chatSource } from './Chat.tsx?raw'
+import { default as contextSource } from '../ContextPanel.tsx?raw'
+import { default as dataPanelSource } from './DataPanel.tsx?raw'
+import { default as decisionSource } from '../DecisionPanel.tsx?raw'
+import { default as draftPanelSource } from './DraftPanel.tsx?raw'
+import { default as edaPanelSource } from './EdaPanel.tsx?raw'
+import { default as evaluatePanelSource } from './EvaluatePanel.tsx?raw'
+import { default as evidencePanelSource } from './EvidencePanel.tsx?raw'
+import { default as findingsPanelSource } from './FindingsPanel.tsx?raw'
+import { default as generatePanelSource } from './GeneratePanel.tsx?raw'
+import { default as historyPanelSource } from './HistoryPanel.tsx?raw'
+import { default as learnPanelSource } from './LearnPanel.tsx?raw'
+import { default as planPanelSource } from './PlanPanel.tsx?raw'
+import { default as refinePanelSource } from '../RefinePanel.tsx?raw'
+import { default as runsPanelSource } from './RunsPanel.tsx?raw'
+import { default as templatesSource } from '../Templates.tsx?raw'
+import { default as caseListSource } from '../CaseList.tsx?raw'
+
+const sources: Record<string, string> = {
+  'AgentPanel.tsx': agentSource,
+  'Chat.tsx': chatSource,
+  'ContextPanel.tsx': contextSource,
+  'DataPanel.tsx': dataPanelSource,
+  'DecisionPanel.tsx': decisionSource,
+  'DraftPanel.tsx': draftPanelSource,
+  'EdaPanel.tsx': edaPanelSource,
+  'EvaluatePanel.tsx': evaluatePanelSource,
+  'EvidencePanel.tsx': evidencePanelSource,
+  'FindingsPanel.tsx': findingsPanelSource,
+  'GeneratePanel.tsx': generatePanelSource,
+  'HistoryPanel.tsx': historyPanelSource,
+  'LearnPanel.tsx': learnPanelSource,
+  'PlanPanel.tsx': planPanelSource,
+  'RefinePanel.tsx': refinePanelSource,
+  'RunsPanel.tsx': runsPanelSource,
+  'Templates.tsx': templatesSource,
+  'CaseList.tsx': caseListSource,
+}
+
 import { AgentPanel, AGENT_COPY, stepSentence, StepStatus } from './AgentPanel'
 import { CaseOverview, QualityList } from './CaseOverview'
 import { Chat, Ground } from './Chat'
@@ -134,6 +177,23 @@ describe('the panel split', () => {
         expect(seen.has(name), 'the same symbol is exported by two panels')
           .toBe(false)
         seen.add(name)
+      }
+    }
+  })
+
+  it('F2-002: the token layer is the vocabulary the panels use, not the CSS', () => {
+    // A panel that goes back to `className="panel"` reinstates the debt F2-002
+    // paid, and this is the test that says so. The old CSS rules those names
+    // defined are gone, so a literal className would render unstyled rather
+    // than merely old-styled - the failure it catches is visible.
+    const dead = ['panel', 'subpanel', 'proposal', 'run', 'items', 'grounds',
+                  'stages', 'chat', 'muted', 'turn', 'rationale']
+    for (const [file, source] of Object.entries(sources)) {
+      for (const name of dead) {
+        expect(
+          source,
+          `${file} still uses className="${name}" - the token layer owns that surface`,
+        ).not.toMatch(`className="${name}"`)
       }
     }
   })

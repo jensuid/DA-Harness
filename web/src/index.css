@@ -106,6 +106,13 @@ main.wide {
   font-weight: 700;
 }
 
+/* The rail's completed stage and the LEARN ladder's completed step. The rail
+   styles status with the accent and the warn ink; a stage that is done is the
+   positive pole, so it carries the ok ink - the one place a status is green. */
+.stage.done {
+  color: #2a7a2a;
+}
+
 /* The case overview's labelled rows (UX 45): a label, then the fact, one per
    line, so a reader scans seven facts rather than seven sentences. */
 ul.overview {
@@ -171,16 +178,6 @@ button {
   cursor: pointer;
 }
 
-.row {
-  display: flex;
-  gap: 0.5rem;
-  margin: 1rem 0;
-}
-
-.row input {
-  flex: 1;
-}
-
 button.link {
   margin: 0 0 0.5rem;
   padding: 0;
@@ -231,47 +228,6 @@ button.case {
   margin: 1rem 0;
 }
 
-.panel h2 {
-  font-size: 1.1rem;
-  margin: 0 0 0.5rem;
-}
-
-.panel h3 {
-  font-size: 1rem;
-  margin: 1rem 0 0.25rem;
-}
-
-.muted {
-  color: #666;
-  font-size: 0.9rem;
-}
-
-.stages,
-.items,
-.chat,
-.grounds {
-  list-style: none;
-  padding: 0;
-  margin: 0.5rem 0;
-}
-
-.stage.done {
-  color: #2a7a2a;
-}
-
-.chat {
-  margin-top: 0.75rem;
-}
-
-.turn {
-  border-top: 1px solid #eee;
-  padding: 0.75rem 0;
-}
-
-.turn .question {
-  font-weight: 600;
-}
-
 .chip {
   display: inline-block;
   margin: 0.15rem 0.3rem 0.15rem 0;
@@ -283,10 +239,6 @@ button.case {
   font-family: ui-monospace, monospace;
 }
 
-.grounds {
-  margin-top: 0.4rem;
-}
-
 code {
   font-family: ui-monospace, monospace;
   font-size: 0.85em;
@@ -295,33 +247,10 @@ code {
   border-radius: 0.25rem;
 }
 
-.subpanel {
-  border-top: 1px solid #eee;
-  margin-top: 0.75rem;
-  padding-top: 0.75rem;
-}
-
-.panel h4 {
-  font-size: 0.95rem;
-  margin: 0 0 0.35rem;
-}
-
 /* W-009: the refinement's rationale is the answer to the panel's own "why"
    heading, and it is shown rather than collapsed behind a disclosure widget
    the analyst has to know to open. A left rule marks it as the proposal's
    support rather than another paragraph of the panel. */
-.rationale {
-  border-top: none;
-  border-left: 3px solid #4a6fa5;
-  background: #f7f9fc;
-  margin: 0.75rem 0 0.5rem;
-  padding: 0.5rem 0.75rem;
-}
-
-.rationale p {
-  margin: 0 0 0.35rem;
-}
-
 .file-button {
   display: inline-block;
   font: inherit;
@@ -336,26 +265,6 @@ code {
 
 .file-button input {
   display: none;
-}
-
-.proposal {
-  border-left: 3px solid #4a6fa5;
-  background: #f7f9fc;
-  padding: 0.5rem 0.75rem;
-  margin: 0.5rem 0;
-}
-
-.proposal pre {
-  background: #eee;
-  padding: 0.5rem;
-  border-radius: 0.3rem;
-  overflow-x: auto;
-  font-size: 0.85rem;
-}
-
-.run {
-  padding: 0.5rem 0;
-  border-top: 1px solid #eee;
 }
 
 button.small {
@@ -383,8 +292,15 @@ button.small {
   color: #a03a2a;
 }
 
-/* A validation concern (P8-VALID-003): the computation reproduced and the claim
-   is phrased within it, but the analysis carries a stated limitation. A failure
+/* A chat turn's question is the analyst's own voice, so it carries the weight
+   the old rule gave it; the answer under it does not. The refinement panel's
+   original question is the same voice, so the rule is the name. */
+.question {
+  font-weight: 600;
+}
+
+/* A concern is not a failure: the computation reproduced and the claim is
+   phrased within it, but the analysis carries a stated limitation. A failure
    is a different statement, so it reads differently rather than louder. */
 .fail {
   color: #8a1a1a;
@@ -487,12 +403,6 @@ table.eda td {
 }
 
 /* The column pickers sit two abreast; a stacked pair reads as one form. */
-.row label {
-  flex: 1;
-  font-weight: 400;
-  margin: 0;
-}
-
 /* A case row is a container, not a single button: the open affordance is the
    primary action and the management actions sit beside it. */
 .case {
@@ -520,11 +430,6 @@ table.eda td {
 
 .case-open:hover {
   text-decoration: underline;
-}
-
-.case-actions {
-  margin-top: 0.5rem;
-  flex-wrap: wrap;
 }
 
 .case-editing {

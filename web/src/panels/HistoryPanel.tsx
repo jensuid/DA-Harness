@@ -1,9 +1,11 @@
 /**
- * P9-F1-001: this panel moved out of CaseWorkspace.tsx verbatim.
- * The workspace holds the state; the panel is pure over its props.
+ * P9-F2-002: this panel is built on the token layer, not on the class names
+ * the hand-written CSS defined. The workspace still holds the state; the
+ * panel is still pure over its props.
  */
 
 import { CaseHistory } from '../api'
+import { surfaces } from '../lib/ui'
 
 export function HistoryPanel({
   history,
@@ -15,15 +17,15 @@ export function HistoryPanel({
   missing: boolean
 }) {
   return (
-    <div className="panel">
-      <h2>Case history</h2>
+    <div className={surfaces.panel}>
+      <h2 className={surfaces.heading}>Case history</h2>
       {missing ? (
         // A 404 means the case is unknown. The workspace loads its own case on
         // mount, so the header already reports it - this panel says so once, as
         // guidance, rather than reporting the same failure twice.
-        <p className="muted">The timeline could not be read: {error}</p>
+        <p className={surfaces.note}>The timeline could not be read: {error}</p>
       ) : !history ? (
-        <p className="muted">Loading the timeline…</p>
+        <p className={surfaces.note}>Loading the timeline…</p>
       ) : (
         <HistoryBody history={history} />
       )}
@@ -44,7 +46,7 @@ export function HistoryBody({ history }: { history: CaseHistory }) {
   }
   return (
     <>
-      <p className="muted">
+      <p className={surfaces.note}>
         {history.events.length} event{history.events.length === 1 ? '' : 's'} in
         this case{parts.length > 0 ? `, ${parts.join(', ')}` : ''} - oldest first
       </p>
@@ -52,18 +54,18 @@ export function HistoryBody({ history }: { history: CaseHistory }) {
         // The core answers one event for a just-created case, so this is
         // defensive - but a projection that answered nothing would be a bug
         // worth seeing rather than an empty list worth hiding.
-        <p className="muted">Nothing has happened in this case yet.</p>
+        <p className={surfaces.note}>Nothing has happened in this case yet.</p>
       ) : (
-        <ul className="items">
+        <ul className={surfaces.panelList}>
           {history.events.map((event, i) => (
             <li key={`${event.artifact_id ?? event.kind}-${i}`}>
               <p>
-                <time className="muted" dateTime={event.timestamp}>
+                <time className={surfaces.note} dateTime={event.timestamp}>
                   {event.timestamp}
                 </time>{' '}
                 — {EVENT_KINDS[event.kind] ?? event.kind}: {event.label}
               </p>
-              {event.detail && <p className="muted">{event.detail}</p>}
+              {event.detail && <p className={surfaces.note}>{event.detail}</p>}
             </li>
           ))}
         </ul>

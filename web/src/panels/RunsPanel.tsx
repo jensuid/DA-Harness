@@ -1,6 +1,7 @@
 /**
- * P9-F1-001: this panel moved out of CaseWorkspace.tsx verbatim.
- * The workspace holds the state; the panel is pure over its props.
+ * P9-F2-002: this panel is built on the token layer, not on the class names
+ * the hand-written CSS defined. The workspace still holds the state; the
+ * panel is still pure over its props.
  */
 
 import { useState } from 'react'
@@ -21,6 +22,7 @@ import {
 } from "../api"
 import { sourceLabel } from '../sourceLabel'
 import { messageOf } from '../CaseList'
+import { Button, surfaces } from '../lib/ui'
 import { DraftPanel } from './DraftPanel'
 
 export function RunsPanel({
@@ -36,16 +38,16 @@ export function RunsPanel({
 }) {
   if (runs.length === 0) {
     return (
-      <div className="panel">
-        <h2>Runs</h2>
-        <p className="muted">No analysis has run yet.</p>
+      <div className={surfaces.panel}>
+        <h2 className={surfaces.heading}>Runs</h2>
+        <p className={surfaces.note}>No analysis has run yet.</p>
       </div>
     )
   }
   return (
-    <div className="panel">
-      <h2>Runs</h2>
-      <ul className="items">
+    <div className={surfaces.panel}>
+      <h2 className={surfaces.heading}>Runs</h2>
+      <ul className={surfaces.panelList}>
         {runs.map((run) => (
           <li key={run.id}>
             <RunRow
@@ -123,45 +125,45 @@ export function RunRow({
   }
 
   return (
-    <div className="run">
+    <div className={surfaces.row}>
       <p>
         <strong>{run.kind}</strong> over {datasetLabel} — {run.row_count} row
         {run.row_count === 1 ? '' : 's'}
         {run.truncated && ' (truncated)'}
       </p>
-      <div className="row">
-        <button type="button" onClick={read} disabled={busy} className="small">
+      <div className={surfaces.buttonRow}>
+        <Button type="button" onClick={read} disabled={busy} variant="small">
           {busy ? 'Working…' : 'Interpret'}
-        </button>
-        <button type="button" onClick={draftIt} disabled={busy} className="small">
+        </Button>
+        <Button type="button" onClick={draftIt} disabled={busy} variant="small">
           {busy ? 'Working…' : 'Draft a finding'}
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
           onClick={() => (rows ? setRows(null) : void showRows())}
           disabled={busy}
-          className="small"
+          variant="small"
           aria-expanded={rows !== null}
         >
           {busy ? 'Working…' : rows ? 'Hide the rows' : 'Show the rows'}
-        </button>
+        </Button>
       </div>
       {error && <p role="alert">The assistant failed: {error}</p>}
       {reading && (
-        <div className="proposal">
-          <p className="muted">{sourceLabel(reading.source, 'interpretation')}</p>
+        <div className={surfaces.proposal}>
+          <p className={surfaces.note}>{sourceLabel(reading.source, 'interpretation')}</p>
           <p>{reading.summary}</p>
           {reading.observations.length > 0 && (
-            <ul className="items">
+            <ul className={surfaces.panelList}>
               {reading.observations.map((observation, i) => (
                 <li key={i}>{observation}</li>
               ))}
             </ul>
           )}
           {reading.caveats.length > 0 && (
-            <ul className="items">
+            <ul className={surfaces.panelList}>
               {reading.caveats.map((caveat, i) => (
-                <li key={i} className="muted">
+                <li key={i} className={surfaces.note}>
                   caveat: {caveat}
                 </li>
               ))}
@@ -260,17 +262,17 @@ export function ChartPanel({
   const yValue = pickOf(y, measures)
 
   return (
-    <div className="subpanel">
-      <div className="row">
-        <button
+    <div className={surfaces.subpanel}>
+      <div className={surfaces.buttonRow}>
+        <Button
           type="button"
           onClick={() => setOpen((prior) => !prior)}
           aria-expanded={open}
           disabled={busy}
-          className="small"
+          variant="small"
         >
           {open ? 'Hide the chart controls' : 'Render a chart'}
-        </button>
+        </Button>
       </div>
       {open && (
         <form
@@ -279,7 +281,7 @@ export function ChartPanel({
             void render()
           }}
         >
-          <div className="row">
+          <div className={surfaces.rowGap}>
             <label>
               Kind
               <select
@@ -339,9 +341,9 @@ export function ChartPanel({
               </select>
             </label>
           </div>
-          <button type="submit" disabled={busy}>
+          <Button type="submit" disabled={busy}>
             {busy ? 'Rendering…' : 'Render the chart'}
-          </button>
+          </Button>
         </form>
       )}
       {error && (
@@ -385,8 +387,8 @@ export function ChartSurface({
   const label = chart ? chartLabel(chart) : 'the chart'
   if (image.format === 'svg') {
     return (
-      <div className="proposal" data-testid="chart-surface">
-        <p className="muted">
+      <div className={surfaces.proposal} data-testid="chart-surface">
+        <p className={surfaces.note}>
           {label} — drawn by the core from the run's stored result
         </p>
         <div
@@ -401,8 +403,8 @@ export function ChartSurface({
     )
   }
   return (
-    <div className="proposal" data-testid="chart-surface">
-      <p className="muted">{label}</p>
+    <div className={surfaces.proposal} data-testid="chart-surface">
+      <p className={surfaces.note}>{label}</p>
       <p>
         <a href={image.url}>Open the rendered chart</a>
       </p>
@@ -425,10 +427,10 @@ export function chartLabel(chart: ChartSummary): string {
 export function RunRowsTable({ run }: { run: Run }) {
   const query = run.sql ?? run.code
   return (
-    <div className="proposal" data-testid="run-rows">
+    <div className={surfaces.proposal} data-testid="run-rows">
       {query && <pre>{query}</pre>}
       {run.rows.length === 0 ? (
-        <p className="muted">The run produced no rows.</p>
+        <p className={surfaces.note}>The run produced no rows.</p>
       ) : (
         <table className="eda">
           <thead>
@@ -450,7 +452,7 @@ export function RunRowsTable({ run }: { run: Run }) {
         </table>
       )}
       {run.truncated && (
-        <p className="muted">
+        <p className={surfaces.note}>
           The result was capped at the row limit; the stored count is{' '}
           {run.row_count}.
         </p>

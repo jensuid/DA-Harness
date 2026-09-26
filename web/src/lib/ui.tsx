@@ -56,37 +56,76 @@ export const tokens = {
 // The composed surfaces the panels build on. A panel is a card with a border
 // and a heading; the strings here are the whole style so a panel reads one
 // name and the decision is made once for all of them.
+//
+// The rule for every string here: it is the CSS rule it replaces, as utility
+// classes, with the same values and the same specificity behaviour. Nothing is
+// restyled and nothing is invented - a panel that moves onto a token renders
+// what the CSS rule it replaced rendered. The values are the ones the tokens
+// above name, so the palette stays one set of names in one file.
 export const surfaces = {
+  // The panel: the bordered card every surface in the workspace is built on.
+  // `my-4` is the margin a panel carries outside the three zones; inside a
+  // zone `.zone .panel { margin: 0 }` cancels it (the zone's gap does that job
+  // instead), which is why the margin stays here rather than being dropped.
+  // The word `panel` stays in the class because the panel is a structural
+  // landmark, not only a style: the workspace's own tests reach a panel with
+  // `heading.closest('.panel')` and the zone CSS scopes to `.zone .panel`.
   panel:
-    'border border-[#ddd] rounded-[0.4rem] bg-white p-4 my-4 ' + tokens.text,
+    'panel border border-[#ddd] rounded-[0.4rem] bg-white p-4 my-4 ' + tokens.text,
   // A panel whose own list is its body: the panel's padding already frames it,
-  // so the list is flush rather than indented.
-  panelList: 'list-none p-0 m-0',
+  // so the list is flush rather than indented, and the margins below the
+  // hairline rule are the same every list had (my-2).
+  panelList: 'list-none p-0 m-0 my-2',
+  // A panel's heading and its sub-headings, replacing `.panel h2/h3/h4`. The
+  // sizes are the ones the old rules set; the selector is gone with them.
   heading: 'text-[1.1rem] m-0 mb-2 ' + tokens.text,
   subheading: 'text-[1rem] mt-4 mb-1 ' + tokens.text,
+  labelheading: 'text-[0.95rem] m-0 mb-1.4 ' + tokens.text,
   body: 'text-sm ' + tokens.textMuted,
+  // `.muted`: a muted line is smaller than the body around it, and the old
+  // rule set both. Note carries the size with the colour, so 92 sites stay
+  // what they were (D2).
   note: 'text-[0.9rem] ' + tokens.textMuted,
-  // A panel's own separator and the block it opens below it.
-  subpanel: 'border-t border-[#eee] mt-3 pt-3',
+  // A panel's own separator and the block it opens below it. The old rule
+  // set no display, so a `subpanel` div was a block; a `label` needs `block`
+  // explicitly or a border-top stretches with the label's inline width
+  // (RefinePanel, ContextPanel).
+  subpanel: 'block border-t border-[#eee] mt-3 pt-3',
   // A proposal or a rationale: the accent's left rule marks it as the panel's
-  // own support rather than another paragraph (W-009).
+  // own support rather than another paragraph (W-009). `.rationale` is the
+  // same surface with its own tighter padding; both are the one accent rule.
   proposal:
     'border-l-[3px] ' + tokens.accentRule + ' ' + tokens.accentSurface + ' p-2 px-3 my-2',
+  rationale:
+    'border-l-[3px] ' + tokens.accentRule + ' ' + tokens.accentSurface + ' p-2 px-3 mt-3 mb-2',
   card: 'border border-[#ddd] rounded-[0.4rem] bg-white p-3 ' + tokens.text,
-  // A run row and a chat turn are separated by hairlines, not by margins.
+  // A run row and a chat turn are separated by hairlines, not by margins. The
+  // turn keeps its own name because the padding it carries (0.75rem) is
+  // tighter than a run row's (0.5rem), and both are what the CSS set.
   row: 'py-2 border-t border-[#eee]',
+  turn: 'py-3 border-t border-[#eee]',
+  // A form's control row: a flex gap with the vertical margin the CSS set.
+  rowGap: 'flex gap-2 my-4',
+  // The case list's action row: flex with wrap (the buttons are short and
+  // narrow screens stack them), and no margin, because the container above
+  // already carries its own.
+  buttonRow: 'flex flex-wrap gap-2 mt-2',
 } as const
 
 // The four button shapes the current CSS defines: `button`, `button.link`,
 // `button.small` and `button.danger`. class-variance-authority types the
 // variants so a typo is a compile error rather than an unstyled button.
+// `button` is the shape everything renders when no variant is named, and it
+// carries the base rule's own properties so a bare `<Button>` is the button
+// the CSS used to draw (D4).
 export const buttonVariants = cva('button', {
   variants: {
     variant: {
-      default: '',
+      default: 'mt-4 px-4 py-2',
       link: 'link',
       small: 'small',
       danger: 'danger',
+      smallDanger: 'small danger',
     },
   },
   defaultVariants: { variant: 'default' },
@@ -122,7 +161,9 @@ export function Panel({
  * The button primitive: the four shapes the CSS has today, typed.
  *
  * `type="button"` is the default because a panel's button that submits a
- * form it is not part of is a bug that reads as a page reload.
+ * form it is not part of is a bug that reads as a page reload. A button that
+ * passes no className takes its variant's own classes, so the base shape is
+ * the variant instead of a class a panel has to remember.
  */
 export function Button({
   variant,

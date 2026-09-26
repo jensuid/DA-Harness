@@ -39,6 +39,7 @@ import {
 } from './api'
 import { ApiError } from './api'
 import { messageOf } from './CaseList'
+import { Button } from './lib/ui'
 import { AgentPanel } from './panels/AgentPanel'
 import { CaseOverview } from './panels/CaseOverview'
 import { Chat } from './panels/Chat'
@@ -202,9 +203,9 @@ export function CaseWorkspace({
   if (error && !caseRow) {
     return (
       <section>
-        <button type="button" onClick={onBack} className="link">
+        <Button type="button" onClick={onBack} variant="link">
           ← Back to cases
-        </button>
+        </Button>
         <p role="alert">Failed to open the case: {error}</p>
       </section>
     )
@@ -223,9 +224,9 @@ export function CaseWorkspace({
 
   return (
     <section>
-      <button type="button" onClick={onBack} className="link">
+      <Button type="button" onClick={onBack} variant="link">
         ← Back to cases
-      </button>
+      </Button>
       <h1>{caseRow?.question ?? '…'}</h1>
       {error && <p role="alert">Something went wrong: {error}</p>}
 

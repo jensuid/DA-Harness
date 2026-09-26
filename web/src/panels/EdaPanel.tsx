@@ -1,6 +1,7 @@
 /**
- * P9-F1-001: this panel moved out of CaseWorkspace.tsx verbatim.
- * The workspace holds the state; the panel is pure over its props.
+ * P9-F2-002: this panel is built on the token layer, not on the class names
+ * the hand-written CSS defined. The workspace still holds the state; the
+ * panel is still pure over its props.
  */
 
 import { useState } from 'react'
@@ -13,6 +14,7 @@ import {
   runEda,
 } from "../api"
 import { messageOf } from '../CaseList'
+import { Button, surfaces } from '../lib/ui'
 import { formatValue } from './RunsPanel'
 
 export function EdaPanel({
@@ -41,9 +43,9 @@ export function EdaPanel({
 
   if (profiled.length === 0) {
     return (
-      <div className="panel">
-        <h2>Explore the data (EDA)</h2>
-        <p className="muted">
+      <div className={surfaces.panel}>
+        <h2 className={surfaces.heading}>Explore the data (EDA)</h2>
+        <p className={surfaces.note}>
           Profile a dataset first - the ops read its columns and their types.
         </p>
       </div>
@@ -89,9 +91,9 @@ export function EdaPanel({
   }
 
   return (
-    <div className="panel">
-      <h2>Explore the data (EDA)</h2>
-      <p className="muted">
+    <div className={surfaces.panel}>
+      <h2 className={surfaces.heading}>Explore the data (EDA)</h2>
+      <p className={surfaces.note}>
         Segment a measure by a category, correlate two columns, or read a
         column's distribution. Each runs read-only like any query, and none is
         kept - an EDA result is exploration, not a finding.
@@ -142,7 +144,7 @@ export function EdaPanel({
           </select>
         </label>
         {op === 'segment' && (
-          <div className="row">
+          <div className={surfaces.rowGap}>
             <label>
               Group by
               <select
@@ -176,7 +178,7 @@ export function EdaPanel({
           </div>
         )}
         {op === 'correlate' && (
-          <div className="row">
+          <div className={surfaces.rowGap}>
             <label>
               X
               <select
@@ -227,9 +229,9 @@ export function EdaPanel({
             </select>
           </label>
         )}
-        <button type="submit" disabled={busy}>
+        <Button type="submit" disabled={busy}>
           {busy ? 'Running…' : 'Run the op'}
-        </button>
+        </Button>
       </form>
       {error && <p role="alert">The op could not run: {error}</p>}
       {result && <EdaResultTable result={result} />}
@@ -250,8 +252,8 @@ export function typeOf(profile: Profile, column: string): string {
 // assume which.
 export function EdaResultTable({ result }: { result: EdaResult }) {
   return (
-    <div className="proposal" data-testid="eda-result">
-      <p className="muted">
+    <div className={surfaces.proposal} data-testid="eda-result">
+      <p className={surfaces.note}>
         {result.row_count} row{result.row_count === 1 ? '' : 's'}
         {result.truncated && ' (truncated)'} — exploration, not evidence: run
         the equivalent query to make a finding of it.

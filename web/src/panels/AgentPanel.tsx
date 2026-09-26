@@ -1,6 +1,7 @@
 /**
- * P9-F1-001: this panel moved out of CaseWorkspace.tsx verbatim.
- * The workspace holds the state; the panel is pure over its props.
+ * P9-F2-002: this panel is built on the token layer, not on the class names
+ * the hand-written CSS defined. The workspace still holds the state; the
+ * panel is still pure over its props.
  */
 
 import { useState } from 'react'
@@ -19,6 +20,7 @@ import {
 } from "../api"
 import { sourceLabel } from '../sourceLabel'
 import { messageOf } from '../CaseList'
+import { Button, surfaces } from '../lib/ui'
 
 export const AGENT_COPY: Record<AgentRole, {
   title: string
@@ -159,9 +161,9 @@ export function AgentPanel({
 
   if (!agent) {
     return (
-      <div className="panel">
-        <h2>{copy.title}</h2>
-        <p className="muted">{copy.loading}</p>
+      <div className={surfaces.panel}>
+        <h2 className={surfaces.heading}>{copy.title}</h2>
+        <p className={surfaces.note}>{copy.loading}</p>
       </div>
     )
   }
@@ -171,46 +173,46 @@ export function AgentPanel({
   const end = finished ? agent.history[agent.history.length - 1] : null
 
   return (
-    <div className="panel">
-      <h2>{copy.title}</h2>
-      <p className="muted">{copy.blurb}</p>
-      <div className="row">
-        <button
+    <div className={surfaces.panel}>
+      <h2 className={surfaces.heading}>{copy.title}</h2>
+      <p className={surfaces.note}>{copy.blurb}</p>
+      <div className={surfaces.buttonRow}>
+        <Button
           type="button"
           onClick={propose}
           disabled={busy}
-          className="small"
+          variant="small"
         >
           {busy ? 'Working…' : pending ? copy.repropose : copy.propose}
-        </button>
+        </Button>
       </div>
       {error && (
         <p role="alert">{copy.error} {error}</p>
       )}
       {pending ? (
-        <div className="proposal">
-          <p className="muted">
+        <div className={surfaces.proposal}>
+          <p className={surfaces.note}>
             {sourceLabel(pending.source, 'proposal')} — approve to run it, or
             reject with your reason
           </p>
           <p><strong>{stepSentence(pending)}</strong></p>
-          <div className="row">
-            <button
+          <div className={surfaces.buttonRow}>
+            <Button
               type="button"
               onClick={() => void decide(true)}
               disabled={busy}
-              className="small"
+              variant="small"
             >
               {busy ? 'Running…' : 'Approve and run'}
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               onClick={() => void decide(false)}
               disabled={busy}
-              className="small"
+              variant="small"
             >
               {busy ? 'Recording…' : 'Reject'}
-            </button>
+            </Button>
           </div>
           <input
             aria-label="Reason for rejecting (optional)"
@@ -221,22 +223,22 @@ export function AgentPanel({
           />
         </div>
       ) : end ? (
-        <p className="muted">
+        <p className={surfaces.note}>
           {copy.stopped}{' '}
           {end.note || 'no further step is derivable from the case as it stands'}
         </p>
       ) : (
-        <p className="muted">{copy.idle}</p>
+        <p className={surfaces.note}>{copy.idle}</p>
       )}
       {agent.history.length > 0 && (
-        <div className="subpanel">
-          <h3>{copy.history}</h3>
-          <ul className="items">
+        <div className={surfaces.subpanel}>
+          <h3 className={surfaces.subheading}>{copy.history}</h3>
+          <ul className={surfaces.panelList}>
             {agent.history
               .slice()
               .reverse()
               .map((step) => (
-                <li key={step.id} className="run">
+                <li key={step.id} className={surfaces.row}>
                   <StepStatus step={step} />
                 </li>
               ))}
@@ -289,9 +291,9 @@ export function StepStatus({ step }: { step: AgentStep }) {
       <span className={`verdict ${step.status === 'done' ? 'pass' : step.status === 'rejected' ? 'fail' : 'concern'}`}>
         {mark} {step.kind}
       </span>
-      <span className="muted"> — {step.note || stepSentence(step)}</span>
+      <span className={surfaces.note}> — {step.note || stepSentence(step)}</span>
       {step.status === 'rejected' && step.note && (
-        <span className="muted"> (rejected: {step.note})</span>
+        <span className={surfaces.note}> (rejected: {step.note})</span>
       )}
     </p>
   )
