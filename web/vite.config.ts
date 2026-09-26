@@ -1,12 +1,13 @@
 /// <reference types="vitest" />
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
 
 // The frontend talks to the Python core exclusively over HTTP - never to the
 // filesystem or DuckDB directly (DEC-001). In dev, /api is proxied to the
 // FastAPI server; in the future Tauri host the same bundle is unchanged.
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), tailwindcss()],
   // Vite's default port (5173) collides with another dev server on this
   // machine, so the frontend dev server is pinned here. strictPort matters:
   // without it Vite silently hops to the next free port and the Tauri shell's

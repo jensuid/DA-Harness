@@ -1,3 +1,38 @@
+/* P9-F1-001: Tailwind v4 is CSS-first, so this one import is the whole
+   configuration - no postcss config and no tailwind.config.js. The plugin in
+   vite.config.ts compiles it in dev and at build, and every rule below is
+   the hand-written CSS the product already shipped, unchanged, so the
+   emitted stylesheet is the existing one plus Tailwind's base and utilities.
+   The panels adopt these utilities one at a time in F2; nothing here
+   replaces a rule the accessibility audit or a test depends on. */
+@import "tailwindcss";
+
+/* The light theme, named (P9-F1-001). The values are the palette the CSS
+   below already used, so the theme is the existing one named rather than a
+   new one invented; a dark theme is a swap of these same names. The panels
+   read them as CSS custom properties until F2 adopts the utility classes
+   that reference them. */
+:root {
+  --color-bg: #fafafa;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f4f4f4;
+  --color-border: #dddddd;
+  --color-text: #1a1a1a;
+  --color-text-muted: #666666;
+  --color-accent: #4a6fa5;
+  --color-accent-text: #1a4a7a;
+  --color-ok: #2a7a2a;
+  --color-ok-bg: #f2f9f2;
+  --color-ok-border: #9cc29c;
+  --color-warn: #8a6a1a;
+  --color-warn-bg: #faf6ec;
+  --color-warn-border: #d9c48a;
+  --color-danger: #a03a2a;
+  --color-danger-bg: #faf0ee;
+  --color-danger-border: #d9a094;
+  --radius: 0.4rem;
+}
+
 :root {
   font-family: system-ui, sans-serif;
   color: #1a1a1a;

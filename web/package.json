@@ -12,8 +12,16 @@
     "build:desktop:watch": "VITE_API_URL=http://127.0.0.1:8123 vite build --outDir dist-desktop --emptyOutDir --watch"
   },
   "dependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "framer-motion": "^13.4.4",
+    "lucide-react": "^1.48.0",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "recharts": "^3.10.1",
+    "tailwind-merge": "^3.7.0",
+    "tailwindcss": "^4.3.3"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^7.0.1",

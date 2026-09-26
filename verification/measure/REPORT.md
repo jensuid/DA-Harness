@@ -12,17 +12,17 @@ and verification/refine/REPORT.md.
 
 ## AT-37                  PASS
 
-- measured: 0 critical, 0 high (22/22 packages scanned)
+- measured: 0 critical, 0 high (30/30 packages scanned)
 - target: 0 critical, 0 high without a documented risk acceptance
 
 ## AT-28                  PASS
 
-- measured: p95 185ms over 20 samples
+- measured: p95 282ms over 20 samples
 - target: p95 <= 2000ms
 
 ## AT-29                  PASS
 
-- measured: p95 1434ms over 10 samples
+- measured: p95 1693ms over 10 samples
 - target: p95 <= 5000ms
 
 ## AT-46                  PASS
@@ -47,9 +47,9 @@ and verification/refine/REPORT.md.
 
 ## AT-27 / AT-30 / AT-32  PASS
 
-- measured: the web suite is green (Tests  163 passed (163))
+- measured: the web suite is green (Tests  181 passed (181))
 - target: p95 <= 200ms, every long-running operation shows its state, 0 critical accessibility violations
 
 ---
 
-**PASS** - 9/9 measurements hold; measured in 791s.
+**PASS** - 9/9 measurements hold; measured in 574s.

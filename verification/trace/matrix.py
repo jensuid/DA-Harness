@@ -246,7 +246,7 @@ MATRIX = (
     _r(
         "AT-05", "Data Import", "# 9. AT-05 — Data Import",
         False, "",
-        (UX(14, "Data Workspace"), Web("web/src/CaseWorkspace.tsx", "DataPanel")),
+        (UX(14, "Data Workspace"), Web("web/src/panels/DataPanel.tsx", "DataPanel")),
         (Code("server/app/main.py", "attach_dataset"),
          Code("server/app/analysis.py", "_sniffed_reader_for")),
         (Code("server/tests/test_datasets.py", "test_attach_and_reopen_dataset"),
@@ -260,7 +260,7 @@ MATRIX = (
     _r(
         "AT-06", "Schema Detection", "# 10. AT-06 — Schema Detection",
         False, "",
-        (UX(14, "Data Workspace"), Web("web/src/CaseWorkspace.tsx", "DataPanel")),
+        (UX(14, "Data Workspace"), Web("web/src/panels/DataPanel.tsx", "DataPanel")),
         (Code("server/app/analysis.py", "_type_family"),
          Code("server/app/analysis.py", "profile_csv")),
         (Code("server/tests/test_profiles.py", "test_deep_profile_stats"),
@@ -273,7 +273,7 @@ MATRIX = (
     _r(
         "AT-07", "Data Profiling", "# 11. AT-07 — Data Profiling",
         True, "Critical analytical calculation error",
-        (UX(14, "Data Workspace"), Web("web/src/CaseWorkspace.tsx", "DataPanel")),
+        (UX(14, "Data Workspace"), Web("web/src/panels/DataPanel.tsx", "DataPanel")),
         (Code("server/app/analysis.py", "profile_csv"),
          Code("server/app/main.py", "profile_dataset")),
         (Code("server/tests/test_golden.py",
@@ -287,7 +287,7 @@ MATRIX = (
     _r(
         "AT-08", "Data Quality Detection", "# 12. AT-08 — Data Quality Detection",
         False, "",
-        (UX(15, "Data Quality UX"), Web("web/src/CaseWorkspace.tsx", "DataPanel")),
+        (UX(15, "Data Quality UX"), Web("web/src/panels/DataPanel.tsx", "DataPanel")),
         (Code("server/app/quality.py", "assess_quality"),
          Code("server/app/quality.py", "ALL_CLASSES")),
         (Code("server/tests/test_quality.py",
@@ -301,7 +301,7 @@ MATRIX = (
     _r(
         "AT-09", "Quality Impact", "# 13. AT-09 — Quality Impact",
         False, "",
-        (UX(15, "Data Quality UX"), Web("web/src/CaseWorkspace.tsx", "DataPanel")),
+        (UX(15, "Data Quality UX"), Web("web/src/panels/DataPanel.tsx", "DataPanel")),
         (Code("server/app/quality.py", "QualityIssue"),
          Code("server/app/validation.py", "_quality_issues")),
         (Code("server/tests/test_quality.py",
@@ -315,7 +315,7 @@ MATRIX = (
     _r(
         "AT-10", "Analysis Planning", "# 14. AT-10 — Analysis Planning",
         False, "",
-        (UX(17, "Analysis Workspace"), Web("web/src/CaseWorkspace.tsx", "PlanPanel")),
+        (UX(17, "Analysis Workspace"), Web("web/src/panels/PlanPanel.tsx", "PlanPanel")),
         (Code("server/app/planner.py", "plan_analysis"),
          Code("server/app/planner.py", "validate_plan")),
         (Code("server/tests/test_plans.py", "test_plan_references_real_columns"),
@@ -330,7 +330,7 @@ MATRIX = (
     _r(
         "AT-11", "SQL Execution", "# 15. AT-11 — SQL Execution",
         True, "Critical analytical calculation error",
-        (UX(25, "SQL / Python UX"), Web("web/src/CaseWorkspace.tsx", "RunsPanel")),
+        (UX(25, "SQL / Python UX"), Web("web/src/panels/RunsPanel.tsx", "RunsPanel")),
         (Code("server/app/analysis.py", "run_query"),
          Code("server/app/analysis.py", "_is_read_only")),
         (Code("server/tests/test_runs.py", "test_run_aggregation_and_reopen"),
@@ -345,7 +345,7 @@ MATRIX = (
     _r(
         "AT-12", "Python Execution", "# 16. AT-12 — Python Execution",
         False, "",
-        (UX(25, "SQL / Python UX"), Web("web/src/CaseWorkspace.tsx", "RunsPanel")),
+        (UX(25, "SQL / Python UX"), Web("web/src/panels/RunsPanel.tsx", "RunsPanel")),
         (Code("server/app/python_exec.py", "run_python"),
          Code("server/app/python_exec.py", "execute_user_code")),
         (Code("server/tests/test_python_runs.py",
@@ -359,7 +359,7 @@ MATRIX = (
     _r(
         "AT-13", "Result Integrity", "# 17. AT-13 — Result Integrity",
         True, "Broken evidence chain",
-        (UX(26, "Result Object UX"), Web("web/src/CaseWorkspace.tsx", "RunsPanel")),
+        (UX(26, "Result Object UX"), Web("web/src/panels/RunsPanel.tsx", "RunsPanel")),
         (Code("server/app/main.py", "create_run"),
          Code("server/app/main.py", "get_run")),
         (Code("server/tests/test_runs.py", "test_list_runs_excludes_rows"),
@@ -372,7 +372,7 @@ MATRIX = (
     _r(
         "AT-14", "Visualization Integrity", "# 18. AT-14 — Visualization Integrity",
         False, "",
-        (UX(34, "Charts"), Web("web/src/CaseWorkspace.tsx", "RunsPanel")),
+        (UX(34, "Charts"), Web("web/src/panels/RunsPanel.tsx", "RunsPanel")),
         (Code("server/app/charts.py", "render_chart"),
          Code("server/app/charts.py", "ChartModel")),
         (Code("server/tests/test_charts.py",
@@ -387,7 +387,7 @@ MATRIX = (
     _r(
         "AT-15", "Evidence Traceability", "# 19. AT-15 — Evidence Traceability",
         True, "Broken evidence chain",
-        (UX(19, "Evidence UX"), Web("web/src/CaseWorkspace.tsx", "EvidencePanel")),
+        (UX(19, "Evidence UX"), Web("web/src/panels/EvidencePanel.tsx", "EvidencePanel")),
         (Code("server/app/evidence.py", "build_evidence_graph"),
          Code("server/app/main.py", "get_evidence_chain")),
         (Code("server/tests/test_findings.py",
@@ -401,7 +401,7 @@ MATRIX = (
     _r(
         "AT-16", "Finding Creation", "# 20. AT-16 — Finding Creation",
         False, "",
-        (UX(20, "Finding UX"), Web("web/src/CaseWorkspace.tsx", "FindingsPanel")),
+        (UX(20, "Finding UX"), Web("web/src/panels/FindingsPanel.tsx", "FindingsPanel")),
         (Code("server/app/main.py", "create_finding"),
          Code("server/app/models.py", "Finding")),
         (Code("server/tests/test_findings.py", "test_findings_survive_reopen"),
@@ -413,7 +413,7 @@ MATRIX = (
     _r(
         "AT-17", "Validation Coverage", "# 21. AT-17 — Validation Coverage",
         False, "",
-        (UX(21, "Validation UX"), Web("web/src/CaseWorkspace.tsx", "FindingsPanel")),
+        (UX(21, "Validation UX"), Web("web/src/panels/FindingsPanel.tsx", "FindingsPanel")),
         (Code("server/app/validation.py", "validate_finding"),
          Code("server/app/validation.py", "DIMENSIONS")),
         (Code("server/tests/test_validation.py", "test_every_dimension_is_answered"),
@@ -426,7 +426,7 @@ MATRIX = (
     _r(
         "AT-18", "Unsupported Causality", "# 22. AT-18 — Unsupported Causality",
         False, "",
-        (UX(43, "Trust UX"), Web("web/src/CaseWorkspace.tsx", "FindingsPanel")),
+        (UX(43, "Trust UX"), Web("web/src/panels/FindingsPanel.tsx", "FindingsPanel")),
         (Code("server/app/causality.py", "assess_causality"),
          Code("server/app/validation.py", "check_causality")),
         (Code("server/tests/test_causality.py",
@@ -442,7 +442,7 @@ MATRIX = (
     _r(
         "AT-19", "AI Execution Honesty", "# 23. AT-19 — AI Execution Honesty",
         True, "Fabricated execution",
-        (UX(24, "AI Actions"), Web("web/src/CaseWorkspace.tsx", "AgentPanel")),
+        (UX(24, "AI Actions"), Web("web/src/panels/AgentPanel.tsx", "AgentPanel")),
         (Code("server/app/generator.py", "validate_code"),
          Code("server/app/drafter.py", "validate_draft"),
          Code("server/app/assistant.py", "validate_answer")),
@@ -459,7 +459,7 @@ MATRIX = (
         "AT-20", "AI Structured Output", "# 24. AT-20 — AI Structured Output",
         False, "",
         (UX(23, "AI Interaction Model"),
-         Web("web/src/CaseWorkspace.tsx", "AgentPanel")),
+         Web("web/src/panels/AgentPanel.tsx", "AgentPanel")),
         (Code("server/app/planner.py", "validate_plan"),
          Code("server/app/refine.py", "validate_refinement")),
         (Code("server/tests/test_plans.py", "test_malformed_llm_output_falls_back"),
@@ -474,7 +474,7 @@ MATRIX = (
     _r(
         "AT-21", "AI Relevance", "# 25. AT-21 — AI Relevance",
         False, "",
-        (UX(22, "AI Assistant UX"), Web("web/src/CaseWorkspace.tsx", "AgentPanel")),
+        (UX(22, "AI Assistant UX"), Web("web/src/panels/AgentPanel.tsx", "AgentPanel")),
         (Code("server/app/assistant.py", "answer_question"),
          Code("server/app/assistant.py", "validate_answer")),
         (Code("server/tests/test_conversation.py",
@@ -488,7 +488,7 @@ MATRIX = (
     _r(
         "AT-22", "AI Human Control", "# 26. AT-22 — AI Human Control",
         False, "",
-        (UX(24, "AI Actions"), Web("web/src/CaseWorkspace.tsx", "AgentPanel")),
+        (UX(24, "AI Actions"), Web("web/src/panels/AgentPanel.tsx", "AgentPanel")),
         (Code("server/app/agent.py", "approve"),
          Code("server/app/agent.py", "reject"),
          Code("server/app/main.py", "_apply_agent_step")),
@@ -505,7 +505,7 @@ MATRIX = (
     _r(
         "AT-23", "Reproducibility", "# 27. AT-23 — Reproducibility",
         True, "Critical analytical calculation error",
-        (UX(26, "Result Object UX"), Web("web/src/CaseWorkspace.tsx", "RunsPanel")),
+        (UX(26, "Result Object UX"), Web("web/src/panels/RunsPanel.tsx", "RunsPanel")),
         (Code("server/app/main.py", "_reproduce_sql"),
          Code("server/app/main.py", "_results_agree")),
         (Code("server/tests/test_validation.py",
@@ -588,7 +588,7 @@ MATRIX = (
         "AT-29", "Data Profiling Performance", "# 33. AT-29 — Data Profiling Performance",
         False, "",
         (UX(37, "Loading and Long-Running Operations"),
-         Web("web/src/CaseWorkspace.tsx", "DataPanel")),
+         Web("web/src/panels/DataPanel.tsx", "DataPanel")),
         (Code("server/app/analysis.py", "profile_csv"),
          Code("server/app/analysis.py", "_materialise")),
         (Case("server/tests/test_large_datasets.py",
@@ -603,9 +603,9 @@ MATRIX = (
         False, "",
         (UX(37, "Loading and Long-Running Operations"),
          Web("web/src/CaseWorkspace.tsx", "CaseWorkspace")),
-        (Code("web/src/CaseWorkspace.tsx", "RunRow"),
-         Code("web/src/CaseWorkspace.tsx", "FindingRow"),
-         Code("web/src/CaseWorkspace.tsx", "GeneratePanel")),
+        (Code("web/src/panels/RunsPanel.tsx", "RunRow"),
+         Code("web/src/panels/FindingsPanel.tsx", "FindingRow"),
+         Code("web/src/panels/GeneratePanel.tsx", "GeneratePanel")),
         (Case(MEASURE_SUITE),),
         "100% of benchmarked long-running operations provide a visible "
         "execution state",
@@ -653,9 +653,9 @@ MATRIX = (
     _r(
         "AT-34", "Evidence Understanding", "# 38. AT-34 — Evidence Understanding",
         False, "",
-        (UX(19, "Evidence UX"), Web("web/src/CaseWorkspace.tsx", "EvidencePanel")),
+        (UX(19, "Evidence UX"), Web("web/src/panels/EvidencePanel.tsx", "EvidencePanel")),
         (Code("server/app/evidence.py", "build_evidence_graph"),
-         Code("web/src/CaseWorkspace.tsx", "EvidencePanel")),
+         Code("web/src/panels/EvidencePanel.tsx", "EvidencePanel")),
         (Case(WEB_SUITE),),
         ">= 8/10 representative users trace a displayed finding back to its "
         "supporting result, unaided",
@@ -664,9 +664,9 @@ MATRIX = (
     _r(
         "AT-35", "Validation Understanding", "# 39. AT-35 — Validation Understanding",
         False, "",
-        (UX(21, "Validation UX"), Web("web/src/CaseWorkspace.tsx", "FindingsPanel")),
+        (UX(21, "Validation UX"), Web("web/src/panels/FindingsPanel.tsx", "FindingsPanel")),
         (Code("server/app/validation.py", "validate_finding"),
-         Code("web/src/CaseWorkspace.tsx", "FindingsPanel")),
+         Code("web/src/panels/FindingsPanel.tsx", "FindingsPanel")),
         (Case(WEB_SUITE),),
         ">= 90% task accuracy distinguishing a result, a finding and a "
         "validated finding",
@@ -745,7 +745,7 @@ MATRIX = (
     _r(
         "AT-41", "Finding-to-Evidence Integrity", "# 45. AT-41 — Finding-to-Evidence Integrity",
         True, "Incorrect validated finding",
-        (UX(21, "Validation UX"), Web("web/src/CaseWorkspace.tsx", "FindingsPanel")),
+        (UX(21, "Validation UX"), Web("web/src/panels/FindingsPanel.tsx", "FindingsPanel")),
         (Code("server/app/main.py", "set_validation_status"),
          Code("server/app/main.py", "create_finding")),
         (Code("server/tests/test_findings.py", "test_set_validation_status"),
@@ -758,7 +758,7 @@ MATRIX = (
     _r(
         "AT-42", "Validation-State Integrity", "# 46. AT-42 — Validation-State Integrity",
         True, "Incorrect validated finding",
-        (UX(21, "Validation UX"), Web("web/src/CaseWorkspace.tsx", "FindingsPanel")),
+        (UX(21, "Validation UX"), Web("web/src/panels/FindingsPanel.tsx", "FindingsPanel")),
         (Code("server/app/main.py", "set_validation_status"),
          Code("server/app/validation.py", "HARD_DIMENSIONS")),
         (Code("server/tests/test_findings.py", "test_set_validation_status"),
@@ -786,7 +786,7 @@ MATRIX = (
         "AT-44", "Auditability", "# 48. AT-44 — Auditability",
         False, "",
         (UX(42, "UX State Model"),
-         Web("web/src/CaseWorkspace.tsx", "HistoryPanel")),
+         Web("web/src/panels/HistoryPanel.tsx", "HistoryPanel")),
         (Code("server/app/history.py", "build_case_history"),
          Code("server/app/history.py", "EVENT_FINDING_VALIDATED")),
         (Code("server/tests/test_case_history.py",
@@ -800,7 +800,7 @@ MATRIX = (
     _r(
         "AT-45", "MVP Data Size Envelope", "# 49. AT-45 — MVP Data Size Envelope",
         False, "",
-        (UX(14, "Data Workspace"), Web("web/src/CaseWorkspace.tsx", "DataPanel")),
+        (UX(14, "Data Workspace"), Web("web/src/panels/DataPanel.tsx", "DataPanel")),
         (Code("server/app/limits.py", "check_dataset_envelope"),
          Code("server/app/limits.py", "DEFAULT_MAX_ROWS"),
          Code("server/app/main.py", "envelope")),
