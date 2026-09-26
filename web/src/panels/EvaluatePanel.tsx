@@ -4,9 +4,37 @@
  */
 
 import { useState } from 'react'
-import { type Dataset, type Evaluation, type Profile, evaluateDataset } from '../api'
+import { ApiError, type Dataset, type Evaluation, type Profile, evaluateDataset } from '../api'
 import { messageOf } from '../CaseList'
 import { Verdict } from './FindingsPanel'
+
+// W-017: a 400 from the audit endpoint is the contract naming what to fix, but
+// three different causes all answer 400 and the core's own sentence names the
+// *artifact*, so an analyst who left a field empty read it as their SQL being
+// refused. Each cause has its own sentence here, so the message the panel shows
+// is about the field that is actually wrong. The key is the core's own detail
+// string, so a core that rewords a refusal reads as an unknown 400 and is shown
+// verbatim - the honesty budget is not paid by hiding a reason this map stops
+// recognising.
+export const EVALUATE_REFUSALS: Readonly<Record<string, string>> = {
+  "the artifact's code is empty":
+    "The artifact's code is empty - paste the work to audit.",
+  'no claim was submitted to audit':
+    'No claim was submitted - state what the work was offered to support.',
+  "the artifact's kind must be 'sql' or 'python'":
+    "The artifact's kind must be SQL or Python.",
+  'the artifact is not a single read-only query':
+    'The artifact is not a single read-only query, so it cannot be executed or audited.',
+}
+
+export function evaluateRefusal(error: unknown): string {
+  if (error instanceof ApiError && error.status === 400) {
+    for (const [key, sentence] of Object.entries(EVALUATE_REFUSALS)) {
+      if (error.message.includes(key)) return sentence
+    }
+  }
+  return messageOf(error)
+}
 
 export function EvaluatePanel({
   caseId,
@@ -59,9 +87,10 @@ export function EvaluatePanel({
       onChanged()
     } catch (err) {
       // A 400 is part of the contract: a non-read-only artifact is refused
-      // before anything executes, and its detail is the actionable thing. It
-      // is shown as a sentence, not as a broken panel.
-      setError(messageOf(err))
+      // before anything executes. W-017: the three causes that answer 400 are
+      // named separately rather than as one raw backend sentence, so an empty
+      // field is not misread as the artifact being refused.
+      setError(evaluateRefusal(err))
     } finally {
       setBusy(false)
     }

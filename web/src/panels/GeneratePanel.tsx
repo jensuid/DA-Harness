@@ -33,10 +33,16 @@ export function GeneratePanel({
   caseId,
   dataset,
   profile,
+  onChanged,
 }: {
   caseId: string
   dataset: Dataset
   profile: Profile | undefined
+  // W-013: a run the panel posts lands in the runs list the workspace owns, so
+  // the panel reports it the way every other writing panel does - otherwise the
+  // analyst re-runs a computation that already succeeded, and the history the
+  // core holds and the list the shell shows disagree.
+  onChanged: () => void
 }) {
   const [question, setQuestion] = useState('')
   const [proposal, setProposal] = useState<GeneratedCode | null>(null)
@@ -73,6 +79,10 @@ export function GeneratePanel({
       } else {
         await runSql(caseId, dataset.id, proposal.code)
       }
+      // W-013: the run persisted before this line, so the runs panel, the rail
+      // and the evidence graph read the case again and pick it up now - the
+      // analyst sees the run land rather than having to reopen the case.
+      onChanged()
       setProposal(null)
       setQuestion('')
     } catch (err) {

@@ -124,7 +124,12 @@ export function DataPanel({
         </ul>
       )}
       {datasets.length > 0 && (
-        <GeneratePanel caseId={caseId} dataset={datasets[0]} profile={profiles[datasets[0].id]} />
+        <GeneratePanel
+          caseId={caseId}
+          dataset={datasets[0]}
+          profile={profiles[datasets[0].id]}
+          onChanged={onChanged}
+        />
       )}
     </div>
   )

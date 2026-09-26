@@ -621,6 +621,44 @@ describe('CaseWorkspace', () => {
       'SELECT region, SUM(revenue) FROM read_csv_auto(?) GROUP BY region'))
   })
 
+  it('reloads the case after a run lands so the runs panel picks it up', async () => {
+    // W-013: the run POST persisted, but the panel never told the workspace to
+    // read the case again, so the runs list and the rail still answered the
+    // state before the run until the case was reopened. The analyst re-ran a
+    // computation that had already succeeded.
+    mockEmptyCase()
+    vi.mocked(api.generateCode).mockResolvedValue({
+      dataset_id: 'd1', case_id: 'c1', kind: 'sql',
+      code: 'SELECT region, SUM(revenue) FROM read_csv_auto(?) GROUP BY region',
+      explanation: 'Sums revenue per region.',
+      columns_used: ['region', 'revenue'],
+      source: 'deterministic',
+    })
+    vi.mocked(api.runSql).mockResolvedValue({
+      id: 'r1', case_id: 'c1', dataset_id: 'd1', kind: 'sql', sql: 'q',
+      code: null, row_count: 2, truncated: false, executed_at: '',
+    })
+
+    const user = userEvent.setup()
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+    await screen.findByText(/ask for the computation/i)
+
+    await user.type(screen.getByLabelText(/question for code generation/i), 'revenue per region')
+    await user.click(screen.getByRole('button', { name: /generate code/i }))
+    await screen.findByText('Sums revenue per region.')
+
+    const before = vi.mocked(api.listRuns).mock.calls.length
+    await user.click(screen.getByRole('button', { name: /run this/i }))
+    await waitFor(() => expect(api.runSql).toHaveBeenCalledTimes(1))
+    // The workspace re-reads the case: the run the analyst just made appears in
+    // the runs panel without a reopen, so there is nothing left to double-run.
+    await waitFor(() =>
+      expect(vi.mocked(api.listRuns).mock.calls.length).toBeGreaterThan(before),
+    )
+    // The proposal clears, so the same code is not offered to run twice.
+    expect(screen.queryByRole('button', { name: /run this/i })).not.toBeInTheDocument()
+  })
+
   it('generates python for a python question and runs it in the sandbox', async () => {
     // W-016: a python run was reachable only by curl, so the hard sandbox the
     // product exists to prove (P3-SEC-001) was never exercised from the app.
@@ -1022,6 +1060,57 @@ describe('CaseWorkspace', () => {
     )
     // The panel is still there, ready for corrected work.
     expect(screen.getByRole('button', { name: /audit this work/i })).toBeInTheDocument()
+  })
+
+  it('names the empty field rather than blaming the artifact (W-017)', async () => {
+    // Three causes answer 400 and the core's sentence names the artifact, so
+    // an analyst who left the claim blank read it as their SQL being refused.
+    // Each cause has its own sentence, naming the field that is actually wrong.
+    mockEmptyCase()
+
+    const user = userEvent.setup()
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+    await screen.findByText(/audit submitted work/i)
+    // The fields hold work; the refusals below are the core's, not an empty
+    // form's. The button stays enabled across the three submissions.
+    await user.type(
+      screen.getByLabelText(/artifact's code/i),
+      'SELECT region, SUM(revenue) AS total FROM read_csv_auto(?) GROUP BY region',
+    )
+    await user.type(
+      screen.getByLabelText(/the claim it supports/i),
+      'Revenue is higher in north than south',
+    )
+
+    vi.mocked(api.evaluateDataset).mockRejectedValue(
+      new api.ApiError(400, "the artifact's code is empty"),
+    )
+    await user.click(screen.getByRole('button', { name: /audit this work/i }))
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      /the artifact's code is empty - paste the work to audit/i,
+    )
+
+    vi.mocked(api.evaluateDataset).mockRejectedValue(
+      new api.ApiError(400, 'no claim was submitted to audit'),
+    )
+    await user.click(screen.getByRole('button', { name: /audit this work/i }))
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      /no claim was submitted - state what the work was offered to support/i,
+    )
+
+    // A reason this map does not know is shown verbatim rather than hidden -
+    // the honesty budget is not paid by swallowing an unfamiliar 400.
+    vi.mocked(api.evaluateDataset).mockRejectedValue(
+      new api.ApiError(400, 'the dataset has a profile from an older schema'),
+    )
+    await user.click(screen.getByRole('button', { name: /audit this work/i }))
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      /profile from an older schema/i,
+    )
+    // Three refusals, and nothing recorded by any of them - the panel's own
+    // mock stays at its empty default throughout.
+    expect(api.evaluateDataset).toHaveBeenCalledTimes(3)
+    expect(vi.mocked(api.evaluateDataset)).toHaveResolvedTimes(0)
   })
 
   it('lists the audits already recorded over the dataset, newest first', async () => {
@@ -1516,6 +1605,19 @@ status: 'rejected',
 
     await user.click(button)
     expect(onOpenCase).toHaveBeenCalledWith('prior')
+  })
+
+  it('tells the analyst the memory reaches across cases', async () => {
+    // W-018: the recall worked - a question about another case's finding was
+    // answered with that finding cited as a ground - but nothing in the shell
+    // said the chat could remember anything but this case, so the capability
+    // went untried. The hint is the surface: no new control, no new endpoint.
+    mockEmptyCase()
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+    expect(
+      await screen.findByText(/the memory is cross-case/i),
+    ).toBeInTheDocument()
+    expect(screen.getByText(/cannot compare across them/i)).toBeInTheDocument()
   })
 
   it('looks a cited case up once however many turns cite it', async () => {

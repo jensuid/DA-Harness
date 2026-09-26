@@ -83,6 +83,11 @@ export function Chat({
   return (
     <div className="panel">
       <h2>Ask this case</h2>
+      <p className="muted">
+        Answers come from this case's artifacts. The memory is cross-case: it
+        may recall findings from your other cases, and it says when it cannot
+        compare across them.
+      </p>
       <form onSubmit={send}>
         <input
           aria-label="Ask a question"

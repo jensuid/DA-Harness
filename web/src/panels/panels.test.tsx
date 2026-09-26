@@ -23,7 +23,7 @@ import { Chat, Ground } from './Chat'
 import { ColumnNulls, DataPanel } from './DataPanel'
 import { DraftPanel } from './DraftPanel'
 import { EdaPanel, EdaResultTable, typeOf } from './EdaPanel'
-import { Audit, AXES, EvaluatePanel, RecordedAudit } from './EvaluatePanel'
+import { Audit, AXES, EVALUATE_REFUSALS, EvaluatePanel, evaluateRefusal, RecordedAudit } from './EvaluatePanel'
 import {
   ClaimTraceRow,
   EvidencePanel,
@@ -63,7 +63,7 @@ const PANELS: Record<string, unknown[]> = {
   DataPanel: [DataPanel, ColumnNulls],
   DraftPanel: [DraftPanel],
   EdaPanel: [EdaPanel, EdaResultTable, typeOf],
-  EvaluatePanel: [EvaluatePanel, Audit, AXES, RecordedAudit],
+  EvaluatePanel: [EvaluatePanel, Audit, AXES, RecordedAudit, EVALUATE_REFUSALS, evaluateRefusal],
   EvidencePanel: [EvidencePanel, GraphBody, ClaimTraceRow, nodePhrase, RELATIONS],
   FindingsPanel: [FindingsPanel, FindingRow, Verdict],
   GeneratePanel: [GeneratePanel, GENERATE_KINDS, GENERATE_KIND_LABELS],
