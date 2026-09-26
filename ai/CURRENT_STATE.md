@@ -12,36 +12,34 @@ causal-language guard, the analytical golden suite, the orientation spine,
 question refinement, the decision view, the measurement layer and the
 requirement-traceability matrix. The full gap analysis is `docs/PRD & UX Conformance Evaluation.md`.
 
-- **Active task:** **P9-F2-002 (the restyle onto the tokens) DONE** - the
-  debt F1 and F2-001 took on is paid. Every panel and every screen renders
-  through the `surfaces` strings in `web/src/lib/ui.tsx`, and 109 lines of
-  the hand-written CSS that named those surfaces retired with the class
-  names it defined (`.panel h2/h3/h4`, `.muted`, `.stages`/`.items`/
-  `.chat`/`.grounds`, `.turn`, `.subpanel`, `.rationale`, `.proposal`,
-  `.run`, `.row`, `.case-actions`). The restyle is parity by contract: a
-  surface is the CSS rule it replaced, as utility classes, with the same
-  values, so nothing looks different and the palette is one set of names in
-  one file. What stays is the layout no token can own - the three-zone grid,
-  the sticky rail, the verdict and chip shapes the status vocabulary renders
-  as text-plus-chip, the quality and notice surfaces, and the literal
-  `:focus-visible` the accessibility audit resolves.
-  Two literals survived the move and lost their rules, caught by auditing
-  every deleted rule against the source that used it: `LearnPanel`'s
-  `className="stage done"` (the rule is kept - a completed stage is the one
-  green status, and the word is the rail's and the ladder's shared
-  vocabulary) and `FindingsPanel`'s `className="muted"`, which moved to
-  `surfaces.note`. The panels test now reads every source file raw and fails
-  by name if a literal comes back.
-  Gates: web 185 (184 + 1), tsc clean, build ok (the emitted CSS is 14.44 kB
-  and still resolves the focus rule), trace 48/48. Web-only: no line outside
+- **Active task:** **P9-F3-001 (the motion layer and its gate) DONE** - the
+  last of F1's unused dependencies is used. framer-motion@13 drives the
+  motion the surfaces were missing, and `web/src/lib/motion.tsx` is the
+  vocabulary: three transitions (`surface` 0.18s for what a click opens,
+  `enter` 0.28s for what a case loads, `arrive` a spring for what a verdict
+  does) and three variants to match, each a `hidden` and a `shown` state
+  with the transition riding inside the target. The movement is 4-6px and
+  never an element's own height - layout shift is the frame AT-27 counts.
+  The gate is `prefers-reduced-motion`, and the collapse is this layer's
+  own: the library makes positional keys instant under reduced motion but
+  still fades opacity, so `MotionSurface` reads `useReducedMotionConfig()`
+  and sets `initial={false}`, rendering the shown state with no animation at
+  all. A second CSS rule holds a `[data-motion-surface]` visible, because a
+  surface that starts hidden and is never animated to shown is invisible
+  content - the failure the JS gate cannot see itself out of. `ReducedMotion`
+  mounts once at the root in `App.tsx`, and a `matchMedia` shim in
+  `setup-tests.ts` is what makes the gate behave in jsdom the way it behaves
+  in a browser.
+  Gates: web 197 (185 + 12), tsc clean, build ok (CSS 15.11 kB, JS 347 kB,
+  still resolving the focus rule), trace 48/48. Web-only: no line outside
   `web/` moved, so the server (727), e2e (28/28), golden (21/21), refine
   (AT-04) and measure (9/9) gates are not re-run.
-  Sebelumnya: P9-F2-001 (the walk-test's last three findings), P9-F1-001
-  (the redesign's foundation), FIX-PYTHON-005 (W-016), FIX-CHART-004
-  (W-016), FIX-VERSION-010 (W-001), FIX-UPDATES-009 (W-005),
-  FIX-PROFILE-008 (W-008), FIX-REFINE-007 (W-009), FIX-TIMEOUT-006 (W-014),
-  FIX-PLAN-003 (W-011), FIX-EVIDENCE-002 (W-015), WALK-E2E-001 — all
-  nineteen walk-test findings are resolved.
+  Sebelumnya: P9-F2-002 (the restyle onto the tokens), P9-F2-001 (the
+  walk-test's last three findings), P9-F1-001 (the redesign's foundation),
+  FIX-PYTHON-005 (W-016), FIX-CHART-004 (W-016), FIX-VERSION-010 (W-001),
+  FIX-UPDATES-009 (W-005), FIX-PROFILE-008 (W-008), FIX-REFINE-007 (W-009),
+  FIX-TIMEOUT-006 (W-014), FIX-PLAN-003 (W-011), FIX-EVIDENCE-002 (W-015),
+  WALK-E2E-001 — all nineteen walk-test findings are resolved.
 
 - **Done before that:** P8-TRACE-010 - the requirement-traceability matrix
   (AT-48). The PRD's section 59 control artifact is code: 48 rows, one per
@@ -86,9 +84,10 @@ requirement-traceability matrix. The full gap analysis is `docs/PRD & UX Conform
   documented minimum but is no longer enforced by CI, and a green run no longer
   proves the exact Intel triple a local build produces. Restoring that needs a
   self-hosted Intel runner.
-- **Test status:** server 727 passed (unchanged - F2-002 is web-only). The
-  web suite is 185 (+1 for P9-F2-002 - the token layer is the vocabulary the
-  panels use, and a literal className that comes back fails by name).
+- **Test status:** server 727 passed (unchanged - F3-001 is web-only). The
+  web suite is 197 (+12 for P9-F3-001 - the motion layer's own contract:
+  the vocabulary is the budget, the gate closes, the content survives the
+  motion, the root wraps every screen).
   Desktop shell 25 Rust tests; P2, P3 and P4 gates
   PASS; **v0.2.0, v0.3.0, v0.3.1, v0.3.2 and v0.3.3 released** (tags
   `v0.2.0` on `ec819fc`, `v0.3.0` on `ab56541`, `v0.3.1` on `19cefc1`,
@@ -105,15 +104,15 @@ requirement-traceability matrix. The full gap analysis is `docs/PRD & UX Conform
   `CaseWorkspace.tsx`'s 2,900 lines into `web/src/panels/`), F2-001 the
   surfaces' findings (done - W-013/W-017/W-018 closed), F2-002 the restyle
   onto the tokens (done - every panel renders through `surfaces`, 109 lines
-  of hand-written CSS retired), F3 motion (respecting
-  `prefers-reduced-motion`) - the next task, and the discipline is that
-  framer-motion is installed and still imported nowhere; F4 the chart
-  surface (recharts, installed and unused) and a re-walk. The walk-test's
-  findings are all closed now (W-001, W-005, W-008, W-009, W-011, W-013,
-  W-014, W-015, W-016, W-017, W-018), and the carried follow-ups that
-  remain in `ai/TASKS.md` are the DMG bundler, the icon proportion (52%,
-  chosen blind), one fragile web test layout, and two environmental items
-  (signing deferred by DEC-006, CI billing suspended).
+  of hand-written CSS retired), F3 motion (done - framer-motion used, and
+  `prefers-reduced-motion` honoured by the JS-driven motion as well as the
+  CSS-driven kind), F4 the chart surface (recharts, installed and still
+  unused - the last of F1's three dependencies at zero imports) plus a
+  re-walk. The walk-test's findings are all closed now (W-001, W-005, W-008,
+  W-009, W-011, W-013, W-014, W-015, W-016, W-017, W-018), and the carried
+  follow-ups that remain in `ai/TASKS.md` are the DMG bundler, the icon
+  proportion (52%, chosen blind), one fragile web test layout, and two
+  environmental items (signing deferred by DEC-006, CI billing suspended).
 
 
 - **Blockers:** none.

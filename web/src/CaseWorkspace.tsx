@@ -40,6 +40,7 @@ import {
 import { ApiError } from './api'
 import { messageOf } from './CaseList'
 import { Button } from './lib/ui'
+import { MotionSurface } from './lib/motion'
 import { AgentPanel } from './panels/AgentPanel'
 import { CaseOverview } from './panels/CaseOverview'
 import { Chat } from './panels/Chat'
@@ -239,97 +240,104 @@ export function CaseWorkspace({
           (UX 46), which is the loop's exit rather than another step in it. */}
       <div className="workspace">
         <section className="zone orientation" aria-label="orientation">
-          <WorkflowRail
-            progress={progress}
-            qualityWarning={qualityIssues.length > 0}
-          />
-          <CaseOverview
-            question={caseRow?.question ?? ''}
-            purpose={context?.purpose ?? ''}
-            progress={progress}
-            datasets={datasets.length}
-            findings={findings.length}
-            openIssues={qualityIssues.length + pendingFindings}
-            pendingValidation={pendingFindings}
-          />
-          <RefinePanel
-            caseId={caseId}
-            question={caseRow?.question ?? ''}
-            onChanged={() => void load()}
-          />
-          <LearnPanel walk={walk} error={walkError} missing={walkMissing} />
-          <HistoryPanel
-            history={history}
-            error={historyError}
-            missing={historyMissing}
-          />
-          <PromoteTemplate caseId={caseId} question={caseRow?.question ?? ''} />
+          <MotionSurface variant="enter" className="contents">
+            <WorkflowRail
+              progress={progress}
+              qualityWarning={qualityIssues.length > 0}
+            />
+            <CaseOverview
+              question={caseRow?.question ?? ''}
+              purpose={context?.purpose ?? ''}
+              progress={progress}
+              datasets={datasets.length}
+              findings={findings.length}
+              openIssues={qualityIssues.length + pendingFindings}
+              pendingValidation={pendingFindings}
+            />
+            <RefinePanel
+              caseId={caseId}
+              question={caseRow?.question ?? ''}
+              onChanged={() => void load()}
+            />
+            <LearnPanel walk={walk} error={walkError} missing={walkMissing} />
+            <HistoryPanel
+              history={history}
+              error={historyError}
+              missing={historyMissing}
+            />
+            <PromoteTemplate caseId={caseId} question={caseRow?.question ?? ''} />
+          </MotionSurface>
         </section>
         <section className="zone work" aria-label="work">
-          <DataPanel
-            caseId={caseId}
-            datasets={datasets}
-            profiles={profiles}
-            onChanged={() => void load()}
-          />
-          <PlanPanel
-            caseId={caseId}
-            datasets={datasets}
-            onChanged={() => void load()}
-          />
-          <EdaPanel caseId={caseId} datasets={datasets} profiles={profiles} />
-          <RunsPanel
-            caseId={caseId}
-            runs={runs}
-            datasets={datasets}
-            onChanged={() => void load()}
-          />
-          <FindingsPanel
-            caseId={caseId}
-            findings={findings}
-            onChanged={() => void load()}
-          />
-          <EvaluatePanel
-            caseId={caseId}
-            datasets={datasets}
-            profiles={profiles}
-            evaluations={evaluations}
-            onChanged={() => void load()}
-          />
-          <EvidencePanel
-            evidence={evidence}
-            error={evidenceError}
-            empty={evidenceEmpty}
-          />
-          {/* UX 46: the loop's exit, last in the work zone - after the evidence
-              graph, because a decision is what the evidence is for. */}
-          <DecisionPanel
-            caseId={caseId}
-            onChanged={() => void load()}
-          />
+          <MotionSurface variant="enter" className="contents">
+            <DataPanel
+              caseId={caseId}
+              datasets={datasets}
+              profiles={profiles}
+              onChanged={() => void load()}
+            />
+            <PlanPanel
+              caseId={caseId}
+              datasets={datasets}
+              onChanged={() => void load()}
+            />
+            <EdaPanel caseId={caseId} datasets={datasets} profiles={profiles} />
+            <RunsPanel
+              caseId={caseId}
+              runs={runs}
+              datasets={datasets}
+              onChanged={() => void load()}
+            />
+            <FindingsPanel
+              caseId={caseId}
+              findings={findings}
+              onChanged={() => void load()}
+            />
+            <EvaluatePanel
+              caseId={caseId}
+              datasets={datasets}
+              profiles={profiles}
+              evaluations={evaluations}
+              onChanged={() => void load()}
+            />
+            <EvidencePanel
+              evidence={evidence}
+              error={evidenceError}
+              empty={evidenceEmpty}
+            />
+            {/* UX 46: the loop's exit, last in the work zone - after the
+                evidence graph, because a decision is what the evidence is
+                for. */}
+            <DecisionPanel
+              caseId={caseId}
+              onChanged={() => void load()}
+            />
+          </MotionSurface>
         </section>
         <section className="zone intelligence" aria-label="intelligence">
-          <ContextPanel caseId={caseId} onChanged={() => void load()} />
-          <AgentPanel
-            caseId={caseId}
-            role="analyst"
-            agent={agent}
-            onAgent={setAgent}
-            onChanged={() => void load()}
-          />
-          <AgentPanel
-            caseId={caseId}
-            role="reviewer"
-            agent={reviewer}
-            onAgent={setReviewer}
-            onChanged={() => void load()}
-          />
-          <Chat
-            caseId={caseId}
-            turns={turns}
-            onTurn={(turn) => setTurns((prior) => [...prior, turn])}
-            onOpenCase={onOpenCase}
-          />
+          <MotionSurface variant="enter" className="contents">
+            <ContextPanel caseId={caseId} onChanged={() => void load()} />
+            <AgentPanel
+              caseId={caseId}
+              role="analyst"
+              agent={agent}
+              onAgent={setAgent}
+              onChanged={() => void load()}
+            />
+            <AgentPanel
+              caseId={caseId}
+              role="reviewer"
+              agent={reviewer}
+              onAgent={setReviewer}
+              onChanged={() => void load()}
+            />
+            <Chat
+              caseId={caseId}
+              turns={turns}
+              onTurn={(turn) => setTurns((prior) => [...prior, turn])}
+              onOpenCase={onOpenCase}
+            />
+          </MotionSurface>
         </section>
       </div>
     </section>

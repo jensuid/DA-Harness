@@ -8,6 +8,7 @@ import { useState } from 'react'
 import { type Finding, type ValidationResult, validateFinding } from '../api'
 import { messageOf } from '../CaseList'
 import { Button, surfaces } from '../lib/ui'
+import { MotionSurface } from '../lib/motion'
 
 export function FindingsPanel({
   caseId,
@@ -73,7 +74,7 @@ export function FindingRow({
       <p>{finding.statement}</p>
       <p className={surfaces.note}>status: {finding.validation_status}</p>
       {verdict && (
-        <div className={surfaces.proposal}>
+        <MotionSurface variant="arrive" className={surfaces.proposal}>
           <p><strong>Verdict: {verdict.status}</strong></p>
           {/* P8-CAUSAL-004: a guard refusal is the message, not a footnote on a
               pass. The verdict names the sentence to fix, so a finding that
@@ -101,7 +102,7 @@ export function FindingRow({
               </li>
             ))}
           </ul>
-        </div>
+        </MotionSurface>
       )}
       <Button type="button" onClick={validate} disabled={busy} variant="small">
         {busy ? 'Validating…' : 'Validate'}

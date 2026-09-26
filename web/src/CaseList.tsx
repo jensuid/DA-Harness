@@ -9,6 +9,7 @@ import {
 } from './api'
 import { Templates } from './Templates'
 import { Button, surfaces } from './lib/ui'
+import { MotionSurface } from './lib/motion'
 
 // The list is the front door: find a case again, or start a new one. The search
 // box is the API's q parameter - a literal substring over question and dataset.
@@ -203,7 +204,7 @@ function CaseRow({
   }
 
   return (
-    <div className="case">
+    <MotionSurface variant="enter" className="case">
       <button type="button" onClick={onOpen} className="case-open" disabled={armed}>
         <span className="case-question">{caseRow.question}</span>
         <span className="case-dataset">{caseRow.dataset}</span>
@@ -272,6 +273,6 @@ function CaseRow({
           The action failed: {error}
         </p>
       )}
-    </div>
+    </MotionSurface>
   )
 }

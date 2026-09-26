@@ -9,6 +9,7 @@ import { type ConversationTurn, getCase, postChat } from '../api'
 import { sourceLabel } from '../sourceLabel'
 import { messageOf } from '../CaseList'
 import { Button, surfaces } from '../lib/ui'
+import { MotionSurface } from '../lib/motion'
 
 export function Chat({
   caseId,
@@ -107,21 +108,23 @@ export function Chat({
         {turns.map((turn) => (
           <li key={turn.id} className={surfaces.turn}>
             <p className="question">{turn.message}</p>
-            <p>{turn.answer}</p>
-            <p className={surfaces.note}>{sourceLabel(turn.source, 'answer')}</p>
-            {turn.grounds.length > 0 && (
-              <ul className={surfaces.panelList}>
-                {turn.grounds.map((ground) => (
-                  <li key={ground}>
-                    <Ground
-                      ground={ground}
-                      priorQuestions={priorQuestions}
-                      onOpenCase={onOpenCase}
-                    />
-                  </li>
-                ))}
-              </ul>
-            )}
+            <MotionSurface variant="open">
+              <p>{turn.answer}</p>
+              <p className={surfaces.note}>{sourceLabel(turn.source, 'answer')}</p>
+              {turn.grounds.length > 0 && (
+                <ul className={surfaces.panelList}>
+                  {turn.grounds.map((ground) => (
+                    <li key={ground}>
+                      <Ground
+                        ground={ground}
+                        priorQuestions={priorQuestions}
+                        onOpenCase={onOpenCase}
+                      />
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </MotionSurface>
           </li>
         ))}
       </ul>

@@ -23,6 +23,7 @@ import {
 import { sourceLabel } from '../sourceLabel'
 import { messageOf } from '../CaseList'
 import { Button, surfaces } from '../lib/ui'
+import { MotionSurface } from '../lib/motion'
 import { DraftPanel } from './DraftPanel'
 
 export function RunsPanel({
@@ -125,7 +126,7 @@ export function RunRow({
   }
 
   return (
-    <div className={surfaces.row}>
+    <MotionSurface variant="open" className={surfaces.row}>
       <p>
         <strong>{run.kind}</strong> over {datasetLabel} — {run.row_count} row
         {run.row_count === 1 ? '' : 's'}
@@ -184,7 +185,7 @@ export function RunRow({
       )}
       {rows && <RunRowsTable run={rows} />}
       <ChartPanel caseId={caseId} run={run} rows={rows} onChanged={onChanged} />
-    </div>
+    </MotionSurface>
   )
 }
 
@@ -387,7 +388,11 @@ export function ChartSurface({
   const label = chart ? chartLabel(chart) : 'the chart'
   if (image.format === 'svg') {
     return (
-      <div className={surfaces.proposal} data-testid="chart-surface">
+      <MotionSurface
+        variant="arrive"
+        className={surfaces.proposal}
+        data-testid="chart-surface"
+      >
         <p className={surfaces.note}>
           {label} — drawn by the core from the run's stored result
         </p>
@@ -399,16 +404,20 @@ export function ChartSurface({
           // re-deriving the geometry.
           dangerouslySetInnerHTML={{ __html: image.svg }}
         />
-      </div>
+      </MotionSurface>
     )
   }
   return (
-    <div className={surfaces.proposal} data-testid="chart-surface">
+    <MotionSurface
+      variant="arrive"
+      className={surfaces.proposal}
+      data-testid="chart-surface"
+    >
       <p className={surfaces.note}>{label}</p>
       <p>
         <a href={image.url}>Open the rendered chart</a>
       </p>
-    </div>
+    </MotionSurface>
   )
 }
 
@@ -427,7 +436,7 @@ export function chartLabel(chart: ChartSummary): string {
 export function RunRowsTable({ run }: { run: Run }) {
   const query = run.sql ?? run.code
   return (
-    <div className={surfaces.proposal} data-testid="run-rows">
+    <MotionSurface variant="open" className={surfaces.proposal} data-testid="run-rows">
       {query && <pre>{query}</pre>}
       {run.rows.length === 0 ? (
         <p className={surfaces.note}>The run produced no rows.</p>
@@ -457,7 +466,7 @@ export function RunRowsTable({ run }: { run: Run }) {
           {run.row_count}.
         </p>
       )}
-    </div>
+    </MotionSurface>
   )
 }
 

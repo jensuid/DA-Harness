@@ -384,6 +384,156 @@ F2 the surfaces, F3 motion, F4 the chart surface and a re-walk.
 | P9-F1-001 | Foundation (tooling, tokens, structure) | DONE | web 181 (177 + 4 panels tests), build ok, tsc clean, server 727, e2e 28/28, golden 21/21, refine AT-04, measure 9/9, trace 48/48 |
 | P9-F2-001 | Surfaces (the walk-test's last three findings) | DONE | web 184 (+3), build ok, tsc clean, trace 48/48; W-013/W-017/W-018 closed |
 | P9-F2-002 | Surfaces (the restyle onto the tokens) | DONE | web 185 (+1), tsc clean, build ok (CSS 14.44 kB), trace 48/48; 109 lines of hand-written CSS retired |
+| P9-F3-001 | Motion (the motion layer and its gate) | DONE | web 197 (+12), tsc clean, build ok (CSS 15.11 kB, JS 347 kB), trace 48/48; framer-motion used, `prefers-reduced-motion` honoured by the JS-driven motion too |
+
+### P9-F3-001 contract
+
+```
+TASK ID: P9-F3-001
+MILESTONE: P9 UI/UX Redesign (phase F3, motion)
+CAPABILITY: Motion (the motion layer and its gate)
+GOAL: framer-motion@13 was installed in F1 and imported nowhere - the same
+      debt shape F2 just paid, one phase earlier. This is the motion: a
+      panel's content appearing as the case loads, a run row opening, a
+      verdict landing. The constraint is `prefers-reduced-motion`, which the
+      CSS already honours for the shell notice (`index.css`'s explicit
+      `animation: none` rule); F3 makes the JS-driven motion honour it too
+      rather than only the CSS-driven kind. A motion budget is the
+      discipline: an animation that costs a frame the measurement layer
+      (AT-27/AT-30) counts is a regression, not a polish.
+CONTEXT: F1 shipped the toolchain and the tokens; F2 moved every surface onto
+         them. The surfaces are the wrappers the panels already render - a
+         run row is `surfaces.row`, a verdict is `surfaces.proposal` - so the
+         motion attaches to those wrappers rather than to new elements, and a
+         motion surface is the `div` the panel was already drawing. The
+         measurement layer pins AT-27's interaction response at 200ms p95 and
+         AT-30's visible state at 100% of long-running operations, and both
+         are asserted in `measure.test.tsx` against the disclosure this layer
+         animates - so the budget is measured, not asserted in prose.
+INPUTS: framer-motion@13 (installed, unused), `web/src/index.css`'s existing
+        reduced-motion rule for the shell notice, the panels' surface
+        wrappers, and the measurement suite that pins the budget.
+RELEVANT FILES: web/src/lib/motion.tsx (new - the variants, the transitions,
+                the `ReducedMotion` gate, the `MotionSurface` component),
+                web/src/motion.test.tsx (new, 12 tests),
+                web/src/setup-tests.ts (the matchMedia shim),
+                web/src/App.tsx (the gate mounted at the root),
+                web/src/CaseWorkspace.tsx, web/src/CaseList.tsx,
+                web/src/panels/RunsPanel.tsx, web/src/panels/FindingsPanel.tsx,
+                web/src/panels/Chat.tsx, web/src/index.css (the CSS gate),
+                ai/HANDOFF.md, ai/TASKS.md, ai/CURRENT_STATE.md.
+REQUIRED CHANGE:
+  - The vocabulary: `transitions` names three - `surface` (0.18s, what a
+    click opens), `enter` (0.28s, what a case loads) and `arrive` (a spring,
+    what a verdict does) - and `variants` names the same three, each a
+    `hidden` state and a `shown` one with the transition riding inside the
+    target so the gate's collapse to `shown` is the end of the motion. The
+    movement is 4-6px and never an element's own height, because layout
+    shift is the cost AT-27 counts; the arrival scales by 2% rather than
+    sliding, because it is the loop's exit and the weight reads.
+  - The gate: `ReducedMotion` mounts `MotionConfig reducedMotion="user"`
+    once at the root in `App.tsx`, so every screen resolves the analyst's
+    OS preference through it. The collapse is this layer's own, not the
+    library's: framer-motion makes positional keys instant under reduced
+    motion but still fades opacity, and a reduced-motion setting that still
+    moves the surface is a setting the surface is not honouring, so
+    `MotionSurface` reads `useReducedMotionConfig()` and sets
+    `initial={false}` - the surface renders its shown state with no
+    animation at all, the same result the CSS gives the shell notice.
+  - The CSS gate, `index.css`'s second `prefers-reduced-motion` rule, holds
+    a `[data-motion-surface]` at opacity 1 and transform none. It is the belt
+    to the JS braces: a surface that starts hidden and is never animated to
+    shown - because the engine was absent, or a frame was dropped on a slow
+    machine - is invisible content, and this rule is what keeps the content
+    present when the motion does not run.
+  - The matchMedia shim in `setup-tests.ts`: jsdom has no `matchMedia`, and
+    the library's preference resolution reads through it, so the shim is what
+    makes the gate behave in the suite the way it behaves in a browser. It is
+    stubbed in `beforeEach` and unstubbed in `afterEach`, so a test that
+    changes the preference does not leak into the accessibility audit or the
+    measurement layer.
+  - The surfaces that moved: the workspace's three zones (the panels appear
+    as the case loads), a run row and its rows table, the chart surface, a
+    verdict, a chat answer, and a case row on the list. Every one is the
+    wrapper the panel already rendered, now a `MotionSurface` carrying the
+    same `className`; no markup was added and no surface was restyled.
+NON-GOALS: restyling anything (F2's parity stands; a new look is a later pass
+           that decides on purpose what changes), the on-screen chart (F4 -
+           recharts is installed and still unused, and the chart this phase
+           animates is the core's own SVG, unchanged), a dark theme, touching
+           the server, and changing any test's assertion rather than the
+           element it reads.
+CONSTRAINTS: green only. No new dependency (framer-motion is F1's, now used).
+             Deterministic and offline. The accessibility audit's
+             STATUS_CLASSES contract is unchanged, and the audit is
+             structural - it does not read opacity, so a surface that starts
+             hidden passes it; the CSS gate is what protects the analyst the
+             audit cannot see. Web-only: no line outside `web/` moves.
+ACCEPTANCE CRITERIA:
+- [x] framer-motion is imported and the motion is the surfaces' own: a panel
+      arriving, a row opening, a verdict landing, a case row on the list
+- [x] every variant is inside the budget: 0.18s for a click's surface, 0.28s
+      for a case load, and a spring whose settle (4 * mass / damping) is
+      under 0.3s
+- [x] a surface slides a little and never its own height - 6px or less, so
+      no motion this layer adds moves another panel
+- [x] the gate closes: `reducedMotion="always"` renders the shown state with
+      no animation, and the surface's opacity is not the hidden one
+- [x] the CSS gate holds a motion surface visible when the motion does not
+      run, and the shell notice's own rule is still there beside it
+- [x] the gate is mounted once at the root, so a screen it does not wrap is
+      a screen the analyst's setting does not reach
+- [x] no other behaviour moved: the existing 185 assertions pass unchanged,
+      the emitted stylesheet still resolves the focus rule the accessibility
+      audit reads, and the disclosure the measurement layer times is inside
+      its budget with the motion in the tree
+TESTS: `motion.test.tsx` (12) - the three variants each carry the state the
+       gate collapses and come to rest visible, the movement is bounded, the
+       transitions are inside the 200ms budget numerically and the
+       disclosure's open is measured with the motion mounted, the gate
+       renders visible content when open and its end state when closed, the
+       helper reads the preference the same way, the CSS rules resolve from
+       the shipped stylesheet, and the root wraps every screen.
+VERIFICATION: `cd web && npm test && npm run build` green (197 = 185 + 12,
+               tsc clean, build ok - the emitted CSS is 15.11 kB and still
+               resolves the focus rule, the JS 347 kB);
+               `server/.venv/bin/python verification/trace/verify_trace.py`
+               green (48/48 rows, AT-48 PASS - the symbols the matrix cites
+               still resolve). Web-only, so the server suite (727), the e2e
+               (28/28), golden (21/21), refine (AT-04) and measure (9/9) are
+               not re-run: no line outside `web/` moved (verified by
+               `git status`), and their last runs are green.
+STATE UPDATE: TASKS/CURRENT_STATE/HANDOFF gain the task; the P9 table closes
+              at F3-001. No schema change, no version bump.
+```
+
+TASK: P9-F3-001 - the motion layer and its gate
+ID: P9-F3-001
+PRIORITY: high
+STATUS: DONE
+SUMMARY: the motion the surfaces were missing, and the one gate that decides
+         whether any of it runs. `web/src/lib/motion.tsx` names three
+         transitions - a click's surface at 0.18s, a case load at 0.28s, a
+         verdict's spring - and three variants to match, each a hidden state
+         and a shown one with the transition riding inside the target. The
+         movement is 4-6px and never an element's own height, because layout
+         shift is the frame AT-27 counts; the verdict scales by 2% because
+         the loop's exit carries weight. `ReducedMotion` mounts
+         `MotionConfig reducedMotion="user"` once at the root, and the
+         collapse is this layer's own rather than the library's:
+         framer-motion makes positional keys instant under reduced motion but
+         still fades opacity, so `MotionSurface` reads
+         `useReducedMotionConfig()` and sets `initial={false}`, rendering the
+         shown state with no animation at all - the same result the CSS gives
+         the shell notice. A second `prefers-reduced-motion` rule holds a
+         `[data-motion-surface]` visible, because a surface that starts
+         hidden and is never animated to shown is invisible content, and that
+         is the failure mode the JS gate cannot see itself out of. The lesson
+         the gate earned: `useReducedMotion()` caches the OS preference in
+         `useState` at first read, so a probe that reads it outside the
+         `MotionConfig` provider always answers the default - the preference
+         is a context, not a global, and the two are not interchangeable.
+
 
 ### P9-F2-002 contract
 

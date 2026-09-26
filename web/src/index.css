@@ -546,3 +546,22 @@ button.danger:hover {
     transition: none;
   }
 }
+
+/* P9-F3: the motion gate, for the JS-driven kind. The surfaces animate through
+   framer-motion, which honours `prefers-reduced-motion` itself when the gate
+   at the root says to; this rule is the belt to that braces, and it is what a
+   surface that composes its own transition falls back to. `contents` is the
+   wrapper the workspace's zones use, so a motion surface never becomes a
+   layout box it was not before.
+
+   AT-32's audit is structural and does not read opacity, but the analyst
+   reads it: a surface that starts at opacity 0 and is never animated to 1 -
+   because the animation engine was absent, or because the frame was dropped
+   on a slow machine - is invisible content. This rule is what keeps the
+   content present when the motion does not run. */
+@media (prefers-reduced-motion: reduce) {
+  [data-motion-surface] {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
