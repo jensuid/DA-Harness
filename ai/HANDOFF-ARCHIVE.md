@@ -3188,3 +3188,51 @@ chat answer, a case row, the three zones of the workspace - now a
 `MotionSurface` carrying the same `className`. No markup was added and no
 surface was restyled; the motion is the surface's own, not a second layer
 over it.
+
+---
+
+## Next action
+
+**P9-F4-001 (the on-screen chart and a re-walk) DONE - and P9 closes.**
+recharts@3 was the last of F1's three dependencies at zero imports, and the
+chart the shell showed was the core's own static SVG: white background baked
+in, no tooltip, no hover. This phase changes the renderer of what the analyst
+*looks at*, not of what the case *holds*.
+
+`web/src/lib/chart.tsx` is both halves of that split. `chartGeometry` is the
+core's own rules - the series split, the plottable-points filter, the palette
+- copied into the shell so the screen and the artifact cannot drift; the
+recharts surface carries axes naming their own columns, a bar anchored at
+zero because bar length reads as magnitude, a legend only when there is more
+than one series, and a tooltip that is a live region. A geometry with
+nothing plottable falls back to the core's own image, because a chart the
+analyst cannot see is worse than a chart the analyst cannot hover, and a CSS
+rule holds the container's height when the tree does not render.
+
+The re-walk is what the task will be remembered for. The shell rendered every
+chart as a link: the core's `Chart` model never returned `format`, so the
+shell read `undefined` and took the PNG-link branch for *every* chart - the
+recharts tree rendered in jsdom, where a fixture supplies the field, and
+nowhere else. One field (`format: str = "svg"`, the default the image
+endpoint already sniffs), one regression test, and a browser confirmation:
+hovering a bar answers its own values, "north" and "total_total : 270". The
+lesson worth carrying: a contract tested only against a fixture the test
+itself builds is a contract the fixture keeps, not the server. The same gap
+is open wherever else a panel mocks a response the server shapes.
+
+**Gates:** web 216 (197 + 19), server 728 (727 + 1), tsc clean, build ok
+(CSS 16.46 kB, JS 744 kB), trace 48/48, e2e 28/28.
+
+**Next, in priority order:**
+
+1. **Whatever the next session wants.** P9 is complete - four phases, green
+   at each: F1 the foundation, F2 the surfaces, F3 the motion, F4 the chart
+   surface and the re-walk. Every dependency F1 installed is used, every
+   walk-test finding is closed, and 48/48 requirements still trace. Nothing
+   after F4 was planned against the redesign itself; what followed it was
+   to be whatever the re-walk found, and the one thing it found was fixed
+   inside the task rather than carried.
+2. **The carried follow-ups remain**, unchanged: the DMG bundler's
+   non-determinism, the icon's blind-chosen proportion, one fragile test
+   layout in `CaseWorkspace.test.tsx`, signing deferred by DEC-006, and
+   CI's suspended billing (a Settings > Billing fix, not a code one).

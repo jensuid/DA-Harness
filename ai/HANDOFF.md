@@ -1,54 +1,64 @@
 ## Next action
 
-**P9-F4-001 (the on-screen chart and a re-walk) DONE - and P9 closes.**
-recharts@3 was the last of F1's three dependencies at zero imports, and the
-chart the shell showed was the core's own static SVG: white background baked
-in, no tooltip, no hover. This phase changes the renderer of what the analyst
-*looks at*, not of what the case *holds*.
+**The v0.3.4 close-out is done.** P9 closed the last functional phase, and
+this session closed the carried follow-ups that were the only remaining
+loose ends: the DMG bundler's flakiness, the icon's blind-chosen proportion,
+and the one fragile test layout. `ai/TASKS.md`'s carried list is down to two
+environmental items, both of them decisions rather than defects.
 
-`web/src/lib/chart.tsx` is both halves of that split. `chartGeometry` is the
-core's own rules - the series split, the plottable-points filter, the palette
-- copied into the shell so the screen and the artifact cannot drift; the
-recharts surface carries axes naming their own columns, a bar anchored at
-zero because bar length reads as magnitude, a legend only when there is more
-than one series, and a tooltip that is a live region. A geometry with
-nothing plottable falls back to the core's own image, because a chart the
-analyst cannot see is worse than a chart the analyst cannot hover, and a CSS
-rule holds the container's height when the tree does not render.
+**The DMG finding is the one worth carrying.** The non-determinism was never
+the tool; it was the vendored `create-dmg`'s Finder-prettifying AppleScript,
+which fails when the build runs without a GUI session and succeeds when it
+has one - an npm-run subprocess and an interactive shell build the same code,
+and one of them answers 64. `--sandbox-safe` skips the AppleScript, so
+`desktop/bundle_dmg.sh` passes it and verifies the image. A second run still
+moves the container hash, because `hdiutil` stamps the image's creation time;
+the mounted contents are byte-identical, and that is the property a build is
+reproducible by. The lesson is the shape of the bug: a failure that depends
+on *how* the build is invoked rather than on *what* it builds, which is why
+"it worked on my machine" was the whole report.
 
-The re-walk is what the task will be remembered for. The shell rendered every
-chart as a link: the core's `Chart` model never returned `format`, so the
-shell read `undefined` and took the PNG-link branch for *every* chart - the
-recharts tree rendered in jsdom, where a fixture supplies the field, and
-nowhere else. One field (`format: str = "svg"`, the default the image
-endpoint already sniffs), one regression test, and a browser confirmation:
-hovering a bar answers its own values, "north" and "total_total : 270". The
-lesson worth carrying: a contract tested only against a fixture the test
-itself builds is a contract the fixture keeps, not the server. The same gap
-is open wherever else a panel mocks a response the server shapes.
+**The icon was measured, not re-cut.** Its artwork covers 51.4% of the canvas,
+is dead-centre, carries the correct squircle, and reads as an ascending bar
+chart - cyan bars, the tallest in amber. Apple's own guidance says you don't
+need to fill the entire canvas with content, so the blind 52% guess was right;
+the follow-up was the guess, not the proportion.
 
-**Gates:** web 216 (197 + 19), server 728 (727 + 1), tsc clean, build ok
-(CSS 16.46 kB, JS 744 kB), trace 48/48, e2e 28/28.
+**Gates:** web 216, server 728, tsc clean, build ok (JS 744 kB), trace 48/48,
+e2e 28/28, the packaged core smokes 0.3.4 end to end (health, version, logs).
+
+**v0.3.4 is published** - tag `d8bec6a`, built locally on Intel with the new
+`bundle_dmg.sh`, release created by hand from the steps `release.yml` runs.
+The release artifact is `x86_64-apple-darwin` and unsigned, as DEC-006
+decided.
 
 **Next, in priority order:**
 
-1. **Whatever the next session wants.** P9 is complete - four phases, green
-   at each: F1 the foundation, F2 the surfaces, F3 the motion, F4 the chart
-   surface and the re-walk. Every dependency F1 installed is used, every
-   walk-test finding is closed, and 48/48 requirements still trace. Nothing
-   after F4 was planned against the redesign itself; what followed it was
-   to be whatever the re-walk found, and the one thing it found was fixed
-   inside the task rather than carried.
-2. **The carried follow-ups remain**, unchanged: the DMG bundler's
-   non-determinism, the icon's blind-chosen proportion, one fragile test
-   layout in `CaseWorkspace.test.tsx`, signing deferred by DEC-006, and
-   CI's suspended billing (a Settings > Billing fix, not a code one).
+1. **CI billing, when you want it** - GitHub Settings > Billing & plans. Pure
+   account administration, no code; the workflow is correct, the account is
+   the blocker. The new `arch-mismatch` CI job will then warn on every run
+   that the hosted `macos-latest` lane is arm64 while the shipped artifact is
+   x86_64, so a green run no longer reads as proof of the shipped triple.
+2. **Nothing else is open.** All nine phases are delivered, all carried
+   follow-ups closed, all 48 acceptance thresholds trace. The roadmap's
+   deferred list (cloud, collaboration, warehouse connectors, governance)
+   stays deferred at a user count of one, and the conformance evaluation's
+   deliberately-not-built list (Analysis Canvas, command palette, Knowledge
+   nav, AI confidence, dashboards) stays deliberately not built - the command
+   palette is the only one that would be cheap to add.
 
 ## Recent completions
 
 The last tasks to land, newest first. The contract and done-record for each
 is in `ai/TASKS.md` (rolling window) or `ai/TASKS-ARCHIVE.md`.
 
+- **v0.3.4** - the close-out: the DMG bundler's non-determinism traced to the
+  vendored create-dmg's Finder AppleScript (fixed by `--sandbox-safe` in
+  `desktop/bundle_dmg.sh`), the icon's proportion measured rather than
+  guessed (51.4%, centred, correct squircle - not a defect), and the fragile
+  question-refinement test layout given the refusals its `beforeEach` needed.
+  Carried follow-ups: two, both decisions (DEC-006's unsigned build, CI
+  billing).
 - **P9-F4-001** - the on-screen chart: recharts draws the same stored result
   the core's artifact came from, with a tooltip a static image cannot give.
   The re-walk found the `format` field the core's response never carried, so

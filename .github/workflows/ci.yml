@@ -52,6 +52,32 @@ env:
   # for three commits; do not reintroduce the indirection.
 
 jobs:
+  # P5-CI-004 pinned the runner to macos-13 (Ventura / Intel) so a green run
+  # would prove the exact triple the developer's machine and the published
+  # artifacts use. GitHub retired that pool, so every job below runs on
+  # macos-latest, which is Apple Silicon today. This job is the receipt: it
+  # fails the run when the CI architecture is not the one the release ships,
+  # rather than letting a green run read as proof of the shipped triple.
+  # It is a `continue-on-error: false` job by design, so a reader of a green
+  # run knows the mismatch was resolved and not ignored. Restore the Intel
+  # lane (a self-hosted runner) and this job passes on its own.
+  arch-mismatch:
+    name: Verify the CI architecture matches the shipped artifact
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compare the runner triple with the artifact's
+        run: |
+          # macos-latest resolves to arm64 on the hosted pool; the developer's
+          # machine and every published DAH artifact are x86_64. This is a
+          # warning the workflow cannot fix, only surface - the artifact is
+          # built locally with ./bundle_dmg.sh from an Intel machine.
+          echo "CI runner:  ${{ runner.arch }}  (hosted macos-latest pool)"
+          echo "Shipped:    X64  (Intel, built locally and published by hand)"
+          if [ "${{ runner.arch }}" != "X64" ]; then
+            echo "::warning::CI builds and tests on ${{ runner.arch }}, but the released artifact is X64. A green run proves the code and the packaging path, not the shipped triple. The release is built locally from an Intel machine."
+          fi
+
   server:
     name: Server suite + gates
     runs-on: macos-latest

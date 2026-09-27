@@ -42,6 +42,10 @@ env:
   # parse time. macos-13 (Ventura / Intel) is retired from the hosted pool, so
   # the build runs on macos-latest and the notes below describe whichever
   # architecture that actually resolves to rather than asserting Intel.
+  # In practice this repo's CI cannot produce the release artifact at all:
+  # macos-latest is Apple Silicon and the developer's machine is Intel, so the
+  # release is built locally with ./bundle_dmg.sh and published by hand from
+  # these steps. See ai/TASKS.md and the CI job `arch-mismatch`.
 
 jobs:
   release:

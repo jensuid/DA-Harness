@@ -2815,10 +2815,19 @@ expect(timeline.getByText(/case created/)).toBeInTheDocument()
   describe('question refinement', () => {
     // The api spies are module-level and persist across the whole file, so the
     // call record is cleared per test - otherwise a "not called" assertion
-    // answers for a test that ran before it. This block sits beside the
-    // CaseWorkspace describe rather than in it, so it needs its own clear.
+    // answers for every test that ran before it. This block sits beside the
+    // CaseWorkspace describe rather than in it, and that describe is where the
+    // plan and run read rejections come from, so they are set here too: without
+    // them a proposal read inherits the previous test's persisted plan and run,
+    // and the panel answers a question nobody asked it.
     beforeEach(() => {
       vi.clearAllMocks()
+      vi.mocked(api.getPlan).mockRejectedValue(
+        new api.ApiError(404, 'plan not found'),
+      )
+      vi.mocked(api.getRun).mockRejectedValue(
+        new api.ApiError(404, 'run not found'),
+      )
     })
 
     const proposal: api.Refinement = {

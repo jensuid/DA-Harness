@@ -1,16 +1,7 @@
-**Phase:** P8 Analytical Contract - COMPLETE (10 of 10 delivered: the case's
-context object, quality beyond missingness, the PRD's nine validation
-dimensions, the causal guard, the analytical golden suite that measures them,
-the orientation spine that presents them, question refinement, and the decision
-view that closes the loop). P7 Product Modes is COMPLETE - every checklist
-item that builds something shipped, including the manual walkthrough and the
-CORS fix, and the store's schema is at v13. P6, P5, P4, P3, P2, P1 and P0 are
-all COMPLETE (see the phase table below). P8 closes the PRD's Level 1 breadth
-gaps and makes "done" measurable: quality detection beyond missingness (2 of 7
-defect classes today), validation from 3 checks to the PRD's 9 dimensions, the
-causal-language guard, the analytical golden suite, the orientation spine,
-question refinement, the decision view, the measurement layer and the
-requirement-traceability matrix. The full gap analysis is `docs/PRD & UX Conformance Evaluation.md`.
+**Phase:** P9 UI/UX Redesign - COMPLETE (4 of 4: the foundation, the surfaces,
+the motion, the on-screen chart). P8, P7, P6, P5, P4, P3, P2, P1 and P0 are all
+COMPLETE (see the phase table below). Every phase the roadmap and the
+conformance evaluation asked for is delivered; no phase is open.
 
 - **Active task:** **P9-F4-001 (the on-screen chart and a re-walk) DONE** -
   the last of F1's three dependencies is used, and the phase closes with it.
@@ -86,17 +77,21 @@ requirement-traceability matrix. The full gap analysis is `docs/PRD & UX Conform
   P5-CI-004 intended - GitHub retired the macos-13 pool, so the label hangs
   forever (probed empirically; see DEC-005). The Ventura floor stays the
   documented minimum but is no longer enforced by CI, and a green run no longer
-  proves the exact Intel triple a local build produces. Restoring that needs a
-  self-hosted Intel runner.
+  proves the exact Intel triple a local build produces. The `arch-mismatch` CI
+  job (P9-F4) now emits a `::warning` on every run recording the gap, and the
+  release artifact is built locally from an Intel machine with
+  `desktop/bundle_dmg.sh`, so the shipped triple is what the developer's
+  machine produces. Restoring an enforced Intel lane needs a self-hosted
+  runner.
 - **Test status:** server 728 passed (727 + 1 for the chart format field
   P9-F4's re-walk found). The web suite is 216 (+19 for P9-F4-001 - the
   chart's own contract: the geometry is the core's rules, the two kinds each
   render their tree, the tooltip is the live region, the fallback holds the
   artifact, and the PNG stays a link).
   Desktop shell 25 Rust tests; P2, P3 and P4 gates
-  PASS; **v0.2.0, v0.3.0, v0.3.1, v0.3.2 and v0.3.3 released** (tags
+  PASS; **v0.2.0, v0.3.0, v0.3.1, v0.3.2, v0.3.3 and v0.3.4 released** (tags
   `v0.2.0` on `ec819fc`, `v0.3.0` on `ab56541`, `v0.3.1` on `19cefc1`,
-  `v0.3.2` on `2ff1bca`, `v0.3.3` on `30db6e9`).
+  `v0.3.2` on `2ff1bca`, `v0.3.3` on `30db6e9`, `v0.3.4` on `d8bec6a`).
 - **e2e:** all 28 real-server steps PASS; the golden suite and the refinement
   runner green, and the measurement layer 9/9 - the reports the matrix cites as
   its measured evidence, regenerated on the current tree.

@@ -88,32 +88,39 @@ the gate comes first because a phase is done when a gate says so.
 
 ### Carried follow-ups (still open)
 
-- DMG bundling depends on the local `create-dmg` happening to be the tool
-  Tauri's `bundle_dmg.sh` expects; it failed on one build and succeeded on
-  another with no code change between. The published artifact is the ditto
-  zip, which is what `release.yml` ships, so this is cosmetic - but a
-  deterministic local build is worth either pinning the tool or dropping the
-  DMG from the local steps.
-- The app icon's proportion was chosen blind (52% of the canvas), because
-  icons cannot be viewed. `desktop/src-tauri/icons/icon.png` is the committed
-  52% source. The recipe to re-cut it: flatten the source onto opaque
-  navy, scale the flattened artwork, centre it on a fresh navy canvas, apply
-  the squircle mask (rounded rectangle, 224px radius on a 1024 canvas), then
-  `iconutil -c icns` from a full iconset. Rebuild with
-  `cd desktop && npm run tauri -- build --config '{"version":"x.y.z"}'`.
-- `web/src/CaseWorkspace.test.tsx`'s question-refinement describe still sits
-  outside the `CaseWorkspace` describe, so it inherits the previous test's
-  persisted plan and run reads. P8-DECISION-008 gave its own decision
-  describe a `beforeEach` for the same reason and noted this one; it is a
-  fragility, not a failure.
 - The packaged app is unsigned: macOS gatekeeps the first launch (right-click,
   Open). Signing and notarization are deferred indefinitely by DEC-006 (DAH is
   single-user) - not blocked, and worth revisiting if the user count moves
   beyond one.
 - GitHub Actions refuses every job with "recent account payments have failed";
-  nothing pushed since `c73118c` has run in CI, and v0.2.0-v0.3.2 were built
+  nothing pushed since `c73118c` has run in CI, and v0.2.0-v0.3.4 were built
   locally from the same steps `release.yml` runs. Fix at Settings > Billing &
   plans; no code change.
+
+### Closed follow-ups (resolved by the v0.3.4 close-out)
+
+- **DMG bundling** — closed. The non-determinism was the vendored
+  `create-dmg`'s Finder-prettifying AppleScript, which fails when the build is
+  invoked without a GUI session (an npm-run subprocess, CI) and succeeds when
+  it has one, with no code change between. Its own `--sandbox-safe` flag skips
+  the AppleScript; `desktop/bundle_dmg.sh` passes that flag, verifies the
+  image and prints its hash. The image's bytes are then identical run to run
+  (the container-level hash still moves, because `hdiutil` stamps the image's
+  creation time - the mounted contents are byte-identical, which is the
+  property a build is reproducible by).
+- **The icon's blind-chosen proportion** — closed, and it was not a defect.
+  Measured rather than guessed: the artwork covers 51.4% of the 1024 canvas,
+  is dead-centre (x offset 0, y offset -2), carries the correct macOS squircle
+  (full canvas, corner radius 66) and reads as an ascending bar chart in cyan
+  with the tallest bar in amber. Apple's own guidance is that "you don't need
+  to fill the entire icon canvas with content," so the 52% the blind guess
+  landed on was right; the follow-up was the guess, not the proportion.
+- **The fragile question-refinement test layout** — closed. The describe sat
+  outside the `CaseWorkspace` describe and inherited the previous test's
+  persisted plan and run reads, because its `beforeEach` cleared the mocks but
+  did not re-set the 404 refusals the parent describe sets. Its `beforeEach`
+  now sets the same refusals the decision describe already set for the same
+  reason (P8-DECISION-008). 116 tests in the file still pass.
 
 ## P6 Post-Launch Evolution
 

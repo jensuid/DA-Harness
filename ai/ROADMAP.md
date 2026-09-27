@@ -4,7 +4,7 @@ Source of truth for **where we are** on the global roadmap
 (`docs/Implementation Roadmap.md`). Every phase completion must update this
 file together with `CURRENT_STATE.md` and `TASKS.md`.
 
-**Current stage: P8 Analytical Contract — COMPLETE (10 of 10). No phase is open; v0.3.0, v0.3.1 and v0.3.2 are published.**
+**Current stage: P9 UI/UX Redesign — COMPLETE (4 of 4). No phase is open; v0.3.4 is published.**
 
 ```
 P0 Foundation          DONE  ✓
@@ -24,6 +24,9 @@ P7 Product Modes       COMPLETE ✓  (all 4 checklist items built; the web-shell
 P8 Analytical Contract COMPLETE ✓  (all 10 checklist items; every PRD threshold
                               now carries a measured number and every requirement
                               traces end to end; v0.3.0, v0.3.1 and v0.3.2 are published)
+P9 UI/UX Redesign       COMPLETE ✓  (all 4 phases: the foundation, the surfaces,
+                              the motion, the on-screen chart; 19 walk-test
+                              findings closed; v0.3.4 published)
                               ← we are here
 ```
 
@@ -45,6 +48,7 @@ production-grade**.
 | P6 Post-Launch Evolution | Scale and intelligence | DONE | — | all 5 checklist items: cross-case recall (P6-MEMORY-001), agentic analysis (P6-AGENT-002), analytical-shape templates (P6-TEMPLATE-003), the versioned migration path (P6-MIGRATE-004) and the update check (P6-UPDATE-005) |
 | P7 Product Modes | The spec's LEARN and EVALUATE modes, and the UI surface for the P6 capabilities | DONE | — | all 4 checklist items: EVALUATE (P7-EVAL-001 + P7-SHELL-002), the closed web-shell gap (P7-SHELL-002..009, eight surfaces), LEARN (P7-LEARN-001 + P7-SHELL-010) and multi-agent workflows (P7-AGENT-001 + P7-SHELL-011); a real-server end-to-end run (P7-E2E-001), a hand walkthrough (P7-WALK-001), the packaged app's CORS fix (P7-CORS-001) and the CSV fix (P7-CSV-002) |
 | P8 Analytical Contract | Close the PRD's Level 1 breadth gaps and make "done" measurable | DONE | — | all 10 checklist items: the case's context object (P8-CONTEXT-001), quality beyond missingness (P8-QUALITY-002), the nine validation dimensions (P8-VALID-003), the causal guard (P8-CAUSAL-004), the analytical golden suite (P8-GOLDEN-005), the orientation spine (P8-SHELL-006), question refinement (P8-REFINE-007), the decision view (P8-DECISION-008), the measurement layer (P8-MEASURE-009) and the traceability matrix (P8-TRACE-010); server 686, web 138, 28/28 e2e, schema v13 |
+| P9 UI/UX Redesign | The redesign the walk-test and the conformance evaluation asked for | DONE | — | all 4 phases: the foundation (P9-F1-001: tooling, tokens, the panel split), the surfaces (P9-F2-001 the walk-test's last three, P9-F2-002 the restyle), the motion (P9-F3-001) and the on-screen chart (P9-F4-001, with the re-walk that found the missing `format` field). web 216, server 728, 28/28 e2e, trace 48/48; v0.3.4 published |
 
 ## Phase gate definitions (what "done" means)
 
