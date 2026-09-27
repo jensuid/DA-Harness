@@ -327,6 +327,31 @@ export function getLlmStatus(): Promise<LlmStatus> {
   return request<LlmStatus>('/llm/status')
 }
 
+// W2X-012 phase B: the settings surface that puts the credential where the
+// packaged core can read it. A `.env` is never bundled and a PyInstaller
+// one-file build has no source-relative path to read one from, so the key
+// arrives as a file in the data directory the shell already points the core
+// at, and this is the shape of that file. The read answers the file's own
+// contents so the form pre-fills; the write answers the status surface's
+// shape, so the banner can flip to "configured" without a refetch.
+export interface LlmConfig {
+  api_key: string
+  model: string
+  base_url: string
+}
+
+export function getLlmConfig(): Promise<LlmConfig> {
+  return request<LlmConfig>('/llm/config')
+}
+
+export function putLlmConfig(config: LlmConfig): Promise<LlmStatus> {
+  return request<LlmStatus>('/llm/config', {
+    method: 'PUT',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(config),
+  })
+}
+
 export function createCase(newCase: NewCase): Promise<Case> {
   return request<Case>('/cases', {
     method: 'POST',

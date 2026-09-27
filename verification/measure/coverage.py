@@ -400,13 +400,21 @@ def measure_coverage(
     lines the tests reached, and the runner prints each module's number so a
     shortfall names the file rather than a percentage alone.
     """
-    import pytest
-
     if test_args is None:
         test_args = ["-q", "-p", "no:cacheprovider", "--no-header", "-m", "not slow"]
 
     failures: list[str] = []
     started = time.perf_counter()
+    # pytest must be imported before the counter enters: `LineCounter.__enter__`
+    # imports every app module, and `app.main` calls `configure_logging()` at
+    # import time. That call installs a file handler only when pytest is absent
+    # from `sys.modules` (the suite repoints the data dir after import, so an
+    # import-time handler would write into the repository), and the tests that
+    # assert the suite installs no file handler would fail under the runner that
+    # is here to measure them. Importing first is one line and it is the seam
+    # the logging contract already keys on.
+    import pytest
+
     with LineCounter() as counter:
         if report_progress:
             report_progress("running the suite under the line counter")

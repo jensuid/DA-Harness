@@ -7,9 +7,11 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 
 import { LlmStatusBanner } from './LLMStatus'
 import * as api from '../api'
+import { SETTINGS_EVENT, LLM_CHANGED_EVENT } from '../shell'
 
 const CONFIGURED = {
   configured: true,
@@ -75,6 +77,22 @@ describe('LlmStatusBanner', () => {
     expect(api.getLlmStatus).toHaveBeenCalledTimes(1)
   })
 
+  it('refetches when the settings panel says a save landed', async () => {
+    // The banner reads once, so a key the analyst saves in the panel would
+    // leave a stale concern on screen until the next mount. The panel posts
+    // a changed event; this is the one thing besides the mount that can move
+    // the state, so it is the one thing the banner refetches for.
+    const get = vi.spyOn(api, 'getLlmStatus').mockResolvedValue(UNCONFIGURED)
+    render(<LlmStatusBanner />)
+    await screen.findByText(/not configured/i)
+    expect(get).toHaveBeenCalledTimes(1)
+
+    window.dispatchEvent(new CustomEvent(LLM_CHANGED_EVENT))
+
+    // One refetch per event - not a poll that has to be torn down.
+    await waitFor(() => expect(get).toHaveBeenCalledTimes(2))
+  })
+
   it('stays silent when the core cannot be reached', async () => {
     vi.spyOn(api, 'getLlmStatus').mockRejectedValue(new Error('core down'))
     const { container } = render(<LlmStatusBanner />)
@@ -109,5 +127,39 @@ describe('LlmStatusBanner', () => {
     // rather than after it - an unwrapped update is a warning in the log and
     // a banner the next test might see.
     await waitFor(() => expect(screen.queryByText(/not configured/i)).not.toBeNull())
+  })
+
+  it('offers a Configure button that opens the settings panel', async () => {
+    // Phase A's sentence ended in an env var name - a developer's answer to
+    // an analyst's problem. Phase B gives it a door, and this is the seam:
+    // the button and the DAH Settings menu item dispatch the same event, so
+    // the panel is one surface whichever path opened it.
+    vi.spyOn(api, 'getLlmStatus').mockResolvedValue(UNCONFIGURED)
+    render(<LlmStatusBanner />)
+    // The label is the accessible name, so the button is found by it rather
+    // than by the visible glyph - "Configure…" is what the analyst reads, and
+    // the ellipsis is a character a regex has to opt into.
+    const button = await screen.findByRole('button', { name: /configure the llm/i })
+
+    expect(button).toBeInTheDocument()
+
+    const dispatched: CustomEvent[] = []
+    const listener = (event: Event) => dispatched.push(event as CustomEvent)
+    window.addEventListener(SETTINGS_EVENT, listener)
+    await userEvent.click(button)
+    window.removeEventListener(SETTINGS_EVENT, listener)
+
+    expect(dispatched).toHaveLength(1)
+    expect(dispatched[0].type).toBe(SETTINGS_EVENT)
+  })
+
+  it('renders no Configure button when the LLM is configured', async () => {
+    // The button belongs to the concern state only. A door on the happy path
+    // is the same noise phase A refused to make of the banner itself.
+    vi.spyOn(api, 'getLlmStatus').mockResolvedValue(CONFIGURED)
+    const { container } = render(<LlmStatusBanner />)
+
+    await waitFor(() => expect(api.getLlmStatus).toHaveBeenCalled())
+    expect(container).toBeEmptyDOMElement()
   })
 })

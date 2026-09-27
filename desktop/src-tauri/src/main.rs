@@ -9,6 +9,7 @@
 
 mod core_server;
 mod logs;
+mod settings;
 mod updates;
 
 use std::path::PathBuf;
@@ -26,6 +27,7 @@ use updates::{
 /// The menu items' ids; the event handler matches on these.
 const REVEAL_LOGS_ID: &str = "reveal_logs";
 const CHECK_UPDATES_ID: &str = "check_updates";
+const SETTINGS_ID: &str = "llm_settings";
 
 fn main() {
     let app = tauri::Builder::default()
@@ -48,6 +50,14 @@ fn main() {
                     ),
                 }
                 let _ = app;
+            } else if event.id().as_ref() == SETTINGS_ID {
+                // The panel is the bundle's own surface, so this is a single
+                // eval - the same channel `updates.rs` uses, and one that
+                // needs no capability (`core:default` grants no commands). The
+                // panel fetches and writes the settings itself over the HTTP
+                // the bundle already speaks, so nothing trust-bearing rides
+                // this event.
+                open_settings_panel(app);
             } else if event.id().as_ref() == CHECK_UPDATES_ID {
                 // Ask the core, which alone has the network egress and the
                 // version, then put the answer in front of the user
@@ -72,6 +82,8 @@ fn main() {
             // away - and Edit keeps the text editing a data tool needs.
             let app_menu = SubmenuBuilder::new(app, "DAH")
                 .about(None)
+                .separator()
+                .text(SETTINGS_ID, "DAH Settings…")
                 .separator()
                 .text(CHECK_UPDATES_ID, "Check for Updates...")
                 .text(REVEAL_LOGS_ID, "Reveal DAH Logs")
@@ -160,6 +172,24 @@ fn current_exe_dir() -> Result<PathBuf, Box<dyn std::error::Error>> {
         .parent()
         .map(PathBuf::from)
         .ok_or_else(|| Box::<dyn std::error::Error>::from("current_exe has no parent directory"))
+}
+
+/// Open the LLM settings panel (W2X-012 phase B).
+///
+/// The panel is the bundle's own surface - the same channel `updates.rs`
+/// reaches, and one that needs no capability - so this is a single evaluated
+/// script rather than a native window. A delivery that cannot reach the
+/// window is reported to the log rather than swallowed, so the menu item
+/// degrades to nothing rather than to silence.
+fn open_settings_panel(app: &tauri::AppHandle) {
+    let Some(window) = app.get_webview_window("main") else {
+        eprintln!("DAH shell: could not open the settings panel - the main window is gone");
+        return;
+    };
+    match window.eval(&settings::open_script()) {
+        Ok(()) => eprintln!("DAH shell: opened the LLM settings panel"),
+        Err(err) => eprintln!("DAH shell: could not open the settings panel: {err}"),
+    }
 }
 
 /// Put the update check's answer in front of the user (FIX-UPDATES-009, W-005).

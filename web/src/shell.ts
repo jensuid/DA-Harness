@@ -25,6 +25,24 @@
  * evaluates; a Rust test guards the agreement by reading this file as text. */
 export const NOTICE_EVENT = 'dah-notice'
 
+/** The custom event the shell dispatches to open the LLM settings panel
+ * (W2X-012 phase B). `open_script` in `desktop/src-tauri/src/settings.rs`
+ * builds this name into its script, and a Rust test guards the agreement the
+ * same way. The event is only ever "open" - the panel fetches and writes the
+ * settings themselves over HTTP, so nothing trust-bearing rides this channel. */
+export const SETTINGS_EVENT = 'dah-settings'
+
+/** The custom event the panel dispatches when a save landed (W2X-012 phase B).
+ *
+ * The banner reads the status once on mount, by design - a poll would
+ * re-render it on every interval for a fact that does not move. That leaves
+ * one gap: the analyst saves a key in the panel and the banner they opened it
+ * from keeps saying the LLM is not configured, because nothing told it the
+ * fact moved. This event is the notification, and it carries no payload - the
+ * banner refetches, so the state the panel and the banner agree on is the
+ * core's own answer, never a value the panel asserted. */
+export const LLM_CHANGED_EVENT = 'dah-llm-changed'
+
 /** Where the shell stashes a notice that arrived before this bundle mounted -
  * the menu item can fire in the second between the window showing and the
  * bundle finishing. Read once on mount, never polled. */

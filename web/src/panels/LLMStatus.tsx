@@ -12,6 +12,12 @@
 // every mount is the boy who cried wolf - the one time it has something to
 // say is the one time it is not read. Only the broken state shows.
 //
+// Phase B gives that state a door: the Configure button opens the settings
+// panel the shell's DAH Settings menu item also opens, so the sentence the
+// banner renders ends in an action rather than in an env var name. The panel
+// is the one place the credential is written, and the banner is the one place
+// the credential's absence is said, so the button is what connects them.
+//
 // The shell's NoticeLayer is a different channel and stays untouched: that
 // one answers the native menu bar through a custom event the browser host
 // never receives. This is an ordinary GET the shell and the browser both
@@ -20,6 +26,8 @@
 
 import { useEffect, useState } from 'react'
 import { getLlmStatus, type LlmStatus } from '../api'
+import { SETTINGS_EVENT, LLM_CHANGED_EVENT } from '../shell'
+import { Button } from '../lib/ui'
 
 export function LlmStatusBanner() {
   const [status, setStatus] = useState<LlmStatus | null>(null)
@@ -28,18 +36,26 @@ export function LlmStatusBanner() {
     let cancelled = false
     // Read once, never polled: the configuration is a property of this
     // deployment, and a poll would re-render the banner on every interval.
-    void getLlmStatus()
-      .then((value) => {
-        if (!cancelled) setStatus(value)
-      })
-      .catch(() => {
-        // A core that cannot answer this is a core that cannot answer the
-        // LLM either, but saying so from here would be a guess - the health
-        // surface is what owns "the core is down". Render nothing and let
-        // that surface say it.
-      })
+    const read = () => {
+      void getLlmStatus()
+        .then((value) => {
+          if (!cancelled) setStatus(value)
+        })
+        .catch(() => {
+          // A core that cannot answer this is a core that cannot answer the
+          // LLM either, but saying so from here would be a guess - the health
+          // surface is what owns "the core is down". Render nothing and let
+          // that surface say it.
+        })
+    }
+    read()
+    // The settings panel tells this banner when a save landed, so a concern
+    // the analyst just resolved leaves the screen instead of lingering until
+    // the next mount. Not a poll: one refetch per thing that can move it.
+    window.addEventListener(LLM_CHANGED_EVENT, read)
     return () => {
       cancelled = true
+      window.removeEventListener(LLM_CHANGED_EVENT, read)
     }
   }, [])
 
@@ -49,9 +65,19 @@ export function LlmStatusBanner() {
     <div className="llm-status" role="status" aria-live="polite">
       <span>
         The LLM is not configured, so plan, draft, refine, chat and the agent
-        answer from DAH's deterministic engines instead. Add a key to
-        DAH_LLM_API_KEY to use them.
+        answer from DAH's deterministic engines instead.
       </span>
+      <Button
+        type="button"
+        variant="link"
+        aria-label="Configure the LLM"
+        // The panel listens for this same event, so the button and the menu
+        // item are one door - and a browser host, which has no menu bar, can
+        // still open the settings from the banner.
+        onClick={() => window.dispatchEvent(new CustomEvent(SETTINGS_EVENT))}
+      >
+        Configure…
+      </Button>
     </div>
   )
 }

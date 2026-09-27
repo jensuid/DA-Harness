@@ -596,6 +596,83 @@ button.danger:hover {
     animation: none;
     transition: none;
   }
+  .llm-settings {
+    animation: none;
+    transition: none;
+  }
+}
+
+/* W2X-012 phase B: the settings panel the banner's Configure button and the
+   DAH Settings menu item open. A dialog rather than a banner: it overlays
+   rather than pushing content, because the form is a modal question the
+   analyst answers once and dismisses. The token set is the banner's own, so
+   the concern and the door to fix it read as one surface. */
+.llm-settings {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 4vh 1rem;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.llm-settings form {
+  width: min(34rem, 100%);
+  padding: 1.2rem 1.4rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: 0 6px 28px rgba(0, 0, 0, 0.18);
+}
+
+.llm-settings h2 {
+  margin: 0 0 0.4rem;
+  font-size: 1.1rem;
+}
+
+.llm-settings-lede {
+  margin: 0 0 1rem;
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+}
+
+.llm-settings-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-bottom: 0.8rem;
+  font-size: 0.92rem;
+}
+
+.llm-settings-field input {
+  padding: 0.45rem 0.55rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+}
+
+.llm-settings-actions {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  margin-top: 0.4rem;
+}
+
+.llm-settings-saved {
+  margin: 0.8rem 0 0;
+  font-size: 0.9rem;
+  color: var(--color-ok);
+}
+
+.llm-settings-error {
+  margin: 0.8rem 0 0;
+  font-size: 0.9rem;
+  color: var(--color-danger);
 }
 
 /* P9-F3: the motion gate, for the JS-driven kind. The surfaces animate through

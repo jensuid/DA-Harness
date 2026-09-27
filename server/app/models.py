@@ -783,6 +783,29 @@ class LlmStatus(BaseModel):
     base_url: str
 
 
+class LlmConfig(BaseModel):
+    """The settings the shell writes so the packaged core reaches an LLM
+    (W2X-012 phase B).
+
+    The inverse of the problem `LlmStatus` answers: the status surface names a
+    state, and this surface changes it. A packaged app cannot read a `.env`
+    that was never bundled, so the credential arrives through a file in the
+    data directory the shell already points the core at, and this model is the
+    shape of that file.
+
+    All three fields are optional and may be blank: an empty `api_key` is the
+    analyst clearing the setting, and the two public values fall back to the
+    defaults the adapters already hold when the core answers status. The
+    response never carries the key back out - only whether one is set, so the
+    surface can show a present key without echoing it into a webview that can
+    read it or a log line that can capture it.
+    """
+
+    api_key: str = ""
+    model: str = ""
+    base_url: str = ""
+
+
 class LogView(BaseModel):
     """The tail of the core's own log (P5-OBSERVE-002).
 

@@ -5,6 +5,7 @@ import { CaseWorkspace } from './CaseWorkspace'
 import { ReducedMotion } from './lib/motion'
 import { NoticeLayer } from './NoticeLayer'
 import { LlmStatusBanner } from './panels/LLMStatus'
+import { LlmSettingsPanel } from './panels/LLMSettings'
 
 // State-based navigation, no router: the bundle stays dependency-free as
 // DEC-001 intends, and every screen reads its own data on mount.
@@ -28,6 +29,7 @@ export function App() {
         <main className="wide">
           <NoticeLayer />
           <LlmStatusBanner />
+          <LlmSettingsPanel />
           <CaseWorkspace
             caseId={view.caseId}
             onBack={() => setView({ kind: 'list' })}
@@ -40,6 +42,7 @@ export function App() {
         <main>
           <NoticeLayer />
           <LlmStatusBanner />
+          <LlmSettingsPanel />
           <CaseCreation
             onCreated={(caseId) => setView({ kind: 'workspace', caseId })}
             onCancel={() => setView({ kind: 'list' })}
@@ -54,6 +57,7 @@ export function App() {
             menu item to answer for. */}
           <NoticeLayer />
           <LlmStatusBanner />
+          <LlmSettingsPanel />
           <CaseList
             onOpen={(caseId) => setView({ kind: 'workspace', caseId })}
             onCreate={() => setView({ kind: 'create' })}

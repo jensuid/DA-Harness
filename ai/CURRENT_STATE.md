@@ -3,28 +3,43 @@ the motion, the on-screen chart). P8, P7, P6, P5, P4, P3, P2, P1 and P0 are all
 COMPLETE (see the phase table below). Every phase the roadmap and the
 conformance evaluation asked for is delivered; no phase is open.
 
-- **Active task:** **W2X-012 phase A DONE - the LLM degradation is no longer
-  silent.** The walk-test's BLOCKER had two halves, a credential the packaged
-  app never receives and an analyst told nothing about it, and this task
-  closed the second. `server/app/llm.py` is the one place the three env vars
-  the six adapters each read for themselves are read for an answer;
-  `GET /llm/status` carries it - `configured`, the provider *name* (never its
-  value), the model and base URL; the core writes one boot line naming which
-  engine is in play; and `web/src/panels/LLMStatus.tsx` renders on every
-  screen, nothing when an LLM is configured and a concern banner naming the
-  deterministic engines when one is not. Both states were verified against a
-  real browser with the core started both ways. The credential still does
-  not reach `/Applications/DAH.app`; that is phase B.
-  Gates: server 741 (728 + 13), web 223 (216 + 7), tsc clean, build ok
-  (CSS 16.84 kB, JS 744 kB), trace 48/48, e2e 28/28, golden 21/21,
-  refine AT-04, measure 9/9.
-  Sebelumnya: WALK-UX-002 (recorded), v0.3.4, P9-F4-001 (the on-screen chart),
-  P9-F3-001 (the motion layer), P9-F2-002 (the restyle), P9-F2-001 (the
-  walk-test's last three findings), P9-F1-001 (the redesign's foundation),
-  FIX-PYTHON-005, FIX-CHART-004, FIX-VERSION-010, FIX-UPDATES-009,
-  FIX-PROFILE-008, FIX-REFINE-007, FIX-TIMEOUT-006, FIX-PLAN-003,
-  FIX-EVIDENCE-002, WALK-E2E-001 — the first walk's nineteen findings are
-  all resolved; the second walk's twelve others are still open.
+- **Active task:** **W2X-012 phase B DONE - the walk-test's BLOCKER is closed
+  on both halves.** Phase A made the LLM's degradation sayable; phase B made
+  it fixable from inside the app. The credential lives in `dah-llm.json` in
+  the data dir the shell already injects (`DAH_DATA_DIR`, from
+  `core_server.rs`), written mode 0o600 via an atomic `.tmp` + `os.replace`,
+  outside the repo, the bundle and git - editable or deletable without a
+  rebuild, and no new dependency (DEC-001: no Keychain binding; build-time
+  injection was rejected as a key burned into a reversible binary). It is
+  read into `os.environ` once at boot, after `configure_logging()` and
+  before phase A's boot line, and applied on every save - no restart,
+  because the six adapters read the environment at call time, not import
+  time. `GET /llm/config` reads the file and never the environment, so an
+  exported key the shell cannot overwrite is never echoed into the
+  CORS-permitted webview; `PUT /llm/config` writes, applies, and answers
+  phase A's own `LlmStatus`, so the panel reports the core's verdict rather
+  than its own write. The write path applies rather than yields: a blank
+  save unsets the variable instead of blanking it (the clear was a real
+  bug the tests found), and only `DAH_LLM_API_KEY` is ever touched. The
+  surface is a three-field panel in the bundle itself, opened from a "DAH
+  Settings…" menu item through the same `window.eval()` DOM CustomEvent
+  channel `updates.rs` already used - no permission, no capability change,
+  a no-op in a browser host. The banner gains the Configure button and one
+  refetch on the panel's changed event: still not polled, but a concern the
+  analyst just resolved leaves the screen instead of lingering. The full
+  loop was verified in a real browser against a live core: the concern, the
+  button opening the panel, a save answering "no restart needed", the
+  banner leaving without a reload, and clearing the key bringing it back.
+  Gates: server 772 (741 + 31), cargo 30 (26 + 4), web 235 (223 + 12),
+  tsc clean, build ok (CSS 17.92 kB, JS 747 kB), trace 48/48, measure 9/9.
+  Sebelumnya: W2X-012-A (the status surface), WALK-UX-002 (recorded),
+  v0.3.4, P9-F4-001 (the on-screen chart), P9-F3-001 (the motion layer),
+  P9-F2-002 (the restyle), P9-F2-001 (the walk-test's last three
+  findings), P9-F1-001 (the redesign's foundation), FIX-PYTHON-005,
+  FIX-CHART-004, FIX-VERSION-010, FIX-UPDATES-009, FIX-PROFILE-008,
+  FIX-REFINE-007, FIX-TIMEOUT-006, FIX-PLAN-003, FIX-EVIDENCE-002,
+  WALK-E2E-001 — the first walk's nineteen findings are all resolved; the
+  second walk's twelve others are still open.
 
 - **Done before that:** P8-TRACE-010 - the requirement-traceability matrix
   (AT-48). The PRD's section 59 control artifact is code: 48 rows, one per

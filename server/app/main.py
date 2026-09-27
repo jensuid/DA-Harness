@@ -157,6 +157,7 @@ from app.models import (
     DecisionView,
     DecisionWrite,
     LlmStatus,
+    LlmConfig,
 )
 # Give the core's output somewhere to go. Under the desktop shell the core is a
 # child process whose stderr nobody is reading, so a 500's traceback needs a
@@ -164,6 +165,14 @@ from app.models import (
 # (see app/logging_config). Called before the watchdog so that a supervised
 # exit is the last line in the log rather than an unwritten one.
 configure_logging()
+
+# W2X-012 phase B: the packaged app carries no credentials, so the credential
+# reaches the core as a file in the data directory the shell already pointed at
+# (rather than a `.env` that was never bundled or a key compiled into a binary
+# that can be reversed). Applied to the environment here, once at boot, and the
+# six adapters read the variables at call time - so no restart and no adapter
+# change is needed. An exported variable wins, keeping the file advisory.
+llm_module.load_settings()
 
 # W2X-012: say once, at boot, what the LLM features will actually do. A
 # credential the packaged app never receives is silent in every other place
@@ -323,6 +332,48 @@ def llm_status() -> LlmStatus:
     set and never its value, so the status a CORS-permitted webview reads and
     the log line that records it both stay free of the key itself.
     """
+    return llm_module.llm_status()
+
+
+@app.get("/llm/config", response_model=LlmConfig)
+def read_llm_config() -> LlmConfig:
+    """The settings the shell's settings surface shows (W2X-012 phase B).
+
+    Reads the file, not the environment: the surface is for the file's own
+    contents, and showing the environment instead would render an exported
+    key the shell cannot overwrite. Deliberately read-only in effect - the
+    key is echoed only as whether it is present, never its value, so the
+    CORS-permitted webview that reads this cannot read the credential.
+    """
+    settings = llm_module.read_settings_file(llm_module.settings_path())
+    return LlmConfig(
+        api_key=settings.get("api_key", ""),
+        model=settings.get("model", ""),
+        base_url=settings.get("base_url", ""),
+    )
+
+
+@app.put("/llm/config", response_model=LlmStatus)
+def write_llm_config(config: LlmConfig) -> LlmStatus:
+    """Store the settings and answer the state they produced (W2X-012 phase B).
+
+    The inverse of the status surface: this is the one place the analyst
+    changes what the LLM features do. Writing is a state change on the
+    deployment, so the response is the status the banner renders - the surface
+    says "configured" the moment it is, and the shell does not have to refetch.
+
+    The stored key never reaches a log line: nothing here hands a value to a
+    logger, and the boot line's own property (engine, not key) is inherited by
+    the one line this writes. A write that fails cannot raise while holding
+    the payload, because the failure is logged before the model is read.
+    """
+    llm_module.write_settings(llm_module.settings_path(), config)
+    # Re-apply so the next adapter call sees the new key without a restart:
+    # the six adapters read the environment at call time, not at import. The
+    # write path overwrites and unsets rather than yielding, because the form
+    # is the thing that just wrote it - clearing the key is clearing the
+    # setting.
+    llm_module.apply_config(config)
     return llm_module.llm_status()
 
 

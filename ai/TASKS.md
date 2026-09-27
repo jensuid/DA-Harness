@@ -232,6 +232,188 @@ SUMMARY: the walk-test's BLOCKER had two halves, and this closed the one that
          is the settings surface that puts it there, and this is the floor it
          stands on.
 
+### W2X-012-B contract (phase B: the settings surface)
+
+```
+TASK ID: W2X-012-B
+MILESTONE: post-walk-test fixes (the second walk-test's BLOCKER, half two)
+CAPABILITY: Distribution / feature availability (the LLM settings surface)
+GOAL: phase A named the state; this delivers the fix. The packaged app carried
+      no LLM credentials and there was no way to put one in it: `.env` is
+      gitignored and does not exist inside a one-file PyInstaller bundle, and
+      the shell injects only the data dir. So the analyst's only path to an
+      LLM answer was a terminal and a restart, which is nobody's path. The
+      credential now arrives as a file the shell's own data dir already
+      owns, and a panel in the bundle writes it - three fields, no restart,
+      no new dependency, and no capability change to the shell.
+CONTEXT: `core_server.rs` injects `DAH_DATA_DIR` into the child (the same dir
+         the cases and `dah-core.log` live in), the six adapters read the env
+         at call time rather than import time (planner.py:390,
+         generator.py:493, interpreter.py:266, assistant.py:600,
+         drafter.py:336, refine.py:622), `updates.rs` had already proven the
+         shell-to-webview channel - a `window.eval()` dispatching a DOM
+         CustomEvent needs no ACL permission - and the webview is already
+         CORS-permitted by `main.py`'s allowlist. The capability file grants
+         only `core:default` and declares that no Tauri JS APIs are used;
+         adding a command would have made that a lie.
+INPUTS: phase A's `GET /llm/status` (the answer this surface's own save
+        returns, so the panel never asserts a state the core did not confirm),
+        `LlmStatus` and the banner conventions, `shell.ts`'s
+        `NOTICE_EVENT`/`describeUpdate` pattern, `updates.rs`'s
+        `notice_script`/`json_string` pair, and `main.rs`'s menu builder.
+RELEVANT FILES: server/app/llm.py (+settings_path, +read_settings_file,
+                +load_settings, +apply_config, +write_settings),
+                server/app/main.py (+GET/PUT /llm/config, +the boot load),
+                server/app/models.py (+LlmConfig),
+                server/tests/test_llm_config.py (new, 18 tests),
+                desktop/src-tauri/src/settings.rs (new - the menu's handler
+                and its eval),
+                desktop/src-tauri/src/main.rs (+SETTINGS_ID, +the menu item,
+                +the handler),
+                web/src/api.ts (+getLlmConfig, +putLlmConfig, +LlmConfig),
+                web/src/shell.ts (+SETTINGS_EVENT, +LLM_CHANGED_EVENT),
+                web/src/panels/LLMSettings.tsx (new - the panel),
+                web/src/panels/LLMSettings.test.tsx (new, 6 tests),
+                web/src/panels/LLMStatus.tsx (+the Configure button, +the
+                changed-event refetch),
+                web/src/panels/LLMStatus.test.tsx (+2 tests),
+                web/src/App.tsx (the panel mounted on all three screens),
+                web/src/index.css (+.llm-settings, +its reduced-motion rule),
+                ai/HANDOFF.md, ai/TASKS.md, ai/CURRENT_STATE.md.
+REQUIRED CHANGE:
+  - The credential's home is a file, not the environment and not the bundle.
+    `dah-llm.json` sits in the data dir the shell already injects, is read
+    into `os.environ` once at boot (after `configure_logging()`, before phase
+    A's boot line so that line is true), and is written mode `0o600` via an
+    atomic `.tmp` + `os.replace` (DEC-001: no new dependency, so no Keychain
+    binding; a build-time injection would burn the key into a reversible
+    binary, which was rejected). The file is outside the repo, the bundle and
+    git, and the analyst can edit or delete it directly.
+  - The load yields and the save does not. `load_settings` will not overwrite
+    a non-blank exported or injected variable - a deployment's own key is
+    authoritative and the file is advisory. `apply_config` is the write path,
+    and it overwrites and *unsets* rather than yielding: the form is the thing
+    that just wrote it, so a blank save must clear the key, not blank a
+    variable the previous save set. Only `DAH_LLM_API_KEY` is ever touched;
+    the `OPENAI_API_KEY` fallback is never written to.
+  - `GET /llm/config` reads the file, never the environment, and never echoes
+    a key: an exported key the shell cannot overwrite would otherwise reach
+    the CORS-permitted webview. The three fields are present as blanks when
+    nothing is stored. Unknown keys in the file are ignored; an unreadable or
+    invalid file warns and yields nothing - a settings surface that raised
+    could not be opened to fix itself.
+  - `PUT /llm/config` writes, applies, and answers phase A's `LlmStatus`:
+    the panel shows the core's own verdict, not its own write, and the
+    banner can be driven from the same answer.
+  - No restart. The adapters read the environment at call time, so a boot
+    load plus a save-time apply is enough; the six adapters, the spec and
+    the capability file are untouched.
+  - The shell's menu gains "DAH Settings…" beside the existing items. The
+    handler asks the core for the status and evaluates a script that
+    dispatches a DOM CustomEvent the panel listens for - the same channel
+    `updates.rs` uses, needs no permission, and is a no-op in a browser
+    host. The panel is the bundle's own surface, so no native window is
+    built.
+  - The panel renders nothing until the event arrives (the browser host
+    never receives it), offers the three fields, and on a save answers with
+    the sentence "no restart needed" - the property the whole design exists
+    to deliver. A failure names the error and keeps the panel open, because
+    dismissing a failed write is how a credential gets lost.
+  - The banner gains the Configure button and a refetch on the panel's
+    changed event. The banner reads once per mount and is not polled; the
+    changed event is the one other thing that can move the state, so it is
+    the one other thing the banner refetches for - an analyst who just
+    resolved the concern should not have to reload to see it go.
+NON-GOALS: refactoring the six adapters onto the single reader, a first-run
+           prompt, keyring/Keychain support (DEC-001), an obscured/masked
+           reveal of the stored key, per-feature LLM toggles, and any change
+           to the capability set, `core_server.rs`, `dah-core.spec` or the
+           six adapters.
+CONSTRAINTS: green only. No new dependency (DEC-001). No key value in any
+             response body, log line or test assertion - the GET answers
+             blanks, the boot line names the engine, and the request log
+             keeps its method/path/status-only property. The write handler
+             must not raise while holding the payload. The desktop capability
+             set stays `core:default`; no Tauri command is added.
+ACCEPTANCE CRITERIA:
+- [x] the credential reaches a packaged core: a settings file in the shell's
+      data dir, read at boot, applied on save
+- [x] saving a key makes the LLM features use it with no restart, verified
+      against a live core (the adapter saw the key immediately after the PUT)
+- [x] clearing the key unsets the variable, not blanks it, and the status
+      answers unconfigured
+- [x] no response body, log line or test assertion contains any part of a key
+      value; the GET never echoes one
+- [x] an exported or injected key is not overwritten by the file at boot, and
+      is not shadowed by the fallback when the form supplies one
+- [x] an unreadable or invalid settings file yields no configuration and does
+      not stop the core from starting
+- [x] the file is mode 0o600, written atomically, outside the repo, bundle and
+      git
+- [x] the menu item opens the panel through a channel needing no new
+      permission, and the panel is a no-show in a browser host
+- [x] the panel writes the three fields and answers with the core's own
+      status shape; a failed write keeps the panel open with the error
+- [x] the banner's Configure button opens the same panel, and the banner
+      refetches once when a save lands - still no poll
+- [x] both states and the full save loop verified in a real browser against a
+      real core
+TESTS: server 18 in test_llm_config.py - the unconfigured answer and its
+       blanks, unknown keys ignored, an unreadable file, a malformed file,
+       the boot load's precedence (env wins), the write path's precedence
+       (form wins, and unsets), a blank save clearing, the variable unset
+       rather than blanked, the fallback not shadowed, the atomic write and
+       its mode, no key in any body or line, and the read-only-ness of the
+       GET. Rust 4 in settings.rs - every shape of a body that is not a
+       boolean `configured` answers not-configured, and the event name the
+       script builds is the one `shell.ts` exports. Web 6 in
+       LLMSettings.test.tsx - nothing rendered until the event, the three
+       fields from the stored config, the write and its "no restart needed"
+       sentence, a failure keeping the panel open with the error, the
+       changed event posted without a payload, and the close. Plus 2 in
+       LLMStatus.test.tsx - the Configure button opens the panel, and the
+       banner refetches once on the changed event.
+VERIFICATION: `cd server && DAH_LLM_API_KEY= DAH_LLM_BASE_URL=
+              DAH_LLM_MODEL= OPENAI_API_KEY= .venv/bin/python -m pytest -q`
+              green (772 = 741 + 31); `cd desktop/src-tauri && cargo test`
+              green (30 = 26 + 4); `cd web && npm test && npx tsc -b &&
+              npm run build` green (235 = 223 + 12, build ok);
+              `server/.venv/bin/python verification/trace/verify_trace.py`
+              green (48/48);
+              verification/measure/verify_measure.py green (9/9);
+              and a real browser against a live core: the banner's concern,
+              the Configure button opening the panel, a save answering
+              "no restart needed", and the banner leaving the screen without
+              a reload - then clearing the key and seeing it return.
+STATE UPDATE: TASKS/CURRENT_STATE gain the task; the W2X-012 carried item
+              closes (both halves done). No schema change.
+```
+
+TASK: W2X-012-B - the LLM settings surface
+ID: W2X-012-B
+PRIORITY: high
+STATUS: DONE
+SUMMARY: the walk-test's BLOCKER is closed on both halves. Phase A made the
+         degradation sayable; this made it fixable from inside the app. The
+         credential lives in `dah-llm.json` in the data dir the shell already
+         injects - mode 0o600, atomic, outside the repo and the bundle, so it
+         can be edited or deleted without a rebuild - read into the
+         environment once at boot and applied on every save, which works
+         because the six adapters read the environment at call time and so
+         need no restart. The panel is three fields in the bundle itself,
+         opened from a menu item the shell already had the channel for: a
+         `window.eval()` dispatching a DOM CustomEvent, the same thing
+         `updates.rs` does, needing no permission and no capability change,
+         and a no-op in a browser host. The save answers with phase A's own
+         `LlmStatus`, so the panel reports the core's verdict instead of its
+         own write, and the banner refetches once on the panel's changed
+         event - still not polled - so a concern the analyst just resolved
+         leaves the screen instead of lingering until the next mount. The
+         property that makes this safe rather than convenient is that the key
+         is nowhere it can be read back: the GET answers blanks and never the
+         environment, the boot line names the engine, and the write handler
+         does not raise while holding the payload.
+
 ### Carried follow-ups from the second walk-test (WALK-UX-002 - open)
 
 Thirteen findings, none fixed. The walk-test's own material is in
@@ -243,17 +425,19 @@ its own contract, one commit per fix.
 
 **BLOCKER**
 
-- **W2X-012 (phase A, the status surface) — CLOSED as far as the silence
-  went.** The core now answers `GET /llm/status` (`server/app/llm.py`, one
-  place reading the three env vars the six adapters each read for
-  themselves), logs one boot line about which engine is in play, and the
-  shell renders `LlmStatusBanner` on every screen - nothing when an LLM is
-  configured, a concern banner naming the deterministic engines when one is
-  not. The degradation is no longer silent, which was the finding's actual
-  harm: `source: template` is a developer's field, and the analyst read
-  nothing. **The credential still does not reach the packaged app** - that
-  is phase B, and until it lands the banner is the honest statement of what
-  the analyst has.
+- **W2X-012 (the second walk-test's BLOCKER) — CLOSED, both halves.** Phase A
+  made the degradation sayable; phase B made it fixable from inside the app.
+  The credential lives in `dah-llm.json` in the data dir the shell already
+  injects (mode 0o600, atomic, outside the repo and the bundle), read into the
+  environment once at boot and applied on save - no restart, because the six
+  adapters read the environment at call time. `GET/PUT /llm/config` are the
+  read and the write (the GET answers blanks and never the environment, so no
+  key is ever echoed into the CORS-permitted webview), and a three-field panel
+  in the bundle writes it, opened from a "DAH Settings…" menu item through
+  the same `window.eval()` DOM CustomEvent channel `updates.rs` already used -
+  no permission, no capability change, a no-op in a browser host. The save
+  answers phase A's own `LlmStatus` and the banner refetches once on it, so a
+  concern the analyst just resolved leaves the screen instead of lingering.
 
 **MAJOR**
 
