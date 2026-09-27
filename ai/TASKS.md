@@ -1430,6 +1430,9 @@ STATE UPDATE: TASKS/CURRENT_STATE gain the fix; the carried follow-up closes
               tag ships it.
 ```
 
+### FIX-VERSION-001 done-record
+
+```
 TASK: FIX-VERSION-001 - the packaged core reports its own version
 ID: FIX-VERSION-001
 PRIORITY: high

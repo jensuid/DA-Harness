@@ -6778,6 +6778,9 @@ STATE UPDATE: TASKS/CURRENT_STATE/HANDOFF gain the task; the P9 table
               before it.
 ```
 
+### P9-F2-001 done-record
+
+```
 TASK: P9-F2-001 - the walk-test's last three findings
 ID: P9-F2-001
 PRIORITY: high
@@ -6802,6 +6805,10 @@ SUMMARY: F1 moved nothing the analyst sees; this is the first surface
          muted sentence under the heading is the surface. The token
          layer gained the `surfaces` strings F2-002 composes, imported
          nowhere yet, by the same rule that let F1 ship its deps unused.
+```
+
+### FIX-EVIDENCE-002 contract
+
 ```
 TASK ID: FIX-EVIDENCE-002
 MILESTONE: post-phase (the walk-test's findings)
