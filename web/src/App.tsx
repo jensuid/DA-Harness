@@ -4,6 +4,7 @@ import { CaseList } from './CaseList'
 import { CaseWorkspace } from './CaseWorkspace'
 import { ReducedMotion } from './lib/motion'
 import { NoticeLayer } from './NoticeLayer'
+import { LlmStatusBanner } from './panels/LLMStatus'
 
 // State-based navigation, no router: the bundle stays dependency-free as
 // DEC-001 intends, and every screen reads its own data on mount.
@@ -26,6 +27,7 @@ export function App() {
         // creation form stay single-column narrow.
         <main className="wide">
           <NoticeLayer />
+          <LlmStatusBanner />
           <CaseWorkspace
             caseId={view.caseId}
             onBack={() => setView({ kind: 'list' })}
@@ -37,6 +39,7 @@ export function App() {
       ) : view.kind === 'create' ? (
         <main>
           <NoticeLayer />
+          <LlmStatusBanner />
           <CaseCreation
             onCreated={(caseId) => setView({ kind: 'workspace', caseId })}
             onCancel={() => setView({ kind: 'list' })}
@@ -50,6 +53,7 @@ export function App() {
             browser host never receives one, because only the shell has a
             menu item to answer for. */}
           <NoticeLayer />
+          <LlmStatusBanner />
           <CaseList
             onOpen={(caseId) => setView({ kind: 'workspace', caseId })}
             onCreate={() => setView({ kind: 'create' })}

@@ -66,6 +66,7 @@ from app.generator import create_code as create_code_module
 from app.assistant import create_answer as create_answer_module, summarize_case
 from app.refine import create_refinement as create_refinement_module
 from app import decision as decision_module
+from app import llm as llm_module
 from app.exporter import export_case, import_package, PACKAGE_FORMAT, PACKAGE_VERSION
 from app.planner import validate_plan as validate_plan_module
 from app.generator import _columns_referenced as _columns_referenced_module
@@ -155,6 +156,7 @@ from app.models import (
     REFINEMENT_STATUSES,
     DecisionView,
     DecisionWrite,
+    LlmStatus,
 )
 # Give the core's output somewhere to go. Under the desktop shell the core is a
 # child process whose stderr nobody is reading, so a 500's traceback needs a
@@ -162,6 +164,14 @@ from app.models import (
 # (see app/logging_config). Called before the watchdog so that a supervised
 # exit is the last line in the log rather than an unwritten one.
 configure_logging()
+
+# W2X-012: say once, at boot, what the LLM features will actually do. A
+# credential the packaged app never receives is silent in every other place
+# the answer exists - the `source` field is for a developer, and the analyst
+# reads nothing. Called after `configure_logging` so the line is written
+# rather than dropped, and once rather than per request so it is a property
+# of this deployment and not of any analyst's call.
+llm_module.log_llm_status()
 
 # Under the desktop shell, end this process when the shell is gone (see
 # app.supervisor). No-op for a hand-started server and under pytest.
@@ -299,6 +309,21 @@ async def log_request(request: Request, call_next):
 async def health() -> dict[str, str]:
     """Liveness probe. Confirms the core process is up and answering."""
     return {"status": "ok"}
+
+
+@app.get("/llm/status", response_model=LlmStatus)
+def llm_status() -> LlmStatus:
+    """Whether the core's LLM features are actually configured (W2X-012).
+
+    Read-only by construction - a GET with no body and no path parameters,
+    answering a question about the environment rather than a request. The
+    packaged app carries no credentials, so without this the shell cannot tell
+    a working LLM from a silent fall-back: both answer, and the only difference
+    was a `source` field a developer reads. The answer names the env var to
+    set and never its value, so the status a CORS-permitted webview reads and
+    the log line that records it both stay free of the key itself.
+    """
+    return llm_module.llm_status()
 
 
 @app.get("/logs", response_model=LogView)

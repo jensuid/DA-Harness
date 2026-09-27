@@ -766,6 +766,23 @@ class AgentApproval(BaseModel):
     reason: str | None = None
 
 
+class LlmStatus(BaseModel):
+    """Whether the core will answer an LLM-typed question with an LLM
+    (W2X-012).
+
+    A read-only answer to the walk-test's finding that the packaged app's LLM
+    features degrade to deterministic engines and the analyst is told nothing:
+    `configured` is what the shell branches on, `provider` names the env var
+    to set (never its value), and the model and base URL are the public
+    defaults a configured deployment overrode. Nothing here is a credential.
+    """
+
+    configured: bool
+    provider: str | None
+    model: str
+    base_url: str
+
+
 class LogView(BaseModel):
     """The tail of the core's own log (P5-OBSERVE-002).
 

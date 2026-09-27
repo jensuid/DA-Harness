@@ -1,39 +1,52 @@
 ## Next action
 
-**The second walk-test (WALK-UX-002) is recorded, and nothing was fixed.**
-The last session walked the shell again as a junior analyst - the first walk
-since P9's redesign landed - and found thirteen things the shipped product
-still does, this time against the *designed* surfaces: 1 BLOCKER, 7 MAJOR,
-5 MINOR. The walk's own summary, findings, capture sheet and phase-2 notes
-are now in `walktest-w2/` (committed; its `data/` and `logs/` are gitignored
-runtime state), and `ai/TASKS.md` carries the thirteen as its carried list.
-This is the state the project is in: everything that was planned is
-delivered, and everything open is a walk-test finding.
+**W2X-012 phase A landed: the LLM degradation is no longer silent.** The
+walk-test's BLOCKER had two halves - a credential that never reaches the
+packaged app, and an analyst who was told nothing about it - and this session
+closed the second. `server/app/llm.py` is the one place the three env vars the
+six adapters each read for themselves get read for an answer, `GET
+/llm/status` carries it (configured, the provider *name*, the model and base
+URL, never the key), the core writes one boot line about which engine is in
+play, and `LlmStatusBanner` renders on every screen: nothing when an LLM is
+configured, because a green banner on every screen is noise the analyst learns
+to dismiss, and a concern banner naming the deterministic engines when one is
+not. Both states were verified against a real browser with the core started
+both ways.
 
-**The BLOCKER is the one that decides whether the product has an intelligent
-layer at all.** W2X-012: the packaged app has no LLM credentials. `.env` is
-gitignored so it is not bundled, `main.py` loads it relative to source - a
-path that does not exist inside a PyInstaller bundle - and the shell does
-not inject `DAH_LLM_API_KEY` into the sidecar. The proof is a
-`POST /generate-code` in the shipped app answering `source: template` where
-the dev checkout answered `by llm`. So every LLM feature silently degrades
-to deterministic for the one user the app is built for. This needs a design
-decision before code, not a patch - the three options (build-time secret
-injection, a first-run UI prompt writing to the app data dir, or an LLM
-status surface) make different trade-offs about a secret on a machine the
-user controls - so propose, then implement.
+**The finding is not gone, only honest now.** The credential still does not
+reach `/Applications/DAH.app` - `.env` is gitignored and un-bundled, `main.py`
+loads it relative to a path that does not exist inside a PyInstaller bundle,
+and the shell does not inject the key. That is phase B, and it needs a design
+decision before code: a first-run UI prompt writing into the app data dir (the
+recommendation, and the one the status surface is built to pre-fill), or
+build-time secret injection into the bundle (works today, burns the key into a
+binary that can be reversed). Phase A is the floor either of them builds on -
+without a way to ask the core what it has, phase B's own UI cannot tell the
+analyst whether it worked.
 
-**What else is open, in the walk-test's own priority order:** W2X-007/W2X-006
-(no editor for the code the app generates and rejects - the single realest
-frustration loop), W2X-002 (an empty-dataset submit is total silence),
-W2X-001 (a two-minute LLM wait with one word on screen and no cancel),
-W2X-005 (the next-action guidance shows the raw `POST` endpoint, twice),
-then W2X-008 (the measured core complaint: 13.1x viewport, 18 flat panels,
-12 of them empty on a new case, zero progressive disclosure - the redesign
-restyled the surfaces but did not make any of them hide), W2X-009 (the
-deterministic drafter promoted the planted 758x outlier as a finding), then
-the five small ones. The carried list in `ai/TASKS.md` has all thirteen with
-their code locations.
+**Gates:** server 741 (728 + 13), web 223 (216 + 7), tsc clean, build ok
+(CSS 16.84 kB, JS 744 kB), trace 48/48, e2e 28/28, golden 21/21, refine AT-04
+(100/100/0/0), measure 9/9.
+
+**Next, in priority order:**
+
+1. **W2X-012 phase B - the design decision, then the settings surface.** A
+   first-run prompt plus a "DAH Settings…" menu item writing
+   `DAH_LLM_*` into the app data dir and telling the core where to read
+   them, with the banner now able to say "configured" the moment it works.
+   The shell gains a Tauri command (a capability change - `core:default`
+   grants nothing today, and that permission set is a deliberate property)
+   and the core gains a read path for the data-dir file, so this is two or
+   three commits, not one.
+2. **W2X-007 + W2X-006, the analysis editor** - one surface: an editable
+   textarea replacing the `<pre>` the generated code shows, posting to the
+   endpoints that already exist. The realest frustration loop in the
+   walk-test.
+3. **W2X-002 and W2X-005** - an inline required-field message and a real
+   action instead of the raw `POST` endpoint string. Both small.
+4. **W2X-008, the density.** The largest effort and the original complaint:
+   hide empty panels, collapse completed stages, narrow the orientation zone.
+5. **W2X-001, W2X-009, then the five MINORs.**
 
 **Two carried decisions stay, both unchanged and both not code:** the
 packaged app is unsigned by DEC-006, and GitHub Actions' billing is
@@ -64,6 +77,10 @@ run in CI).
 The last tasks to land, newest first. The contract and done-record for each
 is in `ai/TASKS.md` (rolling window) or `ai/TASKS-ARCHIVE.md`.
 
+- **W2X-012 phase A** - the status surface: the core answers `GET
+  /llm/status`, one boot line names the engine in play, and a banner says
+  what the analyst is actually getting. The degradation stops being silent;
+  the credential still does not reach the packaged app, which is phase B.
 - **WALK-UX-002 (recorded, not fixed)** - the second walk-test, the first
   since the redesign: thirteen findings against the designed surfaces,
   `walktest-w2/` committed as the evidence.

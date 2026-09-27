@@ -3,37 +3,28 @@ the motion, the on-screen chart). P8, P7, P6, P5, P4, P3, P2, P1 and P0 are all
 COMPLETE (see the phase table below). Every phase the roadmap and the
 conformance evaluation asked for is delivered; no phase is open.
 
-- **Active task:** **WALK-UX-002 recorded - the carried list is thirteen
-  open findings, none fixed.** The second walk-test (the first against P9's
-  redesigned surfaces) walked the shell as a junior analyst on 2026-09-27
-  and is now the project's open backlog; `walktest-w2/` holds its evidence,
-  `ai/TASKS.md`'s carried section holds the thirteen. One BLOCKER: W2X-012,
-  the packaged app carries no LLM credentials - `.env` is not bundled
-  (`dah-core.spec`), `main.py` loads it relative to a path that does not
-  exist inside a PyInstaller bundle, and the shell does not inject
-  `DAH_LLM_API_KEY` - so `POST /generate-code` answers `source: template`
-  in the shipped app and every LLM feature silently degrades to
-  deterministic for the one user the app is built for. Seven MAJOR:
-  W2X-001 (a two-minute LLM wait with one static word and no cancel),
-  W2X-002 (an empty-dataset submit is total silence), W2X-005 (the
-  next-action guidance shows the raw `POST` endpoint with an unfilled
-  placeholder), W2X-006/W2X-007 (there is no editor for the code the app
-  generates and rejects - the realest frustration loop), W2X-008 (the
-  measured core complaint: 13.1x viewport, 18 flat panels, 12 empty on a
-  new case, zero progressive disclosure - the redesign restyled the
-  surfaces and none of them hide), W2X-009 (the deterministic drafter
-  promoted the planted 758x outlier as the case's finding). Five MINOR:
-  W2X-003 (chart gone after a reopen), W2X-004 (a false "unsaved edits"),
-  W2X-010 (duplicates unflagged), W2X-011 (a case row is not clickable),
-  W2X-013 (the orientation zone is 18% of a 1280pt window). Next is a
-  design decision on W2X-012, not a patch.
-  Sebelumnya: v0.3.4 (the close-out), P9-F4-001 (the on-screen chart),
+- **Active task:** **W2X-012 phase A DONE - the LLM degradation is no longer
+  silent.** The walk-test's BLOCKER had two halves, a credential the packaged
+  app never receives and an analyst told nothing about it, and this task
+  closed the second. `server/app/llm.py` is the one place the three env vars
+  the six adapters each read for themselves are read for an answer;
+  `GET /llm/status` carries it - `configured`, the provider *name* (never its
+  value), the model and base URL; the core writes one boot line naming which
+  engine is in play; and `web/src/panels/LLMStatus.tsx` renders on every
+  screen, nothing when an LLM is configured and a concern banner naming the
+  deterministic engines when one is not. Both states were verified against a
+  real browser with the core started both ways. The credential still does
+  not reach `/Applications/DAH.app`; that is phase B.
+  Gates: server 741 (728 + 13), web 223 (216 + 7), tsc clean, build ok
+  (CSS 16.84 kB, JS 744 kB), trace 48/48, e2e 28/28, golden 21/21,
+  refine AT-04, measure 9/9.
+  Sebelumnya: WALK-UX-002 (recorded), v0.3.4, P9-F4-001 (the on-screen chart),
   P9-F3-001 (the motion layer), P9-F2-002 (the restyle), P9-F2-001 (the
   walk-test's last three findings), P9-F1-001 (the redesign's foundation),
   FIX-PYTHON-005, FIX-CHART-004, FIX-VERSION-010, FIX-UPDATES-009,
   FIX-PROFILE-008, FIX-REFINE-007, FIX-TIMEOUT-006, FIX-PLAN-003,
   FIX-EVIDENCE-002, WALK-E2E-001 — the first walk's nineteen findings are
-  all resolved; the second walk's thirteen are all open.
+  all resolved; the second walk's twelve others are still open.
 
 - **Done before that:** P8-TRACE-010 - the requirement-traceability matrix
   (AT-48). The PRD's section 59 control artifact is code: 48 rows, one per
@@ -155,6 +146,11 @@ conformance evaluation asked for is delivered; no phase is open.
   read-only artifact that fails at run time is a Calculation *finding*, not
   a 400, because the work is not the user's to fix.
 - Delete a dataset: `DELETE /cases/{id}/datasets/{id}` (removes the row, profile, plans and file; 400 while a run still binds it)
+- Read the LLM's state (W2X-012): `GET /llm/status` (read-only; answers
+  `configured` with the provider env var's *name*, the model and base URL -
+  never any part of a key value - so the shell can say what the analyst is
+  actually getting rather than letting a deterministic fallback read as an
+  LLM answer)
 - Export: `GET /cases/{id}/export` (self-contained JSON package); `POST /cases/import`
   reconstructs it with fresh IDs
 - Plan: `POST /cases/{id}/datasets/{id}/plan` (structured plan from question + profile; deterministic by default, LLM when DAH_LLM_API_KEY is set, source field records which); latest at `GET .../plan`, history at `GET .../plans`

@@ -86,6 +86,152 @@ the gate comes first because a phase is done when a gate says so.
 | P5-RELEASE-005 | Release automation | M | DONE | P5-CI-004 | A tag matching server/pyproject.toml's version builds, smokes and publishes an unsigned .app as a flagged pre-release with its checksum |
 | P5-UX-006 | Shell UX | S | DONE | P5-RELEASE-005 | A Reveal DAH Logs menu item asks the core where its log is and opens the folder in Finder with it selected |
 
+### W2X-012-A contract (phase A: the status surface)
+
+```
+TASK ID: W2X-012-A
+MILESTONE: post-walk-test fixes (the second walk-test's BLOCKER, half one)
+CAPABILITY: Distribution / feature availability (the LLM status surface)
+GOAL: the LLM's silent degradation becomes a stated one. W2X-012's actual harm
+      was not that the packaged app falls back - a deterministic answer is a
+      working answer - but that it fell back and told nobody: `source:
+      template` is a field a developer reads, and the analyst reads no part of
+      it. So the core learns to answer the question "will I get an LLM answer",
+      and the shell learns to render the answer. The credential itself still
+      does not reach the bundle; that is phase B, and this is the floor it
+      builds on - without a way to ask, phase B's own UI cannot say whether it
+      worked.
+CONTEXT: three sites carry the silence. `server/dah-core.spec` bundles only
+         the version stamp (`.env` is gitignored, by the repo's own rule that
+         no secret is committed); `server/app/main.py:28` loads `.env`
+         relative to source, a path that does not exist inside a one-file
+         PyInstaller bundle; `core_server.rs:88-93` injects only DATA_DIR,
+         DB_PATH and PARENT_PID into the child. Six adapters - planner,
+         generator, drafter, interpreter, assistant, refine - each read the
+         same three env vars through their own `_configured_llm()`, so the
+         truth was duplicated six times and surfaced zero. `/health` answers
+         `{"status":"ok"}` either way, so the shell could not ask.
+INPUTS: the six adapters' env reads (DAH_LLM_API_KEY with an OPENAI_API_KEY
+        fallback, DAH_LLM_BASE_URL, DAH_LLM_MODEL), the response-model
+        conventions in `server/app/models.py`, the notice/banner conventions
+        in `web/src/index.css`, and `web/src/NoticeLayer.tsx` as the existing
+        shell-to-window channel (deliberately untouched: that one answers the
+        native menu bar through a custom event the browser host never
+        receives; this is an ordinary GET both hosts make).
+RELEVANT FILES: server/app/llm.py (new - the one read, the status builder,
+                the boot log line), server/app/models.py (+LlmStatus),
+                server/app/main.py (+the endpoint, +the boot log call),
+                server/tests/test_llm_status.py (new, 13 tests),
+                web/src/api.ts (+getLlmStatus, +LlmStatus),
+                web/src/panels/LLMStatus.tsx (new - the banner),
+                web/src/panels/LLMStatus.test.tsx (new, 7 tests),
+                web/src/App.tsx (mounted on all three screens),
+                web/src/index.css (+.llm-status, +its reduced-motion rule),
+                ai/HANDOFF.md, ai/TASKS.md, ai/CURRENT_STATE.md.
+REQUIRED CHANGE:
+  - The core answers. `GET /llm/status`, read-only by construction - a GET
+    with no body and no path parameters - returning {configured, provider,
+    model, base_url}. `configured` is the field the banner branches on.
+    `provider` names the env var that supplied the key, never its value: the
+    name tells the analyst which setting to change and a value would be a
+    credential the CORS-permitted webview can read and a log line can
+    capture. `model` and `base_url` are the public defaults a configured
+    deployment overrode.
+  - One place reads the environment, not seven. `llm.py` exists so the answer
+    is asked in one place; the six adapters keep their own `_configured_llm`
+    (a deduplication is a separate task, and it touches trust-bearing paths).
+    The two must *agree*: a blank value is treated as absent in both, and
+    the same two var names in the same order.
+  - One boot line, `llm configured: model X at Y` or `llm not configured;
+    LLM features will use deterministic engines`, written to `dah.core`
+    after `configure_logging()`. Once, not per request: the configuration is
+    a property of this deployment, and the request log line still records
+    only method, path and status, so the privacy property the walk-test
+    verified (no payload in the log, ever) holds.
+  - The banner renders on all three screens, reads once on mount, never
+    polls, and renders nothing while the fetch is in flight, nothing when the
+    LLM is configured, nothing if the endpoint fails (the health surface owns
+    "the core is down"), and the concern banner otherwise - naming the
+    deterministic engines and the var to set. A green banner on every screen
+    is noise the analyst learns to dismiss; only the broken state shows. The
+    unmount's cancellation flag is what keeps a late resolution from updating
+    state after the analyst left the screen.
+  - The CSS mirrors `.shell-notice` - fixed, concern-toned, token-backed -
+    with its own `prefers-reduced-motion` rule in the same block.
+NON-GOALS: delivering the credential (phase B - a first-run prompt and a
+           settings surface, or build-time injection), refactoring the six
+           adapters onto this reader, changing any timeout, any new
+           dependency, and a UI state where the banner can be dismissed - a
+           condition that persists cannot be dismissed away.
+CONSTRAINTS: green only. No new dependency (DEC-001). No key value in any
+             response body, log line or test assertion. Read-only endpoint.
+             Deterministic and offline: the endpoint reads the environment
+             and touches nothing else. The desktop capability set stays
+             `core:default` - no Tauri command is added; that is phase B.
+ACCEPTANCE CRITERIA:
+- [x] the core answers `/llm/status` with all four fields, and `configured`
+      is the one the banner branches on
+- [x] no response body, log line or test assertion contains any part of a key
+      value; the provider is the variable's name
+- [x] the same two variables in the same order as the six adapters read them,
+      so the endpoint and the adapters cannot disagree about whether a key
+      exists
+- [x] a blank key is no key, in both places
+- [x] the banner renders nothing when configured, nothing while loading,
+      nothing on an endpoint failure, and the concern banner otherwise
+- [x] the fetch happens exactly once per mount and a late resolution after
+      unmount updates nothing
+- [x] the server-side test pins every field the client branches on - the web
+      suite mocks the api module and a fixture would supply `configured`
+      whether the server emits it or not (the P9-F4 `format` failure)
+- [x] both states verified in a real browser against a real core started both
+      ways, not only in jsdom
+TESTS: server 13 in test_llm_status.py - the unconfigured answer with its
+       public defaults, configured with the provider name, the OpenAI var
+       fallback, three shapes of blank key, a blank key not shadowing the
+       fallback, the field set the client branches on, the whole body free of
+       the key, the two boot lines (and free of the key), read-only-ness, and
+       the helper agreeing with the endpoint.
+       Web 7 in LLMStatus.test.tsx - the banner and its sentence when
+       unconfigured, nothing when configured, nothing while loading, one
+       fetch only, nothing when the core is unreachable, no state update
+       after unmount, and the read going through the api client.
+VERIFICATION: `cd server && DAH_LLM_API_KEY= DAH_LLM_BASE_URL=
+              DAH_LLM_MODEL= OPENAI_API_KEY= .venv/bin/python -m pytest -q`
+              green (741); `cd web && npm test && npx tsc -b && npm run
+              build` green (223, build ok); `server/.venv/bin/python
+              verification/trace/verify_trace.py` green (48/48);
+              verification/e2e/verify_e2e.py green (28/28);
+              verification/golden/verify_golden.py green (21/21);
+              verification/refine/verify_refine.py green (AT-04);
+              verification/measure/verify_measure.py green (9/9);
+              and a real browser against a core started with and without a
+              key: the banner absent in one state and present with its
+              sentence in the other.
+STATE UPDATE: TASKS/CURRENT_STATE gain the task; the W2X-012 carried item
+              becomes phase A closed and phase B open. No schema change.
+```
+
+TASK: W2X-012-A - the LLM status surface
+ID: W2X-012-A
+PRIORITY: high
+STATUS: DONE
+SUMMARY: the walk-test's BLOCKER had two halves, and this closed the one that
+         was the analyst's to bear. `GET /llm/status` answers the question
+         the shell could not ask, `server/app/llm.py` is the one place it is
+         read (six adapters each had their own copy of the same read), and
+         the banner renders on every screen - nothing when an LLM is there,
+         because a green banner on every screen is noise the analyst learns
+         to dismiss, and a concern sentence naming the deterministic engines
+         when one is not. One boot line says which engine is in play, so
+         `Reveal DAH Logs` shows it too. The property that makes this safe
+         rather than convenient is that the key is never anywhere in the
+         answer: the provider is the variable's *name*, and the whole body is
+         asserted free of any key value on both the response and the log
+         line. The credential still does not reach the packaged app; phase B
+         is the settings surface that puts it there, and this is the floor it
+         stands on.
+
 ### Carried follow-ups from the second walk-test (WALK-UX-002 - open)
 
 Thirteen findings, none fixed. The walk-test's own material is in
@@ -97,16 +243,17 @@ its own contract, one commit per fix.
 
 **BLOCKER**
 
-- **W2X-012** - the packaged app has no LLM credentials, so every LLM
-  feature silently degrades to deterministic for the user the app is built
-  for. `.env` is gitignored and not bundled (`server/dah-core.spec`),
-  `server/app/main.py` loads it relative to source (a path that does not
-  exist in a PyInstaller bundle), and
-  `desktop/src-tauri/src/core_server.rs` does not inject
-  `DAH_LLM_API_KEY` into the child env. Proven by `POST /generate-code`
-  answering `source: template` in the shipped app. Needs a design decision
-  first: build-time secret injection, a first-run UI prompt into the app
-  data dir, or an LLM status surface.
+- **W2X-012 (phase A, the status surface) — CLOSED as far as the silence
+  went.** The core now answers `GET /llm/status` (`server/app/llm.py`, one
+  place reading the three env vars the six adapters each read for
+  themselves), logs one boot line about which engine is in play, and the
+  shell renders `LlmStatusBanner` on every screen - nothing when an LLM is
+  configured, a concern banner naming the deterministic engines when one is
+  not. The degradation is no longer silent, which was the finding's actual
+  harm: `source: template` is a developer's field, and the analyst read
+  nothing. **The credential still does not reach the packaged app** - that
+  is phase B, and until it lands the banner is the honest statement of what
+  the analyst has.
 
 **MAJOR**
 

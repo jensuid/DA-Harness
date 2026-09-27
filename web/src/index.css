@@ -554,10 +554,45 @@ button.danger:hover {
   flex: none;
 }
 
+/* W2X-012: the banner that says what the LLM features are actually doing.
+   Fixed like the shell notice because the same argument holds - a notice
+   scrolled out of view is stderr with a font - and the concern tone is the
+   same one, because the state it reports is "you are getting less than you
+   configured for" rather than "something is broken". Only the unconfigured
+   state renders this class, so a configured deployment emits the rule and
+   nothing to hang it on. */
+.llm-status {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  max-width: 48rem;
+  margin: 0 auto;
+  padding: 0.6rem 0.9rem;
+  border: 1px solid var(--color-warn-border);
+  border-top: none;
+  border-radius: 0 0 var(--radius) var(--radius);
+  background: var(--color-warn-bg);
+  color: var(--color-warn);
+  font-size: 0.92rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .shell-notice {
     /* Nothing animates here; the rule is explicit so a future motion pass
        cannot add a slide-in without deciding about it. */
+    animation: none;
+    transition: none;
+  }
+  .llm-status {
+    /* The same explicitness for the LLM banner: nothing animates, and the
+       rule exists so a future motion pass has to decide about this class
+       rather than inheriting an animation from somewhere generic. */
     animation: none;
     transition: none;
   }

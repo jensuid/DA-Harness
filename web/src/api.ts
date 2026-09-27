@@ -305,6 +305,28 @@ export function getHealth(): Promise<Health> {
   return request<Health>('/health')
 }
 
+// W2X-012: whether the core's LLM features are actually configured. The
+// packaged app carries no credentials, so without asking the core the shell
+// cannot tell a working LLM from a silent fall-back - both answer, and the
+// `source` field that carried the truth is a developer's field. This is the
+// surface the analyst reads instead.
+//
+// `configured` is the field the banner branches on, and it is the one the web
+// suite cannot pin: the tests mock this module, so a fixture supplies it
+// whether the server emits it or not. `test_llm_status.py` is what sees an
+// omission; see dah-frontend-testing's trap 9.
+export interface LlmStatus {
+  configured: boolean
+  /** The env var that supplied the key (`DAH_LLM_API_KEY`), never its value. */
+  provider: string | null
+  model: string
+  base_url: string
+}
+
+export function getLlmStatus(): Promise<LlmStatus> {
+  return request<LlmStatus>('/llm/status')
+}
+
 export function createCase(newCase: NewCase): Promise<Case> {
   return request<Case>('/cases', {
     method: 'POST',
