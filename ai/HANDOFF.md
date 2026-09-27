@@ -1,64 +1,77 @@
 ## Next action
 
-**The v0.3.4 close-out is done.** P9 closed the last functional phase, and
-this session closed the carried follow-ups that were the only remaining
-loose ends: the DMG bundler's flakiness, the icon's blind-chosen proportion,
-and the one fragile test layout. `ai/TASKS.md`'s carried list is down to two
-environmental items, both of them decisions rather than defects.
+**The second walk-test (WALK-UX-002) is recorded, and nothing was fixed.**
+The last session walked the shell again as a junior analyst - the first walk
+since P9's redesign landed - and found thirteen things the shipped product
+still does, this time against the *designed* surfaces: 1 BLOCKER, 7 MAJOR,
+5 MINOR. The walk's own summary, findings, capture sheet and phase-2 notes
+are now in `walktest-w2/` (committed; its `data/` and `logs/` are gitignored
+runtime state), and `ai/TASKS.md` carries the thirteen as its carried list.
+This is the state the project is in: everything that was planned is
+delivered, and everything open is a walk-test finding.
 
-**The DMG finding is the one worth carrying.** The non-determinism was never
-the tool; it was the vendored `create-dmg`'s Finder-prettifying AppleScript,
-which fails when the build runs without a GUI session and succeeds when it
-has one - an npm-run subprocess and an interactive shell build the same code,
-and one of them answers 64. `--sandbox-safe` skips the AppleScript, so
-`desktop/bundle_dmg.sh` passes it and verifies the image. A second run still
-moves the container hash, because `hdiutil` stamps the image's creation time;
-the mounted contents are byte-identical, and that is the property a build is
-reproducible by. The lesson is the shape of the bug: a failure that depends
-on *how* the build is invoked rather than on *what* it builds, which is why
-"it worked on my machine" was the whole report.
+**The BLOCKER is the one that decides whether the product has an intelligent
+layer at all.** W2X-012: the packaged app has no LLM credentials. `.env` is
+gitignored so it is not bundled, `main.py` loads it relative to source - a
+path that does not exist inside a PyInstaller bundle - and the shell does
+not inject `DAH_LLM_API_KEY` into the sidecar. The proof is a
+`POST /generate-code` in the shipped app answering `source: template` where
+the dev checkout answered `by llm`. So every LLM feature silently degrades
+to deterministic for the one user the app is built for. This needs a design
+decision before code, not a patch - the three options (build-time secret
+injection, a first-run UI prompt writing to the app data dir, or an LLM
+status surface) make different trade-offs about a secret on a machine the
+user controls - so propose, then implement.
 
-**The icon was measured, not re-cut.** Its artwork covers 51.4% of the canvas,
-is dead-centre, carries the correct squircle, and reads as an ascending bar
-chart - cyan bars, the tallest in amber. Apple's own guidance says you don't
-need to fill the entire canvas with content, so the blind 52% guess was right;
-the follow-up was the guess, not the proportion.
+**What else is open, in the walk-test's own priority order:** W2X-007/W2X-006
+(no editor for the code the app generates and rejects - the single realest
+frustration loop), W2X-002 (an empty-dataset submit is total silence),
+W2X-001 (a two-minute LLM wait with one word on screen and no cancel),
+W2X-005 (the next-action guidance shows the raw `POST` endpoint, twice),
+then W2X-008 (the measured core complaint: 13.1x viewport, 18 flat panels,
+12 of them empty on a new case, zero progressive disclosure - the redesign
+restyled the surfaces but did not make any of them hide), W2X-009 (the
+deterministic drafter promoted the planted 758x outlier as a finding), then
+the five small ones. The carried list in `ai/TASKS.md` has all thirteen with
+their code locations.
 
-**Gates:** web 216, server 728, tsc clean, build ok (JS 744 kB), trace 48/48,
-e2e 28/28, the packaged core smokes 0.3.4 end to end (health, version, logs).
-
-**v0.3.4 is published** - tag `d8bec6a`, built locally on Intel with the new
-`bundle_dmg.sh`, release created by hand from the steps `release.yml` runs.
-The release artifact is `x86_64-apple-darwin` and unsigned, as DEC-006
-decided.
+**Two carried decisions stay, both unchanged and both not code:** the
+packaged app is unsigned by DEC-006, and GitHub Actions' billing is
+suspended (fix at Settings > Billing & plans; nothing since `c73118c` has
+run in CI).
 
 **Next, in priority order:**
 
-1. **CI billing, when you want it** - GitHub Settings > Billing & plans. Pure
-   account administration, no code; the workflow is correct, the account is
-   the blocker. The new `arch-mismatch` CI job will then warn on every run
-   that the hosted `macos-latest` lane is arm64 while the shipped artifact is
-   x86_64, so a green run no longer reads as proof of the shipped triple.
-2. **Nothing else is open.** All nine phases are delivered, all carried
-   follow-ups closed, all 48 acceptance thresholds trace. The roadmap's
-   deferred list (cloud, collaboration, warehouse connectors, governance)
-   stays deferred at a user count of one, and the conformance evaluation's
-   deliberately-not-built list (Analysis Canvas, command palette, Knowledge
-   nav, AI confidence, dashboards) stays deliberately not built - the command
-   palette is the only one that would be cheap to add.
+1. **W2X-012, the design decision.** Read the three sites -
+   `server/dah-core.spec` (bundled data), `server/app/main.py` (env loading),
+   `desktop/src-tauri/src/core_server.rs` (the child env) - then decide how
+   a credential reaches the sidecar and how the shell knows whether it did.
+   A review first, implementation after the go-ahead.
+2. **W2X-007 + W2X-006, the analysis editor.** The two are one surface: a
+   textarea where the generated code is shown and edited, posting to the
+   endpoints that already exist (`/runs`, the sandbox). W2X-006 is that
+   textarea replacing `<pre>`; W2X-007 is the same component answering the
+   stage guidance's "Run an analysis."
+3. **W2X-002 and W2X-005, the two small UX fixes** - inline required-field
+   message, and a real action instead of a raw endpoint string.
+4. **W2X-008, the density.** Largest effort, and the user's original
+   complaint. Hide empty panels, collapse completed stages, narrow the
+   orientation zone to rail + overview + next action.
+5. **W2X-001, W2X-009, then the five MINORs.**
 
 ## Recent completions
 
 The last tasks to land, newest first. The contract and done-record for each
 is in `ai/TASKS.md` (rolling window) or `ai/TASKS-ARCHIVE.md`.
 
+- **WALK-UX-002 (recorded, not fixed)** - the second walk-test, the first
+  since the redesign: thirteen findings against the designed surfaces,
+  `walktest-w2/` committed as the evidence.
 - **v0.3.4** - the close-out: the DMG bundler's non-determinism traced to the
   vendored create-dmg's Finder AppleScript (fixed by `--sandbox-safe` in
   `desktop/bundle_dmg.sh`), the icon's proportion measured rather than
   guessed (51.4%, centred, correct squircle - not a defect), and the fragile
   question-refinement test layout given the refusals its `beforeEach` needed.
-  Carried follow-ups: two, both decisions (DEC-006's unsigned build, CI
-  billing).
 - **P9-F4-001** - the on-screen chart: recharts draws the same stored result
   the core's artifact came from, with a tooltip a static image cannot give.
   The re-walk found the `format` field the core's response never carried, so
@@ -71,23 +84,17 @@ is in `ai/TASKS.md` (rolling window) or `ai/TASKS-ARCHIVE.md`.
   layer times is inside its budget with the motion in the tree.
 - **P9-F2-002** - the restyle: every panel and screen renders through the
   token layer, 109 lines of hand-written CSS retired with the class names it
-  defined, and one test asserts the debt stays paid. Two literals that lost
-  their rules in the deletion were caught by auditing the rules against the
-  source.
+  defined, and one test asserts the debt stays paid.
 - **P9-F2-001** - the walk-test's last three findings: a run now appears in
   the runs panel without a reopen, an EVALUATE refusal names the field that
   is wrong rather than the artifact, and the chat panel says its memory is
   cross-case. Closes W-013, W-017 and W-018.
 - **P9-F1-001** - the redesign's foundation: the toolchain installed and
   unused, the light theme named as tokens, the 2,889-line workspace split
-  into 15 panels under a 600-line ceiling. The split tool closes its loop
-  with tsc rather than regex.
+  into 15 panels under a 600-line ceiling.
 - **FIX-PYTHON-005** - the python run surface: the codegen panel offers an
   engine, the proposal matches it, the run posts to the sandbox's own
   endpoint and its refusal is a sentence. Closes W-016.
-- **FIX-CHART-004** - the chart surface: a run row renders a chart the core
-  draws, sees it inline as the core's own SVG, the pickers offer only the
-  run's columns, and the evidence count moves with it.
 
 Contracts for the rolling window (the two most recent). Older blocks are in
 `ai/TASKS-ARCHIVE.md`.

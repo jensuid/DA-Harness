@@ -30,6 +30,11 @@ graphify-out/
 # Local SQLite dev database
 *.db
 
+# Walk-test runtime state (case data and server logs are reproduced, not
+# source; the walktest-w2/ reports, dataset and evidence are committed)
+walktest-w2/data/
+walktest-w2/logs/
+
 # Uploaded datasets (dev)
 server/data/
 

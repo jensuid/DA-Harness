@@ -86,7 +86,78 @@ the gate comes first because a phase is done when a gate says so.
 | P5-RELEASE-005 | Release automation | M | DONE | P5-CI-004 | A tag matching server/pyproject.toml's version builds, smokes and publishes an unsigned .app as a flagged pre-release with its checksum |
 | P5-UX-006 | Shell UX | S | DONE | P5-RELEASE-005 | A Reveal DAH Logs menu item asks the core where its log is and opens the folder in Finder with it selected |
 
-### Carried follow-ups (still open)
+### Carried follow-ups from the second walk-test (WALK-UX-002 - open)
+
+Thirteen findings, none fixed. The walk-test's own material is in
+`walktest-w2/` - REPORT.md (summary, measured density, priority table),
+FINDINGS.md (one block per finding with severity and code location),
+PHASE2.md (the real-app verification), CAPTURE-SHEET.md. Priority order
+below is the walk-test's (impact / effort); each is a separate task with
+its own contract, one commit per fix.
+
+**BLOCKER**
+
+- **W2X-012** - the packaged app has no LLM credentials, so every LLM
+  feature silently degrades to deterministic for the user the app is built
+  for. `.env` is gitignored and not bundled (`server/dah-core.spec`),
+  `server/app/main.py` loads it relative to source (a path that does not
+  exist in a PyInstaller bundle), and
+  `desktop/src-tauri/src/core_server.rs` does not inject
+  `DAH_LLM_API_KEY` into the child env. Proven by `POST /generate-code`
+  answering `source: template` in the shipped app. Needs a design decision
+  first: build-time secret injection, a first-run UI prompt into the app
+  data dir, or an LLM status surface.
+
+**MAJOR**
+
+- **W2X-001** - an LLM call can take the full 120s timeout
+  (`server/app/timeouts.py`) while the UI shows one static word
+  ("Generating…", "Working… x3") with no elapsed time and no cancel, then
+  answers from the deterministic path without a banner explaining that is
+  what happened. 3 of 4 calls timed out in the walk.
+- **W2X-002** - submitting "New Analysis Case" with the dataset field empty
+  is total silence: no request, no alert, nothing changes. Only HTML5
+  native validation, which is invisible in a headless context and
+  undiscoverable for a first-time user. `web/src/CaseCreation.tsx`.
+- **W2X-005** - the stage guidance shows the raw endpoint
+  (`POST /cases/{case_id}/datasets`, the `{dataset_id}` placeholder
+  unfilled) instead of an action. Confirmed twice, in both the browser and
+  the real app. `server/app/workflow.py` `_STAGE_ACTIONS`.
+- **W2X-006** - the generated code is a read-only `<pre>`
+  (`web/src/panels/GeneratePanel.tsx`), so a one-token fix for a 400 (an
+  invalid date the profile already warned about) costs another LLM call.
+- **W2X-007** - there is no SQL/Python editor anywhere; the stage guidance
+  says "Run an analysis" but the only doors into `/runs` are the
+  non-editable codegen and three preset EDA ops. The core capability has no
+  surface of its own.
+- **W2X-008** - the density, measured: the case page is 13.1x the viewport
+  (7,740px / 593px), 18 flat panels, 21 sub-panels, 23 buttons, 2,258
+  words, zero `<details>`/collapse, and 12 of 18 panels show their empty
+  state on a brand-new case. The redesign restyled the surfaces; none of
+  them hide. Real app: 5.8x. Suggested: hide empty panels until they have
+  data, collapse per stage, narrow the orientation zone.
+- **W2X-009** - the deterministic drafter promoted the planted outlier
+  (revenue 99,589, 758.6x the next-largest value the profile already
+  flagged) as the case's finding, and the validator then blamed the wrong
+  column. The trust loop closed on a false number wearing a
+  `partially_supported` badge. `server/app/drafter.py`.
+
+**MINOR**
+
+- **W2X-003** - the on-screen chart is gone after a reopen (0 svgs) though
+  the artifact is stored and the evidence graph records it. `RunsPanel`.
+- **W2X-004** - the Context panel shows "unsaved edits" from the moment the
+  case opens, though nothing was touched. False dirty state.
+- **W2X-010** - the case list shows duplicate rows for the same question
+  and dataset without any warning at create time. (Partly a test artifact;
+  the gap is the missing duplicate notice.)
+- **W2X-011** - clicking a case row's text does nothing; only the Open
+  button opens it. `web/src/CaseList.tsx`.
+- **W2X-013** - the orientation zone is ~232pt (18%) in a 1280pt window, so
+  a long question becomes an unreadable 101pt-tall block. Grid
+  proportions in `web/src/index.css`.
+
+### Carried decisions (not code, unchanged)
 
 - The packaged app is unsigned: macOS gatekeeps the first launch (right-click,
   Open). Signing and notarization are deferred indefinitely by DEC-006 (DAH is
@@ -144,6 +215,7 @@ Temuan: `walktest/FINDINGS.md` (append-only, 19 blok). Laporan akhir:
 | Task ID | Capability | Status | Verification |
 |---------|-----------|--------|--------------|
 | WALK-E2E-001 | Walk-test end-to-end (flow, UI, UX) | DONE | 19 temuan (8 MAJOR, 8 MINOR, 3 OBS); laporan `walktest/REPORT.md`; trust loop case B2B 484-baris tertutup (`loop_closed: true`) |
+| WALK-UX-002 | Walk-test round 2 (post-redesign, junior analyst) | DONE - 13 findings, none fixed | 13 temuan (1 BLOCKER, 7 MAJOR, 5 MINOR) di `walktest-w2/FINDINGS.md`; fase 2 (app riil `/Applications/DAH.app`) selesai; kepadatan terukur 13,1x viewport browser / 5,8x app riil, 18 panel flat, 0 disclosure |
 
 Konfigurasi target: core master diluncurkan via `.app` v0.3.2 dengan
 `DAH_DEV_CORE=1` (venv checkout, fix version aktif), LLM dari `server/.env`;

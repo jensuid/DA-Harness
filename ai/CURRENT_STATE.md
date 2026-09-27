@@ -3,38 +3,37 @@ the motion, the on-screen chart). P8, P7, P6, P5, P4, P3, P2, P1 and P0 are all
 COMPLETE (see the phase table below). Every phase the roadmap and the
 conformance evaluation asked for is delivered; no phase is open.
 
-- **Active task:** **P9-F4-001 (the on-screen chart and a re-walk) DONE** -
-  the last of F1's three dependencies is used, and the phase closes with it.
-  `web/src/lib/chart.tsx` is the chart the analyst *looks at*: recharts@3
-  drawing the same stored result the core's own renderer drew the artifact
-  from. The difference between the two is deliberate - a static image cannot
-  answer "what is this point", and a trust chain cannot be an interactive
-  widget. So the artifact stays the core's (the persisted SVG, the PNG, the
-  export package, the evidence), and the screen becomes recharts'.
-  `chartGeometry` is the shared half: the series split, the
-  plottable-points filter and the palette are the core's own rules copied
-  into the shell, so what the analyst sees and what the case holds answer
-  the same question the same way. A bar is zero-anchored because bar length
-  reads as magnitude; the legend appears only with more than one series;
-  the tooltip is a keyboard-reachable live region, which is the thing the
-  static SVG could not give.
-  The re-walk is what found the bug the suite could not: the core's `Chart`
-  model never returned `format`, so the shell read `undefined` and took the
-  PNG-link branch for *every* chart - the recharts tree rendered in jsdom,
-  where a fixture supplies the field, and nowhere else. One field in
-  `models.py` (`format: str = "svg"`, the default the image endpoint already
-  sniffs) plus a regression test in `test_charts.py` pin it, and the walk
-  then confirmed the tooltip in a real browser: hovering a bar answers its
-  own values ("north", "total_total : 270").
-  Gates: web 216 (197 + 19), server 728 (727 + 1), tsc clean, build ok
-  (CSS 16.46 kB, JS 744 kB), trace 48/48, e2e 28/28.
-  Sebelumnya: P9-F3-001 (the motion layer), P9-F2-002 (the restyle),
-  P9-F2-001 (the walk-test's last three findings), P9-F1-001 (the redesign's
-  foundation), FIX-PYTHON-005 (W-016), FIX-CHART-004 (W-016),
-  FIX-VERSION-010 (W-001), FIX-UPDATES-009 (W-005), FIX-PROFILE-008 (W-008),
-  FIX-REFINE-007 (W-009), FIX-TIMEOUT-006 (W-014), FIX-PLAN-003 (W-011),
-  FIX-EVIDENCE-002 (W-015), WALK-E2E-001 — all nineteen walk-test findings
-  are resolved.
+- **Active task:** **WALK-UX-002 recorded - the carried list is thirteen
+  open findings, none fixed.** The second walk-test (the first against P9's
+  redesigned surfaces) walked the shell as a junior analyst on 2026-09-27
+  and is now the project's open backlog; `walktest-w2/` holds its evidence,
+  `ai/TASKS.md`'s carried section holds the thirteen. One BLOCKER: W2X-012,
+  the packaged app carries no LLM credentials - `.env` is not bundled
+  (`dah-core.spec`), `main.py` loads it relative to a path that does not
+  exist inside a PyInstaller bundle, and the shell does not inject
+  `DAH_LLM_API_KEY` - so `POST /generate-code` answers `source: template`
+  in the shipped app and every LLM feature silently degrades to
+  deterministic for the one user the app is built for. Seven MAJOR:
+  W2X-001 (a two-minute LLM wait with one static word and no cancel),
+  W2X-002 (an empty-dataset submit is total silence), W2X-005 (the
+  next-action guidance shows the raw `POST` endpoint with an unfilled
+  placeholder), W2X-006/W2X-007 (there is no editor for the code the app
+  generates and rejects - the realest frustration loop), W2X-008 (the
+  measured core complaint: 13.1x viewport, 18 flat panels, 12 empty on a
+  new case, zero progressive disclosure - the redesign restyled the
+  surfaces and none of them hide), W2X-009 (the deterministic drafter
+  promoted the planted 758x outlier as the case's finding). Five MINOR:
+  W2X-003 (chart gone after a reopen), W2X-004 (a false "unsaved edits"),
+  W2X-010 (duplicates unflagged), W2X-011 (a case row is not clickable),
+  W2X-013 (the orientation zone is 18% of a 1280pt window). Next is a
+  design decision on W2X-012, not a patch.
+  Sebelumnya: v0.3.4 (the close-out), P9-F4-001 (the on-screen chart),
+  P9-F3-001 (the motion layer), P9-F2-002 (the restyle), P9-F2-001 (the
+  walk-test's last three findings), P9-F1-001 (the redesign's foundation),
+  FIX-PYTHON-005, FIX-CHART-004, FIX-VERSION-010, FIX-UPDATES-009,
+  FIX-PROFILE-008, FIX-REFINE-007, FIX-TIMEOUT-006, FIX-PLAN-003,
+  FIX-EVIDENCE-002, WALK-E2E-001 — the first walk's nineteen findings are
+  all resolved; the second walk's thirteen are all open.
 
 - **Done before that:** P8-TRACE-010 - the requirement-traceability matrix
   (AT-48). The PRD's section 59 control artifact is code: 48 rows, one per
