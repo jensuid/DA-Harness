@@ -3,36 +3,23 @@ the motion, the on-screen chart). P8, P7, P6, P5, P4, P3, P2, P1 and P0 are all
 COMPLETE (see the phase table below). Every phase the roadmap and the
 conformance evaluation asked for is delivered; no phase is open.
 
-- **Active task:** **W2X-012 phase B DONE - the walk-test's BLOCKER is closed
-  on both halves.** Phase A made the LLM's degradation sayable; phase B made
-  it fixable from inside the app. The credential lives in `dah-llm.json` in
-  the data dir the shell already injects (`DAH_DATA_DIR`, from
-  `core_server.rs`), written mode 0o600 via an atomic `.tmp` + `os.replace`,
-  outside the repo, the bundle and git - editable or deletable without a
-  rebuild, and no new dependency (DEC-001: no Keychain binding; build-time
-  injection was rejected as a key burned into a reversible binary). It is
-  read into `os.environ` once at boot, after `configure_logging()` and
-  before phase A's boot line, and applied on every save - no restart,
-  because the six adapters read the environment at call time, not import
-  time. `GET /llm/config` reads the file and never the environment, so an
-  exported key the shell cannot overwrite is never echoed into the
-  CORS-permitted webview; `PUT /llm/config` writes, applies, and answers
-  phase A's own `LlmStatus`, so the panel reports the core's verdict rather
-  than its own write. The write path applies rather than yields: a blank
-  save unsets the variable instead of blanking it (the clear was a real
-  bug the tests found), and only `DAH_LLM_API_KEY` is ever touched. The
-  surface is a three-field panel in the bundle itself, opened from a "DAH
-  Settings…" menu item through the same `window.eval()` DOM CustomEvent
-  channel `updates.rs` already used - no permission, no capability change,
-  a no-op in a browser host. The banner gains the Configure button and one
-  refetch on the panel's changed event: still not polled, but a concern the
-  analyst just resolved leaves the screen instead of lingering. The full
-  loop was verified in a real browser against a live core: the concern, the
-  button opening the panel, a save answering "no restart needed", the
-  banner leaving without a reload, and clearing the key bringing it back.
-  Gates: server 772 (741 + 31), cargo 30 (26 + 4), web 235 (223 + 12),
-  tsc clean, build ok (CSS 17.92 kB, JS 747 kB), trace 48/48, measure 9/9.
-  Sebelumnya: W2X-012-A (the status surface), WALK-UX-002 (recorded),
+- **Active task:** **W2X-006 + W2X-007 DONE - the analysis editor.** The
+  walk-test's realest loop was a 400 on a one-token date fix that cost
+  another LLM call, because the only copy of the code was a read-only
+  `<pre>`; and the stage guidance said "Run an analysis" while the only
+  doors into `/runs` were the non-editable codegen and the EDA presets.
+  W2X-006 makes `GeneratePanel`'s `<pre>` a `textarea` holding a `draft`
+  that starts as the proposal and is what the run posts - so an untouched
+  proposal runs unchanged and an edit costs no second call. W2X-007 adds a
+  `RunCodePanel` in the work zone: an engine selector (SQL default, Python
+  the analyst's choice), a blank editor, and the two run endpoints the
+  codegen panel already posted to. The core's own capability has a surface,
+  not just a stage instruction. Gates: web 246 (235 + 11), tsc clean, build
+  ok; the server and cargo gates are untouched this task. Browser check
+  against a live core: the panel renders as "Run code on tickets.csv" with
+  both engine radios, and the proposal's code reaches an editable textarea.
+  Sebelumnya: W2X-012 phase B (the settings surface), W2X-012 phase A (the
+  status surface), WALK-UX-002 (recorded),
   v0.3.4, P9-F4-001 (the on-screen chart), P9-F3-001 (the motion layer),
   P9-F2-002 (the restyle), P9-F2-001 (the walk-test's last three
   findings), P9-F1-001 (the redesign's foundation), FIX-PYTHON-005,
@@ -88,12 +75,14 @@ conformance evaluation asked for is delivered; no phase is open.
   `desktop/bundle_dmg.sh`, so the shipped triple is what the developer's
   machine produces. Restoring an enforced Intel lane needs a self-hosted
   runner.
-- **Test status:** server 728 passed (727 + 1 for the chart format field
-  P9-F4's re-walk found). The web suite is 216 (+19 for P9-F4-001 - the
-  chart's own contract: the geometry is the core's rules, the two kinds each
-  render their tree, the tooltip is the live region, the fallback holds the
-  artifact, and the PNG stays a link).
-  Desktop shell 25 Rust tests; P2, P3 and P4 gates
+- **Test status:** server 772 passed (741 + 31 for W2X-012 phase B, and +1
+  for the chart format field P9-F4's re-walk found). The web suite is 246
+  (+30 since 216: +19 for P9-F4-001 - the chart's own contract: the
+  geometry is the core's rules, the two kinds each render their tree, the
+  tooltip is the live region, the fallback holds the artifact, and the PNG
+  stays a link; +11 for W2X-006 and W2X-007, the analysis editor).
+  Desktop shell 30 Rust tests (25 + 4 for W2X-012 phase B's settings
+  surface); P2, P3 and P4 gates
   PASS; **v0.2.0, v0.3.0, v0.3.1, v0.3.2, v0.3.3 and v0.3.4 released** (tags
   `v0.2.0` on `ec819fc`, `v0.3.0` on `ab56541`, `v0.3.1` on `19cefc1`,
   `v0.3.2` on `2ff1bca`, `v0.3.3` on `30db6e9`, `v0.3.4` on `d8bec6a`).

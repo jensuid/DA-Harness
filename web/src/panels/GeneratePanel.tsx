@@ -48,6 +48,12 @@ export function GeneratePanel({
 }) {
   const [question, setQuestion] = useState('')
   const [proposal, setProposal] = useState<GeneratedCode | null>(null)
+  // W2X-006: the code the analyst runs is the code the analyst read and could
+  // touch. A 400 for a date the profile already warned about was a one-token
+  // fix that cost another LLM call, because the only copy was read-only. The
+  // proposal is immutable; the draft is what runs, and it starts as the
+  // proposal so an untouched code runs unchanged.
+  const [draft, setDraft] = useState('')
   const [kind, setKind] = useState<GenerateKind>('sql')
   const [busy, setBusy] = useState(false)
   const [running, setRunning] = useState(false)
@@ -60,7 +66,9 @@ export function GeneratePanel({
     setBusy(true)
     setError(null)
     try {
-      setProposal(await generateCode(caseId, dataset.id, text, kind))
+      const proposal = await generateCode(caseId, dataset.id, text, kind)
+      setProposal(proposal)
+      setDraft(proposal.code)
     } catch (err) {
       setError(messageOf(err))
     } finally {
@@ -77,15 +85,16 @@ export function GeneratePanel({
       // current value: a proposal is generated once and the code in it is
       // for one engine, so the run always matches what the analyst read.
       if (proposal.kind === 'python') {
-        await runPython(caseId, dataset.id, proposal.code)
+        await runPython(caseId, dataset.id, draft)
       } else {
-        await runSql(caseId, dataset.id, proposal.code)
+        await runSql(caseId, dataset.id, draft)
       }
       // W-013: the run persisted before this line, so the runs panel, the rail
       // and the evidence graph read the case again and pick it up now - the
       // analyst sees the run land rather than having to reopen the case.
       onChanged()
       setProposal(null)
+      setDraft('')
       setQuestion('')
     } catch (err) {
       setError(messageOf(err))
@@ -138,8 +147,14 @@ export function GeneratePanel({
             {proposal.columns_used.join(', ')}
           </p>
           <p>{proposal.explanation}</p>
-          <pre>{proposal.code}</pre>
-          <Button type="button" onClick={run} disabled={running}>
+          <textarea
+            aria-label="Code to run"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            spellCheck={false}
+            disabled={running}
+          />
+          <Button type="button" onClick={run} disabled={running || !draft.trim()}>
             {running ? 'Running…' : 'Run this'}
           </Button>
         </div>

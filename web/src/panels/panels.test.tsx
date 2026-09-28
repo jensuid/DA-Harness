@@ -34,6 +34,7 @@ import { default as generatePanelSource } from './GeneratePanel.tsx?raw'
 import { default as historyPanelSource } from './HistoryPanel.tsx?raw'
 import { default as learnPanelSource } from './LearnPanel.tsx?raw'
 import { default as planPanelSource } from './PlanPanel.tsx?raw'
+import { default as runCodePanelSource } from './RunCodePanel.tsx?raw'
 import { default as refinePanelSource } from '../RefinePanel.tsx?raw'
 import { default as runsPanelSource } from './RunsPanel.tsx?raw'
 import { default as templatesSource } from '../Templates.tsx?raw'
@@ -54,6 +55,7 @@ const sources: Record<string, string> = {
   'HistoryPanel.tsx': historyPanelSource,
   'LearnPanel.tsx': learnPanelSource,
   'PlanPanel.tsx': planPanelSource,
+  'RunCodePanel.tsx': runCodePanelSource,
   'RefinePanel.tsx': refinePanelSource,
   'RunsPanel.tsx': runsPanelSource,
   'Templates.tsx': templatesSource,
@@ -83,6 +85,7 @@ import {
 import { COUNT_KINDS, EVENT_KINDS, HistoryBody, HistoryPanel } from './HistoryPanel'
 import { LearnPanel, PHASE_TITLES, WalkBody } from './LearnPanel'
 import { PlanPanel } from './PlanPanel'
+import { RUN_KINDS, RUN_KIND_LABELS, RunCodePanel } from './RunCodePanel'
 import {
   ChartPanel,
   RunRow,
@@ -115,6 +118,7 @@ const PANELS: Record<string, unknown[]> = {
   HistoryPanel: [HistoryPanel, HistoryBody, COUNT_KINDS, EVENT_KINDS],
   LearnPanel: [LearnPanel, WalkBody, PHASE_TITLES],
   PlanPanel: [PlanPanel],
+  RunCodePanel: [RunCodePanel, RUN_KINDS, RUN_KIND_LABELS],
   RunsPanel: [
     RunsPanel,
     RunRow,
@@ -149,6 +153,7 @@ describe('the panel split', () => {
         'HistoryPanel',
         'LearnPanel',
         'PlanPanel',
+        'RunCodePanel',
         'RunsPanel',
         'WorkflowRail',
       ].sort(),

@@ -416,8 +416,8 @@ SUMMARY: the walk-test's BLOCKER is closed on both halves. Phase A made the
 
 ### Carried follow-ups from the second walk-test (WALK-UX-002 - open)
 
-Thirteen findings, none fixed. The walk-test's own material is in
-`walktest-w2/` - REPORT.md (summary, measured density, priority table),
+Thirteen findings; two closed (W2X-006, W2X-007). The walk-test's own material
+is in `walktest-w2/` - REPORT.md (summary, measured density, priority table),
 FINDINGS.md (one block per finding with severity and code location),
 PHASE2.md (the real-app verification), CAPTURE-SHEET.md. Priority order
 below is the walk-test's (impact / effort); each is a separate task with
@@ -454,13 +454,17 @@ its own contract, one commit per fix.
   (`POST /cases/{case_id}/datasets`, the `{dataset_id}` placeholder
   unfilled) instead of an action. Confirmed twice, in both the browser and
   the real app. `server/app/workflow.py` `_STAGE_ACTIONS`.
-- **W2X-006** - the generated code is a read-only `<pre>`
-  (`web/src/panels/GeneratePanel.tsx`), so a one-token fix for a 400 (an
-  invalid date the profile already warned about) costs another LLM call.
-- **W2X-007** - there is no SQL/Python editor anywhere; the stage guidance
-  says "Run an analysis" but the only doors into `/runs` are the
-  non-editable codegen and three preset EDA ops. The core capability has no
-  surface of its own.
+- **W2X-006 — CLOSED.** The generated code is editable: `GeneratePanel`'s
+  `<pre>` is a `textarea` holding a `draft` that starts as the proposal and is
+  what the run posts, so an untouched proposal runs unchanged and a one-token
+  fix for a 400 costs no second LLM call. `web/src/panels/GeneratePanel.tsx`;
+  4 tests in `web/src/panels/GeneratePanel.test.tsx`.
+- **W2X-007 — CLOSED.** The capability has a surface of its own: a
+  `RunCodePanel` in the work zone with an engine selector (SQL default,
+  Python the analyst's choice), a blank editor, and the two run endpoints
+  the codegen panel already posted to. `web/src/panels/RunCodePanel.tsx`
+  mounted in `DataPanel.tsx`; 7 tests in
+  `web/src/panels/RunCodePanel.test.tsx`.
 - **W2X-008** - the density, measured: the case page is 13.1x the viewport
   (7,740px / 593px), 18 flat panels, 21 sub-panels, 23 buttons, 2,258
   words, zero `<details>`/collapse, and 12 of 18 panels show their empty

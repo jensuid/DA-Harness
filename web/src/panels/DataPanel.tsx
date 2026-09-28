@@ -10,6 +10,7 @@ import { messageOf } from '../CaseList'
 import { Button, surfaces } from '../lib/ui'
 import { QualityList } from './CaseOverview'
 import { GeneratePanel } from './GeneratePanel'
+import { RunCodePanel } from './RunCodePanel'
 
 export function DataPanel({
   caseId,
@@ -130,6 +131,14 @@ export function DataPanel({
           caseId={caseId}
           dataset={datasets[0]}
           profile={profiles[datasets[0].id]}
+          onChanged={onChanged}
+        />
+      )}
+      {datasets.length > 0 && (
+        <RunCodePanel
+          caseId={caseId}
+          datasetId={datasets[0].id}
+          datasetName={datasets[0].filename}
           onChanged={onChanged}
         />
       )}

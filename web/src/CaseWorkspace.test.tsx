@@ -689,9 +689,11 @@ describe('CaseWorkspace', () => {
     await waitFor(() => expect(api.generateCode).toHaveBeenCalledWith('c1', 'd1',
       'revenue per region', 'python'))
     expect(await screen.findByText('Totals revenue per region in the sandbox.')).toBeInTheDocument()
-    // The proposed script is rendered verbatim: a pre keeps its newlines, so
-    // the assertion reads it back off the node rather than off normalised text.
-    expect(document.querySelector('pre')?.textContent).toBe(script)
+    // W2X-006: the proposed script is rendered in an editable textarea, so the
+    // one-token fix the analyst needs is in their hands - a pre keeps its
+    // newlines, and a textarea keeps them too, so the assertion still reads the
+    // node rather than normalised text.
+    expect(document.querySelector('textarea')?.value).toBe(script)
 
     await user.click(screen.getByRole('button', { name: /run this/i }))
     // A python run posts to the python endpoint and persists a run like any

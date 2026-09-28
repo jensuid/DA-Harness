@@ -1,7 +1,50 @@
 The archive of `ai/HANDOFF.md`'s `## Next action` sections. Each section is
 moved here verbatim, never edited or summarised, when the task that wrote it
-completes - it is the record of what a session knew and why it chose what it
-chose. Reading this is not part of resuming; `ai/HANDOFF.md` is.
+completes - it is the record of what a session thought mattered before it
+knew how it would end.
+
+---
+
+## W2X-012 phase B
+
+**W2X-012 phase B landed: the walk-test's BLOCKER is closed on both halves.**
+Phase A made the LLM's degradation sayable; this made it fixable from inside
+the app. The credential lives in `dah-llm.json` in the data dir the shell
+already injects - mode 0o600, written atomically, outside the repo, the bundle
+and git, so the analyst can edit or delete it without a rebuild - read into
+`os.environ` once at boot and applied on every save, which works because the
+six adapters read the environment at call time and need no restart. `GET
+/llm/config` reads the file and never the environment (an exported key the
+shell cannot overwrite would otherwise reach the CORS-permitted webview);
+`PUT /llm/config` writes, applies, and answers phase A's own `LlmStatus`, so
+the panel reports the core's verdict and not its own write. The surface is
+three fields in the bundle itself, opened from a "DAH Settings…" menu item
+through the same `window.eval()` DOM CustomEvent channel `updates.rs` already
+used - no permission, no capability change, and a no-op in a browser host.
+
+**Two design decisions from this task are worth carrying.** The capability set
+does not change: the handoff's phase-B note said the shell gains a Tauri
+command, but `updates.rs` had already proven that a script dispatching a DOM
+event reaches the bundle without one, so `core:default` stays as the
+deliberate property it is. And the write path applies rather than yields: a
+blank save unsets `DAH_LLM_API_KEY` instead of blanking it, because the form
+is the thing that just wrote it - that the clear did not work was a real bug
+the tests found, not a test error.
+
+**Gates:** server 772 (741 + 31), cargo 30 (26 + 4), web 235 (223 + 12), tsc
+clean, build ok (CSS 17.92 kB, JS 747 kB), trace 48/48, measure 9/9. The full
+save loop verified in a real browser against a live core: the concern banner,
+the Configure button opening the panel, a save answering "no restart needed",
+and the banner leaving the screen without a reload.
+
+**Two defects found by the measure gate and fixed in the same commit:** the
+AT-38 line counter imported every app module before pytest registered, so
+`configure_logging()` installed a real file handler into the repo; and the new
+config tests leaked `os.environ` into other suites, so `test_refine` made a
+real LLM call and failed on a hostname lookup. The first is a pre-existing
+runner bug, the second is the tests this task wrote.
+
+Reading this is not part of resuming; `ai/HANDOFF.md` is.
 
 ## Next action
 

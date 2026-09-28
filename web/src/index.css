@@ -372,6 +372,14 @@ textarea {
   font-size: 0.9rem;
 }
 
+/* W2X-006 / W2X-007: a code surface has to be tall enough to read more than
+   one line of, or it is a `<pre>` that accepts input and no-one uses it. */
+.proposal textarea,
+.subpanel textarea {
+  min-height: 14rem;
+  resize: vertical;
+}
+
 select {
   width: 100%;
   padding: 0.5rem;
