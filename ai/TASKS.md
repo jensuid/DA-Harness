@@ -476,12 +476,19 @@ its own contract, one commit per fix.
   the codegen panel already posted to. `web/src/panels/RunCodePanel.tsx`
   mounted in `DataPanel.tsx`; 7 tests in
   `web/src/panels/RunCodePanel.test.tsx`.
-- **W2X-008** - the density, measured: the case page is 13.1x the viewport
-  (7,740px / 593px), 18 flat panels, 21 sub-panels, 23 buttons, 2,258
-  words, zero `<details>`/collapse, and 12 of 18 panels show their empty
-  state on a brand-new case. The redesign restyled the surfaces; none of
-  them hide. Real app: 5.8x. Suggested: hide empty panels until they have
-  data, collapse per stage, narrow the orientation zone.
+- **W2X-008 — CLOSED.** The density was measured, and the fix hides what has
+  nothing to say and collapses what the case has already finished. `web/src/lib/
+  disclosure.tsx` is a `<button>` + `role="region"` pair (native `<details>` was
+  rejected: its open state is the browser's, so it cannot be seeded from the
+  case's artifacts and a test cannot read what it chose). The record group -
+  Learn, History, Save as a template - is one collapsed container; Findings and
+  the Evidence graph stay mounted only once the case has them, and the
+  overview's "Still to come" names the ones still waiting. The guidance a 404
+  used to give is not lost: the summaries name the failure ("Case history —
+  could not be read"), so a missing case still reads as missing.
+- **W2X-013 — CLOSED.** The orientation column's fixed 15rem wrapped a long
+  question into a 101pt block. `minmax(15rem, 17rem)` lets it breathe; the work
+  and intelligence zones keep the rest.
 - **W2X-009** - the deterministic drafter promoted the planted outlier
   (revenue 99,589, 758.6x the next-largest value the profile already
   flagged) as the case's finding, and the validator then blamed the wrong
@@ -499,9 +506,9 @@ its own contract, one commit per fix.
   the gap is the missing duplicate notice.)
 - **W2X-011** - clicking a case row's text does nothing; only the Open
   button opens it. `web/src/CaseList.tsx`.
-- **W2X-013** - the orientation zone is ~232pt (18%) in a 1280pt window, so
-  a long question becomes an unreadable 101pt-tall block. Grid
-  proportions in `web/src/index.css`.
+- **W2X-013 — CLOSED.** The orientation column's fixed 15rem wrapped a long
+  question into a 101pt-tall block; `minmax(15rem, 17rem)` lets it breathe and
+  the work zone keeps the rest (`web/src/index.css`).
 
 ### Carried decisions (not code, unchanged)
 

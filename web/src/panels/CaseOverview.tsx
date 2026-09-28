@@ -15,6 +15,7 @@ export function CaseOverview({
   findings,
   openIssues,
   pendingValidation,
+  pending,
 }: {
   question: string
   purpose: string
@@ -23,6 +24,11 @@ export function CaseOverview({
   findings: number
   openIssues: number
   pendingValidation: number
+  // W2X-008: the surfaces the case is still waiting on. A panel whose empty
+  // state carries no control is hidden until it has data, so the overview
+  // names them here instead - one sentence, where an analyst scans the case's
+  // shape, rather than twelve panels each saying the same nothing.
+  pending: string[]
 }) {
   // The analyst's stated purpose outranks the question when both exist; a case
   // that never stated one is described by the question it was created with, so
@@ -56,6 +62,15 @@ export function CaseOverview({
               ? ''
               : ' — none recorded yet'}
         </li>
+        {pending.length > 0 && (
+          // W2X-008: the hidden panels' empty states, named in one sentence.
+          // A young case is told what it does not have yet, by the panel that
+          // already answers "what does this case have", rather than by a
+          // screen of surfaces each saying nothing.
+          <li>
+            Still to come: {pending.join(', ')}
+          </li>
+        )}
       </ul>
     </div>
   )

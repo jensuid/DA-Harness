@@ -1,68 +1,57 @@
 ## Next action
 
-**W2X-002 + W2X-005 landed: the first thing the app says is no longer
-silence, and no longer an endpoint.** Both were the walk-test's "what do I
-do first" findings, and both were the app answering a question the analyst
-hadn't asked - or not answering at all.
+**W2X-008 + W2X-013 landed: the case page stopped showing everything it does
+not have.** The walk measured 13.1 viewports, 18 flat panels, no disclosures
+at all, and 12 of those panels showing an empty state on a case that had just
+been created - the original complaint, and the redesign had restyled every
+surface without hiding one.
 
-- **W2X-002** - submitting "New Analysis Case" with a blank field used to be
-  total silence: no request, no alert, nothing changed, because only HTML5
-  native validation stood behind the submit. The form now names the fields it
-  still needs in `role="alert"` live regions, marks them `aria-invalid`,
-  clears a message when the field is filled, and labels both with `*`. The
-  browser's own refusal was correct; its message was the part nobody could
-  see.
-- **W2X-005** - the rail's "Next:" showed `POST /cases/…/datasets` with a
-  `{dataset_id}` placeholder unfilled, which read as a bug and answered a
-  developer's question. It now shows the action and a "Go to the Data panel"
-  button that scrolls to the panel that performs it; the path lives behind a
-  "developer info" disclosure. The core half fills the placeholder with the
-  first attached dataset and drops it when none exists, so the quoted path
-  is a path that runs.
+- **The disclosure** (`web/src/lib/disclosure.tsx`) is a `<button>` with
+  `aria-expanded` controlling a `role="region"`, the two linked by
+  `aria-controls`/`aria-labelledby`. Native `<details>` was rejected: its open
+  state is the browser's rather than React's, so it cannot be seeded from the
+  case's artifacts and a test cannot read what the analyst chose. Uncontrolled
+  after mount on purpose, so a reload does not re-close what the analyst opened.
+- **The record group** - Learn, History, Save as a template - is one collapsed
+  container in the orientation zone. Each summary names its own count, so a
+  collapsed stage still says what it holds.
+- **The panels whose empty state carries no control** wait until the case has
+  the artifact: Findings and the Evidence graph. The overview's one-sentence
+  "Still to come" names them, so the shape of an unfinished case is visible
+  without scrolling past twelve nothings. Runs stays - it holds "Draft a
+  finding", the only surface that creates one.
+- **W2X-013** - the orientation column's fixed 15rem wrapped a long question
+  into a 101pt block; `minmax(15rem, 17rem)` lets it breathe.
 
-**What broke, all in the tests.** jsdom renders `<details>` open (no
-content-visibility), so the test that asserted the endpoint was absent had to
-assert it is *inside* the disclosure instead - the browser behaviour and the
-jsdom behaviour are both right, and the assertion now names the contract
-rather than the rendering. The sentence "Next: Attach a dataset" spans a
-`<strong>`, so `getByText` needed the container's own text. And
-`vi.clearAllMocks` was missing from one file, so a `createCase` spy carried a
-call from the test before it - the "silence" the test saw was its own leak.
+**What broke, and the fix at the source.** Two tests asserted a 404's guidance
+text, which now lives behind a collapsed disclosure. The wrong answer was to
+make the test open the group anyway; the right one was that a missing case
+must not read as a case with no history. `historySummary` and `walkSummary`
+now read the error first and name it - "Case history — could not be read" -
+so the guidance is visible collapsed, and the tests open the group the way an
+analyst does. A `loading` state that nothing read and an `evidence` expression
+that was always false (`!evidenceEmpty && !!evidence`, where the 400 branch
+sets the graph null and the error non-empty) were dead code the density
+rewrite was the right moment to remove.
 
-**Gates:** web 257 (246 + 11), tsc clean, build ok, server full suite 773
-(772 + 1), test_workflow 16 (14 + 2), trace 48/48, e2e all steps,
-measure 9/9. Every gate is green; this task commits.
-
-**The AT-38 circle is broken, and it was never a circle.** The handoff's
-hypothesis was that the suite fails only *inside* the line counter because the
-seven `test_trace` tests read `verification/measure/REPORT.md`
-(`matrix.py:167`), which a failed measure run had itself just written red. That
-was wrong, and chasing it was the wrong place. The real failure was one test in
-a suite the runner collects first alphabetically: `test_refine.py::
-test_create_refinement_reports_the_engine_that_spoke` asserted
-`source == "deterministic"` and got `"deterministic fallback"` because a
-*previous* test in `test_llm_config.py` had left `DAH_LLM_API_KEY` set in
-`os.environ`, so the refiner was configured, made a real network call to
-`api.openai.com`, got a 401, and fell back. The fallback label was the only
-evidence of the leak. `apply_config` writing `os.environ` directly is the whole
-point of "no restart" and is correct production code; `monkeypatch` restores
-only the variables a test declared, and the PUT endpoint's write is not one of
-them. The suite's own comment claimed the opposite
-(`test_llm_config.py:162-168`). Fixed by restoring the four variables in the
-autouse fixture's teardown, converting `test_env_config.py` off its hand-rolled
-`try/finally` pops for the same reason, and pinning it with a regression test
-that names any variable that outlives the suite. The 401 also explains the
-"stale background notifications": those runs were the same leak, not the same
-suite. Lesson: an order-dependent failure in one test file is an environment
-leak in another one that runs first.
+**Gates:** web 257 (no net new tests - density is a property the walk
+measures, not one the suite asserts), tsc clean, build ok, server 775,
+trace 48/48, e2e all steps. Not run this task: measure (its report and the
+trace runner read each other, and nothing it measures moved) and desktop
+cargo (no Rust touched). Every gate that could regress is green; this task
+commits.
 
 **Next, in priority order:**
 
-1. **W2X-008, the density.** The largest effort and the original complaint:
-   hide empty panels, collapse completed stages, narrow the orientation zone.
-2. **W2X-001, W2X-009, then the five MINORs.**
-3. **W2X-004, the timeout surface** - three of four calls timed out in the
-   walk and the UI showed one static word with no elapsed time and no cancel.
+1. **W2X-001, the timeout surface** - the largest remaining UX finding: three
+   of four LLM calls timed out in the walk while the UI showed one static
+   word with no elapsed time and no cancel.
+2. **W2X-009, the drafter that promoted the planted outlier** - the trust
+   finding: a 758.6x outlier became the case's finding and the validator
+   blamed the wrong column.
+3. **The five MINORs** - W2X-003 (the chart gone after a reopen), W2X-004
+   (the false "unsaved edits"), W2X-010 (no duplicate notice), W2X-011 (a
+   row's text does nothing).
 
 **Two carried decisions stay, both unchanged and both not code:** the
 packaged app is unsigned by DEC-006, and GitHub Actions' billing is
@@ -74,6 +63,12 @@ run in CI).
 The last tasks to land, newest first. The contract and done-record for each
 is in `ai/TASKS.md` (rolling window) or `ai/TASKS-ARCHIVE.md`.
 
+- **W2X-008 + W2X-013, the density** - the case page's 13.1 viewports: a
+  disclosure primitive that is a real control (`<button>` + `role="region"`,
+  not native `<details>`), the record group collapsed to summaries that name
+  their own counts, the panels whose empty state carries no control waiting
+  until the case has them while the overview's "Still to come" names them, and
+  the orientation column's fixed 15rem becoming `minmax(15rem, 17rem)`.
 - **W2X-002 + W2X-005, the first-thing-the-app-says** - the new-case form
   answers a blank submit by naming the fields it needs in live regions instead
   of going silent, and the workflow rail's "Next" is an action with a button

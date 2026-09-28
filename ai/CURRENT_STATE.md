@@ -3,47 +3,36 @@ the motion, the on-screen chart). P8, P7, P6, P5, P4, P3, P2, P1 and P0 are all
 COMPLETE (see the phase table below). Every phase the roadmap and the
 conformance evaluation asked for is delivered; no phase is open.
 
-- **Active task:** **W2X-002 + W2X-005 DONE - the first thing the app says.**
-  The second walk-test's two "what do I do first" findings, both about the
-  app's own answering behaviour rather than its capability. W2X-002:
-  submitting "New Analysis Case" with a blank field was total silence - no
-  request, no alert, nothing changed - because only HTML5 native validation
-  stood behind the submit, and its message is invisible headlessly and
-  undiscoverable for a first-time analyst. The form now names the fields it
-  still needs in `role="alert"` live regions, marks each `aria-invalid`,
-  clears a message once the field is filled, and never leaves the page; both
-  labels carry `*` and the dataset's says what belongs there. W2X-005: the
-  rail's "Next:" showed the raw `POST /cases/…/datasets` with a
-  `{dataset_id}` placeholder unfilled - an answer to a developer's question,
-  that read as a bug, on the surface an analyst reads first. The rail now
-  shows the action and a "Go to the Data panel" button that scrollIntoViews
-  the panel that performs it, with the path behind a "developer info"
-  disclosure; the core half fills the placeholder with the first attached
-  dataset and drops it when none exists yet, so the quoted path is a path
-  that runs instead of a literal that 404s. Gates: web 257 (246 + 11), tsc
-  clean, test_workflow 16 (14 + 2). Browser check against a live core: the
-  empty submit fires zero fetches and answers two `role="alert"`, the rail's
-  button scrolls the right anchor, and the disclosed endpoint is a real
-  dataset id.
-  **STATUS: COMMITTED, all gates green.** The one gate that had held the
-  commit - measure AT-38 - turned out not to be the circular dependency the
-  handoff hypothesised. The suite's real failure inside the line counter was
-  `test_refine.py` seeing a `deterministic fallback` label, because
-  `test_llm_config.py`'s PUT endpoint had left `DAH_LLM_API_KEY` in
-  `os.environ` and the refiner made a real 401 call before falling back;
-  monkeypatch restores only the variables a test declared. Fixed with an
-  autouse teardown in `test_llm_config.py` (and a matching one in
-  `test_env_config.py`), pinned by a regression test.
-  Sebelumnya: W2X-006 + W2X-007 (the analysis editor), W2X-012 phase B (the
-  settings surface), W2X-012 phase A (the status surface), WALK-UX-002
-  (recorded),
-  v0.3.4, P9-F4-001 (the on-screen chart), P9-F3-001 (the motion layer),
-  P9-F2-002 (the restyle), P9-F2-001 (the walk-test's last three
-  findings), P9-F1-001 (the redesign's foundation), FIX-PYTHON-005,
-  FIX-CHART-004, FIX-VERSION-010, FIX-UPDATES-009, FIX-PROFILE-008,
-  FIX-REFINE-007, FIX-TIMEOUT-006, FIX-PLAN-003, FIX-EVIDENCE-002,
-  WALK-E2E-001 — the first walk's nineteen findings are all resolved; the
-  second walk's twelve others are still open.
+- **Active task:** **W2X-008 + W2X-013 DONE - the density.** The walk measured
+  the case page at 13.1 viewports with 18 flat panels and 12 empty states on a
+  brand-new case; the redesign had restyled the surfaces and none of them hid.
+  The fix has two halves. A disclosure primitive
+  (`web/src/lib/disclosure.tsx`) is a `<button>` + `role="region"` pair with
+  `aria-controls`/`aria-labelledby` linking them - native `<details>` was
+  rejected because its open state is the browser's, so a finished stage cannot
+  collapse itself and a test cannot read what it chose. And the panels
+  themselves: the record group (Learn, History, Save as a template) is one
+  collapsed container; Findings and the Evidence graph wait until the case has
+  them, because their empty states carry no control and the overview's "Still
+  to come" names them instead; Runs stays - it holds "Draft a finding".
+  W2X-013, the orientation column's fixed 15rem that wrapped a long question
+  into a 101pt block, is `minmax(15rem, 17rem)`.
+  Gates: web 257 (no net new tests - the density is measured, not asserted;
+  the existing tests moved behind the disclosures), tsc clean, build ok,
+  server 775, trace 48/48, e2e all steps.
+  **STATUS: COMMITTED, all gates green.**
+  The two failures the gate first caught were the fix's own property: the
+  guidance a 404 gives lived behind a collapsed group, and the tests that
+  asserted it could not see it. Fixed at the source - `historySummary` and
+  `walkSummary` now read the error first and name it in the collapsed summary,
+  so a missing case reads as "could not be read" rather than as a case with no
+  history - and the tests open the disclosure the way an analyst does.
+  Sebelumnya: W2X-002 + W2X-005 (the first thing the app says), W2X-006 +
+  W2X-007 (the analysis editor), W2X-012 phase B (the settings surface),
+  W2X-012 phase A (the status surface), WALK-UX-002 (recorded), v0.3.4,
+  P9-F4-001, P9-F3-001, P9-F2-002, P9-F2-001, FIX-PYTHON-005 — the first
+  walk's nineteen findings are all resolved; the second walk's eight remain
+  open (W2X-001, W2X-009, W2X-003, W2X-004, W2X-010, W2X-011).
 
 - **Done before that:** P8-TRACE-010 - the requirement-traceability matrix
   (AT-48). The PRD's section 59 control artifact is code: 48 rows, one per
@@ -92,10 +81,13 @@ conformance evaluation asked for is delivered; no phase is open.
   `desktop/bundle_dmg.sh`, so the shipped triple is what the developer's
   machine produces. Restoring an enforced Intel lane needs a self-hosted
   runner.
-- **Test status:** server 773 passed (772 + 1: the AT-38 regression pin, see
-  below). The web suite is 257 (+11 for W2X-002 and W2X-005, the
-  first-thing-the-app-says fixes: four for the form's inline required-field
-  answers and seven for the rail's action-plus-button guidance).
+- **Test status:** server 775 passed (unchanged - the density is a shell
+  change; the only server file that moved was the e2e report the runner
+  rewrote). The web suite is 257, unchanged in count because the density is a
+  property the walk measures rather than one the existing tests assert: the
+  tests that read a record surface now open the group's disclosure first, the
+  way an analyst does, and the two that asserted a 404's guidance read the
+  collapsed summary's own name for the failure.
   The one server test that is not new this task is the AT-38 fix itself:
   `test_llm_config.py`'s PUT endpoint writes `os.environ` (the "no restart"
   property, correct in production), and monkeypatch restores only the
@@ -103,8 +95,8 @@ conformance evaluation asked for is delivered; no phase is open.
   `test_refine.py` read a `deterministic fallback` label after a real 401.
   Restored in an autouse teardown and pinned by
   `test_the_suite_leaves_no_configured_llm_behind`.
-  Desktop shell 30 Rust tests (25 + 4 for W2X-012 phase B's settings
-  surface); P2, P3 and P4 gates
+  Desktop shell 30 Rust tests (unchanged; no shell code moved);
+  P2, P3 and P4 gates
   PASS; **v0.2.0, v0.3.0, v0.3.1, v0.3.2, v0.3.3 and v0.3.4 released** (tags
   `v0.2.0` on `ec819fc`, `v0.3.0` on `ab56541`, `v0.3.1` on `19cefc1`,
   `v0.3.2` on `2ff1bca`, `v0.3.3` on `30db6e9`, `v0.3.4` on `d8bec6a`).

@@ -311,6 +311,15 @@ function mockEmptyCase() {
   vi.mocked(api.getDecision).mockResolvedValue(emptyDecision())
 }
 
+// W2X-008: the record's surfaces sit behind the Case record group. A test that
+// reads one opens the group's own disclosure for it first - the same gesture
+// an analyst makes - and then scopes to the panel that opened, so an assertion
+// cannot match text from a sibling the analyst never opened.
+async function recordScope(heading: string): Promise<ReturnType<typeof within>> {
+  const panel = await screen.findByRole('heading', { name: heading })
+  return within(panel.parentElement!)
+}
+
 function emptyContext(): api.CaseContext {
   return {
     case_id: 'c1',
@@ -436,7 +445,16 @@ describe('CaseWorkspace', () => {
     expect(screen.getByText('Run an analysis')).toBeInTheDocument()
     const dataPanel = screen.getByRole('heading', { name: 'Data' }).parentElement!
     expect(within(dataPanel).getByText('sales.csv')).toBeInTheDocument()
-    expect(screen.getByText(/no analysis has run yet/i)).toBeInTheDocument()
+    // W2X-008: the panels with nothing to say are gone from the first screen,
+    // and the overview names them instead - one sentence where twelve panels
+    // each said the same nothing.
+    expect(screen.getByText(/still to come:/i)).toHaveTextContent(
+      'a finding, an audit',
+    )
+    // The surfaces are absent, not merely empty: the loop's own next action
+    // names them and the work zone holds the panels that perform it.
+    expect(screen.getByRole('heading', { name: 'Runs' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Findings' })).not.toBeInTheDocument()
   })
 
   it('marks the completed stages', async () => {
@@ -1762,23 +1780,32 @@ status: 'rejected',
     )
 
     render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+    // W2X-008: the evidence panel with nothing to graph is guidance rather
+    // than a failed review - the core's own sentence stays visible, and it is
+    // not an alert. The overview's "Still to come" names the graph too.
     expect(
       await screen.findByText(/no artifacts yet - attach data/i),
     ).toBeInTheDocument()
-    // A young case is guidance, not a failed review.
+    expect(screen.getByText(/still to come: .*the evidence graph/i)).toBeInTheDocument()
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   })
 
   it('walks the four phases and names the one to work on now', async () => {
     mockEmptyCase()
+    const user = userEvent.setup()
     render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
 
-    const panel = await screen.findByRole('heading', { name: 'Learn this case' })
-    const learn = within(panel.parentElement!)
+    // W2X-008: the record's surfaces sit behind the Case record group's
+    // disclosure, so a test that reads one opens the group first - the way an
+    // analyst does.
+    await user.click(
+      await screen.findByRole('button', { name: /learn this case/i }),
+    )
+    const learn = await recordScope('Learn this case')
     // The ladder is the workflow regrouped: the four phases, in the spec's
     // order, and exactly one of them current.
     expect(
-      learn.getAllByRole('heading', { level: 3 }).map((h) => h.textContent),
+      learn.getAllByRole('heading', { level: 3 }).map((h: HTMLElement) => h.textContent),
     ).toEqual(['Why', 'What', 'How', 'Validate'])
     expect(learn.getByText('status: current')).toBeInTheDocument()
     expect(learn.getAllByText(/^status: pending$/)).toHaveLength(3)
@@ -1791,9 +1818,10 @@ status: 'rejected',
 
   it('teaches each phase - what it is for, and the question that tests it', async () => {
     mockEmptyCase()
+    const user = userEvent.setup()
     render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
-    const panel = await screen.findByRole('heading', { name: 'Learn this case' })
-    const learn = within(panel.parentElement!)
+    await user.click(await screen.findByRole('button', { name: /learn this case/i }))
+    const learn = await recordScope('Learn this case')
 
     // The purpose is what the workflow's "next action" never says.
     expect(
@@ -1807,9 +1835,10 @@ status: 'rejected',
 
   it('shows the stages as the actions that close them, done and to do', async () => {
     mockEmptyCase()
+    const user = userEvent.setup()
     render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
-    const panel = await screen.findByRole('heading', { name: 'Learn this case' })
-    const learn = within(panel.parentElement!)
+    await user.click(await screen.findByRole('button', { name: /learn this case/i }))
+    const learn = await recordScope('Learn this case')
 
     // The stages render as what the learner does, not as internal names, and a
     // complete one is marked.
@@ -1838,9 +1867,10 @@ status: 'rejected',
       next_endpoint: 'POST /cases/c1/findings',
     })
 
+    const user = userEvent.setup()
     render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
-    const panel = await screen.findByRole('heading', { name: 'Learn this case' })
-    const learn = within(panel.parentElement!)
+    await user.click(await screen.findByRole('button', { name: /learn this case/i }))
+    const learn = await recordScope('Learn this case')
     expect(
       learn.getByText(
         /The phase to work on now is How: Attach evidence to a finding/i,
@@ -1864,9 +1894,13 @@ status: 'rejected',
       done: true,
     })
 
+    const user = userEvent.setup()
     render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
-    const panel = await screen.findByRole('heading', { name: 'Learn this case' })
-    const learn = within(panel.parentElement!)
+    // A complete walk is collapsed by default, so the record's disclosure is
+    // opened first - the summary already carries the verdict, and the body's
+    // own discipline is what this test reads.
+    await user.click(await screen.findByRole('button', { name: /learn this case — complete/i }))
+    const learn = await recordScope('Learn this case')
     // The core's own discipline, carried into the shell: a closed loop means
     // the loop ran, not that the answer is right.
     expect(
@@ -1883,20 +1917,33 @@ status: 'rejected',
     vi.mocked(api.getLearnWalk).mockRejectedValue(
       new api.ApiError(404, 'case not found'),
     )
-
+    const user = userEvent.setup()
     render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+
+    // W2X-008: the record group is collapsed, and the failure is named in the
+    // summary rather than hidden behind it - a missing case reads as a missing
+    // walk, not as a case with nothing to learn. The guidance itself is in the
+    // panel the disclosure opens, so the analyst sees the same sentence an
+    // open group would.
+    await user.click(
+      await screen.findByRole('button', { name: /learn this case — could not be read/i }),
+    )
+    const learn = await recordScope('Learn this case')
     expect(
-      await screen.findByText(/The walk could not be read: case not found/i),
+      learn.getByText(/The walk could not be read: case not found/i),
     ).toBeInTheDocument()
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   })
 
   it('shows every event of a worked case in the order it happened', async () => {
     mockEmptyCase()
+    const user = userEvent.setup()
     render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
 
-    const panel = await screen.findByRole('heading', { name: 'Case history' })
-    const timeline = within(panel.parentElement!)
+    // A worked case's timeline is collapsed to its count, so it is opened
+    // first; the count is the summary the collapsed state shows.
+    await user.click(await screen.findByRole('button', { name: /case history — 4 events/i }))
+    const timeline = await recordScope('Case history')
     // The counts are one sentence, so the case's shape is visible before any
     // event is read.
     expect(
@@ -1935,9 +1982,10 @@ expect(timeline.getByText(/finding recorded: North leads/)).toBeInTheDocument()
       },
     })
 
+    const user = userEvent.setup()
     render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
-    const panel = await screen.findByRole('heading', { name: 'Case history' })
-    const timeline = within(panel.parentElement!)
+    await user.click(await screen.findByRole('button', { name: /case history — 1 event/i }))
+    const timeline = await recordScope('Case history')
     expect(timeline.getByText(/1 event in this case/)).toBeInTheDocument()
 expect(timeline.getByText(/case created/)).toBeInTheDocument()
     expect(timeline.queryByText(/Nothing has happened/)).not.toBeInTheDocument()
@@ -1951,10 +1999,18 @@ expect(timeline.getByText(/case created/)).toBeInTheDocument()
     vi.mocked(api.getCaseHistory).mockRejectedValue(
       new api.ApiError(404, 'case not found'),
     )
-
+    const user = userEvent.setup()
     render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+
+    // W2X-008: the record group is collapsed, and the failure is named in the
+    // summary rather than hidden behind it - a missing case reads as a
+    // timeline that could not be read, not as a case with no history.
+    await user.click(
+      await screen.findByRole('button', { name: /case history — could not be read/i }),
+    )
+    const timeline = await recordScope('Case history')
     expect(
-      await screen.findByText(/The timeline could not be read: case not found/i),
+      timeline.getByText(/The timeline could not be read: case not found/i),
     ).toBeInTheDocument()
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   })
@@ -2131,9 +2187,15 @@ expect(timeline.getByText(/case created/)).toBeInTheDocument()
     await waitFor(() =>
       expect(screen.getByRole('heading', { name: 'Why did revenue decline?' })).toBeInTheDocument(),
     )
+    // W2X-008: the promotion sits in the Case record group, opened first. The
+    // toggle and the form's submit read the same once open, so the submit is
+    // reached through the panel the disclosure opened - the same scoping any
+    // two same-named controls need.
+    await user.click(await screen.findByRole('button', { name: /^save as a template$/i }))
+    const promotion = await recordScope('Save as a template')
 
     // No name typed: the core defaults it to the case's question.
-    await user.click(screen.getByRole('button', { name: /save as a template/i }))
+    await user.click(promotion.getByRole('button', { name: /save as a template/i }))
     await waitFor(() =>
       expect(api.promoteCaseToTemplate).toHaveBeenCalledWith('c1', ''),
     )
@@ -2159,8 +2221,10 @@ expect(timeline.getByText(/case created/)).toBeInTheDocument()
       expect(screen.getByRole('heading', { name: 'Why did revenue decline?' })).toBeInTheDocument(),
     )
 
-    await user.type(screen.getByLabelText(/template name/i), 'Revenue decline playbook')
-    await user.click(screen.getByRole('button', { name: /save as a template/i }))
+    await user.click(await screen.findByRole('button', { name: /^save as a template$/i }))
+    const promotion = await recordScope('Save as a template')
+    await user.type(promotion.getByLabelText(/template name/i), 'Revenue decline playbook')
+    await user.click(promotion.getByRole('button', { name: /save as a template/i }))
 
     await waitFor(() =>
       expect(api.promoteCaseToTemplate).toHaveBeenCalledWith(
@@ -2183,12 +2247,14 @@ expect(timeline.getByText(/case created/)).toBeInTheDocument()
       expect(screen.getByRole('heading', { name: 'Why did revenue decline?' })).toBeInTheDocument(),
     )
 
-    await user.click(screen.getByRole('button', { name: /save as a template/i }))
+    await user.click(await screen.findByRole('button', { name: /^save as a template$/i }))
+    const promotion = await recordScope('Save as a template')
+    await user.click(promotion.getByRole('button', { name: /save as a template/i }))
 
     const alert = await screen.findByRole('alert')
     expect(alert).toHaveTextContent(/name must not be empty/i)
     // The panel is still ready for a corrected attempt.
-    expect(screen.getByRole('button', { name: /save as a template/i })).toBeEnabled()
+    expect(promotion.getByRole('button', { name: /save as a template/i })).toBeEnabled()
   })
 
   it('states why the agent stopped when nothing is pending', async () => {
@@ -2282,10 +2348,13 @@ expect(timeline.getByText(/case created/)).toBeInTheDocument()
       // The rail is what makes the stage visible without scrolling (UX 5).
       expect(within(orientation).getByText(/where this case stands/i)).toBeInTheDocument()
       expect(within(orientation).getByText(/case overview/i)).toBeInTheDocument()
-      // The work zone holds the surfaces that produce artifacts.
+      // The work zone holds the surfaces that produce artifacts. W2X-008:
+      // Findings is the projection with no control of its own, so it is
+      // absent on a young case - the overview's "Still to come" is where the
+      // analyst hears about it. Runs holds "Draft a finding", so it stays.
       expect(within(work).getByRole('heading', { name: 'Data' })).toBeInTheDocument()
       expect(within(work).getByRole('heading', { name: 'Runs' })).toBeInTheDocument()
-      expect(within(work).getByRole('heading', { name: 'Findings' })).toBeInTheDocument()
+      expect(within(work).queryByRole('heading', { name: 'Findings' })).not.toBeInTheDocument()
       // The intelligence zone holds the assistants - and only them.
       expect(within(intelligence).getByRole('heading', { name: /ask this case/i })).toBeInTheDocument()
       expect(within(intelligence).getByRole('heading', { name: 'Agent' })).toBeInTheDocument()

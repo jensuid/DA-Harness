@@ -7,6 +7,11 @@
 import { type ClaimTrace, type EvidenceGraph, type EvidenceNode } from '../api'
 import { surfaces } from '../lib/ui'
 
+// W2X-008: a projection with nothing to project and no control to offer is
+// not orientation - the overview's "Still to come" names the graph, and this
+// panel waits until there is one to read. A 400 is still guidance, not a
+// failed review: the sentence stays visible so a young case is told what would
+// build a graph, and it is not an alert.
 export function EvidencePanel({
   evidence,
   error,
@@ -16,19 +21,24 @@ export function EvidencePanel({
   error: string | null
   empty: boolean
 }) {
+  if (empty) {
+    // A 400 is the case having no artifacts to graph, so a young case reads
+    // the core's own sentence about what would build one - not a failed
+    // review. The panel stays because the overview's "Still to come" points
+    // here, and the sentence is the next action's own guidance.
+    return (
+      <div className={surfaces.panel}>
+        <h2 className={surfaces.heading}>Evidence graph</h2>
+        <p className={surfaces.note}>{error}</p>
+      </div>
+    )
+  }
+  if (!evidence) return null
   return (
     <div className={surfaces.panel}>
       <h2 className={surfaces.heading}>Evidence graph</h2>
-      {empty ? (
-        // A 400 is the case having no artifacts to graph. The core's sentence
-        // names what would build one, and a young case is not a failed review.
-        <p className={surfaces.note}>{error}</p>
-      ) : !evidence ? (
-        <p className={surfaces.note}>Loading the graph…</p>
-      ) : (
-        <GraphBody graph={evidence} />
-      )}
-      {!empty && error && (
+      <GraphBody graph={evidence} />
+      {error && (
         <p role="alert">The graph could not be read: {error}</p>
       )}
     </div>

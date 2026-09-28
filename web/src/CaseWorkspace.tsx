@@ -39,7 +39,7 @@ import {
 } from './api'
 import { ApiError } from './api'
 import { messageOf } from './CaseList'
-import { Button } from './lib/ui'
+import { Button, surfaces } from './lib/ui'
 import { MotionSurface } from './lib/motion'
 import { AgentPanel } from './panels/AgentPanel'
 import { CaseOverview } from './panels/CaseOverview'
@@ -55,6 +55,95 @@ import { HistoryPanel } from './panels/HistoryPanel'
 import { LearnPanel } from './panels/LearnPanel'
 import { PlanPanel } from './panels/PlanPanel'
 import { PromoteTemplate } from './Templates'
+import { Disclosure } from './lib/disclosure'
+import { historySummary } from './panels/HistoryPanel'
+import { walkSummary } from './panels/LearnPanel'
+
+/**
+ * W2X-008: the case's own record.
+ *
+ * Learn, history and the template promotion are orientation rather than work -
+ * they describe what the case has rather than doing a step in it - but the
+ * walk measured them occupying the first screen alongside six other panels,
+ * four of them relevant only late in the loop. They are one group here, a
+ * single collapsed container the analyst opens when they want the record, so
+ * the orientation zone is the rail, the overview and the question - the three
+ * things that orient - and the record is a click away rather than three panels
+ * of scroll.
+ *
+ * The group stays in the orientation zone: a case's record is what the zone is
+ * for, and moving a panel between zones is a bigger change than the density
+ * asks for. The group's own open state starts closed, because the surfaces
+ * inside it carry their own disclosures and each says its own count.
+ */
+export function CaseRecord({
+  caseId,
+  question,
+  walk,
+  walkError,
+  walkMissing,
+  history,
+  historyError,
+  historyMissing,
+}: {
+  caseId: string
+  question: string
+  walk: LearnWalk | null
+  walkError: string | null
+  walkMissing: boolean
+  history: CaseHistory | null
+  historyError: string | null
+  historyMissing: boolean
+}) {
+  return (
+    <div className={surfaces.panel + ' zone-record'}>
+      <h2 className={surfaces.heading}>Case record</h2>
+      <p className={surfaces.note}>
+        The walk, the timeline and this case's template. Each opens to its own
+        detail.
+      </p>
+      <div className="record-group">
+        <Disclosure
+          id="record-learn"
+          summary={walkSummary(walk, walkError)}
+        >
+          <LearnPanel walk={walk} error={walkError} missing={walkMissing} />
+        </Disclosure>
+        <Disclosure
+          id="record-history"
+          summary={historySummary(history, historyError)}
+        >
+          <HistoryPanel history={history} error={historyError} missing={historyMissing} />
+        </Disclosure>
+        <Disclosure id="record-template" summary="Save as a template">
+          <PromoteTemplate caseId={caseId} question={question} />
+        </Disclosure>
+      </div>
+    </div>
+  )
+}
+
+// The surfaces the case is still waiting on, as one sentence. A hidden panel's
+// empty state is not gone - it is here, named, so the analyst can see the
+// shape of the case they have not built yet without scrolling past it.
+//
+// Each line reads a count the workspace already loads, so the sentence and the
+// panels cannot disagree. The evidence graph is the one projection: it is read
+// through a projection that can answer 400 for a young case, so its own loaded
+// state is the signal, not the count.
+export function pendingPanels(state: {
+  runs: number
+  findings: number
+  evidence: boolean
+  evaluations: number
+}): string[] {
+  const pending: string[] = []
+  if (state.findings === 0) pending.push('a finding')
+  if (!state.evidence) pending.push('the evidence graph')
+  if (state.evaluations === 0) pending.push('an audit')
+  return pending
+}
+
 import { RefinePanel } from './RefinePanel'
 import { RunsPanel } from './panels/RunsPanel'
 import { WorkflowRail } from './panels/WorkflowRail'
@@ -253,6 +342,15 @@ export function CaseWorkspace({
               findings={findings.length}
               openIssues={qualityIssues.length + pendingFindings}
               pendingValidation={pendingFindings}
+              pending={pendingPanels({
+                runs: runs.length,
+                findings: findings.length,
+                // The graph is a projection that can answer 400 for a young
+                // case; its own loaded state says it exists, not the error
+                // that answered instead.
+                evidence: !!evidence,
+                evaluations: evaluations.length,
+              })}
             />
             <div id="refine">
             <RefinePanel
@@ -261,13 +359,22 @@ export function CaseWorkspace({
               onChanged={() => void load()}
             />
             </div>
-            <LearnPanel walk={walk} error={walkError} missing={walkMissing} />
-            <HistoryPanel
+            {/* W2X-008: the case's own record. Learn, history and the template
+                promotion are orientation - they describe the case rather than
+                doing work in it - but they are the later part of orientation,
+                the part an analyst consults once the loop has produced
+                something. One collapsed group instead of three flat panels,
+                open when the case has a record to read. */}
+            <CaseRecord
+              caseId={caseId}
+              question={caseRow?.question ?? ''}
+              walk={walk}
+              walkError={walkError}
+              walkMissing={walkMissing}
               history={history}
-              error={historyError}
-              missing={historyMissing}
+              historyError={historyError}
+              historyMissing={historyMissing}
             />
-            <PromoteTemplate caseId={caseId} question={caseRow?.question ?? ''} />
           </MotionSurface>
         </section>
         <section className="zone work" aria-label="work">
@@ -288,6 +395,13 @@ export function CaseWorkspace({
             />
             </div>
             <EdaPanel caseId={caseId} datasets={datasets} profiles={profiles} />
+            {/* W2X-008: Runs stays mounted on a young case. Hiding a panel that
+                carries no artifact is right only when the panel carries no
+                control either - this one holds "Draft a finding", the only
+                surface that creates one, so a case with no runs still needs it
+                and its empty state is the next action's own sentence. The
+                rail's "Go to the Runs panel" points here, and the anchor has to
+                resolve. */}
             <div id="runs">
             <RunsPanel
               caseId={caseId}
@@ -296,13 +410,15 @@ export function CaseWorkspace({
               onChanged={() => void load()}
             />
             </div>
-            <div id="findings">
-            <FindingsPanel
-              caseId={caseId}
-              findings={findings}
-              onChanged={() => void load()}
-            />
-            </div>
+            {findings.length > 0 ? (
+              <div id="findings">
+                <FindingsPanel
+                  caseId={caseId}
+                  findings={findings}
+                  onChanged={() => void load()}
+                />
+              </div>
+            ) : null}
             <div id="evaluate">
             <EvaluatePanel
               caseId={caseId}

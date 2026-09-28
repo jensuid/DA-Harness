@@ -7,6 +7,10 @@
 import { type LearnWalk } from '../api'
 import { surfaces } from '../lib/ui'
 
+// W2X-008: the panel renders its body directly. The collapse is the Case
+// record group's own disclosure, which carries this panel's derived summary -
+// a disclosure nested in a disclosure is two clicks to read one thing, and
+// the group's summary is the one the analyst scans.
 export function LearnPanel({
   walk,
   error,
@@ -34,6 +38,27 @@ export function LearnPanel({
       )}
     </div>
   )
+}
+
+// W2X-008: the collapsed summary the record group shows. It carries the
+// panel's name - so the toggle is found by the name an analyst knows it by -
+// and the state, so a finished walk says it finished rather than merely
+// sitting closed. A walk that could not be read is named by the failure
+// itself rather than by its absence: the panel's guidance is the one place
+// the 404 is said once, and a collapsed group that hid it would report a
+// missing case as a case with nothing to learn. The workspace sets the error
+// and a null walk together, so the error branch is read before the null one
+// - a load still in flight has neither.
+export function walkSummary(walk: LearnWalk | null, error: string | null): string {
+  if (error) return 'Learn this case — could not be read'
+  if (!walk) return 'Learn this case'
+  if (walk.done) {
+    return 'Learn this case — complete, every phase done'
+  }
+  const phase = PHASE_TITLES[walk.current ?? ''] ?? walk.current
+  return walk.current
+    ? `Learn this case — ${phase} is the phase to work on`
+    : 'Learn this case'
 }
 
 export function WalkBody({ walk }: { walk: LearnWalk }) {

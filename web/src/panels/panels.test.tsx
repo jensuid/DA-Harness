@@ -82,8 +82,8 @@ import {
   GENERATE_KIND_LABELS,
   GeneratePanel,
 } from './GeneratePanel'
-import { COUNT_KINDS, EVENT_KINDS, HistoryBody, HistoryPanel } from './HistoryPanel'
-import { LearnPanel, PHASE_TITLES, WalkBody } from './LearnPanel'
+import { COUNT_KINDS, EVENT_KINDS, HistoryBody, HistoryPanel, historySummary } from './HistoryPanel'
+import { LearnPanel, PHASE_TITLES, WalkBody, walkSummary } from './LearnPanel'
 import { PlanPanel } from './PlanPanel'
 import { RUN_KINDS, RUN_KIND_LABELS, RunCodePanel } from './RunCodePanel'
 import {
@@ -115,8 +115,8 @@ const PANELS: Record<string, unknown[]> = {
   EvidencePanel: [EvidencePanel, GraphBody, ClaimTraceRow, nodePhrase, RELATIONS],
   FindingsPanel: [FindingsPanel, FindingRow, Verdict],
   GeneratePanel: [GeneratePanel, GENERATE_KINDS, GENERATE_KIND_LABELS],
-  HistoryPanel: [HistoryPanel, HistoryBody, COUNT_KINDS, EVENT_KINDS],
-  LearnPanel: [LearnPanel, WalkBody, PHASE_TITLES],
+  HistoryPanel: [HistoryPanel, HistoryBody, COUNT_KINDS, EVENT_KINDS, historySummary],
+  LearnPanel: [LearnPanel, WalkBody, PHASE_TITLES, walkSummary],
   PlanPanel: [PlanPanel],
   RunCodePanel: [RunCodePanel, RUN_KINDS, RUN_KIND_LABELS],
   RunsPanel: [

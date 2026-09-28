@@ -70,7 +70,11 @@ main.wide {
    so a panel's own contract is unchanged. */
 .workspace {
   display: grid;
-  grid-template-columns: 15rem minmax(0, 1fr) 16rem;
+  /* W2X-013: the orientation column had a fixed 15rem, which was 18% of a
+     1280pt window and wrapped a long question into an unreadable block. A
+     min/max lets it breathe to 17rem and never narrower than 15rem, so the
+     question wraps in a readable column and the work zone keeps the rest. */
+  grid-template-columns: minmax(15rem, 17rem) minmax(0, 1fr) minmax(16rem, 18rem);
   gap: 0 1.25rem;
   align-items: start;
   margin-top: 0.5rem;
@@ -740,4 +744,65 @@ button.danger:hover {
   color: var(--color-accent);
   text-decoration: underline;
   cursor: pointer;
+}
+
+/* W2X-008: the disclosure. A collapsed surface is a summary the analyst scans
+   and a region one click away, so the toggle reads as a panel's own header
+   rather than a generic button - the mark is decorative and the summary is
+   the sentence, and the open state is announced by the button's own
+   aria-expanded rather than by the mark's direction. */
+.collapse {
+  margin-top: 0.4rem;
+}
+
+.collapse-toggle {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  width: 100%;
+  margin: 0;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface-muted);
+  color: var(--color-text);
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.collapse-toggle:hover {
+  background: var(--color-accent-surface, #f7f9fc);
+}
+
+.collapse-mark {
+  flex: none;
+  color: var(--color-text-muted);
+  font-weight: 400;
+}
+
+.collapse-body {
+  padding-top: 0.4rem;
+}
+
+/* The case's record group: three disclosures, one panel. The inner panels
+   carry their own margins, so the group's gap does the spacing instead. */
+.zone-record .record-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.zone-record .record-group .panel {
+  margin: 0;
+  padding: 0.6rem 0.75rem;
+  border: none;
+  background: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .collapse-toggle {
+    transition: none;
+  }
 }
