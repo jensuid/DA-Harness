@@ -416,9 +416,10 @@ SUMMARY: the walk-test's BLOCKER is closed on both halves. Phase A made the
 
 ### Carried follow-ups from the second walk-test (WALK-UX-002 - open)
 
-Thirteen findings; two closed (W2X-006, W2X-007). The walk-test's own material
-is in `walktest-w2/` - REPORT.md (summary, measured density, priority table),
-FINDINGS.md (one block per finding with severity and code location),
+Thirteen findings; four closed (W2X-002, W2X-005, W2X-006, W2X-007). The
+walk-test's own material is in `walktest-w2/` - REPORT.md (summary, measured
+density, priority table), FINDINGS.md (one block per finding with severity
+and code location),
 PHASE2.md (the real-app verification), CAPTURE-SHEET.md. Priority order
 below is the walk-test's (impact / effort); each is a separate task with
 its own contract, one commit per fix.
@@ -446,14 +447,24 @@ its own contract, one commit per fix.
   ("Generating…", "Working… x3") with no elapsed time and no cancel, then
   answers from the deterministic path without a banner explaining that is
   what happened. 3 of 4 calls timed out in the walk.
-- **W2X-002** - submitting "New Analysis Case" with the dataset field empty
-  is total silence: no request, no alert, nothing changes. Only HTML5
-  native validation, which is invisible in a headless context and
-  undiscoverable for a first-time user. `web/src/CaseCreation.tsx`.
-- **W2X-005** - the stage guidance shows the raw endpoint
-  (`POST /cases/{case_id}/datasets`, the `{dataset_id}` placeholder
-  unfilled) instead of an action. Confirmed twice, in both the browser and
-  the real app. `server/app/workflow.py` `_STAGE_ACTIONS`.
+- **W2X-002 — CLOSED.** The form answers instead of going quiet: submitting
+  "New Analysis Case" with a blank field now names the fields it still needs
+  in `role="alert"` live regions, marks them `aria-invalid`, clears a message
+  once the field is filled, and never leaves the page - the browser's native
+  validation was the only thing behind the submit, and its message is
+  invisible headlessly and undiscoverable for a first-time analyst. Both
+  labels now carry the `*` and the dataset's says what to put there.
+  `web/src/CaseCreation.tsx`; 4 tests in `web/src/CaseCreation.test.tsx`.
+- **W2X-005 — CLOSED.** The stage guidance shows an action, not an endpoint:
+  "Next: Attach a dataset" with a "Go to the Data panel" button that
+  scrollIntoViews the panel that performs it, and the raw path moved behind a
+  "developer info" disclosure where it still answers the reader who wanted
+  it. The core side of the same fix fills `{dataset_id}` with the first
+  attached dataset and drops the placeholder when no dataset exists yet, so
+  the path the disclosure quotes is a path that runs instead of a literal
+  that 404s. `web/src/panels/WorkflowRail.tsx` (7 tests) +
+  `web/src/CaseWorkspace.tsx` (panel anchors) + `server/app/workflow.py`
+  (2 tests in `server/tests/test_workflow.py`).
 - **W2X-006 — CLOSED.** The generated code is editable: `GeneratePanel`'s
   `<pre>` is a `textarea` holding a `draft` that starts as the proposal and is
   what the run posts, so an untouched proposal runs unchanged and a one-token

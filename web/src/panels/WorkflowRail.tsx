@@ -7,6 +7,21 @@
 import { type CaseProgress } from '../api'
 import { surfaces } from '../lib/ui'
 
+// W2X-005: the stage's action is an action in the product, not an endpoint.
+// The rail's "Next" is the first thing an analyst reads, and a raw HTTP path
+// answers the developer's question, not theirs. Each stage names the panel
+// that performs it; the button scrolls there, and the endpoint stays available
+// behind "developer info" for the reader who wanted it.
+const STAGE_PANEL: Record<string, { panel: string; label: string }> = {
+  question: { panel: 'refine', label: 'the question panel' },
+  data: { panel: 'data', label: 'the Data panel' },
+  profile: { panel: 'data', label: 'the Data panel' },
+  plan: { panel: 'plan', label: 'the Plan panel' },
+  analyze: { panel: 'runs', label: 'the Runs panel' },
+  evidence: { panel: 'findings', label: 'the Findings panel' },
+  validate: { panel: 'evaluate', label: 'the Evaluate panel' },
+}
+
 export function WorkflowRail({
   progress,
   qualityWarning,
@@ -14,6 +29,10 @@ export function WorkflowRail({
   progress: CaseProgress | null
   qualityWarning: boolean
 }) {
+  const target =
+    progress?.stage && progress.stage in STAGE_PANEL
+      ? STAGE_PANEL[progress.stage]
+      : null
   if (!progress) return <p className={surfaces.note}>Loading workflow…</p>
   return (
     <div className={surfaces.panel + ' workflow-rail'}>
@@ -27,11 +46,32 @@ export function WorkflowRail({
         </strong>
       </p>
       {progress.next_action ? (
-        <p>
-          Next: <strong>{progress.next_action}</strong>
-          <br />
-          <code>{progress.next_endpoint}</code>
-        </p>
+        <div className="next-action">
+          <p>
+            Next: <strong>{progress.next_action}</strong>
+          </p>
+          {progress.next_hint && (
+            <p className={surfaces.note}>{progress.next_hint}</p>
+          )}
+          {target && (
+            <p>
+              <button
+                type="button"
+                className="next-action-link"
+                onClick={() => {
+                  const el = document.getElementById(target.panel)
+                  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                }}
+              >
+                Go to {target.label}
+              </button>
+            </p>
+          )}
+          <details>
+            <summary>developer info</summary>
+            <code>{progress.next_endpoint}</code>
+          </details>
+        </div>
       ) : (
         <p>Every stage has an artifact behind it.</p>
       )}

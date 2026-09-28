@@ -1,37 +1,68 @@
 ## Next action
 
-**W2X-006 + W2X-007 landed: the code is editable, and the engine has a door of
-its own.** The walk-test's realest frustration loop was a 400 on a one-token
-date fix that cost another LLM call, because the only copy of the code was a
-read-only `<pre>`; and the stage guidance said "Run an analysis" while the
-only paths into `/runs` were the non-editable codegen and the EDA presets.
+**W2X-002 + W2X-005 landed: the first thing the app says is no longer
+silence, and no longer an endpoint.** Both were the walk-test's "what do I
+do first" findings, and both were the app answering a question the analyst
+hadn't asked - or not answering at all.
 
-- **W2X-006** - the proposal's `<pre>` is a `textarea`. The proposal stays
-  immutable; a `draft` starts as its code and is what the run posts, so an
-  untouched proposal runs unchanged and an edit costs no second call.
-- **W2X-007** - a `RunCodePanel` in the work zone: an engine selector, a blank
-  editor, and the run endpoints the codegen panel already posts to. The core's
-  own SQL/Python capability has a surface, not just a stage instruction.
+- **W2X-002** - submitting "New Analysis Case" with a blank field used to be
+  total silence: no request, no alert, nothing changed, because only HTML5
+  native validation stood behind the submit. The form now names the fields it
+  still needs in `role="alert"` live regions, marks them `aria-invalid`,
+  clears a message when the field is filled, and labels both with `*`. The
+  browser's own refusal was correct; its message was the part nobody could
+  see.
+- **W2X-005** - the rail's "Next:" showed `POST /cases/…/datasets` with a
+  `{dataset_id}` placeholder unfilled, which read as a bug and answered a
+  developer's question. It now shows the action and a "Go to the Data panel"
+  button that scrolls to the panel that performs it; the path lives behind a
+  "developer info" disclosure. The core half fills the placeholder with the
+  first attached dataset and drops it when none exists, so the quoted path
+  is a path that runs.
 
-**What broke, both in the tests rather than the product.** The `vi.mock`
-factories returned only the functions, so `ApiError` was undefined under the
-mock and `messageOf`'s refusal branch was dead in those two files - the
-panel's own refusal sentence was the thing a broken mock hid. Fixed by
-spreading the original module. And `user.type` parses `[` as a keyboard
-modifier, so one python snippet in a test had to drop its list comprehension.
+**What broke, all in the tests.** jsdom renders `<details>` open (no
+content-visibility), so the test that asserted the endpoint was absent had to
+assert it is *inside* the disclosure instead - the browser behaviour and the
+jsdom behaviour are both right, and the assertion now names the contract
+rather than the rendering. The sentence "Next: Attach a dataset" spans a
+`<strong>`, so `getByText` needed the container's own text. And
+`vi.clearAllMocks` was missing from one file, so a `createCase` spy carried a
+call from the test before it - the "silence" the test saw was its own leak.
 
-**Gates:** web 246 (235 + 11), tsc clean, build ok. The server and cargo
-gates are untouched this task - no core or shell code changed. Browser check
-against a live core: the panel renders as "Run code on tickets.csv" with both
-engine radios, and the proposal's code reaches an editable textarea.
+**Gates:** web 257 (246 + 11), tsc clean, build ok, server full suite 773
+(772 + 1), test_workflow 16 (14 + 2), trace 48/48, e2e all steps,
+measure 9/9. Every gate is green; this task commits.
+
+**The AT-38 circle is broken, and it was never a circle.** The handoff's
+hypothesis was that the suite fails only *inside* the line counter because the
+seven `test_trace` tests read `verification/measure/REPORT.md`
+(`matrix.py:167`), which a failed measure run had itself just written red. That
+was wrong, and chasing it was the wrong place. The real failure was one test in
+a suite the runner collects first alphabetically: `test_refine.py::
+test_create_refinement_reports_the_engine_that_spoke` asserted
+`source == "deterministic"` and got `"deterministic fallback"` because a
+*previous* test in `test_llm_config.py` had left `DAH_LLM_API_KEY` set in
+`os.environ`, so the refiner was configured, made a real network call to
+`api.openai.com`, got a 401, and fell back. The fallback label was the only
+evidence of the leak. `apply_config` writing `os.environ` directly is the whole
+point of "no restart" and is correct production code; `monkeypatch` restores
+only the variables a test declared, and the PUT endpoint's write is not one of
+them. The suite's own comment claimed the opposite
+(`test_llm_config.py:162-168`). Fixed by restoring the four variables in the
+autouse fixture's teardown, converting `test_env_config.py` off its hand-rolled
+`try/finally` pops for the same reason, and pinning it with a regression test
+that names any variable that outlives the suite. The 401 also explains the
+"stale background notifications": those runs were the same leak, not the same
+suite. Lesson: an order-dependent failure in one test file is an environment
+leak in another one that runs first.
 
 **Next, in priority order:**
 
-1. **W2X-002 and W2X-005** - an inline required-field message and a real
-   action instead of the raw `POST` endpoint string. Both small.
-2. **W2X-008, the density.** The largest effort and the original complaint:
+1. **W2X-008, the density.** The largest effort and the original complaint:
    hide empty panels, collapse completed stages, narrow the orientation zone.
-3. **W2X-001, W2X-009, then the five MINORs.**
+2. **W2X-001, W2X-009, then the five MINORs.**
+3. **W2X-004, the timeout surface** - three of four calls timed out in the
+   walk and the UI showed one static word with no elapsed time and no cancel.
 
 **Two carried decisions stay, both unchanged and both not code:** the
 packaged app is unsigned by DEC-006, and GitHub Actions' billing is
@@ -43,6 +74,11 @@ run in CI).
 The last tasks to land, newest first. The contract and done-record for each
 is in `ai/TASKS.md` (rolling window) or `ai/TASKS-ARCHIVE.md`.
 
+- **W2X-002 + W2X-005, the first-thing-the-app-says** - the new-case form
+  answers a blank submit by naming the fields it needs in live regions instead
+  of going silent, and the workflow rail's "Next" is an action with a button
+  to the panel that performs it, the raw endpoint behind a developer-info
+  disclosure and its `{dataset_id}` filled with the first attached dataset.
 - **W2X-006 + W2X-007, the analysis editor** - the proposal's `<pre>` is now a
   `textarea` whose `draft` is what the run posts, so a one-token fix costs no
   second LLM call; and a `RunCodePanel` in the work zone gives the core's own

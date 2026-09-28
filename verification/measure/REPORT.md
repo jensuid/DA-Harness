@@ -7,7 +7,7 @@ and verification/refine/REPORT.md.
 
 ## AT-38                  PASS
 
-- measured: core 94.2% (8335/8852 lines), analytical 93.1%, evidence 92.4%
+- measured: core 94.2% (8348/8866 lines), analytical 93.1%, evidence 92.4%
 - target: >= 80% core, >= 90% analytical and evidence
 
 ## AT-37                  PASS
@@ -17,12 +17,12 @@ and verification/refine/REPORT.md.
 
 ## AT-28                  PASS
 
-- measured: p95 144ms over 20 samples
+- measured: p95 171ms over 20 samples
 - target: p95 <= 2000ms
 
 ## AT-29                  PASS
 
-- measured: p95 859ms over 10 samples
+- measured: p95 1363ms over 10 samples
 - target: p95 <= 5000ms
 
 ## AT-46                  PASS
@@ -47,9 +47,9 @@ and verification/refine/REPORT.md.
 
 ## AT-27 / AT-30 / AT-32  PASS
 
-- measured: the web suite is green (Tests  235 passed (235))
+- measured: the web suite is green (Tests  257 passed (257))
 - target: p95 <= 200ms, every long-running operation shows its state, 0 critical accessibility violations
 
 ---
 
-**PASS** - 9/9 measurements hold; measured in 362s.
+**PASS** - 9/9 measurements hold; measured in 367s.

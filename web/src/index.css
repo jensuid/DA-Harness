@@ -701,3 +701,43 @@ button.danger:hover {
     transform: none !important;
   }
 }
+
+/* W2X-002: the inline required-field message. Native validation refuses the
+   submit with a message the headless walk cannot see and a first-time analyst
+   cannot discover; this is the sentence the browser would have shown, in the
+   danger token the shell's other refusals use. */
+.field-error {
+  margin: 0.3rem 0 0.6rem;
+  font-size: 0.9rem;
+  color: var(--color-danger);
+}
+
+/* W2X-005: the stage's next action is a button, not an endpoint. The raw
+   path stays reachable behind "developer info" - it was the answer to a
+   question, just not the analyst's - while the action the stage asks for is
+   one click from the panel that performs it. */
+.next-action {
+  margin: 0.4rem 0 0.6rem;
+}
+.next-action > details {
+  margin-top: 0.4rem;
+  font-size: 0.85rem;
+}
+.next-action > details summary {
+  cursor: pointer;
+  color: var(--color-text-muted);
+}
+.next-action > details code {
+  display: block;
+  margin-top: 0.25rem;
+  word-break: break-all;
+}
+.next-action-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: var(--color-accent);
+  text-decoration: underline;
+  cursor: pointer;
+}

@@ -254,11 +254,13 @@ export function CaseWorkspace({
               openIssues={qualityIssues.length + pendingFindings}
               pendingValidation={pendingFindings}
             />
+            <div id="refine">
             <RefinePanel
               caseId={caseId}
               question={caseRow?.question ?? ''}
               onChanged={() => void load()}
             />
+            </div>
             <LearnPanel walk={walk} error={walkError} missing={walkMissing} />
             <HistoryPanel
               history={history}
@@ -270,29 +272,38 @@ export function CaseWorkspace({
         </section>
         <section className="zone work" aria-label="work">
           <MotionSurface variant="enter" className="contents">
+            <div id="data">
             <DataPanel
               caseId={caseId}
               datasets={datasets}
               profiles={profiles}
               onChanged={() => void load()}
             />
+            </div>
+            <div id="plan">
             <PlanPanel
               caseId={caseId}
               datasets={datasets}
               onChanged={() => void load()}
             />
+            </div>
             <EdaPanel caseId={caseId} datasets={datasets} profiles={profiles} />
+            <div id="runs">
             <RunsPanel
               caseId={caseId}
               runs={runs}
               datasets={datasets}
               onChanged={() => void load()}
             />
+            </div>
+            <div id="findings">
             <FindingsPanel
               caseId={caseId}
               findings={findings}
               onChanged={() => void load()}
             />
+            </div>
+            <div id="evaluate">
             <EvaluatePanel
               caseId={caseId}
               datasets={datasets}
@@ -300,6 +311,7 @@ export function CaseWorkspace({
               evaluations={evaluations}
               onChanged={() => void load()}
             />
+            </div>
             <EvidencePanel
               evidence={evidence}
               error={evidenceError}

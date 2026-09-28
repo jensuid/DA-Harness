@@ -157,12 +157,34 @@ def case_progress(db, case_id: str) -> dict[str, Any]:
         }
 
     action = _STAGE_ACTIONS[current]
+    # W2X-005: a `{dataset_id}` the case cannot fill read as a bug, so the
+    # first attached dataset is substituted where the endpoint needs one. When
+    # the stage is before any dataset exists the placeholder is dropped rather
+    # than shown unfilled - the developer reading it still gets the path's
+    # shape from the routes that take only the case.
+    first_dataset = next(
+        (
+            row["id"]
+            for row in db.execute(
+                "SELECT id FROM datasets WHERE case_id = ? ORDER BY created_at LIMIT 1",
+                (case_id,),
+            ).fetchall()
+        ),
+        None,
+    )
+    endpoint = action["endpoint"].replace("{case_id}", case_id)
+    if "{dataset_id}" in endpoint:
+        endpoint = (
+            endpoint.replace("{dataset_id}", first_dataset)
+            if first_dataset
+            else endpoint.replace("/{dataset_id}", "")
+        )
     return {
         "stage": current,
         "completed": completed,
         "next_action": action["action"],
         "next_hint": action["hint"],
-        "next_endpoint": action["endpoint"].replace("{case_id}", case_id),
+        "next_endpoint": endpoint,
         "loop_closed": False,
         "counts": counts,
     }

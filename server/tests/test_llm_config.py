@@ -32,6 +32,7 @@ import json
 import logging
 import os
 import stat
+from collections.abc import Generator
 from pathlib import Path
 
 import pytest
@@ -50,12 +51,26 @@ from app.llm import (
 
 
 @pytest.fixture(autouse=True)
-def no_llm_key(monkeypatch: pytest.MonkeyPatch) -> None:
+def no_llm_key(monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, None]:
     """The state phase A asserts as a baseline is the state this suite starts
     from too: a key in the developer's environment would make every test here
     observe a configuration it did not set."""
-    for name in ("DAH_LLM_API_KEY", "OPENAI_API_KEY", "DAH_LLM_MODEL", "DAH_LLM_BASE_URL"):
+    for name in (KEY_VARS := ("DAH_LLM_API_KEY", "OPENAI_API_KEY",
+                              "DAH_LLM_MODEL", "DAH_LLM_BASE_URL")):
         monkeypatch.delenv(name, raising=False)
+
+    yield
+
+    # `apply_config` writes `os.environ` directly - that is the whole point of
+    # "no restart", and it is the PUT endpoint this suite exercises. But
+    # monkeypatch only restores the variables it set itself, so a write the
+    # suite made and never declared leaves `DAH_LLM_API_KEY` set for every
+    # test after it. A later adapter call then sees a configured LLM, makes a
+    # real network call and falls back to `deterministic fallback` - a source
+    # label the refinement suite asserts is `deterministic`, and the only
+    # evidence of the leak. Restore the whole set, whatever set it.
+    for name in KEY_VARS:
+        os.environ.pop(name, None)
 
 
 @pytest.fixture
@@ -441,3 +456,29 @@ def test_write_settings_rejects_anything_that_is_not_the_model(settings_dir: Pat
     # the loader silently storing nothing.
     with pytest.raises(TypeError):
         write_settings(settings_path(settings_dir), {"api_key": "not-a-model"})  # type: ignore[arg-type]
+
+
+# -- the suite does not leave a configured LLM behind it -----------------------
+
+
+def test_the_suite_leaves_no_configured_llm_behind() -> None:
+    """A PUT writes `os.environ`, and no test after this suite may see it.
+
+    `apply_config` writes the environment directly - that is the mechanism the
+    whole surface exists for, and it is the reason this suite's own `no_llm_key`
+    teardown restores every variable rather than relying on monkeypatch alone:
+    monkeypatch restores only the variables a test declared, and a write the
+    endpoint performed is not one of them.
+
+    This is the pin. A suite that gains a sixth variable, or a new write path,
+    breaks here with a name, instead of surfacing later as a wrong `source`
+    label in a test that never set a key - which is how the leak looked when it
+    was a circular AT-38 failure instead of a test.
+    """
+    from app.llm import KEY_VARS, MODEL_VAR, BASE_URL_VAR, _configured
+
+    for name in (*KEY_VARS, MODEL_VAR, BASE_URL_VAR):
+        assert name not in os.environ, (
+            f"{name} outlived this suite; a later adapter call would see a "
+            "configured LLM the analyst never set")
+    assert _configured().configured is False

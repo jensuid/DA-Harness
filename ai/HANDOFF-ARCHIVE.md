@@ -5,6 +5,35 @@ knew how it would end.
 
 ---
 
+## W2X-006 + W2X-007
+
+**W2X-006 + W2X-007 landed: the code is editable, and the engine has a door of
+its own.** The walk-test's realest frustration loop was a 400 on a one-token
+date fix that cost another LLM call, because the only copy of the code was a
+read-only `<pre>`; and the stage guidance said "Run an analysis" while the
+only paths into `/runs` were the non-editable codegen and the EDA presets.
+
+- **W2X-006** - the proposal's `<pre>` is a `textarea`. The proposal stays
+  immutable; a `draft` starts as its code and is what the run posts, so an
+  untouched proposal runs unchanged and an edit costs no second call.
+- **W2X-007** - a `RunCodePanel` in the work zone: an engine selector, a blank
+  editor, and the run endpoints the codegen panel already posts to. The core's
+  own SQL/Python capability has a surface, not just a stage instruction.
+
+**What broke, both in the tests rather than the product.** The `vi.mock`
+factories returned only the functions, so `ApiError` was undefined under the
+mock and `messageOf`'s refusal branch was dead in those two files - the
+panel's own refusal sentence was the thing a broken mock hid. Fixed by
+spreading the original module. And `user.type` parses `[` as a keyboard
+modifier, so one python snippet in a test had to drop its list comprehension.
+
+**Gates:** web 246 (235 + 11), tsc clean, build ok. The server and cargo
+gates are untouched this task - no core or shell code changed. Browser check
+against a live core: the panel renders as "Run code on tickets.csv" with both
+engine radios, and the proposal's code reaches an editable textarea.
+
+---
+
 ## W2X-012 phase B
 
 **W2X-012 phase B landed: the walk-test's BLOCKER is closed on both halves.**

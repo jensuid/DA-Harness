@@ -162,3 +162,50 @@ def test_progress_404_for_unknown_case(tmp_path) -> None:
     with TestClient(app) as client:
         response = client.get("/cases/no-such-case/progress")
     assert response.status_code == 404
+
+
+def test_the_next_endpoint_names_the_case_when_no_dataset_exists(tmp_path) -> None:
+    """W2X-005: a `{dataset_id}` the case cannot fill reads as a bug.
+
+    The walk-test saw `POST /cases/{case_id}/datasets/{dataset_id}/plan` with
+    the placeholder unfilled, on the guidance an analyst reads first. When the
+    stage is before any dataset the placeholder is dropped rather than shown
+    empty - the path still names the case, and the routes that take one are the
+    routes this stage is in.
+    """
+    _temp_env(tmp_path)
+    with TestClient(app) as client:
+        case_id = client.post(
+            "/cases", json={"question": "Why?", "dataset": "s.csv"}
+        ).json()["id"]
+        progress = _progress(client, case_id)
+
+    assert progress["stage"] == "data"
+    assert "{dataset_id}" not in progress["next_endpoint"]
+    assert progress["next_endpoint"] == f"POST /cases/{case_id}/datasets"
+
+
+def test_the_next_endpoint_fills_the_dataset_when_one_exists(tmp_path) -> None:
+    """W2X-005: the endpoint the guidance quotes is the endpoint that runs.
+
+    Once a dataset is attached, the placeholder that read as a bug is the id
+    the endpoint actually takes, so a developer who opens the disclosure and
+    curls the path reaches the route rather than a 404 on a literal.
+    """
+    _temp_env(tmp_path)
+    with TestClient(app) as client:
+        case_id = client.post(
+            "/cases", json={"question": "Why?", "dataset": "s.csv"}
+        ).json()["id"]
+        client.post(
+            f"/cases/{case_id}/datasets",
+            files={"file": ("s.csv", CSV, "text/csv")},
+        )
+        dataset_id = client.get(f"/cases/{case_id}/datasets").json()[0]["id"]
+        progress = _progress(client, case_id)
+
+    assert progress["stage"] == "profile"
+    assert "{dataset_id}" not in progress["next_endpoint"]
+    assert progress["next_endpoint"] == (
+        f"POST /cases/{case_id}/datasets/{dataset_id}/profile"
+    )

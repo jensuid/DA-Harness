@@ -3,23 +3,40 @@ the motion, the on-screen chart). P8, P7, P6, P5, P4, P3, P2, P1 and P0 are all
 COMPLETE (see the phase table below). Every phase the roadmap and the
 conformance evaluation asked for is delivered; no phase is open.
 
-- **Active task:** **W2X-006 + W2X-007 DONE - the analysis editor.** The
-  walk-test's realest loop was a 400 on a one-token date fix that cost
-  another LLM call, because the only copy of the code was a read-only
-  `<pre>`; and the stage guidance said "Run an analysis" while the only
-  doors into `/runs` were the non-editable codegen and the EDA presets.
-  W2X-006 makes `GeneratePanel`'s `<pre>` a `textarea` holding a `draft`
-  that starts as the proposal and is what the run posts - so an untouched
-  proposal runs unchanged and an edit costs no second call. W2X-007 adds a
-  `RunCodePanel` in the work zone: an engine selector (SQL default, Python
-  the analyst's choice), a blank editor, and the two run endpoints the
-  codegen panel already posted to. The core's own capability has a surface,
-  not just a stage instruction. Gates: web 246 (235 + 11), tsc clean, build
-  ok; the server and cargo gates are untouched this task. Browser check
-  against a live core: the panel renders as "Run code on tickets.csv" with
-  both engine radios, and the proposal's code reaches an editable textarea.
-  Sebelumnya: W2X-012 phase B (the settings surface), W2X-012 phase A (the
-  status surface), WALK-UX-002 (recorded),
+- **Active task:** **W2X-002 + W2X-005 DONE - the first thing the app says.**
+  The second walk-test's two "what do I do first" findings, both about the
+  app's own answering behaviour rather than its capability. W2X-002:
+  submitting "New Analysis Case" with a blank field was total silence - no
+  request, no alert, nothing changed - because only HTML5 native validation
+  stood behind the submit, and its message is invisible headlessly and
+  undiscoverable for a first-time analyst. The form now names the fields it
+  still needs in `role="alert"` live regions, marks each `aria-invalid`,
+  clears a message once the field is filled, and never leaves the page; both
+  labels carry `*` and the dataset's says what belongs there. W2X-005: the
+  rail's "Next:" showed the raw `POST /cases/…/datasets` with a
+  `{dataset_id}` placeholder unfilled - an answer to a developer's question,
+  that read as a bug, on the surface an analyst reads first. The rail now
+  shows the action and a "Go to the Data panel" button that scrollIntoViews
+  the panel that performs it, with the path behind a "developer info"
+  disclosure; the core half fills the placeholder with the first attached
+  dataset and drops it when none exists yet, so the quoted path is a path
+  that runs instead of a literal that 404s. Gates: web 257 (246 + 11), tsc
+  clean, test_workflow 16 (14 + 2). Browser check against a live core: the
+  empty submit fires zero fetches and answers two `role="alert"`, the rail's
+  button scrolls the right anchor, and the disclosed endpoint is a real
+  dataset id.
+  **STATUS: COMMITTED, all gates green.** The one gate that had held the
+  commit - measure AT-38 - turned out not to be the circular dependency the
+  handoff hypothesised. The suite's real failure inside the line counter was
+  `test_refine.py` seeing a `deterministic fallback` label, because
+  `test_llm_config.py`'s PUT endpoint had left `DAH_LLM_API_KEY` in
+  `os.environ` and the refiner made a real 401 call before falling back;
+  monkeypatch restores only the variables a test declared. Fixed with an
+  autouse teardown in `test_llm_config.py` (and a matching one in
+  `test_env_config.py`), pinned by a regression test.
+  Sebelumnya: W2X-006 + W2X-007 (the analysis editor), W2X-012 phase B (the
+  settings surface), W2X-012 phase A (the status surface), WALK-UX-002
+  (recorded),
   v0.3.4, P9-F4-001 (the on-screen chart), P9-F3-001 (the motion layer),
   P9-F2-002 (the restyle), P9-F2-001 (the walk-test's last three
   findings), P9-F1-001 (the redesign's foundation), FIX-PYTHON-005,
@@ -75,12 +92,17 @@ conformance evaluation asked for is delivered; no phase is open.
   `desktop/bundle_dmg.sh`, so the shipped triple is what the developer's
   machine produces. Restoring an enforced Intel lane needs a self-hosted
   runner.
-- **Test status:** server 772 passed (741 + 31 for W2X-012 phase B, and +1
-  for the chart format field P9-F4's re-walk found). The web suite is 246
-  (+30 since 216: +19 for P9-F4-001 - the chart's own contract: the
-  geometry is the core's rules, the two kinds each render their tree, the
-  tooltip is the live region, the fallback holds the artifact, and the PNG
-  stays a link; +11 for W2X-006 and W2X-007, the analysis editor).
+- **Test status:** server 773 passed (772 + 1: the AT-38 regression pin, see
+  below). The web suite is 257 (+11 for W2X-002 and W2X-005, the
+  first-thing-the-app-says fixes: four for the form's inline required-field
+  answers and seven for the rail's action-plus-button guidance).
+  The one server test that is not new this task is the AT-38 fix itself:
+  `test_llm_config.py`'s PUT endpoint writes `os.environ` (the "no restart"
+  property, correct in production), and monkeypatch restores only the
+  variables a test declared - so `DAH_LLM_API_KEY` outlived the suite and
+  `test_refine.py` read a `deterministic fallback` label after a real 401.
+  Restored in an autouse teardown and pinned by
+  `test_the_suite_leaves_no_configured_llm_behind`.
   Desktop shell 30 Rust tests (25 + 4 for W2X-012 phase B's settings
   surface); P2, P3 and P4 gates
   PASS; **v0.2.0, v0.3.0, v0.3.1, v0.3.2, v0.3.3 and v0.3.4 released** (tags
