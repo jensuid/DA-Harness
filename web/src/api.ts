@@ -13,6 +13,10 @@ export interface Case {
   // Advisory: a template outlives its source case and may be deleted first, so
   // a missing template degrades to normal derivation rather than an error.
   template_id?: string
+  // Advisory: another case asks this exact question about this exact dataset.
+  // Read to warn, never to block - a duplicate is a case in its own right
+  // (W2X-010) - and the case it points at may be deleted first.
+  duplicate_of?: string
   created_at: string
   updated_at: string
 }

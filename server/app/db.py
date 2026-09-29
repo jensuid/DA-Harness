@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS cases (
     question TEXT NOT NULL,
     dataset TEXT NOT NULL,
     template_id TEXT,
+    duplicate_of TEXT,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
 );
@@ -245,7 +246,7 @@ def _ensure_column(conn, table: str, column: str, definition: str) -> None:
 # opening one above it is refused (see _check_version) rather than silently
 # treated as current, because a downgrade against an unknown schema is how a
 # store is corrupted quietly.
-LATEST_SCHEMA_VERSION = 13
+LATEST_SCHEMA_VERSION = 14
 
 
 class Migration:
@@ -290,6 +291,13 @@ def _m_templates_shape_json(conn: sqlite3.Connection) -> None:
 
 def _m_cases_template_id(conn: sqlite3.Connection) -> None:
     _ensure_column(conn, "cases", "template_id", "TEXT")
+
+
+def _m_cases_duplicate_of(conn: sqlite3.Connection) -> None:
+    # A case created with another's exact question+dataset records which one it
+    # repeats (W2X-010). Advisory like template_id: it is read to warn, never
+    # to enforce, so a store that predates it answers "not a duplicate".
+    _ensure_column(conn, "cases", "duplicate_of", "TEXT")
 
 
 def _m_evaluations_table(conn: sqlite3.Connection) -> None:
@@ -417,6 +425,7 @@ MIGRATIONS: tuple[Migration, ...] = (
     Migration(11, "profiles gain the quality issues they detected", _m_profiles_quality_json),
     Migration(12, "refinements: a proposed question sharpening and its decision", _m_refinements_table),
     Migration(13, "decisions: the verdicts validation computed and the implications the analyst wrote", _m_decisions_table),
+    Migration(14, "cases gain the case they repeat", _m_cases_duplicate_of),
 )
 
 

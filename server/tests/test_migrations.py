@@ -66,6 +66,7 @@ HISTORICAL_COLUMNS = [
     ("runs", "dataset_ids_json"),
     ("templates", "shape_json"),
     ("cases", "template_id"),
+    ("cases", "duplicate_of"),
 ]
 
 

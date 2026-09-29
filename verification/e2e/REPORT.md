@@ -1,7 +1,7 @@
 # End-to-End Verification (real server)
 
-Run: 2026-09-29T02:33:12.325716+00:00
-Outcome: PASS (4.6s)
+Run: 2026-09-29T06:20:49.962760+00:00
+Outcome: PASS (3.0s)
 
 A fresh uvicorn server on a free port with an isolated data dir, driven
 over real HTTP. No LLM key is passed to the server, so the deterministic
@@ -9,7 +9,7 @@ engines answer and the run is reproducible offline.
 
 | Step | Verdict | Detail |
 |------|---------|--------|
-| Store opens at the build's schema | PASS | version 13 of 13, 0 migration(s) applied |
+| Store opens at the build's schema | PASS | version 14 of 14, 0 migration(s) applied |
 | Case created | PASS | question='Why did revenue change between the first two quarters?' |
 | Dataset attached over multipart | PASS | sales.csv (csv) |
 | Profile counts the null and the duplicate | PASS | rows=5, columns=['order_id', 'quarter', 'revenue', 'region'], revenue nulls=1, duplicates=1 |
@@ -23,7 +23,7 @@ engines answer and the run is reproducible offline.
 | The reviewer's GET proposes nothing | PASS | pending is null on a read |
 | The reviewer proposes the finding's audit | PASS | kind=evaluate, claim is the finding's own statement |
 | A cross-role approval is refused | PASS | HTTP 409, names the analyst's own pending step |
-| The approved audit records its verdict | PASS | audited finding 06a7bc31-633d-4d29-a700-ff5027e61bf8: 9 axes, 7 pass, 2 concern, 0 fail |
+| The approved audit records its verdict | PASS | audited finding 76ea1700-bd17-426a-b141-93965c6a8a8f: 9 axes, 7 pass, 2 concern, 0 fail |
 | An audited finding is not re-audited | PASS | the reviewer's next derivation has nothing pending |
 | An unknown role is named, not guessed | PASS | HTTP 400 names the roles |
 | The evidence graph traces the claim | PASS | counts={'datasets': 1, 'runs': 3, 'charts': 1, 'plans': 1, 'findings': 1, 'edges': 6} |
@@ -32,7 +32,7 @@ engines answer and the run is reproducible offline.
 | The case answers with citations | PASS | source=deterministic, 2 ground(s) |
 | The decision view reads the loop's exit | PASS | loop_closed, 1 key finding(s), 3 unresolved check(s) |
 | The analyst writes the decision's implications | PASS | 2 written; a bad entry is a 400 that names it |
-| The case round-trips through export | PASS | restored as ffc8d6f0 with fresh ids, its verdicts and its decision |
+| The case round-trips through export | PASS | restored as 321e0757 with fresh ids, its verdicts and its decision |
 | The analyst agent drives the loop to a stop | PASS | approved=7, rejected=0, steps=profile->plan->analyze->interpret->accept->chart->validate; stopped: no further step |
 | Every agent step names its engine | PASS | sources=['deterministic'], 7 step(s) recorded |
 | The agent-run case reaches a stated stage | PASS | stage=validated, loop_closed=True |

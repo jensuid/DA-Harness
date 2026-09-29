@@ -1,32 +1,43 @@
 ## Next action
 
-**W2X-011 landed: the case row opens the case anywhere it is clicked.** The
-walk clicked a row's text and nothing happened; only the Open button worked.
+**W2X-010 landed: the duplicate case stops being silent.** The walk-test's last
+finding - two rows for the same question and the same dataset, nothing to tell
+them apart but a timestamp nobody reads.
 
-The button already spanned the row's width, but it was only as tall as its own
-text, so the blank space below the text was not the button - it was the
-container the button sat in. `flex: 1 0 auto` in `web/src/index.css` stretches
-the button to the row's height instead of adding a second listener, so the row
-is one button and the click that missed before now lands on the same handler.
+The core answers the question itself now. `POST /cases` carries a `duplicate_of`
+when another case already asks this exact question about this exact dataset, so
+the shell reads a fact rather than guessing at similarity. Migration 14 adds
+`cases.duplicate_of`, advisory the way `template_id` already is: read to warn,
+never to enforce, and a store that predates it degrades to "not a duplicate".
 
-The buttons beside it (rename, duplicate, delete) are siblings, not children,
-so they keep their own targets; the row stays openable until deletion is armed,
-and `disabled` still suppresses the open while the confirmation is showing.
+The pair is not a constraint, and that was the design call. A duplicate is a
+case in its own right and re-running an old question is a normal thing to do, so
+the case is still made - the notice is what was missing. The create form keeps
+it and stays put with a warn-toned sentence naming the question and dataset plus
+a link to the case it repeats, instead of opening a workspace the analyst may
+not have wanted. The list row carries `repeats case <id>` so the two are
+distinguishable at a glance later too.
 
-Gates: web 262/262 (259 + 3), tsc clean, build ok. Shell-only: nothing the core
-tests exercise changed, so the server (777) and e2e (28) gates were not
-re-run. CI billing is still suspended (nothing since c73118c has run in CI);
-the packaged app is unsigned by DEC-006.
+The same read serves the other two creation paths: a template-seeded case is
+flagged when its question+dataset already exists, and a duplicate keeps the
+lineage its source carried rather than naming the case it was made from.
 
-**Next in priority order: W2X-010** - the last walk-test finding. The case list
-shows duplicate rows for the same question and dataset without any warning at
-create time, and the gap is the missing duplicate notice.
+Gates: server 788/788 (777 + 11), web 272/272 (262 + 10), tsc clean, build ok,
+trace 48/48, e2e ALL PASS, golden 21/21, refine AT-04 PASS. The schema moved to
+14, so every gate that reads the store was re-run. CI billing is still
+suspended (nothing since c73118c has run in CI); the packaged app is unsigned
+by DEC-006.
+
+**Next: all thirteen walk-test findings are closed.** WALK-UX-002 is finished -
+nothing remains open from `walktest-w2/FINDINGS.md`. No task is queued; the next
+move is the user's.
 
 ## Recent completions
 
 The last tasks to land, newest first. The contract and done-record for each
 is in `ai/TASKS.md` (rolling window) or `ai/TASKS-ARCHIVE.md`.
 
+- **W2X-010, the duplicate that said nothing** - `POST /cases` carries a `duplicate_of` when the question+dataset pair already exists (migration 14), the create form answers with a warn-toned sentence and a link, and the list row names the case it repeats.
 - **W2X-011, the row that only opened at its text** - the Open button spanned the row's width but only its own text height, so the blank part of the row was the container, not the button. A flex stretch makes the whole row one button instead of adding a second listener.
 - **W2X-003, the chart that vanishes on reopen** - the drawing was local state
   a remount resets, and the panel it sat in only mounted once the analyst

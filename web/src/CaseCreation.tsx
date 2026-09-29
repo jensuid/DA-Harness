@@ -1,20 +1,26 @@
 import { useEffect, useState } from 'react'
-import { createCase, getHealth } from './api'
+import { type Case, createCase, getHealth } from './api'
 import { messageOf } from './CaseList'
 import { Button } from './lib/ui'
 
 export function CaseCreation({
   onCreated,
   onCancel,
+  onView,
 }: {
   onCreated: (caseId: string) => void
   onCancel: () => void
+  // W2X-010: the notice that a duplicate exists is only useful if the case it
+  // names can be reached from it, so the form asks its parent to show the one
+  // it found rather than knowing how navigation works.
+  onView?: (caseId: string) => void
 }) {
   const [question, setQuestion] = useState('')
   const [dataset, setDataset] = useState('')
   const [coreStatus, setCoreStatus] = useState('checking…')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [duplicate, setDuplicate] = useState<Case | null>(null)
   // W2X-002: the required fields are enforced here rather than by the browser.
   // Native HTML5 validation refuses the submit with no visible message in a
   // headless context, and a first-time analyst only learns a field is required
@@ -49,11 +55,22 @@ export function CaseCreation({
     if (!showInlineValidation()) return
     setSaving(true)
     setError(null)
+    setDuplicate(null)
     try {
       const created = await createCase({ question, dataset })
-      // The core returns the persisted case; open it straight into its
-      // workspace rather than dumping the analyst back on an empty form.
-      onCreated(created.id)
+      // W2X-010: the core answers with the case this one repeats when its
+      // question and dataset match an existing one exactly, so the form says
+      // it rather than letting an identical row appear later with no way to
+      // tell the two apart but their timestamps. The pair is not refused - a
+      // duplicate is a case in its own right, and re-running an old question
+      // is a normal thing to do - so the case is made and the notice stays.
+      if (created.duplicate_of) {
+        setDuplicate(created)
+      } else {
+        // The core returns the persisted case; open it straight into its
+        // workspace rather than dumping the analyst back on an empty form.
+        onCreated(created.id)
+      }
     } catch (err) {
       setError(messageOf(err))
     } finally {
@@ -112,6 +129,22 @@ export function CaseCreation({
         </Button>
         {error && <p role="alert">Failed: {error}</p>}
       </form>
+      {duplicate && (
+        <p className="duplicate-notice" role="status">
+          Created - but a case already asks “{duplicate.question}” about{' '}
+          {duplicate.dataset}. This one is separate; keep it if you meant to
+          re-run the question.
+          {onView && (
+            <Button
+              type="button"
+              variant="link"
+              onClick={() => onView(duplicate.duplicate_of ?? '')}
+            >
+              See the existing case
+            </Button>
+          )}
+        </p>
+      )}
     </section>
   )
 }

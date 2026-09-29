@@ -119,6 +119,40 @@ describe('CaseList', () => {
     )
   })
 
+  // W2X-010: two rows with the same question and the same dataset differed
+  // only in a timestamp nobody reads, so the row that repeats one names it.
+  it('marks a row that repeats another case (W2X-010)', async () => {
+    vi.mocked(api.listCases).mockResolvedValue([
+      { ...cases[0] },
+      { ...cases[1], duplicate_of: 'a' },
+    ])
+    render(<CaseList onOpen={() => {}} onCreate={() => {}} />)
+    expect(
+      await screen.findByText(/repeats case a/i),
+    ).toBeInTheDocument()
+  })
+
+  it('names the case a duplicate repeats by its shortened id (W2X-010)', async () => {
+    vi.mocked(api.listCases).mockResolvedValue([
+      { id: 'f95acdc5', question: 'q', dataset: 'sales.csv',
+        duplicate_of: '6a79a75b-1234-5678-9abc-def012345678',
+        created_at: '', updated_at: '' },
+    ])
+    render(<CaseList onOpen={() => {}} onCreate={() => {}} />)
+    expect(
+      await screen.findByText(/repeats case 6a79a75b/i),
+    ).toBeInTheDocument()
+  })
+
+  it('marks no row when no case repeats another (W2X-010)', async () => {
+    vi.mocked(api.listCases).mockResolvedValue(cases)
+    render(<CaseList onOpen={() => {}} onCreate={() => {}} />)
+    await waitFor(() =>
+      expect(screen.getByText('Why did revenue decline?')).toBeInTheDocument(),
+    )
+    expect(screen.queryByText(/repeats case/i)).not.toBeInTheDocument()
+  })
+
   it('renders a failure as text rather than crashing', async () => {
     vi.mocked(api.listCases).mockRejectedValue(new api.ApiError(500, 'Internal Server Error'))
     vi.mocked(api.listTemplates).mockResolvedValue([])

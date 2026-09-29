@@ -205,6 +205,16 @@ function CaseRow({
 
   return (
     <MotionSurface variant="enter" className="case">
+      {caseRow.duplicate_of && (
+        // W2X-010: the only thing separating two rows with the same question
+        // and dataset is a timestamp nobody reads, so the row names the case
+        // it repeats. The pair was never refused - the notice is what was
+        // missing - and the marker points at a case that may since have been
+        // deleted, so it degrades to nothing rather than to an error.
+        <span className="case-duplicate">
+          repeats case {caseRow.duplicate_of.slice(0, 8)}
+        </span>
+      )}
       <button
         type="button"
         onClick={onOpen}

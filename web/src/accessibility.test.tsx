@@ -348,9 +348,11 @@ describe('accessibility (AT-32)', () => {
     vi.mocked(api.listCases).mockResolvedValue([
       { id: 'c1', question: 'Why did revenue decline?', dataset: 'sales.csv',
         created_at: '', updated_at: '' },
+      { id: 'c2', question: 'Why did revenue decline?', dataset: 'sales.csv',
+        duplicate_of: 'c1', created_at: '', updated_at: '' },
     ])
     render(<CaseList onOpen={() => {}} onCreate={() => {}} />)
-    await screen.findByText(/why did revenue decline/i)
+    await screen.findByText(/repeats case c1/i)
     const violations = auditAll(document.body)
     expect(violations, violations.join('\n')).toEqual([])
   })

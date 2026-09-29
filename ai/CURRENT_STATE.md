@@ -3,14 +3,26 @@ the motion, the on-screen chart). P8, P7, P6, P5, P4, P3, P2, P1 and P0 are all
 COMPLETE (see the phase table below). Every phase the roadmap and the
 conformance evaluation asked for is delivered; no phase is open.
 
-- **Active task:** W2X-011 — the case row is clickable everywhere, not only
-  where its text is. The Open button already covered the row's width but only
-  its own text height; `flex: 1 0 auto` in `web/src/index.css` stretches it to
-  the row's height. Three regression tests cover the row being one button, the
-  stretch class, and that the row still opens a case when not armed.
-  web 262/262 (259 + 3), tsc clean, build ok. Shell-only: no endpoint or schema
-  changed, so the core gates were not re-run.
+- **Active task:** W2X-010 — the duplicate case stops being silent. The
+  walk-test's last finding: two rows for the same question and the same
+  dataset, nothing to tell them apart but a timestamp nobody reads. `POST
+  /cases` now carries a `duplicate_of` when another case asks this exact
+  question about this exact dataset (migration 14, `cases.duplicate_of`,
+  advisory like `template_id`). The pair is not a constraint - the case is
+  still made - so the create form answers with a warn-toned sentence and a
+  link to the case it repeats, and the list row carries `repeats case <id>`.
+  server 788/788 (777 + 11), web 272/272 (262 + 10), tsc clean, build ok,
+  trace 48/48, e2e ALL PASS, golden 21/21, refine AT-04. The schema moved to
+  14, so every gate that reads the store was re-run.
     **STATUS: COMMITTED, all gates green.**
+  Sebelumnya: W2X-011 (the clickable row), W2X-003 (the chart that vanished
+  on reopen), W2X-004 (the false unsaved-edits claim), W2X-009 (the outlier
+  promotion), W2X-008 + W2X-013 (the density), W2X-002 + W2X-005 (the first
+  thing the app says), W2X-006 + W2X-007 (the analysis editor), W2X-012 phase
+  B (the settings surface), W2X-012 phase A (the status surface), WALK-UX-002
+  (recorded), v0.3.4 — the first walk's nineteen findings are all resolved;
+  the second walk's thirteen are all resolved too: WALK-UX-002 is finished,
+  and no task is queued.
   Two things the gate caught that were not the W2X-004 code (from the W2X-001
   gate run, kept as the record of why those tests moved). Four spy
   assertions in CaseWorkspace.test.tsx matched exact argument lists that now
@@ -25,8 +37,7 @@ conformance evaluation asked for is delivered; no phase is open.
   thing the app says), W2X-006 + W2X-007 (the analysis editor), W2X-012 phase
   B (the settings surface), W2X-012 phase A (the status surface), WALK-UX-002
   (recorded), v0.3.4 — the first walk's nineteen findings are all resolved;
-  the second walk's seven remain open (W2X-009, W2X-003, W2X-004, W2X-010,
-  W2X-011).
+  the second walk's six remain open (W2X-009, W2X-003, W2X-004, W2X-011).
 
 - **Done before that:** P8-TRACE-010 - the requirement-traceability matrix
   (AT-48). The PRD's section 59 control artifact is code: 48 rows, one per

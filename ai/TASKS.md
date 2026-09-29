@@ -516,9 +516,18 @@ its own contract, one commit per fix.
   Decision panel's implications editor, not the Context panel: `dirty` was
   derived from a join comparison, so a parent reload handing the panel a fresh
   view object read as an edit. `web/src/DecisionPanel.tsx`.
-- **W2X-010** - the case list shows duplicate rows for the same question
-  and dataset without any warning at create time. (Partly a test artifact;
-  the gap is the missing duplicate notice.)
+- **W2X-010 — CLOSED.** The case list showed two rows for the same question
+  and the same dataset with nothing to tell them apart but a timestamp nobody
+  reads. The core now answers the question itself: `POST /cases` carries a
+  `duplicate_of` when another case asks this exact question about this exact
+  dataset (migration 14, `cases.duplicate_of`, advisory like `template_id`).
+  The pair is not a constraint - a duplicate is a case in its own right, and
+  re-running an old question is a normal thing to do - so the case is made and
+  the form says it: a warn-toned sentence under the form naming the question
+  and dataset, with a link to the case it repeats, and the list row itself
+  carries `repeats case <id>`. `server/app/main.py` + `server/app/db.py` +
+  `server/app/models.py`; 10 in `server/tests/test_cases.py`; 8 in
+  `web/src/CaseCreation.test.tsx` + 3 in `web/src/CaseList.test.tsx`.
 - **W2X-011 — CLOSED.** Clicking a case row's text did nothing; only the Open
   button opened it. The button was already the whole width of the row but was
   only as tall as its own text, so the blank part of the row was not the

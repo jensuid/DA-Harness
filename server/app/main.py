@@ -482,27 +482,39 @@ def updates_latest() -> UpdateCheckResult:
         ).__dict__
     )
 
-def _insert_case(db, question: str, dataset: str) -> Case:
+def _insert_case(
+    db,
+    question: str,
+    dataset: str,
+    duplicate_of: str | None = None,
+    template_id: str | None = None,
+) -> Case:
     """Persist a fresh case row and return it (P3-CASE-007).
 
-    Shared by direct creation and creation from a template, so the two paths
-    cannot diverge on defaults like `updated_at`.
+    Shared by direct creation, creation from a template and duplication, so
+    the paths cannot diverge on defaults like `updated_at`. `duplicate_of` and
+    `template_id` are the two advisory pointers a case may carry; both default
+    to absent, and neither is enforced.
     """
     now = datetime.now(timezone.utc)
     case = Case(
         id=str(uuid4()),
         question=question,
         dataset=dataset,
+        template_id=template_id,
+        duplicate_of=duplicate_of,
         created_at=now,
         updated_at=now,
     )
     db.execute(
-        "INSERT INTO cases (id, question, dataset, created_at, updated_at) "
-        "VALUES (?, ?, ?, ?, ?)",
+        "INSERT INTO cases (id, question, dataset, template_id, duplicate_of, "
+        "created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
         (
             case.id,
             case.question,
             case.dataset,
+            case.template_id,
+            case.duplicate_of,
             case.created_at.isoformat(),
             case.updated_at.isoformat(),
         ),
@@ -510,18 +522,43 @@ def _insert_case(db, question: str, dataset: str) -> Case:
     return case
 
 
+def _existing_case(db, question: str, dataset: str) -> str | None:
+    """The id of a case already asking this question about this dataset.
+
+    None when no such case exists. The comparison is the exact pair the shell
+    warns about, so the core and the form cannot disagree about what counts as
+    a duplicate the way two separately-worded "similar" definitions could.
+    """
+    row = db.execute(
+        "SELECT id FROM cases "
+        "WHERE question = ? AND dataset = ? "
+        "ORDER BY created_at DESC LIMIT 1",
+        (question, dataset),
+    ).fetchone()
+    return None if row is None else str(row["id"])
+
+
 @app.post("/cases", status_code=201, response_model=Case)
 async def create_case(payload: CaseCreate, db=Depends(get_db)) -> Case:
-    """Create and persist a new Analysis Case."""
-    return _insert_case(db, payload.question, payload.dataset)
+    """Create and persist a new Analysis Case.
+
+    The 201 carries a `duplicate_of` when another case already asks this exact
+    question about this exact dataset. The pair is not a constraint - a
+    duplicate is a case in its own right, and re-running an old question is a
+    normal thing to do - but two rows identical except for their timestamps is
+    how a duplicate was made in the first place, so the core says it instead of
+    leaving the shell to guess (W2X-010).
+    """
+    duplicate_of = _existing_case(db, payload.question, payload.dataset)
+    return _insert_case(db, payload.question, payload.dataset, duplicate_of)
 
 
 @app.get("/cases/{case_id}", response_model=Case)
 async def get_case(case_id: str, db=Depends(get_db)) -> Case:
     """Reopen a persisted Analysis Case."""
     row = db.execute(
-        "SELECT id, question, dataset, template_id, created_at, updated_at "
-        "FROM cases WHERE id = ?",
+        "SELECT id, question, dataset, template_id, duplicate_of, "
+        "created_at, updated_at FROM cases WHERE id = ?",
         (case_id,),
     ).fetchone()
     if row is None:
@@ -573,15 +610,17 @@ def _like_pattern(term: str) -> str:
 def _case_of(row) -> Case:
     """A case row as the API answers it, lineage included when it is selected.
 
-    A SELECT that does not name `template_id` (a caller's own query, or an older
-    code path) still works: the key lookup is guarded, so absence reads as
-    "no lineage" rather than raising.
+    A SELECT that does not name `template_id` or `duplicate_of` (a caller's own
+    query, or an older code path) still works: the key lookups are guarded, so
+    absence reads as "no lineage" rather than raising.
     """
+    keys = row.keys()
     return Case(
         id=row["id"],
         question=row["question"],
         dataset=row["dataset"],
-        template_id=row["template_id"] if "template_id" in row.keys() else None,
+        template_id=row["template_id"] if "template_id" in keys else None,
+        duplicate_of=row["duplicate_of"] if "duplicate_of" in keys else None,
         created_at=row["created_at"],
         updated_at=row["updated_at"],
     )
@@ -598,16 +637,16 @@ async def list_cases(q: str | None = None, db=Depends(get_db)) -> list[Case]:
     if q and q.strip():
         pattern = _like_pattern(q.strip().lower())
         rows = db.execute(
-            "SELECT id, question, dataset, template_id, created_at, updated_at "
-            "FROM cases WHERE LOWER(question) LIKE ? ESCAPE '\\' "
+            "SELECT id, question, dataset, template_id, duplicate_of, "
+            "created_at, updated_at FROM cases WHERE LOWER(question) LIKE ? ESCAPE '\\' "
             "OR LOWER(dataset) LIKE ? ESCAPE '\\' "
             "ORDER BY created_at DESC",
             (pattern, pattern),
         ).fetchall()
     else:
         rows = db.execute(
-            "SELECT id, question, dataset, template_id, created_at, updated_at "
-            "FROM cases ORDER BY created_at DESC"
+            "SELECT id, question, dataset, template_id, duplicate_of, "
+            "created_at, updated_at FROM cases ORDER BY created_at DESC"
         ).fetchall()
     return [_case_of(row) for row in rows]
 
@@ -624,7 +663,8 @@ async def update_case(
     visible as case activity.
     """
     row = db.execute(
-        "SELECT id, question, dataset, created_at, updated_at FROM cases WHERE id = ?",
+        "SELECT id, question, dataset, duplicate_of, created_at, updated_at "
+        "FROM cases WHERE id = ?",
         (case_id,),
     ).fetchone()
     if row is None:
@@ -1087,18 +1127,22 @@ async def duplicate_case(
         id=new_case_id,
         question=source["question"],
         dataset=source["dataset"],
+        template_id=None,
+        duplicate_of=None,
         created_at=now,
         updated_at=now,
     )
     source_lineage = db.execute(
-        "SELECT template_id FROM cases WHERE id = ?", (case_id,)
+        "SELECT template_id, duplicate_of FROM cases WHERE id = ?", (case_id,)
     ).fetchone()
     new_case.template_id = source_lineage["template_id"] if source_lineage else None
+    new_case.duplicate_of = source_lineage["duplicate_of"] if source_lineage else None
     db.execute(
-        "INSERT INTO cases (id, question, dataset, template_id, created_at, "
-        "updated_at) VALUES (?, ?, ?, ?, ?, ?)",
+        "INSERT INTO cases (id, question, dataset, template_id, duplicate_of, "
+        "created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
         (new_case.id, new_case.question, new_case.dataset, new_case.template_id,
-         new_case.created_at.isoformat(), new_case.updated_at.isoformat()),
+         new_case.duplicate_of, new_case.created_at.isoformat(),
+         new_case.updated_at.isoformat()),
     )
 
     case_dir = db_module.DATA_DIR / new_case_id
@@ -4178,10 +4222,12 @@ async def create_case_from_template(
 
     question = payload.question if payload.question is not None else template["question"]
     dataset = payload.dataset if payload.dataset is not None else template["dataset"]
-    case = _insert_case(db, question, dataset)
-    db.execute(
-        "UPDATE cases SET template_id = ? WHERE id = ?",
-        (payload.template_id, case.id),
+    case = _insert_case(
+        db,
+        question,
+        dataset,
+        duplicate_of=_existing_case(db, question, dataset),
+        template_id=payload.template_id,
     )
     case.template_id = payload.template_id
     return case

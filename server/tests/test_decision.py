@@ -641,7 +641,7 @@ def test_every_validated_finding_survives_the_round_trip(tmp_path) -> None:
 
 
 def _legacy_store(db_path: Path) -> None:
-    """A store at v12 - the shape the previous task left behind."""
+    """A store at v12 - the shape before the decision tables landed."""
     conn = sqlite3.connect(db_path)
     conn.executescript(
         """
@@ -660,7 +660,7 @@ def _legacy_store(db_path: Path) -> None:
     conn.close()
 
 
-def test_a_legacy_store_upgrades_to_v13_in_place(tmp_path) -> None:
+def test_a_legacy_store_upgrades_to_the_current_shape(tmp_path) -> None:
     db_path = tmp_path / "legacy.db"
     _legacy_store(db_path)
     with get_connection(db_path) as conn:
@@ -677,11 +677,18 @@ def test_a_legacy_store_upgrades_to_v13_in_place(tmp_path) -> None:
             "SELECT COUNT(*) AS n FROM validations"
         ).fetchone()["n"]
 
-    assert version == LATEST_SCHEMA_VERSION == 13
+    assert version == LATEST_SCHEMA_VERSION == 14
     assert 13 in applied
     assert "decisions" in applied[13]
     assert decisions == 0
     assert validations == 0
+
+    # The migration the last task added: cases gain the case they repeat. A
+    # store at v12 skipped it, so it ran here alongside the v13 tables, and
+    # the column exists the way a fresh store already has it (W2X-010).
+    assert 14 in applied
+    assert "cases gain the case they repeat" in applied[14]
+
 
 
 def test_a_fresh_store_is_current_with_no_migrations_applied(tmp_path) -> None:

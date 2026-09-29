@@ -130,6 +130,13 @@ class Case(BaseModel):
     # its source case and may be deleted before this one, so a missing template
     # degrades to the normal derivation rather than an error.
     template_id: str | None = None
+    # Which case this one repeats, if its question and dataset match an
+    # existing case exactly. Advisory in the same way and for the same reason:
+    # a duplicate is a case in its own right, so the field is read to warn and
+    # never to enforce (W2X-010). Whichever case it points at may be deleted
+    # first, and a dangling pointer degrades to "no duplicate" rather than an
+    # error.
+    duplicate_of: str | None = None
     created_at: datetime
     updated_at: datetime
 

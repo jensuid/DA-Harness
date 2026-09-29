@@ -46,6 +46,9 @@ export function App() {
           <CaseCreation
             onCreated={(caseId) => setView({ kind: 'workspace', caseId })}
             onCancel={() => setView({ kind: 'list' })}
+            // W2X-010: the duplicate notice's own link reaches the case the
+            // core named, and the workspace is the same view either way.
+            onView={(caseId) => setView({ kind: 'workspace', caseId })}
           />
         </main>
       ) : (

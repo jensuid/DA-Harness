@@ -454,3 +454,25 @@ plot. The assertion now reads the drawing itself, not one of its two shapes.
 **One carried decision stays, unchanged and not code:** GitHub Actions
 billing is suspended (fix at Settings > Billing & plans; nothing since commit
 c73118c has run in CI). The packaged app is unsigned by DEC-006.
+
+## Next action
+**W2X-011 landed: the case row opens the case anywhere it is clicked.** The
+walk clicked a row's text and nothing happened; only the Open button worked.
+
+The button already spanned the row's width, but it was only as tall as its own
+text, so the blank space below the text was not the button - it was the
+container the button sat in. `flex: 1 0 auto` in `web/src/index.css` stretches
+the button to the row's height instead of adding a second listener, so the row
+is one button and the click that missed before now lands on the same handler.
+
+The buttons beside it (rename, duplicate, delete) are siblings, not children,
+so they keep their own targets; the row stays openable until deletion is armed,
+and `disabled` still suppresses the open while the confirmation is showing.
+
+Gates: web 262/262 (259 + 3), tsc clean, build ok. Shell-only: nothing the core
+tests exercise changed, so the server (777) and e2e (28) gates were not
+re-run. CI billing is still suspended (nothing since c73118c has run in CI);
+the packaged app is unsigned by DEC-006.
+
+**Next in priority order: W2X-010** - the last walk-test finding. The case list shows duplicate rows for the same question and dataset without any warning at create time, and the gap is the missing duplicate notice.
+
