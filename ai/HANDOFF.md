@@ -20,19 +20,36 @@ Gates: web 285/285 (was 278; +7 in sourceLabel.test.ts), tsc clean, build ok;
 server 788/788 unchanged (this task moved no server code); trace 48/48, e2e
 28/28. `graphify update .` ran clean.
 
-**Next: nothing is queued.** W3X-003, the last walk-test finding, is closed —
-not by a timeout change but by the measurement. The plan call is the only one
-of the six LLM adapters whose prompt asks for a large structured object, and
-the provider generates at ~13 completion tokens per second, so 1785 tokens is
-~137s against a 120s budget. That is a property of the provider, not the
-harness: the fallback it produced was announced, deterministic and correct,
-which is the trust model the timeout was designed around. Temperature is not
-the variable and `max_tokens` truncates the JSON mid-object (a cap buys a
-faster fallback, not a faster answer), so the path to a faster plan runs
-through the prompt's output size, not `timeouts.py`. The measurement is in
-`walktest-w3/FINDINGS.md` for the next session that asks.
+**Next: one task is queued — the W3X-003 follow-up, `W3X-003-PROMPT`.** The
+root cause is measured and recorded (`walktest-w3/FINDINGS.md`): the plan
+prompt asks for the largest output of the six LLM adapters (6 sub-questions,
+5 hypotheses, 6 analysis steps) and the provider generates at ~13 completion
+tokens per second, so 1785 tokens is ~137s against a 120s timeout. The path
+to a faster plan runs through the prompt's output size, not `timeouts.py`.
 
-Gates: web 285/285, tsc clean, build ok; server 788/788, trace 48/48, e2e 28/28.
+The task: shrink what the LLM plan prompt asks for, so a complete plan arrives
+inside the budget on a ~13 tok/s provider. Fix shape (measured baseline above):
+- `server/app/planner.py` `LLMPlanner.plan` — the prompt's schema text and the
+  instruction voice. Candidates: cap the requested lists in the prompt itself
+  (e.g. 4 sub-questions, 3 hypotheses, 4 steps), and add an explicit "be
+  concise; one short clause per field" instruction. `_MAX_LLM_CHARS` (input
+  truncation) is not the variable - the output is.
+- Keep `_MAX_SUB_QUESTIONS = 6`, `_MAX_HYPOTHESES = 5`, `_MAX_STEPS = 6` as the
+  *validator's* ceilings (the deterministic planner and every existing test
+  still produces up to those counts), so a smaller *request* must not shrink
+  what the deterministic path or validation accepts. Only the LLM prompt asks
+  for less.
+- Do not add `max_tokens`: measured, it truncates the JSON mid-object
+  (`finish_reason: length`) and the schema validator refuses it - a cap buys a
+  faster fallback, not a faster answer.
+- `temperature` is not the variable either (measured: 141s with, 103s without,
+  the difference is only output length).
+
+Gates: server pytest (788, plus any new tests), web unchanged (285/285 unless
+shell text moves), tsc clean, build ok, e2e 28/28, trace 48/48.
+
+Gates now: web 285/285, tsc clean, build ok; server 788/788, trace 48/48,
+e2e 28/28.
 
 ## Recent completions
 
