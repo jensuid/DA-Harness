@@ -227,7 +227,7 @@ def test_llm_fallback_logs_the_reason(tmp_path, monkeypatch, caplog) -> None:
     _temp_env(tmp_path, monkeypatch)
 
     class _Broken:
-        def plan(self, question, profile):
+        def plan(self, question, profile, context=None):
             raise RuntimeError("the LLM endpoint exploded")
 
     monkeypatch.setattr(planner_module, "_configured_llm", lambda: _Broken())

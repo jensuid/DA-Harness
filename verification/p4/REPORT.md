@@ -1,6 +1,6 @@
 # P4 Production Candidate Verification
 
-Run: 2026-09-21T05:50:56.424348+00:00
+Run: 2026-09-29T11:26:14.606690+00:00
 
 ## Journey under test
 
@@ -35,15 +35,15 @@ path, and both are what 'production candidate' has to mean.
 | A write query is refused | PASS | HTTP 400 |
 | A sandbox escape is refused and persists nothing | PASS | HTTP 400 |
 | A harness fault answers 500, not 400 | PASS | HTTP 500 (a 400 here would blame the analyst for our own bug) |
-| A broken LLM degrades instead of blocking | PASS | source=deterministic, sub_questions=4 |
-| Run the unordered aggregation | PASS | row_count=5, totals={'north': 100000.0, 'south': 80000.0, 'west': 40000.0, 'central': 20000.0, 'east': 60000.0} |
+| A broken LLM degrades instead of blocking | PASS | source=deterministic fallback, sub_questions=4 |
+| Run the unordered aggregation | PASS | row_count=5, totals={'south': 80000.0, 'west': 40000.0, 'central': 20000.0, 'north': 100000.0, 'east': 60000.0} |
 | The assistant drafts a finding, writes nothing | PASS | source=deterministic, grounds=2 |
 | Accept the draft as a finding | PASS | HTTP 201 |
 | Validation is deterministic across reruns | PASS | verdicts={'supported'} (a flake would show more than one) |
-| Render the chart the evidence stage needs | PASS | HTTP 201, image bytes=16750 |
+| Render the chart the evidence stage needs | PASS | HTTP 201, image bytes=17049 |
 | The loop closes at scale | PASS | stage=validated, loop_closed=True |
-| The case reproduces elsewhere | PASS | totals={'south': 80000.0, 'west': 40000.0, 'central': 20000.0, 'north': 100000.0, 'east': 60000.0} |
-| Test suite runs | PASS | 380 passed, 2 warnings in 151.31s (0:02:31) |
+| The case reproduces elsewhere | PASS | totals={'north': 100000.0, 'east': 60000.0, 'south': 80000.0, 'west': 40000.0, 'central': 20000.0} |
+| Test suite runs | PASS | 788 passed, 2 warnings in 257.47s (0:04:17) |
 
 ## Exit criteria (P4 gate: error semantics, determinism, scale,
 the read-only and sandbox boundaries, graceful degradation)

@@ -118,7 +118,7 @@ class _BrokenLLM:
     def __init__(self, *args, **kwargs):
         pass
 
-    def plan(self, question, profile):
+    def plan(self, question, profile, context=None):
         raise RuntimeError("the LLM endpoint is unreachable")
 
 
@@ -293,10 +293,13 @@ def main() -> int:
             planner_module.LLMPlanner = original_llm
             os.environ.pop("DAH_LLM_API_KEY", None)
         plan_body = plan.json().get("plan", {}) if plan.status_code == 201 else {}
+        # A configured LLM that fails must still answer with a plan, and the
+        # source must say it fell back - a silent "deterministic" here would
+        # hide the degradation FIX-TIMEOUT-006 made visible.
         record(
             "A broken LLM degrades instead of blocking",
             plan.status_code == 201
-            and plan.json().get("source") == "deterministic"
+            and plan.json().get("source") == planner_module.SOURCE_DETERMINISTIC_FALLBACK
             and bool(plan_body.get("sub_questions")),
             f"source={plan.json().get('source')}, "
             f"sub_questions={len(plan_body.get('sub_questions', []))}",
