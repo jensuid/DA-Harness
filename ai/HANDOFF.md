@@ -1,46 +1,33 @@
 ## Next action
 
-**W2X-003 landed: the chart stops vanishing when a case reopens.** The walk
-rendered a chart, left the case, came back to 0 svgs while the evidence graph
-still said the case had one.
+**W2X-011 landed: the case row opens the case anywhere it is clicked.** The
+walk clicked a row's text and nothing happened; only the Open button worked.
 
-**Two causes, both about where the chart lived.** First, the drawing was local
-state: the panel kept the chart it rendered in a useState a remount resets, so
-there was no way for it to reappear. Second, the panel itself only mounted once
-the analyst clicked "Show the rows" - the chart sits below the rows table, so
-even a restored chart had nowhere to draw. Fixing only one of the two would
-have left the bug standing.
+The button already spanned the row's width, but it was only as tall as its own
+text, so the blank space below the text was not the button - it was the
+container the button sat in. `flex: 1 0 auto` in `web/src/index.css` stretches
+the button to the row's height instead of adding a second listener, so the row
+is one button and the click that missed before now lands on the same handler.
 
-**The fix restores both.** The run row reads its charts on mount; when it has
-one it reads the rows automatically, the same read "Show the rows" makes, only
-unprompted. The chart is re-read from the core: the chart endpoint for its
-metadata, the image endpoint for the bytes. The image endpoint sniffs its
-format from the stored bytes rather than from a column the charts table keeps,
-so a new `api.getChart` answers "is this SVG or PNG" before the image is
-fetched - an inline drawing and a bitmap link are the surface's two shapes. A
-restored chart yields to a fresh render the analyst makes in the same session,
-and a chart whose image is missing from disk restores silently, leaving the
-control where it always was.
+The buttons beside it (rename, duplicate, delete) are siblings, not children,
+so they keep their own targets; the row stays openable until deletion is armed,
+and `disabled` still suppresses the open while the confirmation is showing.
 
-**What broke.** The test's first draft asserted `chart-svg`, the testid of the
-inline-SVG branch - but a plottable geometry draws on screen as `chart-tree`
-(recharts), and the SVG branch is the fallback for a geometry with nothing to
-plot. The assertion now reads the drawing itself, not one of its two shapes.
+Gates: web 262/262 (259 + 3), tsc clean, build ok. Shell-only: nothing the core
+tests exercise changed, so the server (777) and e2e (28) gates were not
+re-run. CI billing is still suspended (nothing since c73118c has run in CI);
+the packaged app is unsigned by DEC-006.
 
-**Next, in priority order.** Two MINORs remain:
-1. **W2X-011** - a case row's text does nothing; only the Open button opens
-   it. `CaseList.tsx`.
-2. **W2X-010** - no duplicate notice at case-creation time.
-
-**One carried decision stays, unchanged and not code:** GitHub Actions
-billing is suspended (fix at Settings > Billing & plans; nothing since commit
-c73118c has run in CI). The packaged app is unsigned by DEC-006.
+**Next in priority order: W2X-010** - the last walk-test finding. The case list
+shows duplicate rows for the same question and dataset without any warning at
+create time, and the gap is the missing duplicate notice.
 
 ## Recent completions
 
 The last tasks to land, newest first. The contract and done-record for each
 is in `ai/TASKS.md` (rolling window) or `ai/TASKS-ARCHIVE.md`.
 
+- **W2X-011, the row that only opened at its text** - the Open button spanned the row's width but only its own text height, so the blank part of the row was the container, not the button. A flex stretch makes the whole row one button instead of adding a second listener.
 - **W2X-003, the chart that vanishes on reopen** - the drawing was local state
   a remount resets, and the panel it sat in only mounted once the analyst
   showed the rows. The run row now reads its charts on mount and reads the

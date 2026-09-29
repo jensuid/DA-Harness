@@ -519,8 +519,11 @@ its own contract, one commit per fix.
 - **W2X-010** - the case list shows duplicate rows for the same question
   and dataset without any warning at create time. (Partly a test artifact;
   the gap is the missing duplicate notice.)
-- **W2X-011** - clicking a case row's text does nothing; only the Open
-  button opens it. `web/src/CaseList.tsx`.
+- **W2X-011 — CLOSED.** Clicking a case row's text did nothing; only the Open
+  button opened it. The button was already the whole width of the row but was
+  only as tall as its own text, so the blank part of the row was not the
+  button. `flex: 1 0 auto` stretches the button to the row's height, so any
+  part of the row opens the case (`web/src/CaseList.tsx`, `web/src/index.css`).
 - **W2X-013 — CLOSED.** The orientation column's fixed 15rem wrapped a long
   question into a 101pt-tall block; `minmax(15rem, 17rem)` lets it breathe and
   the work zone keeps the rest (`web/src/index.css`).

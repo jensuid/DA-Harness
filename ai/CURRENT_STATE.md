@@ -3,28 +3,14 @@ the motion, the on-screen chart). P8, P7, P6, P5, P4, P3, P2, P1 and P0 are all
 COMPLETE (see the phase table below). Every phase the roadmap and the
 conformance evaluation asked for is delivered; no phase is open.
 
-- **Active task:** **W2X-003 DONE - the chart that vanishes on reopen.** The
-  walk rendered a chart, left the case, came back: 0 svgs on screen while the
-  evidence graph still said the case had one chart.
-- **Two causes, both about where the chart lived.** First, the chart was local
-  state - the panel kept the drawing it rendered in a useState that a remount
-  resets, so it had no way to reappear. Second, the panel it sat in only
-  mounted at all once the analyst clicked "Show the rows": the chart sits below
-  the rows table, so even a restored chart would have had nowhere to draw.
-- **The fix restores both.** The run row reads its charts on mount, and when it
-  has one it reads the rows automatically - the same read "Show the rows"
-  makes, only unprompted, so the chart has the surface it needs. The chart
-  itself is re-read from the core: the chart endpoint for its metadata, the
-  image endpoint for the bytes. The image endpoint sniffs format from the
-  stored bytes rather than a column the charts table keeps, so a new
-  api.getChart exists to answer "is this SVG or PNG" before the image is
-  fetched - an inline drawing and a bitmap link are the surface's two shapes.
-  The restored chart yields to a fresh render, and a chart whose image is
-  missing from disk stays silent while leaving the control in place.
-- Gates: web 259/259 (258 + 1 new regression test), tsc clean, build ok.
-  Shell-only: no line outside web/ moved, so the server (777) and e2e gates
-  are unchanged.
-  **STATUS: COMMITTED, all gates green.**
+- **Active task:** W2X-011 — the case row is clickable everywhere, not only
+  where its text is. The Open button already covered the row's width but only
+  its own text height; `flex: 1 0 auto` in `web/src/index.css` stretches it to
+  the row's height. Three regression tests cover the row being one button, the
+  stretch class, and that the row still opens a case when not armed.
+  web 262/262 (259 + 3), tsc clean, build ok. Shell-only: no endpoint or schema
+  changed, so the core gates were not re-run.
+    **STATUS: COMMITTED, all gates green.**
   Two things the gate caught that were not the W2X-004 code (from the W2X-001
   gate run, kept as the record of why those tests moved). Four spy
   assertions in CaseWorkspace.test.tsx matched exact argument lists that now

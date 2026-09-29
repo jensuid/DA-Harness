@@ -54,6 +54,53 @@ describe('CaseList', () => {
     expect(onOpen).toHaveBeenCalledWith('a')
   })
 
+  it('says the row is one open affordance, not a button beside text (W2X-011)', async () => {
+    vi.mocked(api.listCases).mockResolvedValue(cases)
+    render(<CaseList onOpen={() => {}} onCreate={() => {}} />)
+
+    await waitFor(() =>
+      expect(screen.getByText('Why did revenue decline?')).toBeInTheDocument(),
+    )
+    // The question and its dataset are the label of the open button: the
+    // whole row is one button, not a button beside the text.
+    expect(screen.getByText('Why did revenue decline?').closest('button')).toBe(
+      screen.getByText('sales.csv').closest('button'),
+    )
+  })
+
+  it('reaches for the case row height so any part of it opens the case (W2X-011)', async () => {
+    vi.mocked(api.listCases).mockResolvedValue(cases)
+    const onOpen = vi.fn()
+    const user = userEvent.setup()
+    render(<CaseList onOpen={onOpen} onCreate={() => {}} />)
+
+    await waitFor(() =>
+      expect(screen.getByText('Why did revenue decline?')).toBeInTheDocument(),
+    )
+    const open = screen.getByText('Why did revenue decline?').closest('button')
+    expect(open).not.toBeNull()
+    // The button is the whole row: it carries the class that stretches it to
+    // the row's height, so the blank part below the text is the button too.
+    expect(open).toHaveClass('case-open')
+    await user.click(open as HTMLElement)
+    expect(onOpen).toHaveBeenCalledWith('a')
+  })
+
+  it('keeps the row clickable while it is not armed for deletion (W2X-011)', async () => {
+    vi.mocked(api.listCases).mockResolvedValue(cases)
+    const onOpen = vi.fn()
+    const user = userEvent.setup()
+    render(<CaseList onOpen={onOpen} onCreate={() => {}} />)
+
+    await waitFor(() =>
+      expect(screen.getByText('Why did revenue decline?')).toBeInTheDocument(),
+    )
+    const open = screen.getByText('Why did revenue decline?').closest('button')
+    expect(open).not.toBeDisabled()
+    await user.click(open as HTMLElement)
+    expect(onOpen).toHaveBeenCalledWith('a')
+  })
+
   it('says so when the search matches nothing', async () => {
     vi.mocked(api.listCases).mockResolvedValue([])
     const user = userEvent.setup()

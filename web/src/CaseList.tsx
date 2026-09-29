@@ -205,7 +205,14 @@ function CaseRow({
 
   return (
     <MotionSurface variant="enter" className="case">
-      <button type="button" onClick={onOpen} className="case-open" disabled={armed}>
+      <button
+        type="button"
+        onClick={onOpen}
+        // It is the whole row, so it reaches for the case's height: clicking
+        // anywhere in the blank part of the row opens the case (W2X-011).
+        className="case-open"
+        disabled={armed}
+      >
         <span className="case-question">{caseRow.question}</span>
         <span className="case-dataset">{caseRow.dataset}</span>
       </button>
