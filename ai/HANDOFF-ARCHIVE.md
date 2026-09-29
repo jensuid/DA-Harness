@@ -1,5 +1,51 @@
 ## Next action
 
+Two things the gate caught that were not the W2X-004 code (from the W2X-001
+gate run, kept as the record of why those tests moved). Four spy assertions in
+CaseWorkspace.test.tsx matched exact argument lists that now carry a trailing
+`AbortSignal`; the calls themselves are unchanged, so the assertions take
+`expect.anything()` for it. And the AT-27 motion-budget test was flaky on this
+machine - an absolute 200ms threshold it hit at 200ms and missed at 470ms on
+the same commit, so it was measuring the host rather than the layer. It now
+measures the motion layer's own added cost: the median of five renders with the
+motion against five without it, so the machine's noise is in both numbers and
+cancels in the difference.
+
+
+**W2X-010 landed: the duplicate case stops being silent.** The walk-test's last
+finding - two rows for the same question and the same dataset, nothing to tell
+them apart but a timestamp nobody reads.
+
+The core answers the question itself now. `POST /cases` carries a `duplicate_of`
+when another case already asks this exact question about this exact dataset, so
+the shell reads a fact rather than guessing at similarity. Migration 14 adds
+`cases.duplicate_of`, advisory the way `template_id` already is: read to warn,
+never to enforce, and a store that predates it degrades to "not a duplicate".
+
+The pair is not a constraint, and that was the design call. A duplicate is a
+case in its own right and re-running an old question is a normal thing to do, so
+the case is still made - the notice is what was missing. The create form keeps
+it and stays put with a warn-toned sentence naming the question and dataset plus
+a link to the case it repeats, instead of opening a workspace the analyst may
+not have wanted. The list row carries `repeats case <id>` so the two are
+distinguishable at a glance later too.
+
+The same read serves the other two creation paths: a template-seeded case is
+flagged when its question+dataset already exists, and a duplicate keeps the
+lineage its source carried rather than naming the case it was made from.
+
+Gates: server 788/788 (777 + 11), web 272/272 (262 + 10), tsc clean, build ok,
+trace 48/48, e2e ALL PASS, golden 21/21, refine AT-04 PASS. The schema moved to
+14, so every gate that reads the store was re-run. CI billing is still
+suspended (nothing since c73118c has run in CI); the packaged app is unsigned
+by DEC-006.
+
+**Next: all thirteen walk-test findings are closed.** WALK-UX-002 is finished -
+nothing remains open from `walktest-w2/FINDINGS.md`. No task is queued; the next
+move is the user's.
+
+## Next action
+
 **W2X-004 landed: the false unsaved-edits claim stopped firing on open.** The
 walk saw "unsaved edits" the moment a case opened, on context nothing had
 touched, and again after every reopen.

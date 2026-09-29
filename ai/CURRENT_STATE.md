@@ -3,36 +3,32 @@ the motion, the on-screen chart). P8, P7, P6, P5, P4, P3, P2, P1 and P0 are all
 COMPLETE (see the phase table below). Every phase the roadmap and the
 conformance evaluation asked for is delivered; no phase is open.
 
-- **Active task:** W2X-010 — the duplicate case stops being silent. The
-  walk-test's last finding: two rows for the same question and the same
-  dataset, nothing to tell them apart but a timestamp nobody reads. `POST
-  /cases` now carries a `duplicate_of` when another case asks this exact
-  question about this exact dataset (migration 14, `cases.duplicate_of`,
-  advisory like `template_id`). The pair is not a constraint - the case is
-  still made - so the create form answers with a warn-toned sentence and a
-  link to the case it repeats, and the list row carries `repeats case <id>`.
-  server 788/788 (777 + 11), web 272/272 (262 + 10), tsc clean, build ok,
-  trace 48/48, e2e ALL PASS, golden 21/21, refine AT-04. The schema moved to
-  14, so every gate that reads the store was re-run.
-    **STATUS: COMMITTED, all gates green.**
-  Sebelumnya: W2X-011 (the clickable row), W2X-003 (the chart that vanished
-  on reopen), W2X-004 (the false unsaved-edits claim), W2X-009 (the outlier
-  promotion), W2X-008 + W2X-013 (the density), W2X-002 + W2X-005 (the first
-  thing the app says), W2X-006 + W2X-007 (the analysis editor), W2X-012 phase
-  B (the settings surface), W2X-012 phase A (the status surface), WALK-UX-002
-  (recorded), v0.3.4 — the first walk's nineteen findings are all resolved;
-  the second walk's thirteen are all resolved too: WALK-UX-002 is finished,
-  and no task is queued.
-  Two things the gate caught that were not the W2X-004 code (from the W2X-001
-  gate run, kept as the record of why those tests moved). Four spy
-  assertions in CaseWorkspace.test.tsx matched exact argument lists that now
-  carry a trailing `AbortSignal`; the calls themselves are unchanged, so the
-  assertions take `expect.anything()` for it. And the AT-27 motion-budget test
-  was flaky on this machine - an absolute 200ms threshold it hit at 200ms and
-  missed at 470ms on the same commit, so it was measuring the host rather than
-  the layer. It now measures the motion layer's own added cost: the median of
-  five renders with the motion against five without it, so the machine's noise
-  is in both numbers and cancels in the difference.
+- **Active task:** v0.3.5 — the release the thirteen walk-test fixes shipped in.
+  The v0.3.4 tag was hollow: it pointed at a version bump, and every W2X fix
+  (W2X-001 through W2X-013) landed after it, so nothing the second walk-test
+  found was ever in a release. The desktop version files had also drifted -
+  the bump commit moved only `server/pyproject.toml`, so a 0.3.4 core shipped
+  inside an app that called itself 0.3.3. All three version files move to 0.3.5
+  together (the `30db6e9` convention), the sidecar is repackaged so
+  `/updates/latest` answers 0.3.5, and the DMG is rebuilt from that bundle.
+  Gates at the bumped HEAD: server 788/788, web 272/272, tsc clean, build ok.
+  The packaged app was smoke-tested as a real launch, not just built: health
+  ok, `/updates/latest` answers `current: 0.3.5` with an honest `unknown` (the
+  feed is unreachable from this machine), the case list and Templates section
+  render, and no test data was left behind.
+    **STATUS: COMMITTED, all gates green, tagged and pushed.**
+  Sebelumnya: W2X-010 (the duplicate that said nothing), W2X-011 (the clickable
+  row), W2X-003 (the chart that vanished on reopen), W2X-004 (the false
+  unsaved-edits claim), W2X-009 (the outlier promotion), W2X-008 + W2X-013 (the
+  density), W2X-002 + W2X-005 (the first thing the app says), W2X-006 + W2X-007
+  (the analysis editor), W2X-012 phase B (the settings surface), W2X-012 phase
+  A (the status surface), WALK-UX-002 (recorded), v0.3.4 — the first walk's
+  nineteen findings are all resolved; the second walk's thirteen are all
+  resolved too: WALK-UX-002 is finished, and no task is queued.
+  Two things outside this repo's control, unchanged: GitHub Actions still
+  refuses every job (billing suspended since before c73118c, so CI never ran on
+  any W2X commit - v0.3.5 was built and verified locally from the same steps
+  `release.yml` runs), and the packaged app is unsigned by DEC-006.
   Sebelumnya: W2X-008 + W2X-013 (the density), W2X-002 + W2X-005 (the first
   thing the app says), W2X-006 + W2X-007 (the analysis editor), W2X-012 phase
   B (the settings surface), W2X-012 phase A (the status surface), WALK-UX-002
@@ -98,9 +94,14 @@ conformance evaluation asked for is delivered; no phase is open.
   `test_the_suite_leaves_no_configured_llm_behind`.
   Desktop shell 30 Rust tests (unchanged; no shell code moved);
   P2, P3 and P4 gates
-  PASS; **v0.2.0, v0.3.0, v0.3.1, v0.3.2, v0.3.3 and v0.3.4 released** (tags
-  `v0.2.0` on `ec819fc`, `v0.3.0` on `ab56541`, `v0.3.1` on `19cefc1`,
+  PASS; **v0.2.0, v0.3.0, v0.3.1, v0.3.2, v0.3.3, v0.3.4 and v0.3.5 released**
+  (tags `v0.2.0` on `ec819fc`, `v0.3.0` on `ab56541`, `v0.3.1` on `19cefc1`,
   `v0.3.2` on `2ff1bca`, `v0.3.3` on `30db6e9`, `v0.3.4` on `d8bec6a`).
+  v0.3.4 was a hollow tag - it pointed at a version bump, and every W2X fix
+  landed after it - so v0.3.5 is the release those thirteen fixes actually
+  shipped in. Its bump commit restored the convention that all three version
+  files move together (the 0.3.4 bump had moved only `server/pyproject.toml`,
+  and a 0.3.4 core shipped in an app that called itself 0.3.3).
 - **e2e:** all 28 real-server steps PASS; the golden suite and the refinement
   runner green, and the measurement layer 9/9 - the reports the matrix cites as
   its measured evidence, regenerated on the current tree.

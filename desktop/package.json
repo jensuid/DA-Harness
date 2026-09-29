@@ -1,7 +1,7 @@
 {
   "name": "dah-desktop",
   "private": true,
-  "version": "0.3.3",
+  "version": "0.3.5",
   "description": "Tauri 2 desktop shell for DAH - hosts the React bundle and spawns the Python core",
   "scripts": {
     "tauri": "tauri",
