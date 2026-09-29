@@ -3,38 +3,29 @@ the motion, the on-screen chart). P8, P7, P6, P5, P4, P3, P2, P1 and P0 are all
 COMPLETE (see the phase table below). Every phase the roadmap and the
 conformance evaluation asked for is delivered; no phase is open.
 
-- **Active task:** **W2X-009 DONE - the drafter stopped promoting the outlier.**
-  The walk planted revenue 99,589 where the rest were ~99; the profile's own
-  quality detector flagged it at 758.6x, but the deterministic draft crowned it
-  ("North has the highest total_revenue at 99589.5") and the trust loop closed
-  on a number 758x too large wearing a partially_supported badge.
-- **The root cause was not the drafter's logic.** main.py's two profile readers
-  - the interpretation endpoint and the draft-finding endpoint - selected
-  columns_json and stats_json only, never quality_json. The quality column was
-  added by a migration that predates both readers, so profile[quality] was
-  silently [] for the whole analysis path. The drafter could not have read the
-  outlier; nothing on that path could. Both now select quality_json. The
-  validator path and the import path already read it - the two broken readers
-  were the outliers.
-- **With quality actually present, the draft reads it.** drafter.py gains
-  _extreme_for, which parses the detector's own sentence back into (value,
-  multiple) - the detector is the one place the rule lives, so re-deriving the
-  comparison is how two detectors drift apart. When the result's leader is the
-  flagged value, the caveat says so plainly and points at the largest group
-  that is not the outlier. The extreme is still stated; it is just no longer
-  announced as the answer. The measure is the only column the check reads, so a
-  quality issue in a column the result never selected stays a fact about the
-  dataset rather than a reason to distrust this draft.
-- **Two server tests** - one that plants the outlier and asserts the draft
-  names it, one that asserts the ordinary fixture does not gain the sentence.
-  The first takes the profile's own multiple rather than hard-coding the walk
-  figure: the detector computes over the dataset, and the walk's 758.6x came
-  from the shipped sample while the test's six-row fixture yields 761.5x.
-- Gates: web 257/257, server 777 (775 + 2 new), trace 48/48, e2e all steps,
-  tsc clean, build ok.
+- **Active task:** **W2X-004 DONE - the false unsaved-edits claim.** The walk
+  saw the case page claiming "unsaved edits" from the moment a case opened,
+  on context that had never been touched, and again after every reopen.
+- **The location was the wrong panel.** The finding names ContextPanel; the
+  Context panel already did this correctly (it initialises dirty false and
+  sets it false again after load). The false signal came from the Decision
+  panel's implications editor, which derived dirty from a join comparison
+  instead of tracking whether the analyst edited: `saved` starts null, the
+  effect seeds it from the view, and a parent reload hands the component a
+  fresh view object whose implications array is a different identity than the
+  one the effect seeded from - so the comparison reads as an edit on a case
+  nothing touched. An "edited" flag now records the gesture (a keystroke,
+  an add, or a remove), and dirty is that flag AND a divergence, so a reload
+  alone cannot flip it.
+- **Why it matters is the trust erosion, not the label:** a warning that
+  fires on every open is one the analyst stops reading, so the moment real
+  unsaved edits arrive it carries no weight. Both panels now only claim it
+  when an actual edit is pending.
+- Gates: web 258/258 (257 + 1 new regression test), tsc clean, build ok,
+  trace 48/48. Server unchanged - this is shell-only.
   **STATUS: COMMITTED, all gates green.**
-MITTED, all gates green.**
-  Two things the gate caught that were not this task's code. Four spy
+  Two things the gate caught that were not the W2X-004 code (from the W2X-001
+  gate run, kept as the record of why those tests moved). Four spy
   assertions in CaseWorkspace.test.tsx matched exact argument lists that now
   carry a trailing `AbortSignal`; the calls themselves are unchanged, so the
   assertions take `expect.anything()` for it. And the AT-27 motion-budget test

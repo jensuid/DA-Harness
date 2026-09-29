@@ -1,5 +1,54 @@
 ## Next action
 
+**W2X-009 landed: the drafter stopped promoting the outlier.** The walk
+planted revenue 99,589 where the rest were ~99; the profile flagged it at
+758.6x, the deterministic draft crowned it anyway ("North has the highest
+total_revenue at 99589.5"), and the trust loop closed on a number 758x too
+large wearing a partially_supported badge.
+
+**The root cause was two lines, and neither was in the drafter.** main.py's two
+profile readers - the interpretation endpoint and the draft-finding endpoint -
+selected columns_json and stats_json and never quality_json. The quality column
+was added by migration 11 before either reader existed, so profile[quality] was
+silently an empty list for the entire analysis path. The drafter could not have
+read the outlier; nothing on that path could. Both readers now select
+quality_json. The validator path and the import path already read it - the two
+broken readers were the outliers, and that is why the walk saw the validator
+blame the wrong column: it was the only one of the three actually looking at
+quality, and it had nothing else to work with.
+
+**With quality present, the draft reads it.** drafter.py gains _extreme_for,
+which parses the detector own sentence back into (value, multiple). The
+detector is the one place the rule lives, so re-deriving the comparison here is
+how two detectors drift apart. When the result leader is the flagged value, the
+caveat names it as an outlier ("at 758.6x the next-largest value, so the
+ranking describes the extreme, not the distribution") and points at the largest
+group that is not the outlier. The extreme is still stated - the honest answer
+names it and steps down, rather than deleting it. Only the measure is checked,
+so a quality issue in a column the result never selected stays a fact about the
+dataset, not a reason to distrust this draft.
+
+**What broke.** Nothing. The gate caught one thing worth keeping: the planted
+test fixture yields 761.5x, not the 758.6x the walk measured, because the
+detector computes over the dataset and the test uses six rows while the walk
+shipped 110. The assertion takes the profile own sentence rather than
+hard-coding the figure.
+
+**Next, in priority order.** The MAJORs are done; what remains is four MINORs
+and one packaging decision carried from before:
+1. **W2X-004** - the false "unsaved edits" claim from the moment a case
+   opens, which is the last thing that reads like a fault to a new analyst.
+2. **W2X-003** - the chart is gone after a reopen (0 svgs) though the artifact
+   is stored and the evidence graph records it.
+3. **W2X-010** - no duplicate notice at case-creation time.
+4. **W2X-011** - a case row text does nothing; only the Open button opens.
+
+**Two carried decisions stay, both unchanged and both not code:** the packaged
+app is unsigned by DEC-006, and GitHub Actions billing is suspended (fix at
+Settings > Billing & plans; nothing since commit c73118c has run in CI).
+
+## Next action
+
 **W2X-001 landed: the wait stopped being one word.** The walk measured three
 of four LLM calls timing out at the 120s ceiling while the UI showed a single
 static word - and in the runs panel three "Working…" at once, because one

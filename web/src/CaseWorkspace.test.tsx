@@ -2865,6 +2865,27 @@ expect(timeline.getByText(/case created/)).toBeInTheDocument()
       expect(screen.getByText(/unsaved edits/i)).toBeInTheDocument()
     })
 
+    it('does not claim unsaved edits on a case that was never touched (W2X-004)', async () => {
+      mockEmptyCase()
+      vi.mocked(api.getContext).mockResolvedValue({
+        case_id: 'c1',
+        purpose: 'Understand the Q3 revenue dip',
+        sub_questions: ['Is it west?'],
+        hypotheses: ['West drove the decline'],
+        constraints: ['No customer-level data'],
+        updated_at: '2026-09-22T00:00:00Z',
+      })
+
+      render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+
+      await screen.findByLabelText('Purpose')
+      // The panel shows the stored state, not a false "unsaved edits": a
+      // warning that fires on every open is one the analyst stops trusting,
+      // and the moment real edits arrive it no longer carries weight.
+      expect(screen.queryByText(/unsaved edits/i)).not.toBeInTheDocument()
+      expect(screen.getByText('saved')).toBeInTheDocument()
+    })
+
     it('reports a failed save without losing the edit', async () => {
       mockEmptyCase()
       vi.mocked(api.getContext).mockResolvedValue(emptyContext())

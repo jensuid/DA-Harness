@@ -509,8 +509,11 @@ its own contract, one commit per fix.
 
 - **W2X-003** - the on-screen chart is gone after a reopen (0 svgs) though
   the artifact is stored and the evidence graph records it. `RunsPanel`.
-- **W2X-004** - the Context panel shows "unsaved edits" from the moment the
-  case opens, though nothing was touched. False dirty state.
+- **W2X-004 — CLOSED.** The Context panel showed "unsaved edits" from the moment
+  the case opens, though nothing was touched. The false dirty state was in the
+  Decision panel's implications editor, not the Context panel: `dirty` was
+  derived from a join comparison, so a parent reload handing the panel a fresh
+  view object read as an edit. `web/src/DecisionPanel.tsx`.
 - **W2X-010** - the case list shows duplicate rows for the same question
   and dataset without any warning at create time. (Partly a test artifact;
   the gap is the missing duplicate notice.)

@@ -204,6 +204,17 @@ function Implications({
   const [saved, setSaved] = useState<string[] | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // W2X-004: dirty starts false and is only set by an edit the analyst makes.
+  // Deriving it from `draft !== saved` on the first render is wrong: `saved`
+  // is null until the effect below runs, so the comparison falls back to
+  // `view.implications` - the same array `draft` was seeded from - and reads
+  // clean. But `view` is a prop the parent re-fetched, and a parent that
+  // reloads hands this component a new object whose implications are a
+  // different array identity than the one the effect seeded, so a plain
+  // identity comparison flips dirty on a case nothing touched. The walk saw
+  // exactly that: "unsaved edits" from the moment the case opened, on a
+  // decision that had never been edited, and again after every reopen.
+  const [edited, setEdited] = useState(false)
 
   // The server is the source of truth: a decision written elsewhere (the API,
   // a restored export) shows up on reload rather than being overwritten by a
@@ -211,9 +222,14 @@ function Implications({
   useEffect(() => {
     setDraft(view.implications)
     setSaved(view.implications)
+    // W2X-004: a view the parent re-fetched does not count as an edit.
+    setEdited(false)
   }, [view.implications])
 
-  const dirty = draft.join('\n') !== (saved ?? view.implications).join('\n')
+  // W2X-004: dirty is whether the analyst edited the draft, not whether the
+  // stored array and the draft array differ by identity - a reload hands the
+  // panel a fresh object either way.
+  const dirty = edited && draft.join('\n') !== (saved ?? view.implications).join('\n')
 
   async function save() {
     if (busy) return
@@ -224,6 +240,9 @@ function Implications({
       const written = await putDecision(caseId, trimmed)
       setDraft(written.implications)
       setSaved(written.implications)
+      // W2X-004: a successful write clears the edit, so the panel stops
+      // claiming unsaved edits once they are saved.
+      setEdited(false)
       onChanged()
     } catch (err) {
       setError(messageOf(err))
@@ -244,14 +263,18 @@ function Implications({
             <input
               aria-label={`Implication ${index + 1}`}
               value={entry}
-              onChange={(event) =>
+              onChange={(event) => {
+                setEdited(true)
                 setDraft(draft.map((value, at) => (at === index ? event.target.value : value)))
-              }
+              }}
               disabled={busy}
             />
             <Button
               type="button"
-              onClick={() => setDraft(draft.filter((_, at) => at !== index))}
+              onClick={() => {
+                setEdited(true)
+                setDraft(draft.filter((_, at) => at !== index))
+              }}
               disabled={busy}
               variant="small"
               aria-label={`Remove implication ${index + 1}`}
@@ -263,7 +286,10 @@ function Implications({
       </ul>
       <Button
         type="button"
-        onClick={() => setDraft([...draft, ''])}
+        onClick={() => {
+          setEdited(true)
+          setDraft([...draft, ''])
+        }}
         disabled={busy}
         variant="small"
       >
