@@ -2025,5 +2025,86 @@ SUMMARY: the Python engine is the one a Python-fluent analyst reaches for
          cannot drift. Nothing in the sandbox, the endpoints, the capability
          set or the refusal messages moved.
 
+### WALK-UX-004 contract (the fourth walk-test)
+
+```
+TASK ID: WALK-UX-004
+MILESTONE: the fourth walk-test (a new domain, the same slow provider, a
+           live browser) - the validation run for the W3X fixes
+CAPABILITY: Verification / UX (the shipped app, used end to end)
+GOAL: two questions the walk-test alone can answer. (1) Does the W3X-003-PROMPT
+      fix hold in a naive analyst's hands - the plan LLM answering inside the
+      120s budget on the same ~10-13 tok/s provider that timed out at 1785
+      tokens, rather than the one live measurement that showed 508 tokens in
+      52.3s? (2) Does the W3X-004 fix change the first three interactions with
+      the Python engine - the contract on the page where three blind refusals
+      used to be? A walk-test that never exercises the fix it exists for is a
+      suite run, and the suite already passed.
+CONTEXT: the tree after W3X-003-PROMPT. WALK-UX-003's four findings are
+         closed: W3X-002 (the sentence is not glued to its label), W3X-004
+         (the panel teaches the sandbox's own contract), W3X-003-PROMPT (the
+         prompt asks for at most 4 sub-questions / 3 hypotheses / 4 steps /
+         3 data requirements, one short clause per string), and W3X-001
+         (recorded as an observation). v0.3.6 is the release those fixes
+         ship in, and this run executes against its tree. The provider is
+         deliberately the same Atria-Dawn-Preview at ~10-13 tok/s: the
+         strongest evidence the fix is real is that it holds on the provider
+         that failed, not on a faster one.
+INPUTS: a fresh core on an isolated data dir (DAH_DATA_DIR / DAH_DB_PATH under
+        walktest-w4/data), port 8123, DAH_LLM_API_KEY configured
+        (Atria-Dawn-Preview, the same provider W3 measured), the Vite dev
+        server on 5273 serving the master bundle, and the walk-test's own
+        protocol (walktest-w2/PLAN.md's naive analyst + facilitator, no
+        coaching mid-run, no code changed during the run, every claim backed
+        by a measured number).
+RELEVANT FILES: walktest-w4/make_dataset.py (new - the seeded dataset),
+                walktest-w4/PLAN.md (new - this run's protocol and focus),
+                walktest-w4/CAPTURE-SHEET.md (new - the live sheet),
+                walktest-w4/FINDINGS.md (new - findings and confirmations),
+                walktest-w4/REPORT.md (new - summary, journey table,
+                priority), walktest-w4/evidence/ (the runs, the export
+                package, the final page's DOM text and screenshot),
+                walktest-w4/logs/ (the core request log, the gate logs),
+                .gitignore (+walktest-w4/data and /logs, mirroring the
+                walktest-w3 rule),
+                ai/HANDOFF.md, ai/TASKS.md, ai/CURRENT_STATE.md.
+REQUIRED CHANGE: none. This task produces findings, not changes; each W4X
+                fix is a separate task with its own contract and gate. The
+                only files that move are the walk-test's own material and
+                the ai/ state that records it.
+ACCEPTANCE CRITERIA:
+- [ ] the walk runs against a real core with a real LLM configured, not a
+      mocked or deterministic-only environment
+- [ ] the dataset is new (not a reuse of walktest/, walktest-w2/ or
+      walktest-w3/) and carries planted anomalies the profiler must find
+- [ ] every surface the shell owns is reached through the UI, and the loop
+      closes: attach, profile, plan, SQL run, Python run, chart, interpret,
+      draft, accept, validate, reviewer audit, chat, implications, export
+- [ ] state survives a leave and a reopen
+- [ ] no code was changed during the run
+- [ ] the capture sheet has no `to be recorded` left
+- [ ] every finding carries a measured observation, not an impression
+- [ ] the plan wait is measured: the LLM plan call's elapsed time and
+      finish reason are in the log, and the finding states whether the
+      W3X-003-PROMPT fix held (inside 120s with a stop) or did not
+- [ ] the Python surface is measured: whether the analyst's first Python
+      interaction used the contract on the page (dataset.rows) rather than
+      a refusal, and how many refusals preceded a successful run
+- [ ] each previous walk-test fix the run exercised is recorded as holding
+      or as regressed, with the measurement
+- [ ] the verification pipeline runs green on the same tree: server, web,
+      tsc, build, e2e, trace
+TESTS: none new - this is a walk-test. The suites are re-run on the same
+       tree as the run's own exit gate.
+VERIFICATION: the gates at the tree the run executed against, recorded in
+              walktest-w4/logs/.
+STATE UPDATE: TASKS/CURRENT_STATE gain the task. No schema change.
+```
+
+TASK: WALK-UX-004 - the fourth walk-test
+ID: WALK-UX-004
+PRIORITY: high
+STATUS: PENDING
+
 Contracts for the rolling window (the two most recent: W3X-003-PROMPT and
 W3X-004). Older blocks are in `ai/TASKS-ARCHIVE.md`.

@@ -37,6 +37,8 @@ walktest-w2/data/
 walktest-w2/logs/
 walktest-w3/data/
 walktest-w3/logs/
+walktest-w4/data/
+walktest-w4/logs/
 
 # Uploaded datasets (dev)
 server/data/
