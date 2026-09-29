@@ -507,8 +507,10 @@ its own contract, one commit per fix.
 
 **MINOR**
 
-- **W2X-003** - the on-screen chart is gone after a reopen (0 svgs) though
-  the artifact is stored and the evidence graph records it. `RunsPanel`.
+- **W2X-003 — CLOSED.** The on-screen chart is gone after a reopen (0 svgs)
+  though the artifact is stored and the evidence graph records it. The chart
+  lived in local state that a remount resets, and the panel it sat in only
+  mounted once the analyst showed the rows. `RunsPanel` + `api.getChart`.
 - **W2X-004 — CLOSED.** The Context panel showed "unsaved edits" from the moment
   the case opens, though nothing was touched. The false dirty state was in the
   Decision panel's implications editor, not the Context panel: `dirty` was

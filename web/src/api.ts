@@ -813,6 +813,14 @@ export function listCharts(caseId: string, runId: string): Promise<ChartSummary[
   return request<ChartSummary[]>(`/cases/${caseId}/runs/${runId}/charts`)
 }
 
+// W2X-003: the image endpoint sniffs its format from the stored bytes rather
+// than from a column the charts table keeps, so a panel that restores a chart
+// it did not render itself has to ask for the chart's metadata to learn
+// whether the artifact is SVG (drawn inline) or PNG (linked).
+export function getChart(caseId: string, chartId: string): Promise<Chart> {
+  return request<Chart>(`/cases/${caseId}/charts/${chartId}`)
+}
+
 // The renderer's refusal is the analyst's input: an unknown kind, a column the
 // result does not have, or a measure with nothing plottable answers 400 with
 // its own sentence, which the panel shows rather than a broken surface.

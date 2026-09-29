@@ -1,5 +1,49 @@
 ## Next action
 
+**W2X-004 landed: the false unsaved-edits claim stopped firing on open.** The
+walk saw "unsaved edits" the moment a case opened, on context nothing had
+touched, and again after every reopen.
+
+**The finding named the wrong panel.** The Context panel already did this
+correctly - it initialises `dirty` false, sets it false again after load, and
+only flips it on a keystroke, an add, or a remove. The false signal came from
+the Decision panel's implications editor, one zone over. Its `dirty` was
+derived, not tracked: `const dirty = draft.join('\\n') !== (saved ?? view.implications).join('\\n')`. `saved` starts null and the effect seeds it from
+the view, but the parent reloads the whole workspace on every change in the
+case, handing the panel a fresh `view` object whose `implications` array is a
+different identity than the array the effect seeded `draft` from. Same
+contents, different array - so the comparison read as an edit on a case
+nothing touched.
+
+**The fix is an `edited` flag** the three edit gestures set, with `dirty` now
+the flag AND a divergence, so a reload alone cannot flip it and an analyst who
+reverts to the stored text sees the claim clear. The save path clears it, and
+the effect seeds it false too, so a re-fetched view is not an edit.
+
+**Why this is trust, not polish:** a warning that fires on every open is one
+the analyst stops reading, and the moment real unsaved edits arrive it carries
+no weight. Both panels now claim it only when an actual edit is pending.
+
+**What broke.** Nothing in the suite. One new regression test mounts a case
+whose stored context has a purpose and entries and asserts no "unsaved edits"
+and a "saved" label. Isolating it fails it - the workspace's other readers
+need the mocks `mockEmptyCase()` installs - but it passes in the file run,
+which is how the suite has always run.
+
+**Next, in priority order.** Three MINORs remain, then the carried packaging
+decision:
+1. **W2X-003** - the chart is gone after a reopen (0 svgs) though the artifact
+   is stored and the evidence graph records it. `RunsPanel`.
+2. **W2X-011** - a case row's text does nothing; only the Open button opens
+   it. `CaseList.tsx`.
+3. **W2X-010** - no duplicate notice at case-creation time.
+
+**One carried decision stays, unchanged and not code:** GitHub Actions billing
+is suspended (fix at Settings > Billing & plans; nothing since commit c73118c
+has run in CI). The packaged app is unsigned by DEC-006.
+
+## Next action
+
 **W2X-009 landed: the drafter stopped promoting the outlier.** The walk
 planted revenue 99,589 where the rest were ~99; the profile flagged it at
 758.6x, the deterministic draft crowned it anyway ("North has the highest

@@ -54,6 +54,8 @@ vi.mock('./api', async (importOriginal) => {
     putDecision: vi.fn(),
     createChart: vi.fn(),
     getChartImage: vi.fn(),
+    listCharts: vi.fn(),
+    getChart: vi.fn(),
     exportCasePackage: vi.fn(),
   }
 })
@@ -306,6 +308,9 @@ function mockEmptyCase() {
   vi.mocked(api.getRoleAgentState).mockResolvedValue(agentIdle({ role: 'reviewer' }))
   vi.mocked(api.getEvidenceGraph).mockResolvedValue(evidenceGraph)
   vi.mocked(api.getCaseHistory).mockResolvedValue(caseHistory)
+  // W2X-003: a run's charts are read on open so a case that had one shows it
+  // again. The default is none, so a case with a chart has to install its own.
+  vi.mocked(api.listCharts).mockResolvedValue([])
   vi.mocked(api.getLearnWalk).mockResolvedValue(learnWalk)
   vi.mocked(api.getRefinement).mockResolvedValue(null)
   vi.mocked(api.getDecision).mockResolvedValue(emptyDecision())
@@ -2775,6 +2780,30 @@ expect(timeline.getByText(/case created/)).toBeInTheDocument()
       // second time, so no inline image sits beside the link.
       expect(await screen.findByTestId('chart-surface')).toBeInTheDocument()
       expect(screen.queryByTestId('chart-svg')).not.toBeInTheDocument()
+    })
+
+    it('shows a chart the case already has when it reopens (W2X-003)', async () => {
+      mockEmptyCase()
+      vi.mocked(api.listRuns).mockResolvedValue([runFixture()])
+      mockRunRows()
+      // The chart was rendered before the case was closed and left: the core
+      // kept it, the evidence graph counts it, and the reopen has to draw it
+      // again instead of waiting for the analyst to ask a second time.
+      const stored = chartFixture()
+      vi.mocked(api.listCharts).mockResolvedValue([stored])
+      vi.mocked(api.getChart).mockResolvedValue(stored)
+      vi.mocked(api.getChartImage).mockResolvedValue({ format: 'svg', svg: '<svg/>' })
+
+      render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+
+      // The chart appears without being asked for again: the surface and its
+      // drawing arrive from the stored artifact, not from a second render the
+      // analyst has to trigger. A plottable geometry draws on screen as a
+      // chart tree; the inline-SVG branch is for a geometry with nothing to
+      // plot, so this asserts the drawing itself, not one of its two shapes.
+      expect(await screen.findByTestId('chart-surface')).toBeInTheDocument()
+      expect(screen.getByTestId('chart-tree')).toBeInTheDocument()
+      expect(vi.mocked(api.createChart)).not.toHaveBeenCalled()
     })
   })
 })

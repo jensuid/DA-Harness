@@ -4,11 +4,12 @@
  * panel is still pure over its props.
  */
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   type ChartImage,
   type ChartKind,
   type ChartSummary,
+  type Chart,
   type Dataset,
   type DraftFinding,
   type Interpretation,
@@ -16,9 +17,11 @@ import {
   type RunSummary,
   createChart,
   draftFinding,
+  getChart,
   getChartImage,
   getRun,
   interpretRun,
+  listCharts,
 } from "../api"
 import { sourceLabel } from '../sourceLabel'
 import { messageOf } from '../CaseList'
@@ -91,6 +94,50 @@ export function RunRow({
   const [busy, setBusy] = useState<'' | 'rows' | 'read' | 'draft'>('')
   const progress = useCallProgress()
   const [error, setError] = useState<string | null>(null)
+  // W2X-003: a run whose chart the core already holds opens with its rows
+  // already read. The chart sits below the rows table, so the drawing the
+  // analyst left behind stays invisible until the rows are shown - and the
+  // walk found exactly that, a case that had one chart by the evidence graph
+  // and none on screen. The rows the chart needs are the same rows the table
+  // shows, so this is the read "Show the rows" makes, only automatic.
+  const [hasChart, setHasChart] = useState<ChartSummary | null>(null)
+  // W2X-003: the chart the core already holds, read back so the case opens
+  // with the drawing it closed with. Handed down to the chart panel, which
+  // would otherwise only ever show a chart it rendered in this session.
+  const [restored, setRestored] = useState<{ chart: Chart; image: ChartImage } | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    void (async () => {
+      try {
+        const charts = await listCharts(caseId, run.id)
+        if (cancelled || charts.length === 0) return
+        setHasChart(charts[0])
+        // W2X-003: the chart the analyst left behind. The image endpoint sniffs
+        // its format from the bytes the core stored, so the metadata is read
+        // first - the restore cannot guess inline-SVG from a bitmap link, and
+        // the pickers open on the axes the stored chart used.
+        const stored = await getChart(caseId, charts[0].id)
+        if (cancelled) return
+        const img = await getChartImage(caseId, stored)
+        if (cancelled) return
+        setRestored({ chart: stored, image: img })
+      } catch {
+        // A chart whose image is gone from disk is still a chart the case has:
+        // the rows open so the control is where it always was, and the analyst
+        // can render it again. The restore does not report this as a failure.
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [caseId, run.id])
+
+  useEffect(() => {
+    if (!hasChart || rows || busy) return
+    void showRows()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasChart])
 
   async function showRows() {
     if (busy) return
@@ -214,7 +261,13 @@ export function RunRow({
         />
       )}
       {rows && <RunRowsTable run={rows} />}
-      <ChartPanel caseId={caseId} run={run} rows={rows} onChanged={onChanged} />
+      <ChartPanel
+        caseId={caseId}
+        run={run}
+        rows={rows}
+        restored={restored}
+        onChanged={onChanged}
+      />
     </MotionSurface>
   )
 }
@@ -233,11 +286,16 @@ export function ChartPanel({
   caseId,
   run,
   rows,
+  restored,
   onChanged,
 }: {
   caseId: string
   run: RunSummary
   rows: Run | null
+  // W2X-003: a chart the case held before it was closed, read back by the row
+  // above and handed down. The panel would otherwise only ever show a chart it
+  // rendered in this session.
+  restored: { chart: Chart; image: ChartImage } | null
   onChanged: () => void
 }) {
   const [open, setOpen] = useState(false)
@@ -251,6 +309,12 @@ export function ChartPanel({
   const [error, setError] = useState<string | null>(null)
 
   const canOffer = rows !== null && rows.columns.length > 0
+
+  // W2X-003: the chart this case already has is the one to draw, so the
+  // restored pair wins over an empty local state and falls behind a chart the
+  // analyst rendered here - a new render is the analyst's latest answer.
+  const shownChart = chart ?? restored?.chart ?? null
+  const shownImage = image ?? restored?.image ?? null
 
   async function render() {
     if (!rows || busy) return
@@ -380,18 +444,18 @@ export function ChartPanel({
       {error && (
         <p role="alert">The chart could not be rendered: {error}</p>
       )}
-      {image && chart && rows && (
+      {shownImage && shownChart && rows && (
         // The surface reads the run's own result, so the on-screen chart and
         // the stored artifact answer the same question from the same numbers;
         // the chart's metadata carries the axes the analyst picked.
         <ChartSurface
-          kind={chart.kind as ChartKind}
+          kind={shownChart.kind as ChartKind}
           run={rows}
-          x={chart.x}
-          y={chart.y}
-          series={chart.series}
-          title={chart.title}
-          image={image}
+          x={shownChart.x}
+          y={shownChart.y}
+          series={shownChart.series}
+          title={shownChart.title}
+          image={shownImage}
         />
       )}
     </div>
