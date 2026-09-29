@@ -7684,3 +7684,87 @@ SUMMARY: the Check for Updates menu item performed a check the core
 
 Contracts for the rolling window (the two most recent: W3X-004 and
 FIX-UPDATES-009). Older blocks are in `ai/TASKS-ARCHIVE.md`.
+
+### FIX-UPDATES-009 contract
+
+```
+TASK ID: FIX-UPDATES-009
+MILESTONE: post-phase (the walk-test's findings)
+CAPABILITY: Distribution (the silent update check, W-005)
+GOAL: the Check for Updates menu item performs a check and reports it to a
+      log, and nothing reports it to the user. The item is silent whether it
+      finds an update, finds none, or cannot reach the feed - three outcomes
+      the core distinguishes and the shell never shows. On a private
+      repository the feed is unreachable and the item is permanently,
+      silently dead.
+CONTEXT: WALK-E2E-001 Fase A triggered the item, watched the core receive
+         the request, and saw nothing in the window; the handler prints its
+         result to stderr and stops there (main.rs:48-60). The core already
+         answers three statuses with a reason for every UNKNOWN, so the
+         information exists and is not delivered.
+INPUTS: the core's `/updates/latest` statuses and their reasons, the menu
+        item's handler, and the shell's own surface for reporting to the
+        user.
+RELEVANT FILES: desktop/src-tauri/src/main.rs (the handler and its delivery),
+                the update status vocabulary in server/app/updates.py, the
+                desktop tests, ai/HANDOFF.md, ai/TASKS.md, ai/CURRENT_STATE.md
+REQUIRED CHANGE:
+  - The check's outcome reaches the user as the window's own message - a
+    dialog or an equivalent surface - for each of the three statuses, so the
+    item always answers something and the analyst never waits on a silent
+    one.
+  - An unreachable feed says it is unreachable rather than appearing to have
+    checked nothing, which is the honest reason the vocabulary already
+    carries.
+  - The handler's result still reaches the log; the delivery is added, not
+    substituted.
+NON-GOALS: an updater (the check remains the verifiable half, per DEC-006);
+           a settings pane; polling.
+CONSTRAINTS: green only. No new dependency. The delivery uses the window the
+             app already has; the statuses come from the core.
+ACCEPTANCE CRITERIA:
+- [x] each of the three statuses produces a visible answer in the window
+- [x] an unreachable feed answers with its reason, not silence
+- [x] the core's own status vocabulary is what the message reports
+- [x] the log line the handler already writes still writes
+TESTS: NoticeLayer.test.tsx (+8) and shell.test.ts (+8) on the web side;
+       notice_tests in updates.rs (+6) on the Rust side - the event-name
+       agreement, the body riding along, the no-body and non-JSON cases, and
+       each of the three statuses.
+VERIFICATION: `cd server && DAH_LLM_API_KEY= DAH_LLM_BASE_URL= DAH_LLM_MODEL=
+              .venv/bin/python -m pytest -q` green (723, unchanged);
+              `cd desktop/src-tauri && cargo test` green (25, +6);
+              `cd web && npm test && npm run build` green (163, +16);
+              `verify_e2e.py` green; `verify_golden.py` green (21/21);
+              `verify_refine.py` green (AT-04); `verify_trace.py` green
+              (48/48).
+STATE UPDATE: TASKS/CURRENT_STATE/HANDOFF gain the fix; W-005 closes. No
+              schema change, no version bump.
+```
+
+TASK: FIX-UPDATES-009 - the silent update check reaches the window
+ID: FIX-UPDATES-009
+PRIORITY: high
+STATUS: DONE
+SUMMARY: the Check for Updates menu item performed a check the core
+         distinguishes three ways and told only stderr about it, so on this
+         private repository - where the feed always answers 404 - the item was
+         permanently, silently dead. The delivery is the bundle's own surface,
+         because the shell is the only host with a menu bar and a native dialog
+         was not available: `tauri-plugin-dialog` is a network-fetched plugin
+         on Tauri 2 and the app is offline once installed, so depending on it
+         would break DEC-001. The shell evaluates a script in the webview it
+         already holds, posting a `dah-notice` event whose detail is the core's
+         own JSON body - never a sentence the shell reworded, so an unreachable
+         feed stays "could not tell" instead of becoming the silent "up to
+         date" P6-UPDATE-005 built the check to avoid. The bundle's
+         `describeUpdate` mirrors the shell's `update_summary`, so the window
+         and the log line always say the same thing about the same answer.
+         One thing the tests caught and fixed: a body that is not JSON cannot
+         be embedded in the script, because the eval would throw a
+         `SyntaxError` and silence the item a second time - so `notice_script`
+         validates the body and falls back to a body the shell rebuilds from
+         the parsed answer, which is also how a transport that kept no body at
+         all still reaches the window.
+
+Contracts for the rolling window (the two most recent: W3X-003-PROMPT and W3X-004). Older blocks are in `ai/TASKS-ARCHIVE.md`.

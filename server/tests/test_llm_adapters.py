@@ -27,6 +27,7 @@ answer rather than nothing.
 
 import json
 import importlib
+import re
 from contextlib import contextmanager
 
 import httpx
@@ -244,6 +245,119 @@ def test_the_planner_carries_the_stated_intent() -> None:
     # An engine that did not name its basis inherits the intent the caller
     # supplied, so a reader knows what the plan was built from either way.
     assert plan["context_basis"] == ["purpose"]
+
+
+# --- the plan prompt asks for less than the validator accepts ---------------
+
+# W3X-003-PROMPT. The plan call is the only one of the six adapters whose prompt
+# asks for a large structured object, and the walk-test measured the cost: the
+# provider generates at ~13 completion tokens per second, so a prompt that asks
+# for six sub-questions, five hypotheses and six steps answers in ~137s against
+# a 120s timeout, and the analyst spends two minutes waiting for a deterministic
+# plan. Asking the LLM for less is the only lever that shortens the answer
+# without touching the timeout (a `max_tokens` cap truncates the JSON
+# mid-object, which the validator refuses - a faster fallback, not a faster
+# answer), so the request's caps are pinned here: a prompt that drifts back to
+# asking for the validator's ceilings is a regression the wait measures.
+_REQUESTED_SUB_QUESTIONS = 4
+_REQUESTED_HYPOTHESES = 3
+_REQUESTED_STEPS = 4
+_REQUESTED_DATA_REQUIREMENTS = 3
+
+
+def test_the_plan_prompt_asks_for_less_than_the_validator_accepts() -> None:
+    """The request is smaller than the contract; the contract is unchanged.
+
+    The deterministic planner and `validate_plan` still accept up to
+    `_MAX_SUB_QUESTIONS / _MAX_HYPOTHESES / _MAX_STEPS`, so a smaller *request*
+    shrinks the wait without shrinking what an engine may answer - an LLM that
+    sends five hypotheses is still a valid plan, only a slower one. The sentence
+    states each cap once, so the numbers are read out of it rather than matched
+    as a phrase.
+    """
+    prompt = planner_module.LLMPlanner("k", "https://x/v1", "m").prompt(
+        QUESTION, PROFILE
+    )
+    match = re.search(r"Keep it short: ([^.]+)\.", prompt)
+    assert match, "the prompt must state its output caps"
+    sentence = match.group(1)
+    requested = {
+        name: int(value)
+        for value, name in re.findall(r"(\d+) (\w+)", sentence)
+    }
+    assert requested == {
+        "sub_questions": _REQUESTED_SUB_QUESTIONS,
+        "hypotheses": _REQUESTED_HYPOTHESES,
+        "analysis_steps": _REQUESTED_STEPS,
+        "data_requirements": _REQUESTED_DATA_REQUIREMENTS,
+    }
+    assert "one short clause" in sentence
+
+    for requested_count, ceiling, name in (
+        (_REQUESTED_SUB_QUESTIONS, planner_module._MAX_SUB_QUESTIONS, "sub_questions"),
+        (_REQUESTED_HYPOTHESES, planner_module._MAX_HYPOTHESES, "hypotheses"),
+        (_REQUESTED_STEPS, planner_module._MAX_STEPS, "analysis_steps"),
+    ):
+        assert requested_count < ceiling, f"{name}: the request must be smaller than the ceiling"
+
+
+def test_the_plan_prompt_names_no_ceiling_the_contract_does_not_have() -> None:
+    """The request is a request, not a constraint on the analyst's plan.
+
+    A cap stated as a limit would refuse an answer that is perfectly valid, so
+    the prompt asks ("at most") and the validator's own ceilings stay what they
+    were - an engine that answers with more still passes `validate_plan`.
+    """
+    assert planner_module.validate_plan({
+        "objective": "o", "primary_question": "q",
+        "sub_questions": ["q"] * planner_module._MAX_SUB_QUESTIONS,
+        "hypotheses": [
+            {"statement": "s", "rationale": "r", "check": "c"}
+        ] * planner_module._MAX_HYPOTHESES,
+        "data_requirements": [
+            {"requirement": "c", "detail": "d"}
+        ] * _REQUESTED_DATA_REQUIREMENTS,
+        "analysis_steps": [
+            {"action": "a", "detail": "d"}
+        ] * planner_module._MAX_STEPS,
+    }) == []
+
+
+def test_the_plan_prompt_is_the_one_the_adapter_posts() -> None:
+    """`plan` posts the prompt `prompt` builds, so the pinned text is the text sent."""
+    with chat(_chat_content(_plan_payload())):
+        planner_module.create_plan(QUESTION, PROFILE)
+    prompt = planner_module.LLMPlanner("k", "https://x/v1", "m").prompt(
+        QUESTION, PROFILE
+    )
+    body = FakeResponse.last_body
+    assert isinstance(body, dict)
+    assert body["messages"][1]["content"] == prompt
+
+
+def test_the_plan_prompt_carries_the_stated_intent() -> None:
+    """A case with stated intent asks the engine to use it."""
+    prompt = planner_module.LLMPlanner("k", "https://x/v1", "m").prompt(
+        QUESTION, PROFILE, {"purpose": "Decide where to spend."}
+    )
+    assert "Stated intent:" in prompt
+    assert "Decide where to spend." in prompt
+
+
+def test_the_plan_prompt_truncates_the_profile() -> None:
+    """The input cap is not the cost, but the prompt still keeps its word.
+
+    The profile is cut at `_MAX_LLM_CHARS`, so a 120 kB profile produces a
+    prompt of about that size plus the fixed instruction - never a prompt that
+    grows with the dataset.
+    """
+    bloated = {"rows": 1, "columns": ["a"], "stats": {},
+               "noise": "y" * planner_module._MAX_LLM_CHARS}
+    prompt = planner_module.LLMPlanner("k", "https://x/v1", "m").prompt(
+        QUESTION, bloated
+    )
+    assert prompt.count("y") < planner_module._MAX_LLM_CHARS
+    assert len(prompt) < 2 * planner_module._MAX_LLM_CHARS
 
 
 def test_the_generator_adapter_reads_only_real_columns() -> None:

@@ -348,23 +348,7 @@ class LLMPlanner:
     def plan(self, question: str, profile: dict, context: dict | None = None) -> dict:
         import httpx
 
-        prompt = (
-            "You are an analysis planner. Given a question and a dataset profile, "
-            "return ONLY a JSON object with this exact schema:\n"
-            "{\n"
-            '  "objective": string,\n'
-            '  "primary_question": string,\n'
-            '  "sub_questions": [string],\n'
-            '  "hypotheses": [{"statement": string, "rationale": string, "check": string}],\n'
-            '  "data_requirements": [{"requirement": string, "detail": string}],\n'
-            '  "analysis_steps": [{"action": string, "detail": string}]\n'
-            "}\n"
-            "Reference real column names from the profile. Do not add fields or "
-            "commentary.\n\n"
-            f"Question: {question}\n\n"
-            f"Profile (truncated): {json.dumps(profile)[:_MAX_LLM_CHARS]}\n"
-            + (f"Stated intent: {json.dumps(context)}\n" if context else "")
-        )
+        prompt = self.prompt(question, profile, context)
         response = httpx.post(
             f"{self._base_url}/chat/completions",
             headers={
@@ -385,6 +369,38 @@ class LLMPlanner:
         response.raise_for_status()
         content = response.json()["choices"][0]["message"]["content"]
         return json.loads(content)
+
+    def prompt(self, question: str, profile: dict, context: dict | None = None) -> str:
+        """The prompt `plan` posts, on its own so a measurement can time it.
+
+        W3X-003-PROMPT: the prompt's requested output is the cost (the provider
+        generates at ~13 completion tokens per second, so 1785 tokens is ~137s
+        against a 120s timeout), so the prompt is what a measurement holds and
+        a test pins. The caps below are a *request*, not the validator's
+        ceilings: the deterministic planner and `validate_plan` still accept
+        up to `_MAX_SUB_QUESTIONS / _MAX_HYPOTHESES / _MAX_STEPS`, so asking
+        the LLM for less shrinks the wait without shrinking what is accepted.
+        """
+        return (
+            "You are an analysis planner. Given a question and a dataset profile, "
+            "return ONLY a JSON object with this exact schema:\n"
+            "{\n"
+            '  "objective": string,\n'
+            '  "primary_question": string,\n'
+            '  "sub_questions": [string],\n'
+            '  "hypotheses": [{"statement": string, "rationale": string, "check": string}],\n'
+            '  "data_requirements": [{"requirement": string, "detail": string}],\n'
+            '  "analysis_steps": [{"action": string, "detail": string}]\n'
+            "}\n"
+            "Reference real column names from the profile. Do not add fields or "
+            "commentary.\n"
+            "Keep it short: at most 4 sub_questions, 3 hypotheses, 4 analysis_steps "
+            "and 3 data_requirements, and every string one short clause - a "
+            "sentence at most, never a paragraph.\n\n"
+            f"Question: {question}\n\n"
+            f"Profile (truncated): {json.dumps(profile)[:_MAX_LLM_CHARS]}\n"
+            + (f"Stated intent: {json.dumps(context)}\n" if context else "")
+        )
 
 
 def _configured_llm() -> LLMPlanner | None:

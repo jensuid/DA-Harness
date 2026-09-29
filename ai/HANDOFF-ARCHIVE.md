@@ -584,3 +584,56 @@ build ok, e2e 28/28, trace 48/48.
 shape, and the W3X-003 root cause - why the plan call takes 120s when the chat
 call takes 67s - is the one that should be looked at before any timeout is
 moved.
+
+## Next action
+
+**W3X-002 is fixed: the fallback announcement reads as a sentence again.** The
+walk-test measured the rendering - "...answered in its place. for
+helpdesk_tickets_2026.csv" - because a panel appended its own context to a
+label that is already a complete sentence, and a period followed by a
+lowercase fragment reads as a typo rather than as the substitution notice
+W2X-001/FIX-TIMEOUT-006 put there.
+
+The fix moved only the join. `sourceLabel` and the five sentences it returns
+are byte-identical (the server's wording, and the panels that render the label
+with no context of their own - RunsPanel, Chat, RefinePanel - are untouched).
+The three panels that append their own context go through a new `sourceWith`,
+which capitalises the context so a sentence ending in a period takes a
+grammatical clause. DraftPanel's "accepting records a real finding" became the
+sibling `<p>` it always read as. Seven unit tests pin it, including one that
+asserts the measured typo shape is absent.
+
+Gates: web 285/285 (was 278; +7 in sourceLabel.test.ts), tsc clean, build ok;
+server 788/788 unchanged (this task moved no server code); trace 48/48, e2e
+28/28. `graphify update .` ran clean.
+
+**Next: one task is queued — the W3X-003 follow-up, `W3X-003-PROMPT`.** The
+root cause is measured and recorded (`walktest-w3/FINDINGS.md`): the plan
+prompt asks for the largest output of the six LLM adapters (6 sub-questions,
+5 hypotheses, 6 analysis steps) and the provider generates at ~13 completion
+tokens per second, so 1785 tokens is ~137s against a 120s timeout. The path
+to a faster plan runs through the prompt's output size, not `timeouts.py`.
+
+The task: shrink what the LLM plan prompt asks for, so a complete plan arrives
+inside the budget on a ~13 tok/s provider. Fix shape (measured baseline above):
+- `server/app/planner.py` `LLMPlanner.plan` — the prompt's schema text and the
+  instruction voice. Candidates: cap the requested lists in the prompt itself
+  (e.g. 4 sub-questions, 3 hypotheses, 4 steps), and add an explicit "be
+  concise; one short clause per field" instruction. `_MAX_LLM_CHARS` (input
+  truncation) is not the variable - the output is.
+- Keep `_MAX_SUB_QUESTIONS = 6`, `_MAX_HYPOTHESES = 5`, `_MAX_STEPS = 6` as the
+  *validator's* ceilings (the deterministic planner and every existing test
+  still produces up to those counts), so a smaller *request* must not shrink
+  what the deterministic path or validation accepts. Only the LLM prompt asks
+  for less.
+- Do not add `max_tokens`: measured, it truncates the JSON mid-object
+  (`finish_reason: length`) and the schema validator refuses it - a cap buys a
+  faster fallback, not a faster answer.
+- `temperature` is not the variable either (measured: 141s with, 103s without,
+  the difference is only output length).
+
+Gates: server pytest (788, plus any new tests), web unchanged (285/285 unless
+shell text moves), tsc clean, build ok, e2e 28/28, trace 48/48.
+
+Gates now: web 285/285, tsc clean, build ok; server 788/788, trace 48/48,
+e2e 28/28.

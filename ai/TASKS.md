@@ -501,8 +501,8 @@ SUMMARY: the loop a first-time analyst walks without a terminal, proven on
 
 None remain open. The three MAJOR findings are closed (W3X-002 and W3X-004
 with code; W3X-003 root-caused as a property of the provider rather than the
-harness) and W3X-001 is recorded as an observation. The material is in
-`walktest-w3/FINDINGS.md`.
+harness, and its follow-up W3X-003-PROMPT now shrinks the prompt) and W3X-001
+is recorded as an observation. The material is in `walktest-w3/FINDINGS.md`.
 
 **MAJOR**
 
@@ -548,6 +548,136 @@ harness) and W3X-001 is recorded as an observation. The material is in
   `POST /cases` checks for a duplicate (W2X-010). The cheapest guard is a
   same-filename refusal naming the existing dataset, but the frequency is
   unmeasured, so it is recorded rather than queued.
+
+### W3X-003-PROMPT contract (the plan prompt asks for less than the validator accepts)
+
+```
+TASK ID: W3X-003-PROMPT
+MILESTONE: post-walk-test fixes (the third walk-test's measured wait)
+CAPABILITY: AI planning (the LLM prompt's requested output size)
+GOAL: a complete LLM plan arrives inside the 120s budget on a ~13 tok/s
+      provider. The walk-test measured the wait (POST .../plan -> 201 in
+      120552ms, then the timeout's deterministic fallback) and a live
+      measurement against the same provider explained it: the plan prompt is
+      the only one of the six adapters that asks for a large structured object,
+      1785 completion tokens at ~13 tok/s is ~137s, so the 120s timeout missed
+      it by minutes. The timeout is not the variable (a slow endpoint is not
+      made faster by giving up on it, and the fallback it produced was
+      announced, deterministic and correct - the trust model the timeout was
+      designed around); `max_tokens` is not either (measured: it truncates the
+      JSON mid-object, `finish_reason: length`, and the schema validator
+      refuses it - a cap buys a faster fallback, not a faster answer); and
+      temperature is not (141s with, 103s without, the difference is only the
+      output length). The one lever left is the output the prompt requests.
+CONTEXT: `server/app/planner.py`'s `LLMPlanner.plan` built the prompt inline,
+         so the text a measurement has to hold was not reachable without
+         posting it. `_MAX_SUB_QUESTIONS = 6`, `_MAX_HYPOTHESES = 5` and
+         `_MAX_STEPS = 6` are the validator's ceilings - the deterministic
+         planner produces up to those counts, and `validate_plan` accepts
+         them - so a smaller request must not shrink what the deterministic
+         path or the validator accepts. The provider in the walk-test measured
+         ~9.7-13 tok/s; nothing in the harness sets that rate.
+INPUTS: the walk-test's measurement (`walktest-w3/FINDINGS.md`, W3X-003's
+        block with the four timings: chat 6.1s, plan 141s / 103s, capped
+        49.3s truncated), the live re-measurement this task ran
+        (`walktest-w3/logs/measure-plan-prompt.log`: the shipped prompt
+        answered 508 tokens in 52.3s, finish=stop, rate 9.7 tok/s), and the
+        validator's own ceilings in `server/app/planner.py`.
+RELEVANT FILES: server/app/planner.py (+`LLMPlanner.prompt`, `plan` now calls
+                it), server/tests/test_llm_adapters.py (+5 tests, 793 server
+                total),
+                walktest-w3/measure_plan_prompt.py (new - the live
+                re-measurement, offline by construction: no key, no run),
+                ai/HANDOFF.md, ai/TASKS.md, ai/CURRENT_STATE.md.
+REQUIRED CHANGE:
+  - The prompt is reachable without posting it. `LLMPlanner.prompt` holds the
+    text `plan` posts, so a measurement or a test can hold the prompt the
+    adapter actually sends. `plan` is byte-for-byte the same request.
+  - The prompt asks for less: at most 4 sub_questions, 3 hypotheses, 4
+    analysis_steps and 3 data_requirements, and every string "one short
+    clause - a sentence at most, never a paragraph". This is a request, not
+    a constraint the validator enforces - the word is "at most", and an
+    engine that answers with five hypotheses is still a valid plan, only a
+    slower one.
+  - The validator's ceilings are untouched. `_MAX_SUB_QUESTIONS = 6`,
+    `_MAX_HYPOTHESES = 5` and `_MAX_STEPS = 6` stay, the deterministic
+    planner still produces up to them, and `validate_plan` still accepts
+    them. Nothing about what an engine may answer changed; only what the
+    LLM is asked for.
+NON-GOALS: any change to `server/app/timeouts.py` (measured as not the
+           variable - a shorter timeout is a faster *fallback*), a
+           `max_tokens` cap (measured: it truncates the JSON mid-object and
+           the validator refuses it), a temperature change (measured: only
+           the output length moved), shrinking what the deterministic
+           planner produces or the validator accepts, any change to the
+           other five adapters (their outputs are small already - the chat
+           shape measured 6.1s), and any new dependency.
+CONSTRAINTS: green only. No new dependency. Deterministic and offline for
+             the tests: every new test builds the prompt directly or reads
+             it out of the patched `httpx.post` recorder, so no packet
+             leaves the process and no key is real. The prompt's caps are
+             pinned by test so a drift back to asking for the validator's
+             ceilings is a named failure rather than a slow regression.
+ACCEPTANCE CRITERIA:
+- [x] the prompt is reachable without a network call, so a test pins the
+      text the adapter actually posts
+- [x] the prompt requests at most 4 sub_questions, 3 hypotheses, 4
+      analysis_steps and 3 data_requirements, and asks for one short clause
+      per string
+- [x] each requested cap is strictly below the validator's ceiling, so the
+      request is smaller than the contract
+- [x] the contract is unchanged: a plan answering with the validator's full
+      ceilings still passes `validate_plan`, and the deterministic planner
+      still produces up to them
+- [x] `plan` posts exactly the prompt `prompt` builds - the pinned text is
+      the text sent
+- [x] the prompt still carries the question, the truncated profile and the
+      stated intent when there is one
+- [x] a live re-measurement against the configured provider answers inside
+      the 120s budget with `finish_reason: stop` (508 tokens, 52.3s), not a
+      truncated object
+- [x] all gates green: server 793 (788 + 5), web 285/285 unchanged, tsc
+      clean, build ok, trace 48/48, e2e 28/28
+TESTS: 5 in test_llm_adapters.py - the caps read out of the prompt's own
+       sentence and each below the validator's ceiling, a plan at the
+       validator's full ceilings still passing `validate_plan`, `plan`
+       posting exactly the prompt `prompt` builds, the prompt carrying the
+       stated intent, and the profile truncation holding.
+VERIFICATION: `cd server && DAH_LLM_API_KEY= DAH_LLM_BASE_URL= DAH_LLM_MODEL=
+              OPENAI_API_KEY= .venv/bin/python -m pytest -q` green (793);
+              `cd web && npm test && npx tsc -b && npm run build` green
+              (285, build ok); `server/.venv/bin/python
+              verification/trace/verify_trace.py` green (48/48);
+              `server/.venv/bin/python verification/e2e/verify_e2e.py`
+              green (28/28); and the live re-measurement
+              (`server/.venv/bin/python walktest-w3/measure_plan_prompt.py`,
+              log at walktest-w3/logs/measure-plan-prompt.log) answering
+              inside the budget.
+STATE UPDATE: TASKS/CURRENT_STATE gain the task; W3X-003-PROMPT closes (the
+              last walk-test follow-up). No schema change.
+```
+
+TASK: W3X-003-PROMPT - the LLM plan prompt asks for less than the validator
+ID: W3X-003-PROMPT
+PRIORITY: high
+STATUS: DONE
+SUMMARY: the plan prompt's output size was the cost, and the cost is now
+         asked down. A live measurement this task ran against the same
+         provider shows the shipped prompt answering 508 tokens in 52.3s
+         (`finish_reason: stop`) where the walk-test's unshrunk prompt took
+         137s and timed out - still slow in absolute terms, because the
+         provider generates at ~10-13 tok/s and that rate is the provider's,
+         not the harness's, but inside the 120s budget rather than past it.
+         The prompt is now reachable without posting it (`LLMPlanner.prompt`,
+         with `plan` calling it, byte-for-byte the same request), asks for at
+         most 4 sub-questions / 3 hypotheses / 4 steps / 3 data requirements
+         with one short clause per string, and the validator's ceilings are
+         untouched - an engine that answers with the full contract still
+         passes, and the deterministic planner still produces up to it. The
+         acceptance is honest about what did not change: a provider at this
+         rate is never fast; the fix moved the plan from "times out and falls
+         back" to "answers inside the budget".
+
 
 ### Carried follow-ups from the second walk-test (WALK-UX-002 - closed)
 
@@ -1895,87 +2025,5 @@ SUMMARY: the Python engine is the one a Python-fluent analyst reaches for
          cannot drift. Nothing in the sandbox, the endpoints, the capability
          set or the refusal messages moved.
 
-### FIX-UPDATES-009 contract
-
-```
-TASK ID: FIX-UPDATES-009
-MILESTONE: post-phase (the walk-test's findings)
-CAPABILITY: Distribution (the silent update check, W-005)
-GOAL: the Check for Updates menu item performs a check and reports it to a
-      log, and nothing reports it to the user. The item is silent whether it
-      finds an update, finds none, or cannot reach the feed - three outcomes
-      the core distinguishes and the shell never shows. On a private
-      repository the feed is unreachable and the item is permanently,
-      silently dead.
-CONTEXT: WALK-E2E-001 Fase A triggered the item, watched the core receive
-         the request, and saw nothing in the window; the handler prints its
-         result to stderr and stops there (main.rs:48-60). The core already
-         answers three statuses with a reason for every UNKNOWN, so the
-         information exists and is not delivered.
-INPUTS: the core's `/updates/latest` statuses and their reasons, the menu
-        item's handler, and the shell's own surface for reporting to the
-        user.
-RELEVANT FILES: desktop/src-tauri/src/main.rs (the handler and its delivery),
-                the update status vocabulary in server/app/updates.py, the
-                desktop tests, ai/HANDOFF.md, ai/TASKS.md, ai/CURRENT_STATE.md
-REQUIRED CHANGE:
-  - The check's outcome reaches the user as the window's own message - a
-    dialog or an equivalent surface - for each of the three statuses, so the
-    item always answers something and the analyst never waits on a silent
-    one.
-  - An unreachable feed says it is unreachable rather than appearing to have
-    checked nothing, which is the honest reason the vocabulary already
-    carries.
-  - The handler's result still reaches the log; the delivery is added, not
-    substituted.
-NON-GOALS: an updater (the check remains the verifiable half, per DEC-006);
-           a settings pane; polling.
-CONSTRAINTS: green only. No new dependency. The delivery uses the window the
-             app already has; the statuses come from the core.
-ACCEPTANCE CRITERIA:
-- [x] each of the three statuses produces a visible answer in the window
-- [x] an unreachable feed answers with its reason, not silence
-- [x] the core's own status vocabulary is what the message reports
-- [x] the log line the handler already writes still writes
-TESTS: NoticeLayer.test.tsx (+8) and shell.test.ts (+8) on the web side;
-       notice_tests in updates.rs (+6) on the Rust side - the event-name
-       agreement, the body riding along, the no-body and non-JSON cases, and
-       each of the three statuses.
-VERIFICATION: `cd server && DAH_LLM_API_KEY= DAH_LLM_BASE_URL= DAH_LLM_MODEL=
-              .venv/bin/python -m pytest -q` green (723, unchanged);
-              `cd desktop/src-tauri && cargo test` green (25, +6);
-              `cd web && npm test && npm run build` green (163, +16);
-              `verify_e2e.py` green; `verify_golden.py` green (21/21);
-              `verify_refine.py` green (AT-04); `verify_trace.py` green
-              (48/48).
-STATE UPDATE: TASKS/CURRENT_STATE/HANDOFF gain the fix; W-005 closes. No
-              schema change, no version bump.
-```
-
-TASK: FIX-UPDATES-009 - the silent update check reaches the window
-ID: FIX-UPDATES-009
-PRIORITY: high
-STATUS: DONE
-SUMMARY: the Check for Updates menu item performed a check the core
-         distinguishes three ways and told only stderr about it, so on this
-         private repository - where the feed always answers 404 - the item was
-         permanently, silently dead. The delivery is the bundle's own surface,
-         because the shell is the only host with a menu bar and a native dialog
-         was not available: `tauri-plugin-dialog` is a network-fetched plugin
-         on Tauri 2 and the app is offline once installed, so depending on it
-         would break DEC-001. The shell evaluates a script in the webview it
-         already holds, posting a `dah-notice` event whose detail is the core's
-         own JSON body - never a sentence the shell reworded, so an unreachable
-         feed stays "could not tell" instead of becoming the silent "up to
-         date" P6-UPDATE-005 built the check to avoid. The bundle's
-         `describeUpdate` mirrors the shell's `update_summary`, so the window
-         and the log line always say the same thing about the same answer.
-         One thing the tests caught and fixed: a body that is not JSON cannot
-         be embedded in the script, because the eval would throw a
-         `SyntaxError` and silence the item a second time - so `notice_script`
-         validates the body and falls back to a body the shell rebuilds from
-         the parsed answer, which is also how a transport that kept no body at
-         all still reaches the window.
-
-Contracts for the rolling window (the two most recent: W3X-004 and
-FIX-UPDATES-009). Older blocks are in `ai/TASKS-ARCHIVE.md`.
+Contracts for the rolling window (the two most recent: W3X-003-PROMPT and
+W3X-004). Older blocks are in `ai/TASKS-ARCHIVE.md`.

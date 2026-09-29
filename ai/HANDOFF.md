@@ -1,60 +1,51 @@
 ## Next action
 
-**W3X-002 is fixed: the fallback announcement reads as a sentence again.** The
-walk-test measured the rendering - "...answered in its place. for
-helpdesk_tickets_2026.csv" - because a panel appended its own context to a
-label that is already a complete sentence, and a period followed by a
-lowercase fragment reads as a typo rather than as the substitution notice
-W2X-001/FIX-TIMEOUT-006 put there.
+**W3X-003-PROMPT is done: the LLM plan prompt asks for less, so the answer
+arrives inside the budget.** The third walk-test's measured wait (a plan call
+that burned all 120s and fell back deterministically) was root-caused as the
+prompt's output size, not the timeout: the plan is the only one of the six
+adapters that asks for a large structured object, and the provider generates
+at ~10-13 tokens per second, so the 1785-token plan the prompt asked for was
+~137s. The fix moved the request, not the contract.
 
-The fix moved only the join. `sourceLabel` and the five sentences it returns
-are byte-identical (the server's wording, and the panels that render the label
-with no context of their own - RunsPanel, Chat, RefinePanel - are untouched).
-The three panels that append their own context go through a new `sourceWith`,
-which capitalises the context so a sentence ending in a period takes a
-grammatical clause. DraftPanel's "accepting records a real finding" became the
-sibling `<p>` it always read as. Seven unit tests pin it, including one that
-asserts the measured typo shape is absent.
+The prompt is now reachable without posting it — `LLMPlanner.prompt` holds the
+text `plan` sends, byte-for-byte — and it asks for at most 4 sub-questions, 3
+hypotheses, 4 steps and 3 data requirements, one short clause per string. A
+live re-measurement against the same provider answered 508 tokens in 52.3s
+(`finish_reason: stop`) — inside the budget, not a truncated object the
+validator would refuse. The validator's ceilings are untouched: an engine that
+answers with the full contract still passes, and the deterministic planner
+still produces up to it. Only what the LLM is *asked* for shrank.
 
-Gates: web 285/285 (was 278; +7 in sourceLabel.test.ts), tsc clean, build ok;
-server 788/788 unchanged (this task moved no server code); trace 48/48, e2e
-28/28. `graphify update .` ran clean.
+Honest about the limit: a ~10 tok/s provider is never fast, and the rate is the
+provider's. The fix moved the plan from "times out and falls back" to "answers
+inside the budget" — a faster plan still needs a faster provider, and the
+measurement (`walktest-w3/measure_plan_prompt.py`) is committed so the next
+session can re-check rather than assume.
 
-**Next: one task is queued — the W3X-003 follow-up, `W3X-003-PROMPT`.** The
-root cause is measured and recorded (`walktest-w3/FINDINGS.md`): the plan
-prompt asks for the largest output of the six LLM adapters (6 sub-questions,
-5 hypotheses, 6 analysis steps) and the provider generates at ~13 completion
-tokens per second, so 1785 tokens is ~137s against a 120s timeout. The path
-to a faster plan runs through the prompt's output size, not `timeouts.py`.
+Gates: server 793/793 (was 788; +5 in test_llm_adapters.py), web 285/285
+unchanged (this task moved no web code), tsc clean, build ok; trace 48/48,
+e2e 28/28. `graphify update .` ran clean.
 
-The task: shrink what the LLM plan prompt asks for, so a complete plan arrives
-inside the budget on a ~13 tok/s provider. Fix shape (measured baseline above):
-- `server/app/planner.py` `LLMPlanner.plan` — the prompt's schema text and the
-  instruction voice. Candidates: cap the requested lists in the prompt itself
-  (e.g. 4 sub-questions, 3 hypotheses, 4 steps), and add an explicit "be
-  concise; one short clause per field" instruction. `_MAX_LLM_CHARS` (input
-  truncation) is not the variable - the output is.
-- Keep `_MAX_SUB_QUESTIONS = 6`, `_MAX_HYPOTHESES = 5`, `_MAX_STEPS = 6` as the
-  *validator's* ceilings (the deterministic planner and every existing test
-  still produces up to those counts), so a smaller *request* must not shrink
-  what the deterministic path or validation accepts. Only the LLM prompt asks
-  for less.
-- Do not add `max_tokens`: measured, it truncates the JSON mid-object
-  (`finish_reason: length`) and the schema validator refuses it - a cap buys a
-  faster fallback, not a faster answer.
-- `temperature` is not the variable either (measured: 141s with, 103s without,
-  the difference is only output length).
+**Next: nothing is queued.** Every phase the roadmap asked for is delivered,
+all three walk-test findings are closed, and the W3X-003 follow-up this queued
+task existed for is done. W3X-001 (a filename accepted twice by the Data
+panel) is recorded as an observation, unqueued because its frequency is
+unmeasured — the cheapest guard if it repeats is a same-filename refusal
+naming the existing dataset. Two things outside this repo's control, unchanged:
+GitHub Actions still refuses every job (billing suspended, so CI never ran on
+any W3X commit; v0.3.5 was built and verified locally from the same steps
+`release.yml` runs), and the packaged app is unsigned by DEC-006.
 
-Gates: server pytest (788, plus any new tests), web unchanged (285/285 unless
-shell text moves), tsc clean, build ok, e2e 28/28, trace 48/48.
-
-Gates now: web 285/285, tsc clean, build ok; server 788/788, trace 48/48,
+Gates now: web 285/285, tsc clean, build ok; server 793/793, trace 48/48,
 e2e 28/28.
 
 ## Recent completions
 
 The last tasks to land, newest first. The contract and done-record for each
 is in `ai/TASKS.md` (rolling window) or `ai/TASKS-ARCHIVE.md`.
+
+- **W3X-003-PROMPT, the plan prompt's output size** - the walk-test measured a plan call that consumed all 120s and fell back deterministically, and the live measurement explained it: the prompt asked for the largest output of the six adapters and the provider runs at ~10-13 tok/s. `LLMPlanner.prompt` is now the text `plan` posts, on its own so a test can pin it, and it asks for at most 4 sub-questions / 3 hypotheses / 4 steps / 3 data requirements with one short clause per string. A live re-measurement answered 508 tokens in 52.3s (`finish_reason: stop`) instead of timing out. The validator's ceilings are untouched, so the request shrank the wait without shrinking what an engine may answer. Five tests pin it. Gates: server 793/793, web 285/285 unchanged, tsc clean, build ok, trace 48/48, e2e 28/28.
 
 - **W3X-002, the fallback sentence glued to its label** - a panel that appends its own context to `sourceLabel` was gluing a lowercase fragment to a sentence that already ends with a period, and the substitution notice read as a typo. `sourceWith` capitalises the join; the sentences, the server's wording and the panels that render the label alone are untouched. Seven tests, one asserting the measured shape is absent. Gates: web 285/285, tsc clean, build ok, server 788/788, trace 48/48, e2e 28/28.
 

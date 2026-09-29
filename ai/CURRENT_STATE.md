@@ -3,35 +3,35 @@ the motion, the on-screen chart). P8, P7, P6, P5, P4, P3, P2, P1 and P0 are all
 COMPLETE (see the phase table below). Every phase the roadmap and the
 conformance evaluation asked for is delivered; no phase is open.
 
-- **Active task:** W3X-002 — the fallback announcement reads as a sentence
-  again, complete. The walk-test measured the rendering ("...answered in its
-  place. for helpdesk_tickets_2026.csv") because a panel appended its own
-  context to a `sourceLabel` that is already a complete sentence, and a period
-  followed by a lowercase fragment reads as a typo rather than as the
-  substitution notice W2X-001/FIX-TIMEOUT-006 put there. The fix moved only the
-  join: `sourceLabel` and the five sentences it returns are byte-identical (the
-  server's wording, and the panels that render the label alone — RunsPanel,
-  Chat, RefinePanel — untouched), and the three panels that append their own
-  context go through a new `sourceWith` that capitalises the context.
-  DraftPanel's "accepting records a real finding" became the sibling paragraph
-  it always read as. Seven unit tests hold it, one asserting the measured typo
-  shape is absent.
+- **Active task:** W3X-003-PROMPT — the LLM plan prompt asks for less than the
+  validator accepts, complete. The third walk-test measured the wait (a plan
+  call that consumed the whole 120s budget and fell back deterministically) and
+  the live measurement explained it: the plan prompt is the only one of the six
+  adapters that asks for a large structured object, and the provider generates
+  at ~10-13 completion tokens per second, so the 1785 tokens the prompt asked
+  for was ~137s — minutes past the budget. The fix moved the request, not the
+  contract: `LLMPlanner.prompt` is now the text `plan` posts (on its own so a
+  test can pin it), asking for at most 4 sub-questions, 3 hypotheses, 4
+  analysis steps and 3 data requirements, one short clause per string. A live
+  re-measurement answered 508 tokens in 52.3s with `finish_reason: stop` —
+  inside the budget, not a truncated object. The validator's ceilings are
+  untouched: a plan answering with the full contract still passes, and the
+  deterministic planner still produces up to it. Five tests pin it.
   **STATUS: COMMITTED and pushed, all gates green.**
-  Sebelumnya: W3X-004 — the Python run surface teaches its own contract.
-  WALK-UX-003 — the third walk-test: the loop runs end to end on a domain the
-  project had never analysed, with a real LLM and a live Chromium on an
-  isolated data dir; four findings, nine W2X fixes measured holding.
-  **All four walk-test 3 findings are now closed** — W3X-002 and W3X-004 with
-  code, W3X-003 root-caused as a provider property (the plan prompt asks for
-  the largest output of the six adapters and the provider runs at ~13
-  completion tokens per second, so a complete plan costs ~137s against a 120s
-  timeout; the fallback was announced and deterministic, which is the trust
-  model the timeout was designed around), and W3X-001 recorded as an
-  observation. **No task is queued.**
+  Sebelumnya: W3X-002 — the fallback announcement reads as a sentence again.
+  W3X-004 — the Python run surface teaches its own contract. WALK-UX-003 —
+  the third walk-test: the loop runs end to end on a domain the project had
+  never analysed, with a real LLM and a live Chromium on an isolated data dir;
+  four findings, nine W2X fixes measured holding.
+  **All four walk-test 3 findings are now closed, and the W3X-003 follow-up
+  this queued task existed for is done — no task is queued.** W3X-001 (a
+  filename accepted twice by the Data panel) stays recorded as an observation;
+  its frequency is unmeasured, so the cheapest guard — a same-filename refusal
+  naming the existing dataset — is unqueued until it repeats.
   Two things outside this repo's control, unchanged: GitHub Actions still
   refuses every job (billing suspended since before c73118c, so CI never ran on
-  any W2X commit - v0.3.5 was built and verified locally from the same steps
-  `release.yml` runs), and the packaged app is unsigned by DEC-006.
+  any W2X or W3X commit - v0.3.5 was built and verified locally from the same
+  steps `release.yml` runs), and the packaged app is unsigned by DEC-006.
   Sebelumnya: W2X-008 + W2X-013 (the density), W2X-002 + W2X-005 (the first
   thing the app says), W2X-006 + W2X-007 (the analysis editor), W2X-012 phase
   B (the settings surface), W2X-012 phase A (the status surface), WALK-UX-002
@@ -85,15 +85,14 @@ conformance evaluation asked for is delivered; no phase is open.
   `desktop/bundle_dmg.sh`, so the shipped triple is what the developer's
   machine produces. Restoring an enforced Intel lane needs a self-hosted
   runner.
-- **Test status:** server 788/788 passed (unchanged - this task moved no server
-  code). The web suite is
-  285/285: 278 held, six tests were added in
-  `web/src/panels/RunCodePanel.test.tsx` for the Python contract surface
-  (the handle, the three refusals' answers, the allowlist-equals-
-  `_SAFE_MODULES` drift test, the placeholder's shape, generic terms for an
-  unprofiled dataset, and SQL/Python parity on engine switching), and seven in
-  `web/src/sourceLabel.test.ts` pinning the fallback join (including the
-  measured typo shape asserted absent). Desktop
+- **Test status:** server 793/793 passed (788 held, five tests added in
+  `server/tests/test_llm_adapters.py` pinning the plan prompt's requested
+  output - the caps read out of the prompt's own sentence and each below the
+  validator's ceiling, a plan at the validator's full ceilings still passing
+  `validate_plan`, `plan` posting exactly the prompt `prompt` builds, the
+  stated intent carried, and the profile truncation holding). The web suite is
+  285/285 unchanged (this task moved no web code), tsc clean and the build ok.
+  Desktop
   shell 30 Rust tests (unchanged; no shell code moved);
   P2, P3 and P4 gates
   PASS; **v0.2.0, v0.3.0, v0.3.1, v0.3.2, v0.3.3, v0.3.4 and v0.3.5 released**
@@ -110,8 +109,10 @@ conformance evaluation asked for is delivered; no phase is open.
   evidence, regenerated on the current tree.
 
 - **Next task:** **none is queued.** All four walk-test 3 findings are closed
-  (W3X-002 and W3X-004 with code, W3X-003 root-caused as a provider property,
-  W3X-001 recorded as an observation), and the second walk-test's thirteen
+  (W3X-002 and W3X-004 with code, W3X-003 root-caused as a provider property
+  and its follow-up W3X-003-PROMPT now shrinking the prompt so the plan
+  answers inside the 120s budget, W3X-001 recorded as an observation), and the
+  second walk-test's thirteen
   are all closed. Every phase the roadmap asked for is delivered. Two items
   remain outside this repo's control and outside any code change: GitHub
   Actions still refuses every job (billing), and the packaged app is unsigned
