@@ -265,6 +265,10 @@ export class ApiError extends Error {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  // W2X-001: an abort signal is passed straight through to fetch, so a panel
+  // can stop the call the analyst gave up on. The browser raises an
+  // AbortError here, and the panel's own catch turns it into a sentence
+  // rather than a failed-looking state.
   const res = await fetch(`${BASE}${path}`, init)
   if (!res.ok) {
     const text = await res.text()
@@ -427,10 +431,17 @@ export interface Refinement {
   decided_at: string | null
 }
 
-// Proposing writes nothing: the question moves only through accept or edit.
-// Read-only on a GET, so opening a case never proposes.
-export function proposeRefinement(caseId: string): Promise<Refinement> {
-  return request<Refinement>(`/cases/${caseId}/refine`, { method: 'POST' })
+// W2X-001: the slow calls are the LLM-backed ones, so the signal is optional
+// and the panels that read rather than wait pass nothing. An omitted signal is
+// the same as no signal: the request runs to the core's own timeout.
+export function proposeRefinement(
+  caseId: string,
+  signal?: AbortSignal,
+): Promise<Refinement> {
+  return request<Refinement>(`/cases/${caseId}/refine`, {
+    method: 'POST',
+    signal,
+  })
 }
 
 export function getRefinement(caseId: string): Promise<Refinement | null> {
@@ -593,11 +604,16 @@ export function getRun(caseId: string, runId: string): Promise<Run> {
   return request<Run>(`/cases/${caseId}/runs/${runId}`)
 }
 
-export function postChat(id: string, message: string): Promise<ConversationTurn> {
+export function postChat(
+  id: string,
+  message: string,
+  signal?: AbortSignal,
+): Promise<ConversationTurn> {
   return request<ConversationTurn>(`/cases/${id}/chat`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ message }),
+    signal,
   })
 }
 
@@ -677,9 +693,14 @@ export function getPlan(caseId: string, datasetId: string): Promise<Plan> {
 // - the rail names "Generate an analysis plan" and before this control the
 // shell never called the endpoint that performs it, so the stage was only
 // finishable from a terminal.
-export function createPlan(caseId: string, datasetId: string): Promise<Plan> {
+export function createPlan(
+  caseId: string,
+  datasetId: string,
+  signal?: AbortSignal,
+): Promise<Plan> {
   return request<Plan>(`/cases/${caseId}/datasets/${datasetId}/plan`, {
     method: 'POST',
+    signal,
   })
 }
 
@@ -688,6 +709,7 @@ export function generateCode(
   datasetId: string,
   question: string,
   kind = 'sql',
+  signal?: AbortSignal,
 ): Promise<GeneratedCode> {
   return request<GeneratedCode>(
     `/cases/${caseId}/datasets/${datasetId}/generate-code`,
@@ -695,22 +717,30 @@ export function generateCode(
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ question, kind }),
+      signal,
     },
   )
 }
 
-export function interpretRun(caseId: string, runId: string): Promise<Interpretation> {
+export function interpretRun(
+  caseId: string,
+  runId: string,
+  signal?: AbortSignal,
+): Promise<Interpretation> {
   return request<Interpretation>(`/cases/${caseId}/runs/${runId}/interpret`, {
     method: 'POST',
+    signal,
   })
 }
 
 export function draftFinding(
   caseId: string,
   runId: string,
+  signal?: AbortSignal,
 ): Promise<DraftFinding> {
   return request<DraftFinding>(`/cases/${caseId}/runs/${runId}/draft-finding`, {
     method: 'POST',
+    signal,
   })
 }
 
@@ -1054,19 +1084,27 @@ export function getAgentState(caseId: string): Promise<AgentState> {
 
 // Idempotent: a pending step is returned unchanged, so two calls never yield
 // two writes.
-export function proposeAgentStep(caseId: string): Promise<AgentState> {
-  return request<AgentState>(`/cases/${caseId}/agent`, { method: 'POST' })
+export function proposeAgentStep(
+  caseId: string,
+  signal?: AbortSignal,
+): Promise<AgentState> {
+  return request<AgentState>(`/cases/${caseId}/agent`, { method: 'POST', signal })
 }
 
 // The approval must name the case's CURRENT pending step; an id from a stale
 // page is a 409, never a second write. Approving runs the step's write through
 // the endpoint that owns it and returns the next proposal with it, so the
 // human needs no second call to see what comes next.
-export function approveAgentStep(caseId: string, stepId: string): Promise<AgentState> {
+export function approveAgentStep(
+  caseId: string,
+  stepId: string,
+  signal?: AbortSignal,
+): Promise<AgentState> {
   return request<AgentState>(`/cases/${caseId}/agent/approve`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ step_id: stepId }),
+    signal,
   })
 }
 
@@ -1110,8 +1148,12 @@ export function getRoleAgentState(
 export function proposeRoleAgentStep(
   caseId: string,
   role: AgentRole,
+  signal?: AbortSignal,
 ): Promise<AgentState> {
-  return request<AgentState>(`/cases/${caseId}/agents/${role}`, { method: 'POST' })
+  return request<AgentState>(`/cases/${caseId}/agents/${role}`, {
+    method: 'POST',
+    signal,
+  })
 }
 
 // The approval must name THIS role's current pending step. An id from the

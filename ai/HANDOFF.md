@@ -1,57 +1,58 @@
 ## Next action
 
-**W2X-008 + W2X-013 landed: the case page stopped showing everything it does
-not have.** The walk measured 13.1 viewports, 18 flat panels, no disclosures
-at all, and 12 of those panels showing an empty state on a case that had just
-been created - the original complaint, and the redesign had restyled every
-surface without hiding one.
+**W2X-001 landed: the wait stopped being one word.** The walk measured three
+of four LLM calls timing out at the 120s ceiling while the UI showed a single
+static word - and in the runs panel three "Working…" at once, because one
+shared `busy` flag served three unrelated requests.
 
-- **The disclosure** (`web/src/lib/disclosure.tsx`) is a `<button>` with
-  `aria-expanded` controlling a `role="region"`, the two linked by
-  `aria-controls`/`aria-labelledby`. Native `<details>` was rejected: its open
-  state is the browser's rather than React's, so it cannot be seeded from the
-  case's artifacts and a test cannot read what the analyst chose. Uncontrolled
-  after mount on purpose, so a reload does not re-close what the analyst opened.
-- **The record group** - Learn, History, Save as a template - is one collapsed
-  container in the orientation zone. Each summary names its own count, so a
-  collapsed stage still says what it holds.
-- **The panels whose empty state carries no control** wait until the case has
-  the artifact: Findings and the Evidence graph. The overview's one-sentence
-  "Still to come" names them, so the shape of an unfinished case is visible
-  without scrolling past twelve nothings. Runs stays - it holds "Draft a
-  finding", the only surface that creates one.
-- **W2X-013** - the orientation column's fixed 15rem wrapped a long question
-  into a 101pt block; `minmax(15rem, 17rem)` lets it breathe.
+- **The row** (`web/src/lib/progress.tsx`) is a hook owning one call's
+  `AbortController` and a one-second elapsed clock, plus the row a panel
+  renders from it: "Generating the plan… 12s elapsed" and a Cancel button.
+  `role="status"`, so a screen reader announces the wait without an alert
+  - the wait is expected, not a fault.
+- **Every LLM-backed call carries the signal**: plan, code, interpret, draft,
+  refine, chat, agent proposal. The shell cannot know which engine the core
+  will pick before it answers, so a fast deterministic call shows the same row
+  for a moment rather than two surfaces for two engines.
+- **Per-action busy state.** The runs panel's three buttons each have their
+  own flag now, so the one in flight is the only one that says so. The agent
+  panel's three actions likewise - a shared flag had "Reject" reading
+  "Running…" while a proposal was what was in flight.
+- **A cancel is a sentence, not a failure.** "Cancelled - the plan was not
+  generated", "Cancelled - the question is still here", and chat keeps the
+  question the analyst typed.
 
-**What broke, and the fix at the source.** Two tests asserted a 404's guidance
-text, which now lives behind a collapsed disclosure. The wrong answer was to
-make the test open the group anyway; the right one was that a missing case
-must not read as a case with no history. `historySummary` and `walkSummary`
-now read the error first and name it - "Case history — could not be read" -
-so the guidance is visible collapsed, and the tests open the group the way an
-analyst does. A `loading` state that nothing read and an `evidence` expression
-that was always false (`!evidenceEmpty && !!evidence`, where the 400 branch
-sets the graph null and the error non-empty) were dead code the density
-rewrite was the right moment to remove.
+**What this is not.** The shell does not shorten the core's own 120s timeout
+(`server/app/timeouts.py`) and does not retry: cancelling aborts the browser's
+request, and a fallback that arrives after a cancel is the core's business.
+The deterministic-fallback banner was already shipped - `sourceLabel` reads
+`deterministic fallback` and announces the substitution - so this task is the
+wait itself, and the fallback notice it would arrive with was done first.
 
-**Gates:** web 257 (no net new tests - density is a property the walk
-measures, not one the suite asserts), tsc clean, build ok, server 775,
-trace 48/48, e2e all steps. Not run this task: measure (its report and the
-trace runner read each other, and nothing it measures moved) and desktop
-cargo (no Rust touched). Every gate that could regress is green; this task
-commits.
+**What broke.** Four spy assertions in CaseWorkspace.test.tsx matched exact
+argument lists that now carry a trailing `AbortSignal`; the calls themselves
+are unchanged, so the assertions take `expect.anything()` for it. And the
+AT-27 motion-budget test was flaky on this machine - an absolute 200ms
+threshold it hit at 200ms and missed at 470ms on the same commit, so it was
+measuring the host rather than the layer. It now measures the layer's own
+added cost: the median of five renders with the motion against five without
+it, so the machine's noise is in both numbers and cancels in the difference.
+
+**Gates:** web 257, tsc clean, build ok, server 775, trace 48/48, e2e all
+steps. Not run this task: measure and desktop cargo - no Rust moved, and
+nothing the measurement layer reports changed. Every gate that could regress
+is green; this task commits.
 
 **Next, in priority order:**
 
-1. **W2X-001, the timeout surface** - the largest remaining UX finding: three
-   of four LLM calls timed out in the walk while the UI showed one static
-   word with no elapsed time and no cancel.
-2. **W2X-009, the drafter that promoted the planted outlier** - the trust
-   finding: a 758.6x outlier became the case's finding and the validator
-   blamed the wrong column.
-3. **The five MINORs** - W2X-003 (the chart gone after a reopen), W2X-004
-   (the false "unsaved edits"), W2X-010 (no duplicate notice), W2X-011 (a
-   row's text does nothing).
+1. **W2X-009, the drafter that promoted the planted outlier** - the trust
+   finding: a 758.6x revenue outlier became the case's finding and the
+   validator then blamed the wrong column, so the loop closed on a false
+   number wearing a `partially_supported` badge.
+2. **The MINORs** - W2X-003 (the chart gone after a reopen), W2X-004 (the
+   false "unsaved edits" from the moment a case opens), W2X-010 (no duplicate
+   notice at create time), W2X-011 (a case row's text does nothing, only the
+   Open button).
 
 **Two carried decisions stay, both unchanged and both not code:** the
 packaged app is unsigned by DEC-006, and GitHub Actions' billing is
@@ -63,6 +64,12 @@ run in CI).
 The last tasks to land, newest first. The contract and done-record for each
 is in `ai/TASKS.md` (rolling window) or `ai/TASKS-ARCHIVE.md`.
 
+- **W2X-001, the timeout surface** - the wait stopped being one word: a hook
+  owning one call's AbortController and elapsed clock, a row each slow panel
+  renders ("Generating the plan… 12s elapsed" plus a Cancel button), every
+  LLM-backed call carrying the signal, per-action busy state so only the
+  button in flight says it, and a cancel reported as a sentence rather than a
+  failure.
 - **W2X-008 + W2X-013, the density** - the case page's 13.1 viewports: a
   disclosure primitive that is a real control (`<button>` + `role="region"`,
   not native `<details>`), the record group collapsed to summaries that name

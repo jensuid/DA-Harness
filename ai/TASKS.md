@@ -442,11 +442,21 @@ its own contract, one commit per fix.
 
 **MAJOR**
 
-- **W2X-001** - an LLM call can take the full 120s timeout
-  (`server/app/timeouts.py`) while the UI shows one static word
-  ("Generating…", "Working… x3") with no elapsed time and no cancel, then
-  answers from the deterministic path without a banner explaining that is
-  what happened. 3 of 4 calls timed out in the walk.
+- **W2X-001 — CLOSED.** The timeout surface. Three of four LLM calls timed out
+  at the 120s ceiling while the UI showed one static word - and in the runs
+  panel three "Working…" at once, because one shared `busy` flag served three
+  unrelated requests. `web/src/lib/progress.tsx` is a hook that owns one call's
+  `AbortController` and elapsed clock, plus the row a panel renders from it
+  ("Generating the plan… 12s elapsed" + a Cancel button). Every LLM-backed call
+  in the shell carries the signal now - plan, code, interpret, draft, refine,
+  chat, agent proposal - and each panel's busy state is per action, so the
+  button that is in flight is the only one that says so. A cancel is reported
+  as a sentence ("Cancelled - the plan was not generated"), never as a failure.
+  The shell does not shorten the core's timeout or retry: cancelling aborts the
+  browser's request, and a fallback that arrives after a cancel is the core's
+  business. The deterministic fallback banner was already shipped
+  (`sourceLabel` reads `deterministic fallback` and announces the substitution);
+  this task is the wait itself.
 - **W2X-002 — CLOSED.** The form answers instead of going quiet: submitting
   "New Analysis Case" with a blank field now names the fields it still needs
   in `role="alert"` live regions, marks them `aria-invalid`, clears a message

@@ -21,6 +21,7 @@ import {
 import { sourceLabel } from '../sourceLabel'
 import { messageOf } from '../CaseList'
 import { Button, surfaces } from '../lib/ui'
+import { CallProgress, useCallProgress } from '../lib/progress'
 
 export const AGENT_COPY: Record<AgentRole, {
   title: string
@@ -83,24 +84,30 @@ export function AgentPanel({
   onChanged: () => void
 }) {
   const copy = AGENT_COPY[role]
-  const [busy, setBusy] = useState(false)
+  // W2X-001: the panel's three actions share one endpoint family but are three
+  // separate requests; a shared flag made the reject button read "Running…"
+  // while a proposal was what was in flight. Each names the thing it is doing.
+  const [busy, setBusy] = useState<'' | 'propose' | 'approve' | 'reject'>('')
+  const progress = useCallProgress()
   const [reason, setReason] = useState('')
   const [error, setError] = useState<string | null>(null)
-  // The analyst is the legacy /agent family and the reviewer is the role
-  // family; both answer the same four verbs. The analyst keeps calling the
-  // functions it always did, so nothing about its behaviour changes.
+  // W2X-001: the signal is passed to the slow call only. A proposal is the
+  // derivation the analyst waits on; an approval or rejection is a write the
+  // core has to complete for the case to be consistent, so it cannot be
+  // stopped halfway and takes no signal.
   const calls =
     role === 'reviewer'
       ? {
           read: () => getRoleAgentState(caseId, role),
-          propose: () => proposeRoleAgentStep(caseId, role),
+          propose: (signal?: AbortSignal) =>
+            proposeRoleAgentStep(caseId, role, signal),
           approve: (id: string) => approveRoleAgentStep(caseId, role, id),
           reject: (id: string, why: string) =>
             rejectRoleAgentStep(caseId, role, id, why),
         }
       : {
           read: () => getAgentState(caseId),
-          propose: () => proposeAgentStep(caseId),
+          propose: (signal?: AbortSignal) => proposeAgentStep(caseId, signal),
           approve: (id: string) => approveAgentStep(caseId, id),
           reject: (id: string, why: string) => rejectAgentStep(caseId, id, why),
         }
@@ -116,23 +123,31 @@ export function AgentPanel({
 
   async function propose() {
     if (busy) return
-    setBusy(true)
+    setBusy('propose')
     setError(null)
+    const signal = progress.start()
     try {
       // Idempotent by contract: a pending step comes back unchanged, so an
       // impatient second click is a no-op rather than a second write.
-      onAgent(await calls.propose())
+      onAgent(await calls.propose(signal))
     } catch (err) {
-      setError(messageOf(err))
+      // A cancel is the analyst's stop: nothing was proposed, and the panel
+      // says so rather than reporting the agent failed.
+      setError(
+        err instanceof DOMException && err.name === 'AbortError'
+          ? 'Cancelled - no step was proposed.'
+          : messageOf(err),
+      )
     } finally {
-      setBusy(false)
+      progress.done()
+      setBusy('')
     }
   }
 
   async function decide(approve: boolean) {
     const stepId = agent?.pending?.id
     if (busy || !stepId) return
-    setBusy(true)
+    setBusy(approve ? 'approve' : 'reject')
     setError(null)
     try {
       if (approve) {
@@ -155,7 +170,7 @@ export function AgentPanel({
       await refresh()
       setError(messageOf(err))
     } finally {
-      setBusy(false)
+      setBusy('')
     }
   }
 
@@ -180,12 +195,18 @@ export function AgentPanel({
         <Button
           type="button"
           onClick={propose}
-          disabled={busy}
+          disabled={busy !== ''}
           variant="small"
         >
-          {busy ? 'Working…' : pending ? copy.repropose : copy.propose}
+          {busy === 'propose' ? 'Working…' : pending ? copy.repropose : copy.propose}
         </Button>
       </div>
+      <CallProgress
+        kind="next step"
+        elapsed={progress.elapsed}
+        active={progress.active}
+        onCancel={progress.cancel}
+      />
       {error && (
         <p role="alert">{copy.error} {error}</p>
       )}
@@ -200,18 +221,18 @@ export function AgentPanel({
             <Button
               type="button"
               onClick={() => void decide(true)}
-              disabled={busy}
+              disabled={busy !== ''}
               variant="small"
             >
-              {busy ? 'Running…' : 'Approve and run'}
+              {busy === 'approve' ? 'Running…' : 'Approve and run'}
             </Button>
             <Button
               type="button"
               onClick={() => void decide(false)}
-              disabled={busy}
+              disabled={busy !== ''}
               variant="small"
             >
-              {busy ? 'Recording…' : 'Reject'}
+              {busy === 'reject' ? 'Recording…' : 'Reject'}
             </Button>
           </div>
           <input
@@ -219,7 +240,7 @@ export function AgentPanel({
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             placeholder="Why this step is wrong - recorded with it"
-            disabled={busy}
+            disabled={busy !== ''}
           />
         </div>
       ) : end ? (

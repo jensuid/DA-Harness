@@ -30,6 +30,7 @@ import {
 } from './api'
 import { messageOf } from './CaseList'
 import { Button, surfaces } from './lib/ui'
+import { CallProgress, useCallProgress } from './lib/progress'
 import { sourceLabel } from './sourceLabel'
 
 // The two input boxes the walkthrough found near-identical are in different
@@ -50,6 +51,11 @@ export function RefinePanel({
   const [error, setError] = useState<string | null>(null)
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState('')
+  // W2X-001: the timeout surface. A refinement the LLM answers is the call the
+  // walk measured timing out, so the proposal's wait shows its elapsed time and
+  // carries a stop button; the deterministic path uses the same row for its
+  // moment, because the shell cannot know which engine answered before it does.
+  const progress = useCallProgress()
 
   async function load() {
     setError(null)
@@ -71,14 +77,16 @@ export function RefinePanel({
     if (busy) return
     setBusy(true)
     setError(null)
+    const signal = progress.start()
     try {
-      const made = await proposeRefinement(caseId)
+      const made = await proposeRefinement(caseId, signal)
       setProposal(made)
       setDraft(made.refined_question)
       setEditing(false)
     } catch (err) {
       setError(messageOf(err))
     } finally {
+      progress.done()
       setBusy(false)
     }
   }
@@ -144,6 +152,13 @@ export function RefinePanel({
           )}
         </div>
       )}
+
+      <CallProgress
+        kind="refinement"
+        elapsed={progress.elapsed}
+        active={progress.active}
+        onCancel={progress.cancel}
+      />
 
       {proposal && (
         <div>

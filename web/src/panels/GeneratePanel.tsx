@@ -16,6 +16,7 @@ import {
 import { sourceLabel } from '../sourceLabel'
 import { messageOf } from '../CaseList'
 import { Button, surfaces } from '../lib/ui'
+import { CallProgress, useCallProgress } from '../lib/progress'
 
 type GenerateKind = 'sql' | 'python'
 export const GENERATE_KINDS: GenerateKind[] = ['sql', 'python']
@@ -58,6 +59,10 @@ export function GeneratePanel({
   const [busy, setBusy] = useState(false)
   const [running, setRunning] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // W2X-001: code generation is the one LLM call the walk saw finish (~14s),
+  // but the wait is the same surface as the ones that timed out. The row names
+  // the artifact it is producing rather than the verb.
+  const progress = useCallProgress()
 
   async function propose(event: React.FormEvent) {
     event.preventDefault()
@@ -65,13 +70,15 @@ export function GeneratePanel({
     if (!text || busy) return
     setBusy(true)
     setError(null)
+    const signal = progress.start()
     try {
-      const proposal = await generateCode(caseId, dataset.id, text, kind)
+      const proposal = await generateCode(caseId, dataset.id, text, kind, signal)
       setProposal(proposal)
       setDraft(proposal.code)
     } catch (err) {
       setError(messageOf(err))
     } finally {
+      progress.done()
       setBusy(false)
     }
   }
@@ -139,6 +146,12 @@ export function GeneratePanel({
           {busy ? 'Generating…' : 'Generate code'}
         </Button>
       </form>
+      <CallProgress
+        kind="code proposal"
+        elapsed={progress.elapsed}
+        active={progress.active}
+        onCancel={progress.cancel}
+      />
       {error && <p role="alert">Generation failed: {error}</p>}
       {proposal && (
         <div className={surfaces.proposal}>

@@ -806,3 +806,25 @@ button.danger:hover {
     transition: none;
   }
 }
+
+/* W2X-001: the timeout surface. A slow call's wait is a sentence the analyst
+   reads, not a word they stare at: the elapsed count names how long it has
+   been and the stop button ends it. It sits with the control that started it,
+   uses the note's muted ink because it is a status rather than a result, and
+   its own aria-live announces the count to a screen reader without making it
+   an alert - the wait is expected, not a fault. */
+.call-progress {
+  margin-top: 0.4rem;
+}
+
+.call-progress p {
+  margin: 0;
+  flex: 1 1 auto;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .call-progress {
+    transition: none;
+  }
+}

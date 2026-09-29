@@ -9,6 +9,7 @@ import { type ConversationTurn, getCase, postChat } from '../api'
 import { sourceLabel } from '../sourceLabel'
 import { messageOf } from '../CaseList'
 import { Button, surfaces } from '../lib/ui'
+import { CallProgress, useCallProgress } from '../lib/progress'
 import { MotionSurface } from '../lib/motion'
 
 export function Chat({
@@ -65,6 +66,10 @@ export function Chat({
   const [message, setMessage] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // W2X-001: the chat's answer is the call the analyst waits on most often,
+  // and its wait is the same one-word sentence as the rest. The elapsed row
+  // and its stop button sit under the question the analyst asked.
+  const progress = useCallProgress()
 
   async function send(event: React.FormEvent) {
     event.preventDefault()
@@ -72,13 +77,21 @@ export function Chat({
     if (!text || busy) return
     setBusy(true)
     setError(null)
+    const signal = progress.start()
     try {
-      const turn = await postChat(caseId, text)
+      const turn = await postChat(caseId, text, signal)
       onTurn(turn)
       setMessage('')
     } catch (err) {
-      setError(messageOf(err))
+      // A cancel leaves the question where the analyst wrote it, so the wait
+      // can stop without losing what was asked.
+      setError(
+        err instanceof DOMException && err.name === 'AbortError'
+          ? 'Cancelled - the question is still here.'
+          : messageOf(err),
+      )
     } finally {
+      progress.done()
       setBusy(false)
     }
   }
@@ -103,6 +116,12 @@ export function Chat({
           {busy ? 'Asking…' : 'Ask'}
         </Button>
       </form>
+      <CallProgress
+        kind="answer"
+        elapsed={progress.elapsed}
+        active={progress.active}
+        onCancel={progress.cancel}
+      />
       {error && <p role="alert">The assistant could not answer: {error}</p>}
       <ul className={surfaces.panelList}>
         {turns.map((turn) => (

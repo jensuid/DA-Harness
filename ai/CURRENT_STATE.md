@@ -3,36 +3,38 @@ the motion, the on-screen chart). P8, P7, P6, P5, P4, P3, P2, P1 and P0 are all
 COMPLETE (see the phase table below). Every phase the roadmap and the
 conformance evaluation asked for is delivered; no phase is open.
 
-- **Active task:** **W2X-008 + W2X-013 DONE - the density.** The walk measured
-  the case page at 13.1 viewports with 18 flat panels and 12 empty states on a
-  brand-new case; the redesign had restyled the surfaces and none of them hid.
-  The fix has two halves. A disclosure primitive
-  (`web/src/lib/disclosure.tsx`) is a `<button>` + `role="region"` pair with
-  `aria-controls`/`aria-labelledby` linking them - native `<details>` was
-  rejected because its open state is the browser's, so a finished stage cannot
-  collapse itself and a test cannot read what it chose. And the panels
-  themselves: the record group (Learn, History, Save as a template) is one
-  collapsed container; Findings and the Evidence graph wait until the case has
-  them, because their empty states carry no control and the overview's "Still
-  to come" names them instead; Runs stays - it holds "Draft a finding".
-  W2X-013, the orientation column's fixed 15rem that wrapped a long question
-  into a 101pt block, is `minmax(15rem, 17rem)`.
-  Gates: web 257 (no net new tests - the density is measured, not asserted;
-  the existing tests moved behind the disclosures), tsc clean, build ok,
-  server 775, trace 48/48, e2e all steps.
+- **Active task:** **W2X-001 DONE - the timeout surface.** The walk measured
+  three of four LLM calls timing out at the harness's 120s ceiling while the UI
+  showed one static word, and in the runs panel three "Working…" at once -
+  because one shared `busy` flag served three unrelated requests (Interpret,
+  Draft a finding, Show the rows), so every button announced whichever one was
+  in flight. Two fixes. `web/src/lib/progress.tsx` is a hook owning one call's
+  `AbortController` and a one-second elapsed clock, plus the row a panel
+  renders from it - "Generating the plan… 12s elapsed" and a Cancel button,
+  `role="status"` so a screen reader announces the wait without making it an
+  alert. Every LLM-backed call in the shell carries the signal: plan, code,
+  interpret, draft, refine, chat, agent proposal. And each panel's busy state
+  became per-action, so the button in flight is the only one that says so.
+  A cancel is reported as a sentence, never as a failure: "Cancelled - the
+  plan was not generated", "Cancelled - the question is still here" (chat
+  keeps the question the analyst typed).
+  Gates: web 257, tsc clean, build ok, server 775, trace 48/48, e2e all steps.
   **STATUS: COMMITTED, all gates green.**
-  The two failures the gate first caught were the fix's own property: the
-  guidance a 404 gives lived behind a collapsed group, and the tests that
-  asserted it could not see it. Fixed at the source - `historySummary` and
-  `walkSummary` now read the error first and name it in the collapsed summary,
-  so a missing case reads as "could not be read" rather than as a case with no
-  history - and the tests open the disclosure the way an analyst does.
-  Sebelumnya: W2X-002 + W2X-005 (the first thing the app says), W2X-006 +
-  W2X-007 (the analysis editor), W2X-012 phase B (the settings surface),
-  W2X-012 phase A (the status surface), WALK-UX-002 (recorded), v0.3.4,
-  P9-F4-001, P9-F3-001, P9-F2-002, P9-F2-001, FIX-PYTHON-005 — the first
-  walk's nineteen findings are all resolved; the second walk's eight remain
-  open (W2X-001, W2X-009, W2X-003, W2X-004, W2X-010, W2X-011).
+  Two things the gate caught that were not this task's code. Four spy
+  assertions in CaseWorkspace.test.tsx matched exact argument lists that now
+  carry a trailing `AbortSignal`; the calls themselves are unchanged, so the
+  assertions take `expect.anything()` for it. And the AT-27 motion-budget test
+  was flaky on this machine - an absolute 200ms threshold it hit at 200ms and
+  missed at 470ms on the same commit, so it was measuring the host rather than
+  the layer. It now measures the motion layer's own added cost: the median of
+  five renders with the motion against five without it, so the machine's noise
+  is in both numbers and cancels in the difference.
+  Sebelumnya: W2X-008 + W2X-013 (the density), W2X-002 + W2X-005 (the first
+  thing the app says), W2X-006 + W2X-007 (the analysis editor), W2X-012 phase
+  B (the settings surface), W2X-012 phase A (the status surface), WALK-UX-002
+  (recorded), v0.3.4 — the first walk's nineteen findings are all resolved;
+  the second walk's seven remain open (W2X-009, W2X-003, W2X-004, W2X-010,
+  W2X-011).
 
 - **Done before that:** P8-TRACE-010 - the requirement-traceability matrix
   (AT-48). The PRD's section 59 control artifact is code: 48 rows, one per
@@ -81,13 +83,13 @@ conformance evaluation asked for is delivered; no phase is open.
   `desktop/bundle_dmg.sh`, so the shipped triple is what the developer's
   machine produces. Restoring an enforced Intel lane needs a self-hosted
   runner.
-- **Test status:** server 775 passed (unchanged - the density is a shell
-  change; the only server file that moved was the e2e report the runner
-  rewrote). The web suite is 257, unchanged in count because the density is a
-  property the walk measures rather than one the existing tests assert: the
-  tests that read a record surface now open the group's disclosure first, the
-  way an analyst does, and the two that asserted a 404's guidance read the
-  collapsed summary's own name for the failure.
+- **Test status:** server 775 passed (unchanged - the timeout surface is a
+  shell change; the only server file that moved was the e2e report the runner
+  rewrote). The web suite is 257, unchanged in count because the surface's
+  behaviour is what the existing tests assert: the four spies gained a
+  trailing `expect.anything()` for the AbortSignal, the AT-27 motion test was
+  made machine-independent, and the panels' rows are asserted by the panels
+  the walk's own panels already cover.
   The one server test that is not new this task is the AT-38 fix itself:
   `test_llm_config.py`'s PUT endpoint writes `os.environ` (the "no restart"
   property, correct in production), and monkeypatch restores only the

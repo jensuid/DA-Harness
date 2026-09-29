@@ -1,3 +1,65 @@
+
+---
+
+## W2X-008 + W2X-013
+
+**W2X-008 + W2X-013 landed: the case page stopped showing everything it does
+not have.** The walk measured 13.1 viewports, 18 flat panels, no disclosures
+at all, and 12 of those panels showing an empty state on a case that had just
+been created - the original complaint, and the redesign had restyled every
+surface without hiding one.
+
+- **The disclosure** (`web/src/lib/disclosure.tsx`) is a `<button>` with
+  `aria-expanded` controlling a `role="region"`, the two linked by
+  `aria-controls`/`aria-labelledby`. Native `<details>` was rejected: its open
+  state is the browser's rather than React's, so it cannot be seeded from the
+  case's artifacts and a test cannot read what the analyst chose. Uncontrolled
+  after mount on purpose, so a reload does not re-close what the analyst opened.
+- **The record group** - Learn, History, Save as a template - is one collapsed
+  container in the orientation zone. Each summary names its own count, so a
+  collapsed stage still says what it holds.
+- **The panels whose empty state carries no control** wait until the case has
+  the artifact: Findings and the Evidence graph. The overview's one-sentence
+  "Still to come" names them, so the shape of an unfinished case is visible
+  without scrolling past twelve nothings. Runs stays - it holds "Draft a
+  finding", the only surface that creates one.
+- **W2X-013** - the orientation column's fixed 15rem wrapped a long question
+  into a 101pt block; `minmax(15rem, 17rem)` lets it breathe.
+
+**What broke, and the fix at the source.** Two tests asserted a 404's guidance
+text, which now lives behind a collapsed disclosure. The wrong answer was to
+make the test open the group anyway; the right one was that a missing case
+must not read as a case with no history. `historySummary` and `walkSummary`
+now read the error first and name it - "Case history — could not be read" -
+so the guidance is visible collapsed, and the tests open the group the way an
+analyst does. A `loading` state that nothing read and an `evidence` expression
+that was always false (`!evidenceEmpty && !!evidence`, where the 400 branch
+sets the graph null and the error non-empty) were dead code the density
+rewrite was the right moment to remove.
+
+**Gates:** web 257 (no net new tests - density is a property the walk
+measures, not one the suite asserts), tsc clean, build ok, server 775,
+trace 48/48, e2e all steps. Not run this task: measure (its report and the
+trace runner read each other, and nothing it measures moved) and desktop
+cargo (no Rust touched). Every gate that could regress is green; this task
+commits.
+
+**Next, in priority order:**
+
+1. **W2X-001, the timeout surface** - the largest remaining UX finding: three
+   of four LLM calls timed out in the walk while the UI showed one static
+   word with no elapsed time and no cancel.
+2. **W2X-009, the drafter that promoted the planted outlier** - the trust
+   finding: a 758.6x outlier became the case's finding and the validator
+   blamed the wrong column.
+3. **The five MINORs** - W2X-003 (the chart gone after a reopen), W2X-004
+   (the false "unsaved edits"), W2X-010 (no duplicate notice), W2X-011 (a
+   row's text does nothing).
+
+**Two carried decisions stay, both unchanged and both not code:** the
+packaged app is unsigned by DEC-006, and GitHub Actions' billing is
+suspended (fix at Settings > Billing & plans; nothing since `c73118c` has
+run in CI).
 The archive of `ai/HANDOFF.md`'s `## Next action` sections. Each section is
 moved here verbatim, never edited or summarised, when the task that wrote it
 completes - it is the record of what a session thought mattered before it

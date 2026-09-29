@@ -23,6 +23,7 @@ import {
 import { sourceLabel } from '../sourceLabel'
 import { messageOf } from '../CaseList'
 import { Button, surfaces } from '../lib/ui'
+import { CallProgress, useCallProgress } from '../lib/progress'
 import { MotionSurface } from '../lib/motion'
 import { ChartSurface } from '../lib/chart'
 import { DraftPanel } from './DraftPanel'
@@ -82,12 +83,18 @@ export function RunRow({
   // rows are what a finding rests on, and AT-34 asks a reader to trace a claim
   // back to them without leaving the workspace.
   const [rows, setRows] = useState<Run | null>(null)
-  const [busy, setBusy] = useState(false)
+  // W2X-001: the run's three actions are three separate requests, so a shared
+  // "busy" meant every button read "Working…" for whichever one was in flight
+  // - the walk saw three at once, and a slow LLM-backed interpret made the
+  // rows toggle read the same thing as the call it was not making. Each action
+  // owns its own flag, and each slow one owns its own elapsed row.
+  const [busy, setBusy] = useState<'' | 'rows' | 'read' | 'draft'>('')
+  const progress = useCallProgress()
   const [error, setError] = useState<string | null>(null)
 
   async function showRows() {
     if (busy) return
-    setBusy(true)
+    setBusy('rows')
     setError(null)
     try {
       setRows(await getRun(caseId, run.id))
@@ -96,33 +103,49 @@ export function RunRow({
     } catch (err) {
       setError(messageOf(err))
     } finally {
-      setBusy(false)
+      setBusy('')
     }
   }
 
   async function read() {
-    setBusy(true)
+    if (busy) return
+    setBusy('read')
     setError(null)
+    const signal = progress.start()
     try {
-      setReading(await interpretRun(caseId, run.id))
+      setReading(await interpretRun(caseId, run.id, signal))
       setDraft(null)
     } catch (err) {
-      setError(messageOf(err))
+      // A cancel is the analyst's stop, and the reading simply did not happen -
+      // reported as a sentence rather than as an assistant that failed.
+      setError(
+        err instanceof DOMException && err.name === 'AbortError'
+          ? 'Cancelled - no interpretation was made.'
+          : messageOf(err),
+      )
     } finally {
-      setBusy(false)
+      progress.done()
+      setBusy('')
     }
   }
 
   async function draftIt() {
-    setBusy(true)
+    if (busy) return
+    setBusy('draft')
     setError(null)
+    const signal = progress.start()
     try {
-      setDraft(await draftFinding(caseId, run.id))
+      setDraft(await draftFinding(caseId, run.id, signal))
       setReading(null)
     } catch (err) {
-      setError(messageOf(err))
+      setError(
+        err instanceof DOMException && err.name === 'AbortError'
+          ? 'Cancelled - no draft was made.'
+          : messageOf(err),
+      )
     } finally {
-      setBusy(false)
+      progress.done()
+      setBusy('')
     }
   }
 
@@ -134,22 +157,28 @@ export function RunRow({
         {run.truncated && ' (truncated)'}
       </p>
       <div className={surfaces.buttonRow}>
-        <Button type="button" onClick={read} disabled={busy} variant="small">
-          {busy ? 'Working…' : 'Interpret'}
+        <Button type="button" onClick={read} disabled={busy !== ''} variant="small">
+          {busy === 'read' ? 'Working…' : 'Interpret'}
         </Button>
-        <Button type="button" onClick={draftIt} disabled={busy} variant="small">
-          {busy ? 'Working…' : 'Draft a finding'}
+        <Button type="button" onClick={draftIt} disabled={busy !== ''} variant="small">
+          {busy === 'draft' ? 'Working…' : 'Draft a finding'}
         </Button>
         <Button
           type="button"
           onClick={() => (rows ? setRows(null) : void showRows())}
-          disabled={busy}
+          disabled={busy !== ''}
           variant="small"
           aria-expanded={rows !== null}
         >
-          {busy ? 'Working…' : rows ? 'Hide the rows' : 'Show the rows'}
+          {busy === 'rows' ? 'Working…' : rows ? 'Hide the rows' : 'Show the rows'}
         </Button>
       </div>
+      <CallProgress
+        kind={busy === 'draft' ? 'draft finding' : 'interpretation'}
+        elapsed={progress.elapsed}
+        active={progress.active}
+        onCancel={progress.cancel}
+      />
       {error && <p role="alert">The assistant failed: {error}</p>}
       {reading && (
         <div className={surfaces.proposal}>

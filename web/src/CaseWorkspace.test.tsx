@@ -704,8 +704,10 @@ describe('CaseWorkspace', () => {
     await user.click(screen.getByRole('button', { name: /generate code/i }))
 
     // The kind the analyst picked is the kind the generator was asked for.
+    // W2X-001: the generator takes the abort signal the timeout surface owns,
+    // so the call carries it as a trailing argument the spy does not assert.
     await waitFor(() => expect(api.generateCode).toHaveBeenCalledWith('c1', 'd1',
-      'revenue per region', 'python'))
+      'revenue per region', 'python', expect.anything()))
     expect(await screen.findByText('Totals revenue per region in the sandbox.')).toBeInTheDocument()
     // W2X-006: the proposed script is rendered in an editable textarea, so the
     // one-token fix the analyst needs is in their hands - a pre keeps its
@@ -752,7 +754,7 @@ describe('CaseWorkspace', () => {
     await user.type(screen.getByLabelText(/question for code generation/i), ' second')
     await user.click(screen.getByRole('button', { name: /generate code/i }))
     await waitFor(() => expect(api.generateCode).toHaveBeenLastCalledWith('c1', 'd1',
-      expect.stringMatching(/second/), 'python'))
+      expect.stringMatching(/second/), 'python', expect.anything()))
   })
 
   it("shows the sandbox's own sentence when a script is refused", async () => {
@@ -1397,7 +1399,7 @@ describe('CaseWorkspace', () => {
 
     await user.click(screen.getByRole('button', { name: /propose the next audit/i }))
     await waitFor(() =>
-      expect(api.proposeRoleAgentStep).toHaveBeenCalledWith('c1', 'reviewer'),
+      expect(api.proposeRoleAgentStep).toHaveBeenCalledWith('c1', 'reviewer', expect.anything()),
     )
 
     // A second click is the same contract: the pending step comes back
@@ -2462,7 +2464,9 @@ expect(timeline.getByText(/case created/)).toBeInTheDocument()
         await screen.findByRole('button', { name: /generate an analysis plan/i }),
       )
 
-      expect(vi.mocked(api.createPlan)).toHaveBeenCalledWith('c1', 'd1')
+      // W2X-001: the plan's generation takes the abort signal the timeout
+      // surface owns, so the spy matches the call with it as a trailing arg.
+      expect(vi.mocked(api.createPlan)).toHaveBeenCalledWith('c1', 'd1', expect.anything())
       // The panel renders what the planner produced, without a manual reload.
       expect(await screen.findByText(/objective: explain the q2 revenue decline\./i)).toBeInTheDocument()
       expect(screen.getByText('How does revenue differ across region?')).toBeInTheDocument()

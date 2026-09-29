@@ -9,6 +9,7 @@ import { ApiError, type Dataset, type Plan, createPlan, getPlan } from '../api'
 import { sourceLabel } from '../sourceLabel'
 import { messageOf } from '../CaseList'
 import { Button, surfaces } from '../lib/ui'
+import { CallProgress, useCallProgress } from '../lib/progress'
 
 export function PlanPanel({
   caseId,
@@ -24,6 +25,10 @@ export function PlanPanel({
   const [error, setError] = useState<string | null>(null)
   const [generateError, setGenerateError] = useState<string | null>(null)
   const [generating, setGenerating] = useState(false)
+  // W2X-001: the plan's wait is the call the walk measured at 121s. The row
+  // shows the elapsed time and a stop button, so "generating" stops being one
+  // static word the analyst cannot tell from a dead page.
+  const progress = useCallProgress()
 
   const datasetId = datasets.length > 0 ? datasets[0].id : null
 
@@ -63,8 +68,9 @@ export function PlanPanel({
     setGenerating(true)
     setError(null)
     setGenerateError(null)
+    const signal = progress.start()
     try {
-      const created = await createPlan(caseId, datasetId)
+      const created = await createPlan(caseId, datasetId, signal)
       setPlan(created)
       setMissing(false)
       // The plan is what makes the rail's next action legible, so the case's
@@ -72,13 +78,20 @@ export function PlanPanel({
       // than waiting for the next mount.
       onChanged()
     } catch (err) {
-      // The endpoint refuses to plan an unprofiled dataset, and that refusal
-      // is the sentence the analyst needs: it names the step before this one.
-      // This is held separately from the read's error because the two are
-      // never both live: the empty state the control lives in means the read
-      // answered 404, and a 404 is not the reason a generation failed.
-      setGenerateError(messageOf(err))
+      // A cancel is the analyst's own stop, not a failure: the row says it
+      // was cancelled rather than reporting the plan failed to generate.
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        setGenerateError('Cancelled - the plan was not generated.')
+      } else {
+        // The endpoint refuses to plan an unprofiled dataset, and that refusal
+        // is the sentence the analyst needs: it names the step before this one.
+        // This is held separately from the read's error because the two are
+        // never both live: the empty state the control lives in means the read
+        // answered 404, and a 404 is not the reason a generation failed.
+        setGenerateError(messageOf(err))
+      }
     } finally {
+      progress.done()
       setGenerating(false)
     }
   }
@@ -117,6 +130,12 @@ export function PlanPanel({
               // one rather than reading as a fault in the panel.
               <p role="alert">{generateError}</p>
             )}
+            <CallProgress
+              kind="plan"
+              elapsed={progress.elapsed}
+              active={progress.active}
+              onCancel={progress.cancel}
+            />
           </>
         ) : error ? (
           <p role="alert">The plan could not be read: {error}</p>
