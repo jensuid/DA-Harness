@@ -6,7 +6,7 @@
 
 import { useEffect, useState } from 'react'
 import { ApiError, type Dataset, type Plan, createPlan, getPlan } from '../api'
-import { sourceLabel } from '../sourceLabel'
+import { sourceWith } from '../sourceLabel'
 import { messageOf } from '../CaseList'
 import { Button, surfaces } from '../lib/ui'
 import { CallProgress, useCallProgress } from '../lib/progress'
@@ -151,7 +151,7 @@ export function PlanPanel({
     <div className={surfaces.panel}>
       <h2 className={surfaces.heading}>Plan</h2>
       <p className={surfaces.note}>
-        {sourceLabel(plan.source, 'plan')} for {datasets[0].filename}
+        {sourceWith(plan.source, 'plan', `for ${datasets[0].filename}`)}
         {body.context_basis.length > 0 &&
           ` — read from ${body.context_basis.join(', ')}`}
       </p>

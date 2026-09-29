@@ -13,7 +13,7 @@ import {
   runPython,
   runSql,
 } from "../api"
-import { sourceLabel } from '../sourceLabel'
+import { sourceWith } from '../sourceLabel'
 import { messageOf } from '../CaseList'
 import { Button, surfaces } from '../lib/ui'
 import { CallProgress, useCallProgress } from '../lib/progress'
@@ -156,8 +156,7 @@ export function GeneratePanel({
       {proposal && (
         <div className={surfaces.proposal}>
           <p className={surfaces.note}>
-            {sourceLabel(proposal.source, 'proposal')} — reads{' '}
-            {proposal.columns_used.join(', ')}
+            {sourceWith(proposal.source, 'proposal', `— reads ${proposal.columns_used.join(', ')}`)}
           </p>
           <p>{proposal.explanation}</p>
           <textarea

@@ -1,38 +1,35 @@
 ## Next action
 
-**W3X-004 is fixed: the Python run surface teaches its own contract.** The
-engine a Python-fluent analyst reaches for first refused them three times in a
-row (`import pandas`, `import csv`, the `path` variable the SQL placeholder
-implies exists) and put none of the answers on the page - the placeholder was
-`# python`. The sandbox was correct to refuse, so nothing about it moved: no
-allowlist change, no endpoint, no capability, no refusal message. What changed
-is the sign on the wall. While Python is chosen, `RunCodePanel` shows the
-handle (`dataset.rows` / `.columns` / `.query(sql)`, and that there is no file
-path), the importable subset as one sentence that names pandas, csv and numpy
-as refused with `statistics` as the alternative, and the list-of-dicts-in-
-`result` shape a run takes. The placeholder became the canonical use the
-core's own tests write, so running it as it stands produces a run. The
-contract is the Python engine's own - absent on SQL, whose placeholder carries
-`read_csv_auto(?)`. Six tests cover it, one of which reads `_SAFE_MODULES`
-out of `server/app/python_exec.py` and compares sets, so the page cannot claim
-a door the wall refuses.
+**W3X-002 is fixed: the fallback announcement reads as a sentence again.** The
+walk-test measured the rendering - "...answered in its place. for
+helpdesk_tickets_2026.csv" - because a panel appended its own context to a
+label that is already a complete sentence, and a period followed by a
+lowercase fragment reads as a typo rather than as the substitution notice
+W2X-001/FIX-TIMEOUT-006 put there.
 
-Gates: web 278/278 (was 272; +6 in RunCodePanel.test.tsx), tsc clean, build ok;
+The fix moved only the join. `sourceLabel` and the five sentences it returns
+are byte-identical (the server's wording, and the panels that render the label
+with no context of their own - RunsPanel, Chat, RefinePanel - are untouched).
+The three panels that append their own context go through a new `sourceWith`,
+which capitalises the context so a sentence ending in a period takes a
+grammatical clause. DraftPanel's "accepting records a real finding" became the
+sibling `<p>` it always read as. Seven unit tests pin it, including one that
+asserts the measured typo shape is absent.
+
+Gates: web 285/285 (was 278; +7 in sourceLabel.test.ts), tsc clean, build ok;
 server 788/788 unchanged (this task moved no server code); trace 48/48, e2e
 28/28. `graphify update .` ran clean.
 
-**Next: W3X-002, the fallback sentence glued to its label.** `sourceLabel`
-returns the substitution sentence and the panel appends ` for {filename}`, so
-it renders "...answered in its place. for helpdesk_tickets_2026.csv" - a
-lowercase fragment that reads as a typo. Cheapest fix of the remaining three,
-and it lands on every LLM-backed panel. After it, W3X-003: why the plan call
-burns the whole 120s budget when the chat call on the same provider answers
-in 67s - the root cause before the timeout number moves.
+**Next: W3X-003 is the last one open.** The plan call consumed the whole 120s
+budget while the chat call on the same provider answered in 67s, so the root
+cause - why the plan call differs - comes before any timeout change.
 
 ## Recent completions
 
 The last tasks to land, newest first. The contract and done-record for each
 is in `ai/TASKS.md` (rolling window) or `ai/TASKS-ARCHIVE.md`.
+
+- **W3X-002, the fallback sentence glued to its label** - a panel that appends its own context to `sourceLabel` was gluing a lowercase fragment to a sentence that already ends with a period, and the substitution notice read as a typo. `sourceWith` capitalises the join; the sentences, the server's wording and the panels that render the label alone are untouched. Seven tests, one asserting the measured shape is absent. Gates: web 285/285, tsc clean, build ok, server 788/788, trace 48/48, e2e 28/28.
 
 - **W3X-004, the Python surface refuses and teaches nothing** - the sandbox's own contract now sits on the panel that runs against it: the handle (`dataset.rows`), the importable subset with pandas/csv/numpy named as refused and `statistics` as the alternative, no file path, and the `result` shape a run takes. The placeholder is the canonical use, not `# python`. Six tests, one comparing the panel's module list to `_SAFE_MODULES` in the Python source. Shell-only; the sandbox, the endpoints and the refusal messages are untouched. Gates: web 278/278, tsc clean, build ok, server 788/788, trace 48/48, e2e 28/28.
 - **WALK-UX-003, the third walk-test** - a complete end-to-end run on a new domain (SaaS helpdesk, seeded, six planted anomalies) with a real LLM and a live Chromium on an isolated data dir. The loop closed through the UI alone: attach, profile, plan, SQL, Python, chart, interpret, draft, validate, the reviewer's audit, chat, implications, export, and a reopen that kept all of it. Four findings (`walktest-w3/FINDINGS.md`), none a blocker: the fallback sentence is glued to its label (W3X-002), the Python surface refuses three times and teaches nothing (W3X-004), the plan call burns the whole 120s budget (W3X-003), and a filename accepted twice (W3X-001, a harness artifact). Nine W2X fixes confirmed still holding. Gates: server 788/788, web 272/272, tsc clean, build ok, e2e 28/28, trace 48/48.

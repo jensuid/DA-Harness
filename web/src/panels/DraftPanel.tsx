@@ -40,8 +40,10 @@ export function DraftPanel({
   return (
     <div className={surfaces.proposal}>
       <p className={surfaces.note}>
-        {sourceLabel(draft.source, 'draft')} — accepting records a real finding,
-        not_evaluated until validated
+        {sourceLabel(draft.source, 'draft')}
+      </p>
+      <p className={surfaces.note}>
+        Accepting records a real finding, not_evaluated until validated
       </p>
       <p>{draft.statement}</p>
       <p className={surfaces.note}>{draft.interpretation}</p>

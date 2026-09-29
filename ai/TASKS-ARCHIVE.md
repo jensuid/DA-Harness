@@ -7148,3 +7148,539 @@ SUMMARY: opening a case re-profiled its datasets, twice. The mount effect
          an unprofiled dataset is offered rather than fabricated, a failed
          profiling surfaces the endpoint's own reason, and the panel renders
          the stored profile.
+
+### P9-F2-002 contract
+
+```
+TASK ID: P9-F2-002
+MILESTONE: P9 UI/UX Redesign (phase F2, the surfaces)
+CAPABILITY: Surfaces (the restyle onto the tokens)
+GOAL: the debt F1 and F2-001 took on, paid. The token layer shipped in
+      `lib/ui.tsx` and nothing imported it; the panels rendered class names
+      the hand-written CSS defined. This moves every surface onto the tokens
+      and deletes the CSS rules that only existed to name them, so the palette
+      is one set of names in one file and a panel reads one surface name
+      instead of a string of properties. The restyle is conservative by
+      contract: nothing is restyled and nothing is invented, because the
+      surfaces are the CSS rules they replace, as utility classes, with the
+      same values. The theme is the existing one named, not a new one drawn.
+CONTEXT: F1 shipped the tokens and the primitives and used them nowhere, by
+         the same rule that let it install dependencies it did not import
+         yet. F2-001 added the `surfaces` strings. The workspace is 15 panels
+         in `web/src/panels/` plus five screens that are not panels
+         (`CaseList`, `CaseCreation`, `Templates`, `ContextPanel`,
+         `RefinePanel`, `DecisionPanel`, `NoticeLayer`), and each carried its
+         own `className="panel"` / `"subpanel"` / `"proposal"` / `"run"` /
+         `"turn"` / `"muted"` / `"row"`. The accessibility audit reads the
+         emitted stylesheet (`accessibility.test.tsx`'s `focusIsGuaranteed`),
+         so a rule the audit resolves must survive as a literal declaration.
+INPUTS: `web/src/lib/ui.tsx` (the tokens and the `surfaces` strings), the 15
+        panel files, the five non-panel screens, `web/src/index.css`, and the
+        existing test suites, which are the behaviour contract.
+RELEVANT FILES: every file above, `web/src/panels/panels.test.tsx` (+1 test -
+                the debt-paid assertion), `ai/HANDOFF.md`, `ai/TASKS.md`,
+                `ai/CURRENT_STATE.md`.
+REQUIRED CHANGE:
+  - Every panel and screen swaps its literal `className="panel"` /
+    `"subpanel"` / `"proposal"` / `"run"` / `"turn"` / `"muted"` / `"row"` /
+    `"stages"` / `"items"` / `"grounds"` / `"rationale"` for the `surfaces`
+    string that holds the same values as utility classes. A panel keeps the
+    `panel` word in its class because it is a structural landmark the
+    workspace's own tests reach with `heading.closest('.panel')` and the zone
+    CSS scopes to `.zone .panel`.
+  - `lib/ui.tsx` gains the surfaces the restyle needed and F2-001 did not
+    name: `labelheading` (the `.panel h4` size), `turn` (a chat turn's own
+    padding), `rowGap` and `buttonRow` (a form's control row and the case
+    list's action row), and `smallDanger` as a fifth button variant, because
+    a variant that is both small and danger was a class string two panels
+    composed by hand. `buttonVariants`'s default carries the base button
+    rule's own properties, so a bare `<Button>` is the button the CSS drew.
+  - The CSS rules those class names defined are deleted in the same pass:
+    `.row` and `.row input` / `.row label`, `.panel h2` / `h3` / `h4`,
+    `.muted`, `.stages` / `.items` / `.chat` / `.grounds`, `.stage.done`,
+    `.turn`, `.turn .question`, `.subpanel`, `.rationale` and `.rationale p`,
+    `.proposal` and `.proposal pre`, `.run`, and `.case-actions`. The rules
+    that stay are the ones no token can own: the three-zone layout, the
+    sticky rail, the verdict and chip shapes the status vocabulary renders
+    as text-plus-chip, the quality-issue and shell-notice surfaces, and the
+    literal `:focus-visible` rule the accessibility audit resolves.
+  - One regression class, found by auditing the rules the deletion removed
+    against the source that still used them, and fixed before any commit:
+    `LearnPanel` rendered `className="stage done"` and `FindingsPanel`
+    rendered `className="muted"`, both of which lost their rules. `.stage.done`
+    stays in the CSS (a completed stage is the one green status, and it is
+    the rail's and the ladder's shared vocabulary) and the muted check row
+    moves to `surfaces.note`, which carries the size and the colour together.
+NON-GOALS: restyling anything beyond parity (a new look is a later pass that
+           decides on purpose what changes), motion (F3), the on-screen chart
+           (F4), a dark theme, touching the server, changing any test's
+           assertion rather than the class it reads, and deleting a rule a
+           status chip or the audit resolves.
+CONSTRAINTS: green only. No new dependency (DEC-001). The accessibility
+             audit's STATUS_CLASSES contract is unchanged: no status class is
+             added or removed, and nothing new carries a status by colour
+             alone. Web-only: no line outside `web/` moves.
+ACCEPTANCE CRITERIA:
+- [x] every panel and screen renders its surfaces through the token layer,
+      and no source file uses a literal `className` the deleted rules defined
+- [x] the CSS the build emits no longer carries the retired rules, and the
+      emitted stylesheet still resolves the focus rule the audit reads
+- [x] the surfaces are the rules they replaced: same values, same specificity
+      behaviour, so a panel on a token renders what the CSS rule rendered
+- [x] no class that a surviving rule styles lost its rule - every literal
+      className still in the source has its CSS (audited rule by rule, which
+      is how the `stage done` / `muted` regressions were caught)
+- [x] a test asserts the debt stays paid: a panel that goes back to a literal
+      `className="panel"` fails by name
+- [x] no other behaviour moved: the existing 184 assertions pass unchanged
+TESTS: `panels/panels.test.tsx` (+1) - reads every panel's and screen's source
+       through Vite's `?raw` and asserts none of the retired class names
+       appears as a literal `className`, naming the file and the class. The
+       suite's unchanged assertions are the rest of the contract.
+VERIFICATION: `cd web && npm test && npm run build` green (185 = 184 + 1,
+               tsc clean, build ok, the emitted CSS 14.44 kB and still
+               resolving the focus rule);
+               `server/.venv/bin/python verification/trace/verify_trace.py`
+               green (48/48 rows, AT-48 PASS - the symbols the matrix cites
+               still resolve). Web-only, so the server suite (727), the e2e
+               (28/28), golden (21/21), refine (AT-04) and measure (9/9) are
+               not re-run: no line outside `web/` moved (verified by
+               `git status`), and their last runs are green.
+STATE UPDATE: TASKS/CURRENT_STATE/HANDOFF gain the task; the P9 table closes
+              at F2-002. No schema change, no version bump.
+```
+
+TASK: P9-F2-002 - the restyle onto the tokens
+ID: P9-F2-002
+PRIORITY: high
+STATUS: DONE
+SUMMARY: the token layer is the vocabulary the panels use, and the
+         hand-written CSS that named those surfaces is gone. Every panel and
+         every screen renders through `surfaces` in `lib/ui.tsx`, and 109
+         lines of CSS retired with them - `.panel h2/h3/h4`, `.muted`,
+         `.stages`/`.items`/`.chat`/`.grounds`, `.turn`, `.subpanel`,
+         `.rationale`, `.proposal`, `.run`, `.row` and `.case-actions`. What
+         stays is the layout no token can own: the three-zone grid, the
+         sticky rail, the verdict and chip shapes the status vocabulary
+         renders as text-plus-chip, the quality and notice surfaces, and the
+         literal `:focus-visible` the accessibility audit resolves. The
+         restyle is parity by contract - a surface is the rule it replaced,
+         as utility classes, with the same values, so nothing looks
+         different and the palette is one set of names in one file.
+         The lesson the audit earned: deleting the retired rules was only
+         safe once the rules were checked against the source that used them,
+         not against the list of rules the restyle touched. Two literals
+         survived the move and lost their rules - `LearnPanel`'s
+         `className="stage done"` and `FindingsPanel`'s `className="muted"`.
+         The first keeps its rule, because a completed stage is the one
+         green status and the word is the rail's and the ladder's shared
+         vocabulary; the second moves to `surfaces.note`, which carries the
+         size with the colour. The panels test now asserts the debt stays
+         paid, reading every source file raw and naming the file and the
+         class if a literal comes back.
+```
+
+### FIX-CHART-004 contract
+
+```
+TASK ID: FIX-CHART-004
+MILESTONE: post-phase (the walk-test's findings)
+CAPABILITY: UX (a chart surface, W-016)
+GOAL: a chart is an evidence artifact the core renders, stores and exports,
+      and the shell cannot produce one. The runs panel runs a query and the
+      evidence graph counts the charts, but between them there is no control
+      that asks for a chart, and no surface that shows the one the core drew.
+      Every chart is only reachable through its file path. This closes that
+      gap for the run that produced the numbers.
+CONTEXT: WALK-E2E-001 Fase C created a chart by curl to verify the renderer,
+         and the evidence graph, the history and the export all carried it -
+         only the shell could not. `grep -c chart web/src/api.ts` is zero.
+         The endpoint validates its columns against the run's own result, so
+         the control's pickers can only offer what the run produced.
+INPUTS: the chart endpoint's payload and response (main.py:2884), the chart
+        kinds and formats the renderer supports, the run row's columns, and
+        the stored path the response returns.
+RELEVANT FILES: web/src/api.ts (a chart helper), web/src/CaseWorkspace.tsx
+                (RunRow gains the control and the surface), the renderer and
+                the endpoint (unchanged), web/src/CaseWorkspace.test.tsx,
+                ai/HANDOFF.md, ai/TASKS.md, ai/CURRENT_STATE.md
+REQUIRED CHANGE:
+  - A run row offers "Render a chart" once it has a result, with pickers for
+    the x and y columns the run actually produced and the kind the renderer
+    supports, and the control posts to the endpoint that owns the write.
+  - The response's chart is shown in the shell - as an inline SVG for the
+    default format, and as a link for the others - so a chart is evidence
+    the analyst can see, not a path on disk.
+  - A chart that fails to render shows the endpoint's own reason as a
+    sentence, because the renderer's refusal is the analyst's input.
+NON-GOALS: a chart gallery or a chart history view (the evidence graph
+           counts them and the export carries them); editing a chart; new
+           chart kinds (the renderer's vocabulary is what it is).
+CONSTRAINTS: green only. No new dependency. The POST goes to the endpoint
+             that owns the write and renders from the stored result.
+ACCEPTANCE CRITERIA:
+- [x] a run with a result can render a chart, and the chart appears in the
+      shell without leaving the case
+- [x] the pickers offer only the columns the run produced
+- [x] an unsupported choice is refused with the endpoint's own sentence
+- [x] the SVG the response carries is what the shell displays
+- [x] the evidence graph's chart count moves when a chart is rendered
+TESTS: CaseWorkspace.test.tsx (+6) - the control appears only once the run's
+       rows are open, the SVG shows inline and the payload carries the run's
+       own columns, the measure picker defaults to the numeric column, the
+       case reloads so the evidence count moves, a refusal surfaces the
+       renderer's sentence with the control standing, and a bitmap is a link
+       to the persisted artifact.
+VERIFICATION: `cd server && DAH_LLM_API_KEY= DAH_LLM_BASE_URL= DAH_LLM_MODEL=
+              .venv/bin/python -m pytest -q` green (727);
+              `cd web && npm test && npm run build` green (173, build ok);
+              `verify_e2e.py` green (28/28); `verify_trace.py` green (48/48).
+STATE UPDATE: TASKS/CURRENT_STATE/HANDOFF gain the fix; the chart half of
+              W-016 closes.
+```
+TASK: FIX-CHART-004 - the chart surface
+ID: FIX-CHART-004
+PRIORITY: high
+STATUS: DONE
+SUMMARY: a chart is now evidence the analyst can produce and see. The run row
+         holds a "Render a chart" control that appears once the run's rows are
+         open - those columns are the renderer's input and are exactly what
+         the pickers offer, with the measure defaulting to a numeric column -
+         and it POSTs the endpoint that owns the write. On success the shell
+         fetches the SVG the core drew and renders it inline, because drawing
+         it a second time would make the shell a second source of truth for
+         what the chart looks like; a PNG is a link to the persisted artifact
+         instead. The workspace reloads with a chart, so the evidence graph's
+         count moves with the panel, and a refusal shows the renderer's own
+         sentence with the control standing. Two things the first test run
+         caught: the control was offered before the rows were read, which is
+         before there is anything to draw from, so it now waits on the result;
+         and the surface was asserted as an img role, which jsdom does not
+         give an inline SVG - the assertion reads the element instead.
+
+### FIX-PYTHON-005 contract
+
+```
+TASK ID: FIX-PYTHON-005
+MILESTONE: post-phase (the walk-test's findings)
+CAPABILITY: UX (a python run surface, W-016)
+GOAL: the sandbox executes user Python against an attached dataset and
+      persists the result exactly like a SQL run, and the shell has no way to
+      ask for one. The codegen panel generates SQL only, and the runs
+      endpoint it posts to is the SQL one. A python run is only reachable by
+      curl, so the hardening the sandbox exists to prove is untested by
+      anyone using the app.
+CONTEXT: WALK-E2E-001 Fase C ran python through the endpoint: the seatbelt
+         refused a bad script with a 400 and an honest reason, and a correct
+         one produced a run that the evidence graph, the history and the
+         export all carried. `grep -rn "runs/python" web/src` is empty. The
+         generator already supports kind 'python' and the endpoint and its
+         model already exist; only the shell's request is missing.
+INPUTS: the python run endpoint (main.py:1778), its `PythonRunCreate` model,
+        the generator's kind parameter and its python output, the sandbox's
+        contract (a `dataset` handle, a `result` the run tabulates), and the
+        codegen panel's existing propose-and-run shape.
+RELEVANT FILES: web/src/api.ts (a python run helper), web/src/CaseWorkspace.tsx
+                (the codegen panel gains a kind, the run posts to the python
+                endpoint), web/src/CaseWorkspace.test.tsx, the endpoint and
+                the sandbox (unchanged), ai/HANDOFF.md, ai/TASKS.md,
+                ai/CURRENT_STATE.md
+REQUIRED CHANGE:
+  - The codegen panel offers SQL and Python, and the proposal it generates
+    matches the kind chosen, so a python question is answered with python.
+  - Running a python proposal posts to the python endpoint, and the run it
+    persists is a run like any other - the same runs panel, the same
+    evidence chain, the same validation.
+  - A sandbox refusal is the analyst's input: its detail is the sentence the
+    panel shows, not a broken panel.
+NON-GOALS: a python editor with a console; a package installer; changing the
+           sandbox (its allowlist, its seatbelt profile and its row cap are
+           the contract the surface now exposes).
+CONSTRAINTS: green only. No new dependency. The POST goes to the endpoint
+             that owns the write; the panel does not execute code itself.
+ACCEPTANCE CRITERIA:
+- [x] the panel generates python for a python question and the code it
+      proposes is what the sandbox accepts
+- [x] running a python proposal creates a run the runs panel and the
+      evidence graph carry
+- [x] a script the sandbox refuses answers a 400 whose detail the panel
+      shows as a sentence
+- [x] the kind persists across proposals in the same panel
+- [x] the SQL path is unchanged in behaviour and in its tests
+TESTS: CaseWorkspace.test.tsx (+4) - python generation and its run, the
+       engine persisting across proposals, the refusal surfaced, SQL
+       unaffected (its own test still asserts the run posts to the SQL
+       endpoint and never the python one).
+VERIFICATION: `cd server && ... pytest -q` green (727);
+              `cd web && npm test && npm run build` green (177, build ok);
+              verification/e2e, golden, refine (AT-04), measure (9/9) and
+              trace (48/48) all green.
+STATE UPDATE: TASKS/CURRENT_STATE/HANDOFF gain the fix; the python half of
+              W-016 closes and W-016 is done.
+```
+
+### FIX-PYTHON-005 done-record
+
+```
+TASK: FIX-PYTHON-005 - a python run surface
+ID: FIX-PYTHON-005
+PRIORITY: high
+STATUS: DONE
+SUMMARY: the codegen panel now offers two engines where it offered one. A
+         kind selector (SQL, the default, and Python) picks the code the
+         generator is asked for and persists across proposals in the same
+         panel, and the run posts to the endpoint matching the proposal's own
+         kind rather than the selector's current value - the code the analyst
+         read is the code that executes. `runPython` posts to the sandbox's
+         own endpoint, which was reachable only by curl before, so the hard
+         sandbox P3-SEC-001 exists to prove is now exercised by someone using
+         the app. A persisted python run is a run like any other: the same
+         runs panel, the same evidence chain, the same validation. The
+         seatbelt's 400 detail renders as a sentence and the proposal stands
+         to be fixed and retried. Two things the first test run caught: two
+         radios named python/sql on the same page (the EVAL panel's own
+         kind-toggle) matched every /python/i query, so the codegen radios
+         carry their own aria-label and the audit test now scopes its click to
+         its panel; and a multi-line script does not survive getByText's
+         whitespace normalisation, so the pre's own textContent is what the
+         assertion reads.
+```
+
+### FIX-TIMEOUT-006 contract
+
+```
+TASK ID: FIX-TIMEOUT-006
+MILESTONE: post-phase (the walk-test's findings)
+CAPABILITY: Reliability (the interpret/draft LLM timeout, W-014)
+GOAL: two of the three assistant slices never use the LLM in practice: the
+      interpret and draft endpoints wait exactly thirty seconds, time out,
+      and fall back to deterministic, and the shell shows "Working…" for the
+      whole thirty seconds with no indication that an engine failed and
+      another answered. The planner and refine endpoints, at sixty seconds,
+      finish. The analyst reads a deterministic reading believing it was the
+      LLM's, because the only tell is a small source label.
+CONTEXT: WALK-E2E-001 Fase C reproduced this on every interpret and draft
+         call: the log line is `llm read failed; falling back to
+         deterministic: The read operation timed out` at 30133ms and
+         30184ms, while the generator at 30s and refine at 60s succeeded.
+         The timeouts are interpreter.py:239, drafter.py:312 and
+         assistant.py:576 at 30.0; planner.py:366 and refine.py:595 at 60.0.
+INPUTS: the five LLM call sites and their timeouts, the fallback contract
+        (any failure degrades, the source field records which engine
+        answered), and the panels that render the source label.
+RELEVANT FILES: server/app/interpreter.py, server/app/drafter.py,
+                server/app/assistant.py (the timeouts), the web panels that
+                render `by <source>` (the announcement), the tests for both,
+                ai/HANDOFF.md, ai/TASKS.md, ai/CURRENT_STATE.md
+REQUIRED CHANGE:
+  - The timeouts are one configured value the environment can raise, default
+    high enough that a slow endpoint answers before the harness gives up on
+    it, so the engine a case configured is the engine that answers.
+  - A fallback is announced rather than labelled: the panel says the LLM was
+    unavailable and a deterministic reading was used in its place, in the
+    same place the source label sits, so the analyst knows which engine
+    spoke and that it was not the one asked.
+  - The contract that any failure degrades is untouched: a plan, a reading
+    and a draft are still always returned, and the source still records
+    which engine produced them.
+NON-GOALS: changing the fallback itself (the contract is the point);
+           retrying (a second thirty seconds is not a better answer);
+           streaming (the endpoints answer once, whole).
+CONSTRAINTS: green only. No new dependency. The default is a number, not a
+             behaviour; the tests inject the failure rather than waiting for
+             it, so no test is slower for the change.
+ACCEPTANCE CRITERIA:
+- [ ] the three 30s call sites read the same configured value, and the
+      planner's 60s is the same value's neighbour
+- [ ] a slow endpoint that would have timed out answers before the timeout
+- [ ] the source the response carries still records which engine answered
+- [ ] a panel showing a deterministic answer after an LLM failure says so in
+      a sentence the analyst reads
+- [ ] no test waits the timeout to reach its failure
+TESTS: test_interpreter.py / test_drafter.py (+~4, the timeout is read from
+       the value and a slow engine still answers), the web panel's
+       announcement (+~2).
+VERIFICATION: `cd server && ... pytest -q` green; `cd web && npm test && npm
+              run build` green.
+STATE UPDATE: TASKS/CURRENT_STATE/HANDOFF gain the fix; W-014 closes.
+```
+
+### FIX-REFINE-007 contract
+
+```
+TASK ID: FIX-REFINE-007
+MILESTONE: post-phase (the walk-test's findings)
+CAPABILITY: UX (the refinement's rationale, W-009)
+GOAL: accepting a refinement is a black box. The API returns a rationale and
+      the grounds it rests on, and the panel renders neither, so the analyst
+      approves a change to their own question without being told why the
+      change was proposed or what in the profile supports it. "Why these
+      changes" is the panel's own heading and it sits empty.
+CONTEXT: WALK-E2E-001 Fase B accepted a deterministic refinement and the
+         heading stayed blank; the response carries the fields the panel
+         does not read.
+INPUTS: the refinement response's rationale and grounds fields, the panel's
+        heading and its accepted state.
+RELEVANT FILES: web/src/RefinePanel.tsx, web/src/CaseWorkspace.test.tsx,
+                ai/HANDOFF.md, ai/TASKS.md, ai/CURRENT_STATE.md
+REQUIRED CHANGE:
+  - The proposal renders its rationale as the answer to the heading that
+    asks, and the grounds it names - the profile's own columns and measures,
+    which is what makes the suggestion honest - are listed where the analyst
+    can see what the suggestion rests on.
+  - The accepted state keeps the proposal readable, so the change the
+    analyst accepted stays explained after it is applied.
+NON-GOALS: changing the refinement engines or their output; editing a
+           rationale; re-proposing automatically.
+CONSTRAINTS: green only. No new dependency. The fields are already in the
+             response; this is rendering what the API returns.
+ACCEPTANCE CRITERIA:
+- [x] a proposal shows its rationale under its own heading
+- [x] the grounds the proposal names are listed, and they are the response's
+- [x] an accepted refinement keeps its rationale and grounds readable
+- [x] a proposal without grounds renders nothing rather than an empty list
+TESTS: CaseWorkspace.test.tsx / RefinePanel (+~3).
+VERIFICATION: `cd server && ... pytest -q` green; `cd web && npm test && npm
+              run build` green.
+STATE UPDATE: TASKS/CURRENT_STATE/HANDOFF gain the fix; W-009 closes.
+```
+
+TASK: FIX-REFINE-007 - the refinement's rationale is rendered
+ID: FIX-REFINE-007
+PRIORITY: high
+STATUS: DONE
+SUMMARY: accepting a refinement was a black box. The API returned a
+         `rationale` and the `grounds` it rests on - the profile's own
+         columns and measured ranges, which is what makes a suggestion
+         honest - and `RefinePanel` had both inside a `<details>` that
+         renders collapsed, so "Why these changes" read as inert text and
+         the analyst approved a change to their own question without being
+         told why it was proposed or what supports it. The disclosure is
+         gone: the rationale sits under a real `<h4>` heading of its own,
+         the grounds list below it, both always visible, and both still
+         rendered after an accept so a change the analyst made stays
+         explained. `.rationale` carries the proposals' left rule and
+         ground so the block reads as support rather than another paragraph,
+         and `.panel h4` exists because no panel had used a fourth-level
+         heading. Three tests cover it: the proposal shows its rationale and
+         both grounds under the heading, an accepted proposal keeps them
+         readable, and a proposal without grounds renders no empty list.
+TASK: W3X-002 - the fallback sentence is not glued to the label it replaces
+ID: W3X-002
+PRIORITY: high
+STATUS: DONE
+SUMMARY: the announcement W2X-001 made visible now reads as a sentence. The
+         fix kept the sentences, the server's wording and the panels that
+         render the label alone completely untouched, and moved only the
+         join: the three panels that append their own context go through
+         `sourceWith`, which capitalises the context so a sentence that ends
+         with a period takes a grammatical clause instead of the lowercase
+         fragment the walk-test measured. DraftPanel's "accepting records a
+         real finding" became the sibling paragraph it always read as.
+TASK: W3X-004 - the Python run surface teaches its own contract
+ID: W3X-004
+PRIORITY: high
+STATUS: DONE
+SUMMARY: the Python engine is the one a Python-fluent analyst reaches for
+         first, and its first three interactions were refusals whose answers
+         were not on the page - `import pandas`, `import csv`, and the
+         `path` variable the SQL placeholder implies exists, answered only
+         by a 400. The sandbox was correct to refuse, so the fix is the sign
+         on the wall rather than the wall: the panel shows the contract
+         while Python is chosen - the handle `dataset.rows` / `.columns` /
+         `.query(sql)` and that there is no file path, the importable subset
+         as one sentence that names pandas, csv and numpy as refused with
+         `statistics` as the alternative, and the list-of-dicts-in-`result`
+         shape a run takes. The placeholder stopped being `# python` and
+         became the canonical use the core's own tests write, so an analyst
+         who runs it as it stands gets a run. The contract is the engine's
+         own: it appears on Python and is absent on SQL, whose placeholder
+         carries its own contract (`read_csv_auto(?)`). The allowlist the
+         page shows is read out of `_SAFE_MODULES` by a test, so the two
+         cannot drift. Nothing in the sandbox, the endpoints, the capability
+         set or the refusal messages moved.
+
+### FIX-UPDATES-009 contract
+
+```
+TASK ID: FIX-UPDATES-009
+MILESTONE: post-phase (the walk-test's findings)
+CAPABILITY: Distribution (the silent update check, W-005)
+GOAL: the Check for Updates menu item performs a check and reports it to a
+      log, and nothing reports it to the user. The item is silent whether it
+      finds an update, finds none, or cannot reach the feed - three outcomes
+      the core distinguishes and the shell never shows. On a private
+      repository the feed is unreachable and the item is permanently,
+      silently dead.
+CONTEXT: WALK-E2E-001 Fase A triggered the item, watched the core receive
+         the request, and saw nothing in the window; the handler prints its
+         result to stderr and stops there (main.rs:48-60). The core already
+         answers three statuses with a reason for every UNKNOWN, so the
+         information exists and is not delivered.
+INPUTS: the core's `/updates/latest` statuses and their reasons, the menu
+        item's handler, and the shell's own surface for reporting to the
+        user.
+RELEVANT FILES: desktop/src-tauri/src/main.rs (the handler and its delivery),
+                the update status vocabulary in server/app/updates.py, the
+                desktop tests, ai/HANDOFF.md, ai/TASKS.md, ai/CURRENT_STATE.md
+REQUIRED CHANGE:
+  - The check's outcome reaches the user as the window's own message - a
+    dialog or an equivalent surface - for each of the three statuses, so the
+    item always answers something and the analyst never waits on a silent
+    one.
+  - An unreachable feed says it is unreachable rather than appearing to have
+    checked nothing, which is the honest reason the vocabulary already
+    carries.
+  - The handler's result still reaches the log; the delivery is added, not
+    substituted.
+NON-GOALS: an updater (the check remains the verifiable half, per DEC-006);
+           a settings pane; polling.
+CONSTRAINTS: green only. No new dependency. The delivery uses the window the
+             app already has; the statuses come from the core.
+ACCEPTANCE CRITERIA:
+- [x] each of the three statuses produces a visible answer in the window
+- [x] an unreachable feed answers with its reason, not silence
+- [x] the core's own status vocabulary is what the message reports
+- [x] the log line the handler already writes still writes
+TESTS: NoticeLayer.test.tsx (+8) and shell.test.ts (+8) on the web side;
+       notice_tests in updates.rs (+6) on the Rust side - the event-name
+       agreement, the body riding along, the no-body and non-JSON cases, and
+       each of the three statuses.
+VERIFICATION: `cd server && DAH_LLM_API_KEY= DAH_LLM_BASE_URL= DAH_LLM_MODEL=
+              .venv/bin/python -m pytest -q` green (723, unchanged);
+              `cd desktop/src-tauri && cargo test` green (25, +6);
+              `cd web && npm test && npm run build` green (163, +16);
+              `verify_e2e.py` green; `verify_golden.py` green (21/21);
+              `verify_refine.py` green (AT-04); `verify_trace.py` green
+              (48/48).
+STATE UPDATE: TASKS/CURRENT_STATE/HANDOFF gain the fix; W-005 closes. No
+              schema change, no version bump.
+```
+
+TASK: FIX-UPDATES-009 - the silent update check reaches the window
+ID: FIX-UPDATES-009
+PRIORITY: high
+STATUS: DONE
+SUMMARY: the Check for Updates menu item performed a check the core
+         distinguishes three ways and told only stderr about it, so on this
+         private repository - where the feed always answers 404 - the item was
+         permanently, silently dead. The delivery is the bundle's own surface,
+         because the shell is the only host with a menu bar and a native dialog
+         was not available: `tauri-plugin-dialog` is a network-fetched plugin
+         on Tauri 2 and the app is offline once installed, so depending on it
+         would break DEC-001. The shell evaluates a script in the webview it
+         already holds, posting a `dah-notice` event whose detail is the core's
+         own JSON body - never a sentence the shell reworded, so an unreachable
+         feed stays "could not tell" instead of becoming the silent "up to
+         date" P6-UPDATE-005 built the check to avoid. The bundle's
+         `describeUpdate` mirrors the shell's `update_summary`, so the window
+         and the log line always say the same thing about the same answer.
+         One thing the tests caught and fixed: a body that is not JSON cannot
+         be embedded in the script, because the eval would throw a
+         `SyntaxError` and silence the item a second time - so `notice_script`
+         validates the body and falls back to a body the shell rebuilds from
+         the parsed answer, which is also how a transport that kept no body at
+         all still reaches the window.
+
+Contracts for the rolling window (the two most recent: W3X-004 and
+FIX-UPDATES-009). Older blocks are in `ai/TASKS-ARCHIVE.md`.

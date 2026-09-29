@@ -505,13 +505,16 @@ fix. Priority is the walk-test's (impact / effort). The material is in
 
 **MAJOR**
 
-- **W3X-002 — the fallback sentence is glued to the label it replaces.**
-  `sourceLabel` returns the substitution sentence and the panel appends ` for
-  {filename}` to it, so it renders "...answered in its place. for
-  helpdesk_tickets_2026.csv" - a lowercase fragment that reads as a typo
-  rather than the announcement W2X-001's FIX-TIMEOUT-006 line intended. The
-  sentence is the analyst's only signal that the engine they configured did
-  not answer. Cheapest fix here, lands on every LLM-backed panel.
+- **W3X-002 — CLOSED.** The fallback sentence was glued to the label it
+  replaces: `sourceLabel` returns the substitution sentence and the panel
+  appended ` for {filename}`, so it rendered "...answered in its place. for
+  helpdesk_tickets_2026.csv" - a lowercase fragment that read as a typo
+  rather than as the announcement W2X-001's FIX-TIMEOUT-006 line intended.
+  The fix moved only the join: `sourceLabel` and its five sentences are
+  byte-identical, and the three panels that append their own context go
+  through `sourceWith`, which capitalises the context so a sentence ending
+  in a period takes a grammatical clause. Contract and tests below, in the
+  rolling window.
 - **W3X-004 — CLOSED.** The Python surface refuses three times and teaches
   nothing. A Python-fluent analyst's first three interactions with the engine
   were refusals (`import pandas`, `import csv`, the `path` variable the SQL
@@ -1701,6 +1704,90 @@ SUMMARY: accepting a refinement was a black box. The API returned a
          heading. Three tests cover it: the proposal shows its rationale and
          both grounds under the heading, an accepted proposal keeps them
          readable, and a proposal without grounds renders no empty list.
+
+### W3X-002 contract (the fallback sentence is not glued to the label it replaces)
+
+```
+TASK ID: W3X-002
+MILESTONE: post-phase (the third walk-test's findings, WALK-UX-003)
+CAPABILITY: UX (the engine-source announcement, shared by seven panels)
+GOAL: the substitution announcement - the analyst's only signal that the
+      engine they configured did not answer - must read as a sentence, not as
+      a label with a typo glued to it. W2X-001/FIX-TIMEOUT-006 made the
+      fallback visible; this keeps it legible.
+CONTEXT: `web/src/sourceLabel.ts` returns one of five full sentences when
+         `source` is `deterministic fallback` (each engine module owns the
+         server-side wording through SOURCE_FALLBACK_SENTENCE). Seven panels
+         render that label; three of them append their own context directly
+         after it in JSX: PlanPanel (" for {filename}"), GeneratePanel
+         (" — reads {columns}"), AgentPanel (" — approve to run it, or reject
+         with your reason"). DraftPanel's sentence stood
+         beside "— accepting records a real finding". The measured rendering
+         was "...answered in its place. for helpdesk_tickets_2026.csv" -
+         a period followed by a lowercase fragment.
+INPUTS: `web/src/sourceLabel.ts` (the shared label), the three call sites that
+        append context, the two surfaces that render the sentence beside a
+        second thought, and `web/src/CaseWorkspace.test.tsx` (regex
+        assertions on the fallback sentences, which must keep matching).
+RELEVANT FILES: web/src/sourceLabel.ts (+sourceWith), web/src/sourceLabel.test.ts
+                (new, 7 tests), web/src/panels/PlanPanel.tsx,
+                web/src/panels/GeneratePanel.tsx,
+                web/src/panels/AgentPanel.tsx (sourceWith at the three call
+                sites that append context),
+                web/src/panels/DraftPanel.tsx (the sentence as its own <p>),
+                ai/HANDOFF.md, ai/TASKS.md, ai/CURRENT_STATE.md.
+REQUIRED CHANGE:
+  - Nothing about the sentences themselves. `sourceLabel` is unchanged; the
+    server's wording (the owner, per FIX-TIMEOUT-006) is untouched, and the
+    panels that render the label with no context of their own
+    (RunsPanel, Chat, RefinePanel) are untouched too.
+  - One new helper next to it: `sourceWith(source, kind, context)` returns
+    `by {source} {context}` for a plain label, and for a fallback takes the
+    sentence as it stands and capitalises the context's first letter, so the
+    period is followed by a grammatical clause instead of a fragment. The
+    context stays the panel's own; the helper owns only the join.
+  - The three call sites that appended context now go through it.
+    DraftPanel renders the sentence as its own `<p>` and its "accepting
+    records a real finding" note as the sibling it always read as.
+NON-GOALS: changing any fallback sentence's wording (the server's), changing
+           the engine-side `SOURCE_FALLBACK_SENTENCE`, touching the panels
+           that render the label alone, and any change to the endpoints, the
+           sandbox or the capability set.
+CONSTRAINTS: green only. Shell-only, no new dependency (DEC-001), no LLM
+             call. The existing regex assertions in CaseWorkspace.test.tsx
+             continue to match because the sentences are unchanged.
+ACCEPTANCE CRITERIA:
+- [x] no panel renders a period followed by a lowercase fragment as its
+      engine-source line
+- [x] the five fallback sentences themselves are byte-identical to before
+- [x] a plain `by {source}` label still takes its appended context unchanged
+- [x] the panels that rendered the label with no context are untouched
+- [x] CaseWorkspace.test.tsx's regex assertions on the sentences still match
+- [x] a unit test pins the join: fallback + context is the sentence, then a
+      capitalised clause; and the two shapes never disagree about which
+      engine answered
+TESTS: web 7 in sourceLabel.test.ts - the plain label, the fallback sentence,
+       the join for a plain label, the measured typo shape asserted absent,
+       the join for a fallback, a context already carrying its own dash, and
+       the two shapes naming the same engine.
+VERIFICATION: `cd web && npx vitest run` green (285 = 278 + 7);
+              `npx tsc -b` clean; `npm run build` ok.
+STATE UPDATE: TASKS/CURRENT_STATE/HANDOFF gain the fix; W3X-002 closes and
+              the carried list drops to one (W3X-003). No schema change.
+```
+
+TASK: W3X-002 - the fallback sentence is not glued to the label it replaces
+ID: W3X-002
+PRIORITY: high
+STATUS: DONE
+SUMMARY: the announcement W2X-001 made visible now reads as a sentence. The
+         fix kept the sentences, the server's wording and the panels that
+         render the label alone completely untouched, and moved only the
+         join: the three panels that append their own context go through
+         `sourceWith`, which capitalises the context so a sentence that ends
+         with a period takes a grammatical clause instead of the lowercase
+         fragment the walk-test measured. DraftPanel's "accepting records a
+         real finding" became the sibling paragraph it always read as.
 
 ### W3X-004 contract (the Python surface's own contract)
 

@@ -18,7 +18,7 @@ import {
   rejectAgentStep,
   rejectRoleAgentStep,
 } from "../api"
-import { sourceLabel } from '../sourceLabel'
+import { sourceWith } from '../sourceLabel'
 import { messageOf } from '../CaseList'
 import { Button, surfaces } from '../lib/ui'
 import { CallProgress, useCallProgress } from '../lib/progress'
@@ -213,8 +213,7 @@ export function AgentPanel({
       {pending ? (
         <div className={surfaces.proposal}>
           <p className={surfaces.note}>
-            {sourceLabel(pending.source, 'proposal')} — approve to run it, or
-            reject with your reason
+            {sourceWith(pending.source, 'proposal', '— approve to run it, or reject with your reason')}
           </p>
           <p><strong>{stepSentence(pending)}</strong></p>
           <div className={surfaces.buttonRow}>

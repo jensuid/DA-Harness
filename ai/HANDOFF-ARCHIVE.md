@@ -1,5 +1,36 @@
 ## Next action
 
+**W3X-004 is fixed: the Python run surface teaches its own contract.** The
+engine a Python-fluent analyst reaches for first refused them three times in a
+row (`import pandas`, `import csv`, the `path` variable the SQL placeholder
+implies exists) and put none of the answers on the page - the placeholder was
+`# python`. The sandbox was correct to refuse, so nothing about it moved: no
+allowlist change, no endpoint, no capability, no refusal message. What changed
+is the sign on the wall. While Python is chosen, `RunCodePanel` shows the
+handle (`dataset.rows` / `.columns` / `.query(sql)`, and that there is no file
+path), the importable subset as one sentence that names pandas, csv and numpy
+as refused with `statistics` as the alternative, and the list-of-dicts-in-
+`result` shape a run takes. The placeholder became the canonical use the
+core's own tests write, so running it as it stands produces a run. The
+contract is the Python engine's own - absent on SQL, whose placeholder carries
+`read_csv_auto(?)`. Six tests cover it, one of which reads `_SAFE_MODULES`
+out of `server/app/python_exec.py` and compares sets, so the page cannot claim
+a door the wall refuses.
+
+Gates: web 278/278 (was 272; +6 in RunCodePanel.test.tsx), tsc clean, build ok;
+server 788/788 unchanged (this task moved no server code); trace 48/48, e2e
+28/28. `graphify update .` ran clean.
+
+**Next: W3X-002, the fallback sentence glued to its label.** `sourceLabel`
+returns the substitution sentence and the panel appends ` for {filename}`, so
+it renders "...answered in its place. for helpdesk_tickets_2026.csv" - a
+lowercase fragment that reads as a typo. Cheapest fix of the remaining three,
+and it lands on every LLM-backed panel. After it, W3X-003: why the plan call
+burns the whole 120s budget when the chat call on the same provider answers
+in 67s - the root cause before the timeout number moves.
+
+## Next action
+
 Two things the gate caught that were not the W2X-004 code (from the W2X-001
 gate run, kept as the record of why those tests moved). Four spy assertions in
 CaseWorkspace.test.tsx matched exact argument lists that now carry a trailing
