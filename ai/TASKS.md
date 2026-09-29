@@ -499,11 +499,11 @@ its own contract, one commit per fix.
 - **W2X-013 — CLOSED.** The orientation column's fixed 15rem wrapped a long
   question into a 101pt block. `minmax(15rem, 17rem)` lets it breathe; the work
   and intelligence zones keep the rest.
-- **W2X-009** - the deterministic drafter promoted the planted outlier
+- **W2X-009 — CLOSED.** The deterministic drafter promoted the planted outlier
   (revenue 99,589, 758.6x the next-largest value the profile already
   flagged) as the case's finding, and the validator then blamed the wrong
   column. The trust loop closed on a false number wearing a
-  `partially_supported` badge. `server/app/drafter.py`.
+  `partially_supported` badge. `server/app/drafter.py` + `server/app/main.py`.
 
 **MINOR**
 

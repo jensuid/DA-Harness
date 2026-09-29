@@ -219,6 +219,78 @@ def test_a_drafts_statement_can_be_accepted_and_validated(tmp_path, monkeypatch)
     assert verdict.json()["status"] == "supported"
 
 
+def test_a_draft_that_leads_with_an_outlier_names_it_as_one(
+    tmp_path, monkeypatch
+) -> None:
+    """W2X-009: the deterministic draft does not promote a planted outlier.
+
+    The walk planted 99000 where revenue was otherwise ~99; the profile's
+    quality detector flagged it at 758x, and the draft crowned it anyway. The
+    honest answer names the outlier and steps down to the largest remaining
+    group, rather than announcing the extreme as the leader.
+    """
+    csv = (
+        b"order_id,revenue,region\n"
+        b"1,99000.0,north\n"
+        b"2,99.0,east\n"
+        b"3,130.0,south\n"
+        b"4,99.5,east\n"
+        b"5,120.0,south\n"
+        b"6,88.0,north\n"
+    )
+    # The walk's shape: a raw row-level result whose region repeats, so the
+    # draft has a grouping to compare and crowns the outlier's row.
+    sql = "SELECT region, revenue FROM read_csv_auto(?) ORDER BY revenue DESC"
+    _temp_env(tmp_path, monkeypatch)
+    with TestClient(app) as client:
+        case_id = client.post(
+            "/cases", json={"question": "which region leads on revenue?", "dataset": "sales.csv"}
+        ).json()["id"]
+        dataset_id = client.post(
+            f"/cases/{case_id}/datasets", files={"file": ("sales.csv", csv, "text/csv")}
+        ).json()["id"]
+        profile = client.post(f"/cases/{case_id}/datasets/{dataset_id}/profile").json()
+        run_id = client.post(
+            f"/cases/{case_id}/datasets/{dataset_id}/runs", json={"sql": sql}
+        ).json()["id"]
+        body = client.post(f"/cases/{case_id}/runs/{run_id}/draft-finding").json()
+
+    # The profile's quality layer is the thing the draft now reads.
+    kinds = [issue["kind"] for issue in profile.get("quality") or []]
+    assert drafter_module.CLASS_EXTREME_VALUES in kinds
+
+    caveat = body["caveat"]
+    # The outlier is named as an outlier, not as the answer. The detector's
+    # multiple is computed over the dataset, so the assertion takes the
+    # profile's own sentence rather than hard-coding the figure the walk saw.
+    assert "is an outlier" in caveat
+    extreme = next(
+        issue for issue in (profile.get("quality") or [])
+        if issue["kind"] == drafter_module.CLASS_EXTREME_VALUES
+    )
+    assert "the next-largest value" in extreme["observed"]
+    # The ranking the analyst would act on is pointed at the largest group
+    # that is not the outlier, not at the outlier itself.
+    assert "largest revenue among the remaining groups" in caveat
+
+
+def test_a_draft_without_a_quality_issue_does_not_mention_an_outlier(
+    tmp_path, monkeypatch
+) -> None:
+    """The outlier caveat appears only when the profile recorded one.
+
+    A draft on a dataset whose spread is ordinary - the suite's own fixture -
+    must not gain the outlier sentence, so the caveat is a response to the
+    profile rather than text the draft always carries.
+    """
+    _temp_env(tmp_path, monkeypatch)
+    with TestClient(app) as client:
+        case_id, run_id = _case_with_run(client)
+        body = client.post(f"/cases/{case_id}/runs/{run_id}/draft-finding").json()
+
+    assert "outlier" not in body["caveat"]
+
+
 def test_a_result_without_a_numeric_column_yields_an_honest_weaker_draft(
     tmp_path, monkeypatch
 ) -> None:

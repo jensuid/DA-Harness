@@ -2787,13 +2787,18 @@ async def create_interpretation(
 
     case = db.execute("SELECT question FROM cases WHERE id = ?", (case_id,)).fetchone()
     profile_row = db.execute(
-        "SELECT columns_json, stats_json FROM profiles WHERE dataset_id = ?",
+        "SELECT columns_json, stats_json, quality_json FROM profiles WHERE dataset_id = ?",
         (row["dataset_id"],),
     ).fetchone()
+    # W2X-009: quality_json is read here, or the draft and the interpretation
+    # cannot see the outlier the profile detected. These two readers predate
+    # the quality column and never gained it, so their outlier check always
+    # saw an empty list and crowned the planted 99000.
     profile = (
         {
             "columns": json.loads(profile_row["columns_json"]),
             "stats": json.loads(profile_row["stats_json"]),
+            "quality": json.loads(profile_row["quality_json"] or "[]"),
         }
         if profile_row is not None
         else None
@@ -2924,13 +2929,16 @@ async def draft_finding(
 
     case = db.execute("SELECT question FROM cases WHERE id = ?", (case_id,)).fetchone()
     profile_row = db.execute(
-        "SELECT columns_json, stats_json FROM profiles WHERE dataset_id = ?",
+        "SELECT columns_json, stats_json, quality_json FROM profiles WHERE dataset_id = ?",
         (row["dataset_id"],),
     ).fetchone()
+    # W2X-009: the draft reads the profile's quality issues - see the
+    # interpretation reader above for why the column is here.
     profile = (
         {
             "columns": json.loads(profile_row["columns_json"]),
             "stats": json.loads(profile_row["stats_json"]),
+            "quality": json.loads(profile_row["quality_json"] or "[]"),
         }
         if profile_row is not None
         else None

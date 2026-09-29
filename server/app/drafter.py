@@ -36,6 +36,7 @@ _MAX_LLM_CHARS = 12_000
 _MAX_ROWS_IN_PROMPT = 25
 
 SOURCE_DETERMINISTIC = "deterministic"
+from app.quality import CLASS_EXTREME_VALUES
 SOURCE_LLM = "llm"
 SOURCE_DETERMINISTIC_FALLBACK = "deterministic fallback"
 SOURCE_FALLBACK_SENTENCE = (
@@ -99,6 +100,39 @@ def _fmt(value: Any) -> str:
     return str(value)
 
 
+def _extreme_for(measure: str | None, quality: list) -> tuple[float, float] | None:
+    """The (value, multiple) the profile recorded as an outlier on `measure`.
+
+    W2X-009. A draft crowns its largest group; the profile's quality issues
+    already recorded that value as one that dwarfs its neighbour. The
+    sentence the detector writes carries both the value and the multiple it
+    stands at, so the draft reads it back rather than re-deriving the
+    comparison - the detector is the only place that knows the rule, and
+    duplicating it here is how two detectors drift apart.
+
+    Returns None when the measure has no recorded extreme, including when the
+    profile is empty (an unprofiled result has no quality to read) or the
+    sentence's shape is not the one the detector writes now. A shape change
+    is caught by the test that plants an outlier, not by this parser.
+    """
+    if not measure:
+        return None
+    for issue in quality or []:
+        if not isinstance(issue, dict):
+            continue
+        if issue.get("column") != measure:
+            continue
+        if issue.get("kind") != CLASS_EXTREME_VALUES:
+            continue
+        observed = issue.get("observed") or ""
+        # "The largest value in revenue (99000.0) is 758.6x the next-largest."
+        match = re.search(r"\((-?\d+(?:\.\d+)?)\) is (\d+(?:\.\d+)?)x", str(observed))
+        if not match:
+            continue
+        return float(match.group(1)), float(match.group(2))
+    return None
+
+
 def draft_finding(
     question: str,
     kind: str,
@@ -144,6 +178,36 @@ def draft_finding(
         caveat = (
             "a single aggregated view; rerun and validate before this carries weight"
         )
+        # W2X-009: a draft that promotes an outlier is worse than no draft. The
+        # profile's quality issues already flag a value that dwarfs its
+        # neighbour - the walk planted 99000 where revenue was otherwise ~99 -
+        # and the honest answer when the maximum is that value is to name it
+        # as an outlier and step down to the second-largest, not to announce
+        # it as the leader. Read only when the issue names this draft's own
+        # measure: an extreme in a column the result never selects is a fact
+        # about the dataset, not a reason to distrust this comparison.
+        extreme = _extreme_for(measure, (profile or {}).get("quality") or [])
+        if extreme is not None and best == extreme[0]:
+            caveat += (
+                f"; the {measure} value the result leads with is an outlier - the "
+                f"profile records it at {_fmt(extreme[1])}x the next-largest value, "
+                "so the ranking describes the extreme, not the distribution"
+            )
+            if len(pairs) > 1:
+                # `pairs` can carry a group twice (a deterministic generator
+                # repeats the outlier's row when it has more rows than its
+                # synthetic spread), so the second entry can be the same
+                # leader again. Take the first pair whose leader is not the
+                # one being stepped down from.
+                ranked = sorted(pairs, key=lambda pair: pair[1], reverse=True)
+                runner_up = next(
+                    ((who, value) for who, value in ranked if who != leader), None,
+                )
+                if runner_up is not None:
+                    caveat += (
+                        f"; {_fmt(runner_up[0])} is the largest {measure} among the "
+                        f"remaining groups at {_fmt(runner_up[1])}"
+                    )
     elif measure is not None:
         values = [v for v in by_column[measure] if _is_number(v)]
         statement = (

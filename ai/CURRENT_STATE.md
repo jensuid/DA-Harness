@@ -3,23 +3,37 @@ the motion, the on-screen chart). P8, P7, P6, P5, P4, P3, P2, P1 and P0 are all
 COMPLETE (see the phase table below). Every phase the roadmap and the
 conformance evaluation asked for is delivered; no phase is open.
 
-- **Active task:** **W2X-001 DONE - the timeout surface.** The walk measured
-  three of four LLM calls timing out at the harness's 120s ceiling while the UI
-  showed one static word, and in the runs panel three "Working…" at once -
-  because one shared `busy` flag served three unrelated requests (Interpret,
-  Draft a finding, Show the rows), so every button announced whichever one was
-  in flight. Two fixes. `web/src/lib/progress.tsx` is a hook owning one call's
-  `AbortController` and a one-second elapsed clock, plus the row a panel
-  renders from it - "Generating the plan… 12s elapsed" and a Cancel button,
-  `role="status"` so a screen reader announces the wait without making it an
-  alert. Every LLM-backed call in the shell carries the signal: plan, code,
-  interpret, draft, refine, chat, agent proposal. And each panel's busy state
-  became per-action, so the button in flight is the only one that says so.
-  A cancel is reported as a sentence, never as a failure: "Cancelled - the
-  plan was not generated", "Cancelled - the question is still here" (chat
-  keeps the question the analyst typed).
-  Gates: web 257, tsc clean, build ok, server 775, trace 48/48, e2e all steps.
+- **Active task:** **W2X-009 DONE - the drafter stopped promoting the outlier.**
+  The walk planted revenue 99,589 where the rest were ~99; the profile's own
+  quality detector flagged it at 758.6x, but the deterministic draft crowned it
+  ("North has the highest total_revenue at 99589.5") and the trust loop closed
+  on a number 758x too large wearing a partially_supported badge.
+- **The root cause was not the drafter's logic.** main.py's two profile readers
+  - the interpretation endpoint and the draft-finding endpoint - selected
+  columns_json and stats_json only, never quality_json. The quality column was
+  added by a migration that predates both readers, so profile[quality] was
+  silently [] for the whole analysis path. The drafter could not have read the
+  outlier; nothing on that path could. Both now select quality_json. The
+  validator path and the import path already read it - the two broken readers
+  were the outliers.
+- **With quality actually present, the draft reads it.** drafter.py gains
+  _extreme_for, which parses the detector's own sentence back into (value,
+  multiple) - the detector is the one place the rule lives, so re-deriving the
+  comparison is how two detectors drift apart. When the result's leader is the
+  flagged value, the caveat says so plainly and points at the largest group
+  that is not the outlier. The extreme is still stated; it is just no longer
+  announced as the answer. The measure is the only column the check reads, so a
+  quality issue in a column the result never selected stays a fact about the
+  dataset rather than a reason to distrust this draft.
+- **Two server tests** - one that plants the outlier and asserts the draft
+  names it, one that asserts the ordinary fixture does not gain the sentence.
+  The first takes the profile's own multiple rather than hard-coding the walk
+  figure: the detector computes over the dataset, and the walk's 758.6x came
+  from the shipped sample while the test's six-row fixture yields 761.5x.
+- Gates: web 257/257, server 777 (775 + 2 new), trace 48/48, e2e all steps,
+  tsc clean, build ok.
   **STATUS: COMMITTED, all gates green.**
+MITTED, all gates green.**
   Two things the gate caught that were not this task's code. Four spy
   assertions in CaseWorkspace.test.tsx matched exact argument lists that now
   carry a trailing `AbortSignal`; the calls themselves are unchanged, so the
@@ -83,13 +97,9 @@ conformance evaluation asked for is delivered; no phase is open.
   `desktop/bundle_dmg.sh`, so the shipped triple is what the developer's
   machine produces. Restoring an enforced Intel lane needs a self-hosted
   runner.
-- **Test status:** server 775 passed (unchanged - the timeout surface is a
-  shell change; the only server file that moved was the e2e report the runner
-  rewrote). The web suite is 257, unchanged in count because the surface's
-  behaviour is what the existing tests assert: the four spies gained a
-  trailing `expect.anything()` for the AbortSignal, the AT-27 motion test was
-  made machine-independent, and the panels' rows are asserted by the panels
-  the walk's own panels already cover.
+- **Test status:** server 777 passed - 775 from before plus the two W2X-009
+  outlier tests. The web suite is 257, unchanged: this task moved no shell code,
+  only the two server profile readers and the drafter.
   The one server test that is not new this task is the AT-38 fix itself:
   `test_llm_config.py`'s PUT endpoint writes `os.environ` (the "no restart"
   property, correct in production), and monkeypatch restores only the

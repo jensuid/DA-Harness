@@ -1,3 +1,64 @@
+## Next action
+
+**W2X-001 landed: the wait stopped being one word.** The walk measured three
+of four LLM calls timing out at the 120s ceiling while the UI showed a single
+static word - and in the runs panel three "Working…" at once, because one
+shared `busy` flag served three unrelated requests.
+
+- **The row** (`web/src/lib/progress.tsx`) is a hook owning one call's
+  `AbortController` and a one-second elapsed clock, plus the row a panel
+  renders from it: "Generating the plan… 12s elapsed" and a Cancel button.
+  `role="status"`, so a screen reader announces the wait without an alert
+  - the wait is expected, not a fault.
+- **Every LLM-backed call carries the signal**: plan, code, interpret, draft,
+  refine, chat, agent proposal. The shell cannot know which engine the core
+  will pick before it answers, so a fast deterministic call shows the same row
+  for a moment rather than two surfaces for two engines.
+- **Per-action busy state.** The runs panel's three buttons each have their
+  own flag now, so the one in flight is the only one that says so. The agent
+  panel's three actions likewise - a shared flag had "Reject" reading
+  "Running…" while a proposal was what was in flight.
+- **A cancel is a sentence, not a failure.** "Cancelled - the plan was not
+  generated", "Cancelled - the question is still here", and chat keeps the
+  question the analyst typed.
+
+**What this is not.** The shell does not shorten the core's own 120s timeout
+(`server/app/timeouts.py`) and does not retry: cancelling aborts the browser's
+request, and a fallback that arrives after a cancel is the core's business.
+The deterministic-fallback banner was already shipped - `sourceLabel` reads
+`deterministic fallback` and announces the substitution - so this task is the
+wait itself, and the fallback notice it would arrive with was done first.
+
+**What broke.** Four spy assertions in CaseWorkspace.test.tsx matched exact
+argument lists that now carry a trailing `AbortSignal`; the calls themselves
+are unchanged, so the assertions take `expect.anything()` for it. And the
+AT-27 motion-budget test was flaky on this machine - an absolute 200ms
+threshold it hit at 200ms and missed at 470ms on the same commit, so it was
+measuring the host rather than the layer. It now measures the layer's own
+added cost: the median of five renders with the motion against five without
+it, so the machine's noise is in both numbers and cancels in the difference.
+
+**Gates:** web 257, tsc clean, build ok, server 775, trace 48/48, e2e all
+steps. Not run this task: measure and desktop cargo - no Rust moved, and
+nothing the measurement layer reports changed. Every gate that could regress
+is green; this task commits.
+
+**Next, in priority order:**
+
+1. **W2X-009, the drafter that promoted the planted outlier** - the trust
+   finding: a 758.6x revenue outlier became the case's finding and the
+   validator then blamed the wrong column, so the loop closed on a false
+   number wearing a `partially_supported` badge.
+2. **The MINORs** - W2X-003 (the chart gone after a reopen), W2X-004 (the
+   false "unsaved edits" from the moment a case opens), W2X-010 (no duplicate
+   notice at create time), W2X-011 (a case row's text does nothing, only the
+   Open button).
+
+**Two carried decisions stay, both unchanged and both not code:** the
+packaged app is unsigned by DEC-006, and GitHub Actions' billing is
+suspended (fix at Settings > Billing & plans; nothing since `c73118c` has
+run in CI).
+
 
 ---
 
