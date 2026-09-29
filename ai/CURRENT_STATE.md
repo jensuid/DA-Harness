@@ -3,28 +3,24 @@ the motion, the on-screen chart). P8, P7, P6, P5, P4, P3, P2, P1 and P0 are all
 COMPLETE (see the phase table below). Every phase the roadmap and the
 conformance evaluation asked for is delivered; no phase is open.
 
-- **Active task:** v0.3.5 — the release the thirteen walk-test fixes shipped in.
-  The v0.3.4 tag was hollow: it pointed at a version bump, and every W2X fix
-  (W2X-001 through W2X-013) landed after it, so nothing the second walk-test
-  found was ever in a release. The desktop version files had also drifted -
-  the bump commit moved only `server/pyproject.toml`, so a 0.3.4 core shipped
-  inside an app that called itself 0.3.3. All three version files move to 0.3.5
-  together (the `30db6e9` convention), the sidecar is repackaged so
-  `/updates/latest` answers 0.3.5, and the DMG is rebuilt from that bundle.
-  Gates at the bumped HEAD: server 788/788, web 272/272, tsc clean, build ok.
-  The packaged app was smoke-tested as a real launch, not just built: health
-  ok, `/updates/latest` answers `current: 0.3.5` with an honest `unknown` (the
-  feed is unreachable from this machine), the case list and Templates section
-  render, and no test data was left behind.
-    **STATUS: COMMITTED, all gates green, tagged and pushed.**
-  Sebelumnya: W2X-010 (the duplicate that said nothing), W2X-011 (the clickable
-  row), W2X-003 (the chart that vanished on reopen), W2X-004 (the false
-  unsaved-edits claim), W2X-009 (the outlier promotion), W2X-008 + W2X-013 (the
-  density), W2X-002 + W2X-005 (the first thing the app says), W2X-006 + W2X-007
-  (the analysis editor), W2X-012 phase B (the settings surface), W2X-012 phase
-  A (the status surface), WALK-UX-002 (recorded), v0.3.4 — the first walk's
-  nineteen findings are all resolved; the second walk's thirteen are all
-  resolved too: WALK-UX-002 is finished, and no task is queued.
+- **Active task:** WALK-UX-003 — the third walk-test, complete. The loop runs
+  end to end on a domain the project had never analysed (a seeded SaaS
+  helpdesk dataset with six planted anomalies) with a real LLM configured and
+  a live Chromium on an isolated data dir. Every surface the shell owns was
+  reached through the UI — attach, profile, plan, SQL, Python, chart,
+  interpret, draft, validate, the reviewer's audit, chat, the decision's
+  implications and the export — with no terminal anywhere in the path, and
+  the case survived a leave and a reopen (`loop_closed: true`, export
+  round-tripped). Four findings, none a blocker: the fallback sentence is
+  glued to its label (W3X-002), the Python surface refuses three times and
+  teaches nothing (W3X-004), the plan call burns the whole 120s budget
+  (W3X-003), and a filename accepted twice (W3X-001, a harness artifact).
+  Nine W2X fixes were measured holding against the running core.
+  **STATUS: COMMITTED and pushed, all gates green.**
+  Sebelumnya: v0.3.5 — the release the thirteen W2X fixes shipped in. W2X-010
+  through W2X-003, WALK-UX-002 — the first walk's nineteen findings are all
+  resolved; the second walk's thirteen are all resolved; the third walk's
+  four are recorded and three are queued as carried follow-ups.
   Two things outside this repo's control, unchanged: GitHub Actions still
   refuses every job (billing suspended since before c73118c, so CI never ran on
   any W2X commit - v0.3.5 was built and verified locally from the same steps
@@ -82,17 +78,13 @@ conformance evaluation asked for is delivered; no phase is open.
   `desktop/bundle_dmg.sh`, so the shipped triple is what the developer's
   machine produces. Restoring an enforced Intel lane needs a self-hosted
   runner.
-- **Test status:** server 777 passed - 775 from before plus the two W2X-009
-  outlier tests. The web suite is 257, unchanged: this task moved no shell code,
-  only the two server profile readers and the drafter.
-  The one server test that is not new this task is the AT-38 fix itself:
-  `test_llm_config.py`'s PUT endpoint writes `os.environ` (the "no restart"
-  property, correct in production), and monkeypatch restores only the
-  variables a test declared - so `DAH_LLM_API_KEY` outlived the suite and
-  `test_refine.py` read a `deterministic fallback` label after a real 401.
-  Restored in an autouse teardown and pinned by
-  `test_the_suite_leaves_no_configured_llm_behind`.
-  Desktop shell 30 Rust tests (unchanged; no shell code moved);
+- **Test status:** server 788/788 passed (re-run as the walk-test's exit gate;
+  unchanged from v0.3.5 - this task moved no server code). The web suite is
+  272/272: `measure.test.tsx`'s AT-27 timing test timed out at its 5s budget
+  while the core, the dev server and a browser were all running on the same
+  machine, and re-ran green 10/10 once they were stopped - the suite's own
+  comment warns that jsdom environments starve for CPU under load, which is
+  what happened. Desktop shell 30 Rust tests (unchanged; no shell code moved);
   P2, P3 and P4 gates
   PASS; **v0.2.0, v0.3.0, v0.3.1, v0.3.2, v0.3.3, v0.3.4 and v0.3.5 released**
   (tags `v0.2.0` on `ec819fc`, `v0.3.0` on `ab56541`, `v0.3.1` on `19cefc1`,
@@ -102,9 +94,10 @@ conformance evaluation asked for is delivered; no phase is open.
   shipped in. Its bump commit restored the convention that all three version
   files move together (the 0.3.4 bump had moved only `server/pyproject.toml`,
   and a 0.3.4 core shipped in an app that called itself 0.3.3).
-- **e2e:** all 28 real-server steps PASS; the golden suite and the refinement
-  runner green, and the measurement layer 9/9 - the reports the matrix cites as
-  its measured evidence, regenerated on the current tree.
+- **e2e:** all 28 real-server steps PASS (re-run at this tree); the
+  requirement-traceability matrix 48/48 PASS; the web suite 272/272, tsc
+  clean and the build ok - the reports the matrix cites as its measured
+  evidence, regenerated on the current tree.
 
 - **Next task:** **P9 is now COMPLETE** - all four phases green: F1 the
   foundation, F2 the surfaces, F3 the motion, F4 the chart surface and the

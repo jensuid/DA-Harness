@@ -31,9 +31,12 @@ graphify-out/
 *.db
 
 # Walk-test runtime state (case data and server logs are reproduced, not
-# source; the walktest-w2/ reports, dataset and evidence are committed)
+# source; the walktest-w2/ and walktest-w3/ reports, datasets and evidence are
+# committed)
 walktest-w2/data/
 walktest-w2/logs/
+walktest-w3/data/
+walktest-w3/logs/
 
 # Uploaded datasets (dev)
 server/data/

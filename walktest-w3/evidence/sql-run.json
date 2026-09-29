@@ -1,0 +1,44 @@
+{
+ "id": "8e5d8c1a-e859-474f-99c7-cf0a8b44adb5",
+ "case_id": "851f3fe3-29f2-454a-a0dc-9427f1a931f3",
+ "dataset_id": "d8beebc1-7b9a-4041-b820-cfaf84b7d55a",
+ "kind": "sql",
+ "sql": "SELECT tier, COUNT(*) AS tickets, ROUND(AVG(resolution_hours),2) AS avg_resolution, ROUND(AVG(satisfaction),2) AS avg_satisfaction FROM read_csv_auto(?) GROUP BY tier ORDER BY avg_resolution DESC",
+ "code": null,
+ "dataset_ids": null,
+ "columns": [
+  "tier",
+  "tickets",
+  "avg_resolution",
+  "avg_satisfaction"
+ ],
+ "rows": [
+  [
+   "Enterprise",
+   21,
+   55.82,
+   3.95
+  ],
+  [
+   "enterprise",
+   7,
+   7.71,
+   4.71
+  ],
+  [
+   "Growth",
+   29,
+   6.1,
+   4.72
+  ],
+  [
+   "Starter",
+   32,
+   5.93,
+   4.5
+  ]
+ ],
+ "row_count": 4,
+ "truncated": false,
+ "executed_at": "2026-09-29T12:17:02.924480Z"
+}

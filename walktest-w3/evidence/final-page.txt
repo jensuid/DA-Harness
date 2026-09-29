@@ -1,0 +1,307 @@
+← Back to cases
+Did slower response times drive the dip in Enterprise satisfaction in Q2 2026, and which product is worst?
+Where this case stands
+
+Stage: validated — the trust loop has closed
+
+Every stage has an artifact behind it.
+
+✓ question
+⚠ data
+✓ profile
+✓ plan
+✓ analyze
+✓ evidence
+✓ validate
+Case overview
+Objective: Did slower response times drive the dip in Enterprise satisfaction in Q2 2026, and which product is worst?
+Question: Did slower response times drive the dip in Enterprise satisfaction in Q2 2026, and which product is worst?
+Status: 7 / 7 stages complete — the trust loop has closed
+Key findings: 1
+Open issues: 6
+Data sources: 1
+Validation: 1 finding validated
+Refine the question
+
+A vague question is sharpened with what the profile measured - real columns, measured ranges - and nothing is changed until you decide.
+
+Propose a refinement
+Case record
+
+The walk, the timeline and this case's template. Each opens to its own detail.
+
+Data
+Attach a CSV, Parquet or Excel file
+helpdesk_tickets_2026.csv (csv) — 89 rows, 10 columns, 1 duplicate
+Re-profile
+1 of 89 non-null values in created_date do not read as the type the other 88 values hold (98.9% consistent).
+Potential impact: created_date does not behave as one type in SQL: aggregates and comparisons over it may silently exclude or misread those rows.
+83 of 89 values are missing.
+Potential impact: reopened contains 93.3% missing values; rows may be silently excluded from comparisons grouped by it.
+1 of 89 rows are exact duplicates of an earlier row.
+Potential impact: Counts and rates over the full dataset may be inflated by up to 1.1%; count distinct rows when a total matters.
+The largest value in resolution_hours (962.5) is 41.9x the next-largest value.
+Potential impact: Averages over resolution_hours are pulled by this extreme value; a median may describe the typical value better.
+tier has 1 category with inconsistent spelling; for example 'Enterprise' and 'enterprise' are the same value.
+Potential impact: Grouping by tier splits one category across several groups, understating each; normalise the values before comparing.
+2 of 89 values are missing.
+Potential impact: product contains 2.2% missing values; rows may be silently excluded from comparisons grouped by it.
+ticket_id: 0 nulls (0%)
+created_date: 0 nulls (0%)
+product: 2 nulls (2.25%)
+tier: 0 nulls (0%)
+agent: 0 nulls (0%)
+first_response_hours: 0 nulls (0%)
+resolution_hours: 0 nulls (0%)
+satisfaction: 0 nulls (0%)
+channel: 0 nulls (0%)
+reopened: 83 nulls (93.26%)
+Ask for the computation
+Engine
+ SQL
+ Python
+Generate code
+Run code on helpdesk_tickets_2026.csv
+Engine
+ SQL
+ Python
+Run
+Plan
+
+The LLM was unavailable, so a deterministic plan answered in its place. for helpdesk_tickets_2026.csv
+
+Objective
+
+Objective: Did slower response times drive the dip in Enterprise satisfaction in Q2 2026, and which product is worst?
+
+Sub-questions
+How does missingness in reopened affect the answer, and is it random?
+How does missingness in product affect the answer, and is it random?
+What is the distribution of first_response_hours, and does it contain outliers?
+What is the distribution of resolution_hours, and does it contain outliers?
+How does the answer differ across ticket_id?
+How are first_response_hours and resolution_hours related?
+Hypotheses
+
+Missing values in reopened are concentrated in particular rows rather than spread evenly (93.26% null)
+
+why: reopened is 93.26% null; non-random missingness biases any aggregate that ignores it
+
+how to check: Compare the distribution of other columns between rows where reopened is null and rows where it is not
+
+Missing values in product are concentrated in particular rows rather than spread evenly (2.25% null)
+
+why: product is 2.25% null; non-random missingness biases any aggregate that ignores it
+
+how to check: Compare the distribution of other columns between rows where product is null and rows where it is not
+
+A small number of extreme values in first_response_hours dominate its aggregate
+
+why: first_response_hours spans 0.2 to 5.71 with an average of 2.059438202247191
+
+how to check: Rank rows by first_response_hours and report the share of the total held by the top few rows
+
+A small number of extreme values in resolution_hours dominate its aggregate
+
+why: resolution_hours spans 0.7 to 962.5 with an average of 17.901011235955053
+
+how to check: Rank rows by resolution_hours and report the share of the total held by the top few rows
+
+The effect behind the question is not uniform across ticket_id
+
+why: ticket_id has 88 distinct value(s) and rows totalling 89
+
+how to check: Group the rows by ticket_id and compare the measure of interest per group
+
+Steps
+distribution — Profile first_response_hours: histogram, percentiles, top contributors
+distribution — Profile resolution_hours: histogram, percentiles, top contributors
+grouped comparison — Aggregate the measure per ticket_id and rank the groups
+deduplicate — Recompute the headline aggregate on distinct rows only
+answer the primary question — Compute the headline measure directly, then decompose it by the dimension that varies most
+Data requirements
+columns: ticket_id, created_date, product, tier, agent, first_response_hours, resolution_hours, satisfaction, channel, reopened
+rows: 89 row(s), 1 duplicate row(s)
+completeness: reopened: 93.26% null
+completeness: product: 2.25% null
+Explore the data (EDA)
+
+Segment a measure by a category, correlate two columns, or read a column's distribution. Each runs read-only like any query, and none is kept - an EDA result is exploration, not a finding.
+
+What to look at
+Distribution — a column's spread, or its most common values
+Segment — group a measure's stats by a category
+Correlate — Pearson r between two numeric columns
+Column
+ticket_id
+created_date
+product
+tier
+agent
+first_response_hours (numeric)
+resolution_hours (numeric)
+satisfaction (numeric)
+channel
+reopened
+Run the op
+Runs
+
+sql over helpdesk_tickets_2026.csv — 4 rows
+
+Interpret
+Draft a finding
+Show the rows
+
+python over helpdesk_tickets_2026.csv — 3 rows
+
+Interpret
+Draft a finding
+Show the rows
+
+sql over helpdesk_tickets_2026.csv — 4 rows
+
+Interpret
+Draft a finding
+Hide the rows
+SELECT tier, COUNT(*) AS tickets, ROUND(AVG(resolution_hours),2) AS avg_resolution, ROUND(AVG(satisfaction),2) AS avg_satisfaction FROM read_csv_auto(?) GROUP BY tier ORDER BY avg_resolution DESC
+tier	tickets	avg_resolution	avg_satisfaction
+Enterprise	21	55.82	3.95
+enterprise	7	7.71	4.71
+Growth	29	6.1	4.72
+Starter	32	5.93	4.5
+Render a chart
+
+bar chart of avg_resolution by tier — drawn on screen from the run's stored result
+
+Enterprise
+enterprise
+Growth
+Starter
+0
+15
+30
+45
+60
+Findings
+
+tickets spans 7 to 32 across 4 row(s)
+
+status: partially_supported
+
+Validate
+Audit submitted work (EVALUATE)
+
+Paste work that came from elsewhere and the claim it was offered to support. DAH runs it against the data and answers nine questions, each with a verdict and a sentence.
+
+SQL
+Python
+The artifact's code
+The claim it supports
+Audit this work
+Recorded audits
+
+tickets spans 7 to 32 across 4 row(s)
+
+sql — every axis passed
+
+Evidence graph
+
+1 dataset, 3 runs, 1 finding, 1 chart, 1 plan
+
+Claims and what they rest on
+
+tickets spans 7 to 32 across 4 row(s)
+
+status: partially_supported
+
+finding: tickets spans 7 to 32 across 4 row(s)
+run: sql run
+dataset: helpdesk_tickets_2026.csv
+How each artifact was derived
+run “sql run” queries dataset “helpdesk_tickets_2026.csv”
+run “python run” queries dataset “helpdesk_tickets_2026.csv”
+run “sql run” queries dataset “helpdesk_tickets_2026.csv”
+chart “bar chart” rendered from run “sql run”
+plan “Did slower response times drive the dip in Enterprise satisfaction in Q2 2026, and which product is worst?” planned from dataset “helpdesk_tickets_2026.csv”
+finding “tickets spans 7 to 32 across 4 row(s)” anchored on run “sql run”
+Decision
+
+What this case established, and what it did not. DAH informs decisions; it does not make them.
+
+Question
+
+Did slower response times drive the dip in Enterprise satisfaction in Q2 2026, and which product is worst?
+
+Key findings
+
+⚠ tickets spans 7 to 32 across 4 row(s)
+
+validation: partially_supported
+
+caveat: a range is an observation, not a comparison; no grouping is present to explain it
+
+Uncertainty
+⚠ data — reopened contains 93.3% missing values; rows may be silently excluded from comparisons grouped by it. (from “tickets spans 7 to 32 across 4 row(s)”)
+⚠ method — the query averages resolution_hours, which the profile flagged as holding extreme values; an average there describes the outlier more than the typical value (from “tickets spans 7 to 32 across 4 row(s)”)
+⚠ alternative_explanations — the question names product but the query never reads it, so an explanation resting on it is untested (from “tickets spans 7 to 32 across 4 row(s)”)
+Potential implications
+
+Yours to write - the analysis informs them, it does not draft them.
+
+Remove
+Add implication
+Save implications
+1 saved
+Export
+
+A self-contained package: the findings, their validation, the evidence and the decision - restorable anywhere with fresh IDs.
+
+Export analysis case
+Context
+
+What this case is for. The planner reads it, so a plan is built from stated intent rather than from a question string alone.
+
+Purpose
+Sub-questions
+Add sub-question
+Hypotheses to test
+Add hypothesis
+Known constraints
+Add constraint
+Save context
+Agent
+
+A plan that executes itself one approved write at a time. It proposes the next step from what the case already has; nothing is written until you approve it, and every write goes through the same endpoint a hand-written call would.
+
+Propose the next step
+
+Nothing is pending. Propose a step, or work the panels below by hand.
+
+Reviewer
+
+A second agent whose only method is EVALUATE: it takes each finding this case recorded and proposes auditing the run that backs it - the claim is the finding's own statement, the code the run's own query. The verdict is recorded beside the finding and never changes the finding's own validation status, because a rerun and an audit are two different claims.
+
+Propose the next audit
+
+Nothing is pending review. Either the case has no findings yet, or every finding whose run still carries its code has been audited.
+
+What the reviewer has done
+
+✓ evaluate — audited finding f566577d-3a44-4e70-84b9-4c0c54f2b8dd: 9 axes, 9 pass, 0 concern, 0 fail
+
+Ask this case
+
+Answers come from this case's artifacts. The memory is cross-case: it may recall findings from your other cases, and it says when it cannot compare across them.
+
+Ask
+
+Is the Q2 Enterprise slowdown real, or is it one outlier ticket?
+
+Unresolved: the dataset has the fields needed to test a Q2 Enterprise slowdown, and the Python median-resolution run is the appropriate outlier check, but no listed finding isolates Q2 Enterprise or identifies a single outlier ticket; the only finding is partially supported and concerns ticket counts spanning 7 to 32 across 4 rows.
+
+by llm
+
+dataset:d8beebc1-7b9a-4041-b820-cfaf84b7d55a
+run:28d51211-e449-4418-b1e2-af70468b76a5
+finding:f566577d-3a44-4e70-84b9-4c0c54f2b8dd
+0

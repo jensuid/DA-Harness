@@ -414,6 +414,130 @@ SUMMARY: the walk-test's BLOCKER is closed on both halves. Phase A made the
          environment, the boot line names the engine, and the write handler
          does not raise while holding the payload.
 
+### WALK-UX-003 contract (the third walk-test)
+
+```
+TASK ID: WALK-UX-003
+MILESTONE: the third walk-test (a new domain, a real LLM, a live browser)
+CAPABILITY: Verification / UX (the shipped app, used end to end)
+GOAL: prove the loop a first-time analyst can walk without a terminal, on a
+      domain the project had never analysed, and find what still harms them.
+      WALK-UX-002 found density; with that closed, the hypothesis was that
+      the remaining harm is the wait and the surfaces that refuse without
+      teaching. This run tested that, and measured both.
+CONTEXT: the v0.3.5 tree - all thirteen W2X fixes released, WALK-UX-002
+         closed. The walk-test's own protocol (walktest-w2/PLAN.md) is the
+         one followed: naive analyst plus facilitator, no coaching mid-run,
+         every density claim backed by a number, no code changed during the
+         run. The Tauri WKWebView has no CDP, so the authoritative surface
+         is the web bundle in a real Chromium, which is the same React code
+         the shell renders.
+INPUTS: a fresh core on an isolated data dir (DAH_DATA_DIR / DAH_DB_PATH under
+        walktest-w3/data), port 8123, DAH_LLM_API_KEY configured
+        (Atria-Dawn-Preview) so the LLM paths are really exercised - a
+        walk-test that never calls the LLM cannot find what the wait costs.
+        The Vite dev server on 5273 serving the master bundle.
+RELEVANT FILES: walktest-w3/make_dataset.py (new - the seeded dataset),
+                walktest-w3/CAPTURE-SHEET.md (new - the live sheet),
+                walktest-w3/FINDINGS.md (new - the four findings and the
+                nine confirmations), walktest-w3/REPORT.md (new - summary,
+                journey table, priority), walktest-w3/evidence/ (the two
+                runs, the export package, the final page's DOM text and
+                screenshot), walktest-w3/logs/ (the core request log, the
+                suite and gate logs), .gitignore (+walktest-w3/data and
+                /logs, mirroring the walktest-w2 rule),
+                ai/HANDOFF.md, ai/TASKS.md, ai/CURRENT_STATE.md.
+REQUIRED CHANGE: none. This task produces findings, not changes; each W3X
+                fix is a separate task with its own contract and gate.
+                The only files that move are the walk-test's own material
+                and the ai/ state that records it.
+ACCEPTANCE CRITERIA:
+- [x] the walk runs against a real core with a real LLM configured, not a
+      mocked or deterministic-only environment
+- [x] the dataset is new (not a reuse of walktest/ or walktest-w2/) and
+      carries planted anomalies the profiler must find
+- [x] every surface the shell owns is reached through the UI, and the loop
+      closes: attach, profile, plan, SQL run, Python run, chart, interpret,
+      draft, accept, validate, reviewer audit, chat, implications, export
+- [x] state survives a leave and a reopen
+- [x] no code was changed during the run
+- [x] the capture sheet has no `to be recorded` left
+- [x] every finding carries a measured observation, not an impression
+- [x] each previous walk-test fix the run exercised is recorded as holding
+      or as regressed, with the measurement
+- [x] the verification pipeline runs green on the same tree: server 788/788,
+      web 272/272, tsc clean, build ok, e2e 28/28, trace 48/48
+TESTS: none new - this is a walk-test. The suites were re-run on the same
+       tree as the run's own exit gate.
+VERIFICATION: server 788/788 passed; web vitest 271/272 with one timing test
+              (AT-27, measure.test.tsx) timing out at 5s under load and
+              re-running green 10/10; `npx tsc -b` clean; `vite build` ok;
+              `verification/e2e/verify_e2e.py` 28/28 PASS;
+              `verification/trace/verify_trace.py` 48/48 PASS.
+STATE UPDATE: TASKS/CURRENT_STATE gain the task; the three MAJOR findings
+              become carried follow-ups. No schema change.
+```
+
+TASK: WALK-UX-003 - the third walk-test
+ID: WALK-UX-003
+PRIORITY: high
+STATUS: DONE
+SUMMARY: the loop a first-time analyst walks without a terminal, proven on
+         a domain the project had never analysed. One seeded helpdesk dataset
+         with six planted anomalies, one case, every surface the shell owns -
+         and the anomalies the profiler was supposed to find were all six
+         found, each with its own "potential impact" sentence. `loop_closed`
+         read true and the export round-tripped. Four findings: the fallback
+         sentence is glued to the label it replaces (W3X-002), the Python
+         surface refuses three times and teaches nothing (W3X-004), the plan
+         call burns the whole 120s budget for an answer the deterministic
+         engine writes in under a second (W3X-003), and a filename accepted
+         twice (W3X-001, an artifact of how the harness drives the file
+         input). Nine W2X fixes were measured holding against the running
+         core - recorded because a walk-test that only reports new findings
+         cannot tell you the old ones regressed.
+
+### Carried follow-ups from the third walk-test (WALK-UX-003 - open)
+
+Three findings, each a separate task with its own contract and one commit per
+fix. Priority is the walk-test's (impact / effort). The material is in
+`walktest-w3/FINDINGS.md`.
+
+**MAJOR**
+
+- **W3X-002 — the fallback sentence is glued to the label it replaces.**
+  `sourceLabel` returns the substitution sentence and the panel appends ` for
+  {filename}` to it, so it renders "...answered in its place. for
+  helpdesk_tickets_2026.csv" - a lowercase fragment that reads as a typo
+  rather than the announcement W2X-001's FIX-TIMEOUT-006 line intended. The
+  sentence is the analyst's only signal that the engine they configured did
+  not answer. Cheapest fix here, lands on every LLM-backed panel.
+- **W3X-004 — the Python surface refuses three times and teaches nothing.**
+  A Python-fluent analyst's first three interactions with the engine are
+  refusals (`import pandas`, `import csv`, the `path` variable the SQL
+  placeholder implies exists), and the page puts none of the answers on it:
+  the handle is `dataset.rows` and only a stdlib subset imports. The sandbox
+  is right to refuse - refusing is the security property - but the panel's
+  placeholder is `# python`. Highest impact per effort of the three: show the
+  contract on the panel, one note and one example.
+- **W3X-003 — the analyst waits the full 120s for a deterministic plan.**
+  The plan call consumed the whole `LLM_TIMEOUT_SECONDS` budget
+  (`POST .../plan -> 201 in 120552ms`, `The read operation timed out`) while
+  the chat call on the same provider answered in 66.8s, so the timeout change
+  is second and the root cause is first: why does the plan call differ? The
+  wait is honest now (W2X-001's clock and Cancel both work) but it is still
+  two minutes of a spinning button for an answer that costs under a second.
+
+**OBS (recorded, not to fix)**
+
+- **W3X-001 — the Data panel accepted the same filename twice.** The
+  walk-test synthesised a `File` through `DataTransfer` because the harness
+  cannot hand the input a real one; a human re-selecting the same file would
+  reach the same state. `POST /datasets` has no filename check - only
+  `POST /cases` checks for a duplicate (W2X-010). The cheapest guard is a
+  same-filename refusal naming the existing dataset, but the frequency is
+  unmeasured, so it is recorded rather than queued.
+
 ### Carried follow-ups from the second walk-test (WALK-UX-002 - open)
 
 Thirteen findings; four closed (W2X-002, W2X-005, W2X-006, W2X-007). The

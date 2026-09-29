@@ -1,0 +1,38 @@
+{
+ "id": "28d51211-e449-4418-b1e2-af70468b76a5",
+ "case_id": "851f3fe3-29f2-454a-a0dc-9427f1a931f3",
+ "dataset_id": "d8beebc1-7b9a-4041-b820-cfaf84b7d55a",
+ "kind": "python",
+ "sql": null,
+ "code": "\nimport statistics\nrows = dataset.rows\nby = {}\nfor r in rows:\n    tier = (r.get('tier') or '').title() or 'Unknown'\n    by.setdefault(tier, []).append(r)\nout = []\nfor tier, rs in sorted(by.items()):\n    res = [float(r['resolution_hours']) for r in rs]\n    sat = [float(r['satisfaction']) for r in rs]\n    out.append({'tier': tier, 'tickets': len(rs),\n                'median_resolution': statistics.median(res),\n                'mean_satisfaction': round(statistics.mean(sat), 2)})\nresult = sorted(out, key=lambda d: -d['median_resolution'])\n",
+ "dataset_ids": null,
+ "columns": [
+  "tier",
+  "tickets",
+  "median_resolution",
+  "mean_satisfaction"
+ ],
+ "rows": [
+  [
+   "Enterprise",
+   28,
+   8.69,
+   4.14
+  ],
+  [
+   "Growth",
+   29,
+   6.21,
+   4.72
+  ],
+  [
+   "Starter",
+   32,
+   5.885,
+   4.5
+  ]
+ ],
+ "row_count": 3,
+ "truncated": false,
+ "executed_at": "2026-09-29T12:29:03.742411Z"
+}
