@@ -1,39 +1,40 @@
 ## Next action
 
-**Walk-test 3 is complete: the loop runs end to end on a domain the project
-had never analysed, with a real LLM and a live browser.** A fresh core on an
-isolated data dir, a seeded helpdesk dataset with six planted anomalies, and
-one case driven through every surface the shell owns - attach, profile, plan,
-SQL, Python, chart, interpret, draft, validate, the reviewer's audit, chat, the
-decision's implications and the export - without a terminal anywhere in the
-path. `loop_closed` read true and the export round-tripped.
+**W3X-004 is fixed: the Python run surface teaches its own contract.** The
+engine a Python-fluent analyst reaches for first refused them three times in a
+row (`import pandas`, `import csv`, the `path` variable the SQL placeholder
+implies exists) and put none of the answers on the page - the placeholder was
+`# python`. The sandbox was correct to refuse, so nothing about it moved: no
+allowlist change, no endpoint, no capability, no refusal message. What changed
+is the sign on the wall. While Python is chosen, `RunCodePanel` shows the
+handle (`dataset.rows` / `.columns` / `.query(sql)`, and that there is no file
+path), the importable subset as one sentence that names pandas, csv and numpy
+as refused with `statistics` as the alternative, and the list-of-dicts-in-
+`result` shape a run takes. The placeholder became the canonical use the
+core's own tests write, so running it as it stands produces a run. The
+contract is the Python engine's own - absent on SQL, whose placeholder carries
+`read_csv_auto(?)`. Six tests cover it, one of which reads `_SAFE_MODULES`
+out of `server/app/python_exec.py` and compares sets, so the page cannot claim
+a door the wall refuses.
 
-Four findings, none a blocker. Two are microcopy on surfaces that work: the
-fallback sentence is glued to the label it replaces ("...answered in its place.
-for helpdesk_tickets_2026.csv"), and the Python surface refuses three times
-(`pandas`, `csv`, `path`) without putting the answer - `dataset.rows` and the
-importable subset - on the page. The third is the wait that remains after
-W2X-001 fixed the silence: the plan call consumed the whole 120s budget for an
-answer the deterministic engine writes in under a second, while the chat call
-on the same provider answered in 67s - so the timeout change is second, and
-finding out why the plan call differs is first. The fourth is a harness
-artifact (a filename accepted twice) and is recorded, not fixed.
+Gates: web 278/278 (was 272; +6 in RunCodePanel.test.tsx), tsc clean, build ok;
+server 788/788 unchanged (this task moved no server code); trace 48/48, e2e
+28/28. `graphify update .` ran clean.
 
-Nine confirmations were measured, not assumed: every W2X fix the last walk
-forced still holds against the running core. Gates at this tree: server 788/788,
-web 272/272 (one timing test timed out under load and re-ran green), tsc clean,
-build ok, e2e 28/28, trace 48/48.
-
-**Next: nothing is queued.** The three MAJOR findings each carry its own fix
-shape, and the W3X-003 root cause - why the plan call takes 120s when the chat
-call takes 67s - is the one that should be looked at before any timeout is
-moved.
+**Next: W3X-002, the fallback sentence glued to its label.** `sourceLabel`
+returns the substitution sentence and the panel appends ` for {filename}`, so
+it renders "...answered in its place. for helpdesk_tickets_2026.csv" - a
+lowercase fragment that reads as a typo. Cheapest fix of the remaining three,
+and it lands on every LLM-backed panel. After it, W3X-003: why the plan call
+burns the whole 120s budget when the chat call on the same provider answers
+in 67s - the root cause before the timeout number moves.
 
 ## Recent completions
 
 The last tasks to land, newest first. The contract and done-record for each
 is in `ai/TASKS.md` (rolling window) or `ai/TASKS-ARCHIVE.md`.
 
+- **W3X-004, the Python surface refuses and teaches nothing** - the sandbox's own contract now sits on the panel that runs against it: the handle (`dataset.rows`), the importable subset with pandas/csv/numpy named as refused and `statistics` as the alternative, no file path, and the `result` shape a run takes. The placeholder is the canonical use, not `# python`. Six tests, one comparing the panel's module list to `_SAFE_MODULES` in the Python source. Shell-only; the sandbox, the endpoints and the refusal messages are untouched. Gates: web 278/278, tsc clean, build ok, server 788/788, trace 48/48, e2e 28/28.
 - **WALK-UX-003, the third walk-test** - a complete end-to-end run on a new domain (SaaS helpdesk, seeded, six planted anomalies) with a real LLM and a live Chromium on an isolated data dir. The loop closed through the UI alone: attach, profile, plan, SQL, Python, chart, interpret, draft, validate, the reviewer's audit, chat, implications, export, and a reopen that kept all of it. Four findings (`walktest-w3/FINDINGS.md`), none a blocker: the fallback sentence is glued to its label (W3X-002), the Python surface refuses three times and teaches nothing (W3X-004), the plan call burns the whole 120s budget (W3X-003), and a filename accepted twice (W3X-001, a harness artifact). Nine W2X fixes confirmed still holding. Gates: server 788/788, web 272/272, tsc clean, build ok, e2e 28/28, trace 48/48.
 - **v0.3.5, the release the fixes shipped in** - the v0.3.4 tag was hollow (it pointed at a version bump; every W2X fix landed after it) and the desktop version files had drifted from the core's, so a 0.3.4 core shipped in an app calling itself 0.3.3. `server/pyproject.toml`, `desktop/src-tauri/tauri.conf.json` and `desktop/package.json` move to 0.3.5 together, the sidecar is repackaged (`/updates/latest` answers 0.3.5) and the DMG rebuilt from that bundle. Gates: server 788/788, web 272/272, tsc clean; the packaged app was smoke-tested as a real launch, not just built.
 - **W2X-010, the duplicate that said nothing** - `POST /cases` carries a `duplicate_of` when the question+dataset pair already exists (migration 14), the create form answers with a warn-toned sentence and a link, and the list row names the case it repeats.

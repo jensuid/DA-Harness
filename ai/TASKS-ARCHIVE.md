@@ -7076,3 +7076,75 @@ SUMMARY: a packaged core answered `current: unknown` at `/updates/latest`, so
          four releases. Verified against the binary itself: the sidecar built
          by build_sidecar.sh answers `current: 0.3.2`.
 
+
+### FIX-PROFILE-008 contract
+
+```
+TASK ID: FIX-PROFILE-008
+MILESTONE: post-phase (the walk-test's findings)
+CAPABILITY: Reliability (the automatic re-profiling, W-008)
+GOAL: opening a case re-profiles its dataset, twice, every time. The panel
+      POSTs the profile endpoint on every mount, so a profile that already
+      exists is recomputed and rewritten on each visit, and the stage that
+      reads it is ambiguous - the rail can show "profile" current while the
+      panel is the thing that completes it. Profiling is the analyst's step,
+      and the shell takes it for them without being asked.
+CONTEXT: WALK-E2E-001 Fase B watched the core log receive two POST /profile
+         calls each time the case view opened; `profileDataset` in api.ts:572
+         is a POST and the useEffect at CaseWorkspace.tsx:191 calls it on
+         mount. The profile is what the planner and the missing-data check
+         read, so a silent rewrite of it is not free.
+INPUTS: the profile endpoint's GET and POST shapes, the panel's mount effect,
+        and the profile's own read contract.
+RELEVANT FILES: web/src/CaseWorkspace.tsx (the mount effect), web/src/api.ts
+                (a read helper if the endpoint offers none), the tests, the
+                core if a GET is needed, ai/HANDOFF.md, ai/TASKS.md,
+                ai/CURRENT_STATE.md
+REQUIRED CHANGE:
+  - The panel reads the profile it has before asking for one: a case with a
+    profile renders it, and a POST happens when the analyst asks for a
+    re-profile or when there is nothing to read - not on every mount.
+  - The double invocation is one invocation; if the effect must remain, its
+    dependency array and the strict-mode double render no longer both reach
+    the endpoint.
+  - The rail and the panel agree about the profile stage, because the panel
+    no longer completes it by opening.
+NON-GOALS: caching a profile client-side (a read per mount is correct, a
+           write is not); changing the profiler; dropping the re-profile
+           control (a stale profile must be refreshable, on request).
+CONSTRAINTS: green only. No new dependency. A GET is preferred to a POST
+             when the endpoint can answer one; if it cannot, the change adds
+             one and the tests cover it.
+ACCEPTANCE CRITERIA:
+- [x] opening a case with a profile does not POST the profile endpoint
+- [x] opening a case without a profile does not fabricate one
+- [x] an explicit re-profile works and the panel reflects it
+- [x] the profile the panels render is the stored one
+- [x] the rail's profile stage and the panel's state agree
+TESTS: CaseWorkspace.test.tsx (+~4) - no POST on mount with a profile, one
+       on request, the panel renders the stored profile.
+VERIFICATION: `cd server && ... pytest -q` green; `cd web && npm test && npm
+              run build` green.
+STATE UPDATE: TASKS/CURRENT_STATE/HANDOFF gain the fix; W-008 closes.
+```
+
+TASK: FIX-PROFILE-008 - opening a case reads its profile, and does not write one
+ID: FIX-PROFILE-008
+PRIORITY: high
+STATUS: DONE
+SUMMARY: opening a case re-profiled its datasets, twice. The mount effect
+         called `profileDataset` - a POST - per attached dataset on every
+         visit, and strict mode's double render made it two writes, so a
+         profile that already existed was recomputed and rewritten, and the
+         step the rail names as the analyst's was silently completed by the
+         shell. The GET endpoint already existed (`main.py:1654`, a 404 when
+         there is nothing stored), so the mount now reads through a new
+         `getProfile` helper and the POST is the analyst's explicit ask.
+         A dataset with a profile shows it and offers Re-profile; one
+         without shows an offer to profile it rather than a "profiling…"
+         placeholder that was the shell completing the step - so the panel
+         and the rail now agree about where the profile stage stands. Four
+         tests cover it: the mount GETs and never POSTs and a request POSTs,
+         an unprofiled dataset is offered rather than fabricated, a failed
+         profiling surfaces the endpoint's own reason, and the panel renders
+         the stored profile.

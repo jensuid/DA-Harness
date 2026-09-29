@@ -3,7 +3,23 @@ the motion, the on-screen chart). P8, P7, P6, P5, P4, P3, P2, P1 and P0 are all
 COMPLETE (see the phase table below). Every phase the roadmap and the
 conformance evaluation asked for is delivered; no phase is open.
 
-- **Active task:** WALK-UX-003 — the third walk-test, complete. The loop runs
+- **Active task:** W3X-004 — the Python run surface teaches its own contract,
+  complete. The engine a Python-fluent analyst reaches for first refused three
+  times in a row (`import pandas`, `import csv`, the `path` variable the SQL
+  placeholder implies exists) and the page taught none of it; the placeholder
+  was `# python`. The sandbox is correct to refuse, so nothing about it moved
+  — no allowlist change, no endpoint, no capability, no refusal message. What
+  changed is the surface: while Python is chosen, `RunCodePanel` shows the
+  handle (`dataset.rows` / `.columns` / `.query(sql)`, and that there is no
+  file path), the importable subset as one sentence naming pandas, csv and
+  numpy as refused with `statistics` as the alternative, and the
+  list-of-dicts-in-`result` shape a run takes. The placeholder is now the
+  canonical use the core's own tests write, so an analyst who runs it as it
+  stands gets a run. The contract is the Python engine's own — absent on SQL,
+  whose placeholder carries `read_csv_auto(?)`. Six tests hold it, one reading
+  `_SAFE_MODULES` out of the Python source and comparing sets.
+  **STATUS: COMMITTED and pushed, all gates green.**
+  Sebelumnya: WALK-UX-003 — the third walk-test, complete. The loop runs
   end to end on a domain the project had never analysed (a seeded SaaS
   helpdesk dataset with six planted anomalies) with a real LLM configured and
   a live Chromium on an isolated data dir. Every surface the shell owns was
@@ -13,14 +29,15 @@ conformance evaluation asked for is delivered; no phase is open.
   the case survived a leave and a reopen (`loop_closed: true`, export
   round-tripped). Four findings, none a blocker: the fallback sentence is
   glued to its label (W3X-002), the Python surface refuses three times and
-  teaches nothing (W3X-004), the plan call burns the whole 120s budget
-  (W3X-003), and a filename accepted twice (W3X-001, a harness artifact).
-  Nine W2X fixes were measured holding against the running core.
-  **STATUS: COMMITTED and pushed, all gates green.**
+  teaches nothing (W3X-004, now closed), the plan call burns the whole 120s
+  budget (W3X-003), and a filename accepted twice (W3X-001, a harness
+  artifact). Nine W2X fixes were measured holding against the running core.
   Sebelumnya: v0.3.5 — the release the thirteen W2X fixes shipped in. W2X-010
   through W2X-003, WALK-UX-002 — the first walk's nineteen findings are all
   resolved; the second walk's thirteen are all resolved; the third walk's
-  four are recorded and three are queued as carried follow-ups.
+  four are recorded and two are queued as carried follow-ups (W3X-002, the
+  fallback sentence; W3X-003, the 120s plan wait), W3X-004 now closed.
+  Sebelumnya: v0.3.5 — the release the thirteen W2X fixes shipped in.
   Two things outside this repo's control, unchanged: GitHub Actions still
   refuses every job (billing suspended since before c73118c, so CI never ran on
   any W2X commit - v0.3.5 was built and verified locally from the same steps
@@ -78,13 +95,14 @@ conformance evaluation asked for is delivered; no phase is open.
   `desktop/bundle_dmg.sh`, so the shipped triple is what the developer's
   machine produces. Restoring an enforced Intel lane needs a self-hosted
   runner.
-- **Test status:** server 788/788 passed (re-run as the walk-test's exit gate;
-  unchanged from v0.3.5 - this task moved no server code). The web suite is
-  272/272: `measure.test.tsx`'s AT-27 timing test timed out at its 5s budget
-  while the core, the dev server and a browser were all running on the same
-  machine, and re-ran green 10/10 once they were stopped - the suite's own
-  comment warns that jsdom environments starve for CPU under load, which is
-  what happened. Desktop shell 30 Rust tests (unchanged; no shell code moved);
+- **Test status:** server 788/788 passed (re-run as this task's own gate;
+  unchanged - this task moved no server code). The web suite is
+  278/278: 272 held and six tests were added in
+  `web/src/panels/RunCodePanel.test.tsx` for the Python contract surface
+  (the handle, the three refusals' answers, the allowlist-equals-
+  `_SAFE_MODULES` drift test, the placeholder's shape, generic terms for an
+  unprofiled dataset, and SQL/Python parity on engine switching). Desktop
+  shell 30 Rust tests (unchanged; no shell code moved);
   P2, P3 and P4 gates
   PASS; **v0.2.0, v0.3.0, v0.3.1, v0.3.2, v0.3.3, v0.3.4 and v0.3.5 released**
   (tags `v0.2.0` on `ec819fc`, `v0.3.0` on `ab56541`, `v0.3.1` on `19cefc1`,
@@ -95,20 +113,22 @@ conformance evaluation asked for is delivered; no phase is open.
   files move together (the 0.3.4 bump had moved only `server/pyproject.toml`,
   and a 0.3.4 core shipped in an app that called itself 0.3.3).
 - **e2e:** all 28 real-server steps PASS (re-run at this tree); the
-  requirement-traceability matrix 48/48 PASS; the web suite 272/272, tsc
+  requirement-traceability matrix 48/48 PASS; the web suite 278/278, tsc
   clean and the build ok - the reports the matrix cites as its measured
   evidence, regenerated on the current tree.
 
-- **Next task:** **P9 is now COMPLETE** - all four phases green: F1 the
-  foundation, F2 the surfaces, F3 the motion, F4 the chart surface and the
-  re-walk. Every dependency F1 installed is used, every walk-test finding is
-  closed, and 48/48 requirements still trace. What follows is whatever the
-  re-walk found - and it found one thing this phase fixed as it stood (the
-  missing `format` field), so the phase closes with the shell's own surface
-  verified in a browser rather than only in the suite. The carried
-  follow-ups that remain in `ai/TASKS.md` are the DMG bundler, the icon
-  proportion (52%, chosen blind), one fragile web test layout, and two
-  environmental items (signing deferred by DEC-006, CI billing suspended).
+- **Next task:** **W3X-002, the fallback sentence glued to its label.**
+  `sourceLabel` returns the substitution sentence and the panel appends `
+  for {filename}`, so it renders "...answered in its place. for
+  helpdesk_tickets_2026.csv" - a lowercase fragment that reads as a typo
+  rather than the announcement W2X-001's FIX-TIMEOUT-006 line intended. The
+  sentence is the analyst's only signal that the engine they configured did
+  not answer, so the fix is the clause's punctuation, not the sentence's
+  content. Cheapest of the remaining two findings, and it lands on every
+  LLM-backed panel. After it, W3X-003: the plan call burns the whole 120s
+  budget for an answer the deterministic engine writes in under a second,
+  while the chat call on the same provider answers in 67s - the root cause
+  (why the plan call differs) before the timeout number moves.
 
 
 - **Blockers:** none.

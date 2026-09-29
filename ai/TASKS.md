@@ -512,14 +512,14 @@ fix. Priority is the walk-test's (impact / effort). The material is in
   rather than the announcement W2X-001's FIX-TIMEOUT-006 line intended. The
   sentence is the analyst's only signal that the engine they configured did
   not answer. Cheapest fix here, lands on every LLM-backed panel.
-- **W3X-004 — the Python surface refuses three times and teaches nothing.**
-  A Python-fluent analyst's first three interactions with the engine are
-  refusals (`import pandas`, `import csv`, the `path` variable the SQL
-  placeholder implies exists), and the page puts none of the answers on it:
-  the handle is `dataset.rows` and only a stdlib subset imports. The sandbox
-  is right to refuse - refusing is the security property - but the panel's
-  placeholder is `# python`. Highest impact per effort of the three: show the
-  contract on the panel, one note and one example.
+- **W3X-004 — CLOSED.** The Python surface refuses three times and teaches
+  nothing. A Python-fluent analyst's first three interactions with the engine
+  were refusals (`import pandas`, `import csv`, the `path` variable the SQL
+  placeholder implies exists), and the page put none of the answers on it: the
+  handle is `dataset.rows` and only a stdlib subset imports. The sandbox was
+  right to refuse - refusing is the security property - so the fix was not the
+  wall but the sign on it: the panel shows the contract before the first run
+  (contract, done-record and tests below, in the rolling window).
 - **W3X-003 — the analyst waits the full 120s for a deterministic plan.**
   The plan call consumed the whole `LLM_TIMEOUT_SECONDS` budget
   (`POST .../plan -> 201 in 120552ms`, `The read operation timed out`) while
@@ -1702,77 +1702,105 @@ SUMMARY: accepting a refinement was a black box. The API returned a
          both grounds under the heading, an accepted proposal keeps them
          readable, and a proposal without grounds renders no empty list.
 
-### FIX-PROFILE-008 contract
+### W3X-004 contract (the Python surface's own contract)
 
 ```
-TASK ID: FIX-PROFILE-008
-MILESTONE: post-phase (the walk-test's findings)
-CAPABILITY: Reliability (the automatic re-profiling, W-008)
-GOAL: opening a case re-profiles its dataset, twice, every time. The panel
-      POSTs the profile endpoint on every mount, so a profile that already
-      exists is recomputed and rewritten on each visit, and the stage that
-      reads it is ambiguous - the rail can show "profile" current while the
-      panel is the thing that completes it. Profiling is the analyst's step,
-      and the shell takes it for them without being asked.
-CONTEXT: WALK-E2E-001 Fase B watched the core log receive two POST /profile
-         calls each time the case view opened; `profileDataset` in api.ts:572
-         is a POST and the useEffect at CaseWorkspace.tsx:191 calls it on
-         mount. The profile is what the planner and the missing-data check
-         read, so a silent rewrite of it is not free.
-INPUTS: the profile endpoint's GET and POST shapes, the panel's mount effect,
-        and the profile's own read contract.
-RELEVANT FILES: web/src/CaseWorkspace.tsx (the mount effect), web/src/api.ts
-                (a read helper if the endpoint offers none), the tests, the
-                core if a GET is needed, ai/HANDOFF.md, ai/TASKS.md,
-                ai/CURRENT_STATE.md
+TASK ID: W3X-004
+MILESTONE: post-phase (the third walk-test's findings, WALK-UX-003)
+CAPABILITY: Analysis Workspace (the Python run surface, microcopy + UX)
+GOAL: a first-time analyst's first three interactions with the Python engine
+      are not three blind refusals. The three the walk measured were
+      `import pandas`, `import csv` and the `path` variable the SQL
+      placeholder implies exists; the answers - `dataset.rows`, the stdlib
+      subset, the shape a run takes - were nowhere on the page, and the
+      analyst's only teacher was the 400. The sandbox keeps refusing exactly
+      as it did: refusing is the security property, and this task changes
+      none of it. What changes is the page.
+CONTEXT: walktest-w3/FINDINGS.md (W3X-004, MAJOR) - three 400s in
+         walktest-w3/logs/core-stdout.log and the 201 that followed once
+         `dataset.rows` and `statistics` were guessed; the placeholder was
+         `# python`. The handle is `_DatasetHandle` in
+         server/app/python_exec.py (`.rows`, `.columns`, `.query(sql)`), the
+         import wall is `_SAFE_MODULES` in the same file, and the canonical
+         use is server/tests/test_python_runs.py:40-73.
+INPUTS: the sandbox's own allowlist and handle, the panel's existing surface,
+        and the codegen panel's placeholder as the style the SQL engine
+        already carries (`read_csv_auto(?)`).
+RELEVANT FILES: web/src/panels/RunCodePanel.tsx (the contract surface and the
+                placeholder), web/src/panels/DataPanel.tsx (passes the
+                profiled columns), web/src/index.css (the contract's surface,
+                with its own reduced-motion rule), RunCodePanel.test.tsx,
+                ai/HANDOFF.md, ai/TASKS.md, ai/CURRENT_STATE.md
 REQUIRED CHANGE:
-  - The panel reads the profile it has before asking for one: a case with a
-    profile renders it, and a POST happens when the analyst asks for a
-    re-profile or when there is nothing to read - not on every mount.
-  - The double invocation is one invocation; if the effect must remain, its
-    dependency array and the strict-mode double render no longer both reach
-    the endpoint.
-  - The rail and the panel agree about the profile stage, because the panel
-    no longer completes it by opening.
-NON-GOALS: caching a profile client-side (a read per mount is correct, a
-           write is not); changing the profiler; dropping the re-profile
-           control (a stale profile must be refreshable, on request).
-CONSTRAINTS: green only. No new dependency. A GET is preferred to a POST
-             when the endpoint can answer one; if it cannot, the change adds
-             one and the tests cover it.
+  - The panel shows the contract while the Python engine is chosen: the
+    handle (`dataset.rows`, `dataset.columns`, `dataset.query`), that there
+    is no file path, the importable modules as one sentence naming pandas,
+    csv and numpy as the refused ones with statistics as the alternative, and
+    the shape a run takes (a list of dicts left in `result`).
+  - The placeholder stops being `# python` and becomes the canonical use -
+    read the handle, accumulate, leave the table in `result` - so an
+    analyst who runs it as it stands gets a run, not a refusal. The SQL
+    placeholder names `read_csv_auto(?)` and a column the dataset has.
+  - The contract is the Python engine's own: it appears when Python is
+    chosen and is absent on SQL, which carries its own contract in its
+    placeholder.
+  - The module list the panel shows is the sandbox's `_SAFE_MODULES`, and a
+    test reads the frozenset from the Python source to prove the two are one
+    set - the page does not get to claim a door the wall refuses.
+NON-GOALS: weakening or widening the sandbox; changing `_SAFE_MODULES`,
+           the handle, the endpoints or the capability set; adding a
+           dependency or a Tauri command; touching the refusal messages,
+           which stay exactly as they are; an endpoint that publishes the
+           allowlist (the page carries the sentence, not the wall).
+CONSTRAINTS: green only. Shell-only. No new dependency (DEC-001). The
+             surface follows the token layer and the CSS conventions
+             (`.duplicate-notice`'s warn-toned left rule, an explicit
+             `prefers-reduced-motion` entry, text carrying the whole
+             meaning so colour is never the signal - AT-32).
 ACCEPTANCE CRITERIA:
-- [x] opening a case with a profile does not POST the profile endpoint
-- [x] opening a case without a profile does not fabricate one
-- [x] an explicit re-profile works and the panel reflects it
-- [x] the profile the panels render is the stored one
-- [x] the rail's profile stage and the panel's state agree
-TESTS: CaseWorkspace.test.tsx (+~4) - no POST on mount with a profile, one
-       on request, the panel renders the stored profile.
-VERIFICATION: `cd server && ... pytest -q` green; `cd web && npm test && npm
-              run build` green.
-STATE UPDATE: TASKS/CURRENT_STATE/HANDOFF gain the fix; W-008 closes.
+- [x] with Python chosen, the page names `dataset.rows` before any run
+- [x] the page names the refused modules (pandas, csv, numpy) and the
+      alternative (statistics) - the answers to refusal 1 and 2
+- [x] the page says there is no file path - the answer to refusal 3
+- [x] the page shows the shape a run takes, and the placeholder is a
+      runnable script rather than `# python`
+- [x] the module list the panel shows equals `_SAFE_MODULES`, verified
+      against the Python source
+- [x] the contract is present only for the Python engine; SQL is unchanged
+- [x] the sandbox, the endpoints, the capability set and the refusal
+      messages are untouched; the server suite is unchanged and green
+TESTS: RunCodePanel.test.tsx (+6) - the handle/columns/query sentence, the
+       three refusals' answers, the allowlist-equals-`_SAFE_MODULES` drift
+       test, the placeholder's shape, generic terms for an unprofiled
+       dataset, and SQL/Python contract parity on engine switching.
+VERIFICATION: `cd web && npm test` green (278/278); `npx tsc -b` clean;
+              `npm run build` ok; `cd server && .venv/bin/python -m pytest`
+              788/788; verification/trace 48/48; verification/e2e 28/28.
+STATE UPDATE: TASKS/CURRENT_STATE/HANDOFF gain the fix; W3X-004 closes.
 ```
 
-TASK: FIX-PROFILE-008 - opening a case reads its profile, and does not write one
-ID: FIX-PROFILE-008
+TASK: W3X-004 - the Python run surface teaches its own contract
+ID: W3X-004
 PRIORITY: high
 STATUS: DONE
-SUMMARY: opening a case re-profiled its datasets, twice. The mount effect
-         called `profileDataset` - a POST - per attached dataset on every
-         visit, and strict mode's double render made it two writes, so a
-         profile that already existed was recomputed and rewritten, and the
-         step the rail names as the analyst's was silently completed by the
-         shell. The GET endpoint already existed (`main.py:1654`, a 404 when
-         there is nothing stored), so the mount now reads through a new
-         `getProfile` helper and the POST is the analyst's explicit ask.
-         A dataset with a profile shows it and offers Re-profile; one
-         without shows an offer to profile it rather than a "profiling…"
-         placeholder that was the shell completing the step - so the panel
-         and the rail now agree about where the profile stage stands. Four
-         tests cover it: the mount GETs and never POSTs and a request POSTs,
-         an unprofiled dataset is offered rather than fabricated, a failed
-         profiling surfaces the endpoint's own reason, and the panel renders
-         the stored profile.
+SUMMARY: the Python engine is the one a Python-fluent analyst reaches for
+         first, and its first three interactions were refusals whose answers
+         were not on the page - `import pandas`, `import csv`, and the
+         `path` variable the SQL placeholder implies exists, answered only
+         by a 400. The sandbox was correct to refuse, so the fix is the sign
+         on the wall rather than the wall: the panel shows the contract
+         while Python is chosen - the handle `dataset.rows` / `.columns` /
+         `.query(sql)` and that there is no file path, the importable subset
+         as one sentence that names pandas, csv and numpy as refused with
+         `statistics` as the alternative, and the list-of-dicts-in-`result`
+         shape a run takes. The placeholder stopped being `# python` and
+         became the canonical use the core's own tests write, so an analyst
+         who runs it as it stands gets a run. The contract is the engine's
+         own: it appears on Python and is absent on SQL, whose placeholder
+         carries its own contract (`read_csv_auto(?)`). The allowlist the
+         page shows is read out of `_SAFE_MODULES` by a test, so the two
+         cannot drift. Nothing in the sandbox, the endpoints, the capability
+         set or the refusal messages moved.
 
 ### FIX-UPDATES-009 contract
 
@@ -1856,5 +1884,5 @@ SUMMARY: the Check for Updates menu item performed a check the core
          the parsed answer, which is also how a transport that kept no body at
          all still reaches the window.
 
-Contracts for the rolling window (the two most recent: FIX-UPDATES-009 and
-FIX-PROFILE-008). Older blocks are in `ai/TASKS-ARCHIVE.md`.
+Contracts for the rolling window (the two most recent: W3X-004 and
+FIX-UPDATES-009). Older blocks are in `ai/TASKS-ARCHIVE.md`.

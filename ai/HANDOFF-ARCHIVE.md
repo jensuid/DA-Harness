@@ -522,3 +522,34 @@ the packaged app is unsigned by DEC-006.
 
 **Next in priority order: W2X-010** - the last walk-test finding. The case list shows duplicate rows for the same question and dataset without any warning at create time, and the gap is the missing duplicate notice.
 
+
+## Next action
+
+**Walk-test 3 is complete: the loop runs end to end on a domain the project
+had never analysed, with a real LLM and a live browser.** A fresh core on an
+isolated data dir, a seeded helpdesk dataset with six planted anomalies, and
+one case driven through every surface the shell owns - attach, profile, plan,
+SQL, Python, chart, interpret, draft, validate, the reviewer's audit, chat, the
+decision's implications and the export - without a terminal anywhere in the
+path. `loop_closed` read true and the export round-tripped.
+
+Four findings, none a blocker. Two are microcopy on surfaces that work: the
+fallback sentence is glued to the label it replaces ("...answered in its place.
+for helpdesk_tickets_2026.csv"), and the Python surface refuses three times
+(`pandas`, `csv`, `path`) without putting the answer - `dataset.rows` and the
+importable subset - on the page. The third is the wait that remains after
+W2X-001 fixed the silence: the plan call consumed the whole 120s budget for an
+answer the deterministic engine writes in under a second, while the chat call
+on the same provider answered in 67s - so the timeout change is second, and
+finding out why the plan call differs is first. The fourth is a harness
+artifact (a filename accepted twice) and is recorded, not fixed.
+
+Nine confirmations were measured, not assumed: every W2X fix the last walk
+forced still holds against the running core. Gates at this tree: server 788/788,
+web 272/272 (one timing test timed out under load and re-ran green), tsc clean,
+build ok, e2e 28/28, trace 48/48.
+
+**Next: nothing is queued.** The three MAJOR findings each carry its own fix
+shape, and the W3X-003 root cause - why the plan call takes 120s when the chat
+call takes 67s - is the one that should be looked at before any timeout is
+moved.

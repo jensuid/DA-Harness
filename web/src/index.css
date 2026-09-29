@@ -527,6 +527,38 @@ button.danger:hover {
   margin: 0.35rem 0 0;
 }
 
+/* W3X-004: the Python sandbox's own contract, on the panel that runs against
+   it. The engine is the one a Python-fluent analyst reaches for first, and
+   its first three interactions were three refusals whose answers were not on
+   the page - pandas, csv, and the path variable the SQL placeholder implies
+   exists. The wall is correct, so the fix is the sign on it: the handle, the
+   importable subset, and the shape a run takes, before the first run.
+
+   The warn token is amber because nothing here is refused: this is the
+   sandbox saying what it admits, not what it rejected. The left rule marks
+   it as the engine's own contract rather than another paragraph of the
+   panel, the same way `.duplicate-notice` marks a warning and `.proposal`
+   marks the accent. The text carries the whole meaning, so the border is an
+   edge and not a signal. */
+.engine-contract {
+  margin: 0.6rem 0 0;
+  padding: 0.5rem 0.7rem;
+  border-left: 3px solid var(--color-warn-border);
+  background: var(--color-warn-bg);
+}
+
+.engine-contract p {
+  margin: 0;
+}
+
+.engine-contract p + p {
+  margin-top: 0.3rem;
+}
+
+.engine-contract code {
+  font-size: 0.85em;
+}
+
 /* FIX-UPDATES-009 (W-005): the surface that answers the native Check for
    Updates menu item. The shell is the only host with a menu bar, so it owns
    the delivery, and the delivery is the bundle's own surface - no new
@@ -617,6 +649,13 @@ button.danger:hover {
     transition: none;
   }
   .llm-settings {
+    animation: none;
+    transition: none;
+  }
+  .engine-contract {
+    /* The same explicitness for W3X-004's contract: nothing animates, and the
+       rule exists so a future motion pass has to decide about this class
+       rather than inheriting an animation from somewhere generic. */
     animation: none;
     transition: none;
   }

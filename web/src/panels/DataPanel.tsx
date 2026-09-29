@@ -139,6 +139,11 @@ export function DataPanel({
           caseId={caseId}
           datasetId={datasets[0].id}
           datasetName={datasets[0].filename}
+          // W3X-004: the contract names the columns the dataset actually has,
+          // so its example reads against the file the analyst attached. A
+          // dataset the profile has not reached yet still gets the contract,
+          // in the generic terms the codegen panel's placeholder uses.
+          columns={profiles[datasets[0].id]?.columns}
           onChanged={onChanged}
         />
       )}
