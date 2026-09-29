@@ -145,7 +145,6 @@ def main() -> None:
 
     prompt = LLMPlanner(key, base, model).prompt(QUESTION, PROFILE)
     _post(key, base, model, prompt, "shipped prompt")
-    _post(key, base, model, prompt, "shipped prompt (repeat)")
 
 
 if __name__ == "__main__":
