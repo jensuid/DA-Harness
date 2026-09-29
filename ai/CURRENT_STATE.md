@@ -109,18 +109,14 @@ conformance evaluation asked for is delivered; no phase is open.
   clean and the build ok - the reports the matrix cites as its measured
   evidence, regenerated on the current tree.
 
-- **Next task:** **W3X-002, the fallback sentence glued to its label.**
-  `sourceLabel` returns the substitution sentence and the panel appends `
-  for {filename}`, so it renders "...answered in its place. for
-  helpdesk_tickets_2026.csv" - a lowercase fragment that reads as a typo
-  rather than the announcement W2X-001's FIX-TIMEOUT-006 line intended. The
-  sentence is the analyst's only signal that the engine they configured did
-  not answer, so the fix is the clause's punctuation, not the sentence's
-  content. Cheapest of the remaining two findings, and it lands on every
-  LLM-backed panel. After it, W3X-003: the plan call burns the whole 120s
-  budget for an answer the deterministic engine writes in under a second,
-  while the chat call on the same provider answers in 67s - the root cause
-  (why the plan call differs) before the timeout number moves.
+- **Next task:** **none is queued.** All four walk-test 3 findings are closed
+  (W3X-002 and W3X-004 with code, W3X-003 root-caused as a provider property,
+  W3X-001 recorded as an observation), and the second walk-test's thirteen
+  are all closed. Every phase the roadmap asked for is delivered. Two items
+  remain outside this repo's control and outside any code change: GitHub
+  Actions still refuses every job (billing), and the packaged app is unsigned
+  by DEC-006. A fresh session should read `ai/HANDOFF.md` and pick the next
+  task from there.
 
 
 - **Blockers:** none.

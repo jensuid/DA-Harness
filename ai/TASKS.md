@@ -549,15 +549,13 @@ harness) and W3X-001 is recorded as an observation. The material is in
   same-filename refusal naming the existing dataset, but the frequency is
   unmeasured, so it is recorded rather than queued.
 
-### Carried follow-ups from the second walk-test (WALK-UX-002 - open)
+### Carried follow-ups from the second walk-test (WALK-UX-002 - closed)
 
-Thirteen findings; four closed (W2X-002, W2X-005, W2X-006, W2X-007). The
-walk-test's own material is in `walktest-w2/` - REPORT.md (summary, measured
-density, priority table), FINDINGS.md (one block per finding with severity
-and code location),
-PHASE2.md (the real-app verification), CAPTURE-SHEET.md. Priority order
-below is the walk-test's (impact / effort); each is a separate task with
-its own contract, one commit per fix.
+All thirteen findings closed. The walk-test's own material is in
+`walktest-w2/` - REPORT.md (summary, measured density, priority table),
+FINDINGS.md (one block per finding with severity and code location),
+PHASE2.md (the real-app verification), CAPTURE-SHEET.md. Each was a separate
+task with its own contract and one commit per fix.
 
 **BLOCKER**
 
