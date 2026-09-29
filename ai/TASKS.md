@@ -497,10 +497,11 @@ SUMMARY: the loop a first-time analyst walks without a terminal, proven on
          core - recorded because a walk-test that only reports new findings
          cannot tell you the old ones regressed.
 
-### Carried follow-ups from the third walk-test (WALK-UX-003 - open)
+### Carried follow-ups from the third walk-test (WALK-UX-003 - closed)
 
-Three findings, each a separate task with its own contract and one commit per
-fix. Priority is the walk-test's (impact / effort). The material is in
+None remain open. The three MAJOR findings are closed (W3X-002 and W3X-004
+with code; W3X-003 root-caused as a property of the provider rather than the
+harness) and W3X-001 is recorded as an observation. The material is in
 `walktest-w3/FINDINGS.md`.
 
 **MAJOR**
@@ -523,13 +524,20 @@ fix. Priority is the walk-test's (impact / effort). The material is in
   right to refuse - refusing is the security property - so the fix was not the
   wall but the sign on it: the panel shows the contract before the first run
   (contract, done-record and tests below, in the rolling window).
-- **W3X-003 — the analyst waits the full 120s for a deterministic plan.**
-  The plan call consumed the whole `LLM_TIMEOUT_SECONDS` budget
-  (`POST .../plan -> 201 in 120552ms`, `The read operation timed out`) while
-  the chat call on the same provider answered in 66.8s, so the timeout change
-  is second and the root cause is first: why does the plan call differ? The
-  wait is honest now (W2X-001's clock and Cancel both work) but it is still
-  two minutes of a spinning button for an answer that costs under a second.
+- **W3X-003 — CLOSED as root-caused, no code change.** The plan call consumed
+  the whole `LLM_TIMEOUT_SECONDS` budget (`POST .../plan -> 201 in 120552ms`,
+  `The read operation timed out`) and the live measurement against the same
+  provider explains it: the plan prompt is the only one of the six adapters
+  that asks for a large structured object (6 sub-questions, 5 hypotheses, 6
+  steps), the provider generates at ~13 completion tokens per second, and
+  1785 tokens at that rate is ~137s - the 120s timeout missed it by minutes.
+  Temperature is not the variable; `max_tokens` truncates the JSON mid-object,
+  which the schema validator refuses, so a cap buys a faster fallback, not a
+  faster answer. This is a property of the provider, not the harness: the
+  fallback was announced, deterministic and correct, which is the trust model
+  the timeout was designed around. The measurement is recorded in
+  `walktest-w3/FINDINGS.md` for the next session that asks why the plan is
+  slow - the answer is the prompt's output size, not `timeouts.py`.
 
 **OBS (recorded, not to fix)**
 

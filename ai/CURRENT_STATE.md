@@ -21,9 +21,13 @@ conformance evaluation asked for is delivered; no phase is open.
   WALK-UX-003 — the third walk-test: the loop runs end to end on a domain the
   project had never analysed, with a real LLM and a live Chromium on an
   isolated data dir; four findings, nine W2X fixes measured holding.
-  **W3X-003 is the only walk-test 3 finding still open** — the plan call burns
-  the whole 120s budget while the chat call on the same provider answers in
-  67s, so the root cause comes before any timeout change.
+  **All four walk-test 3 findings are now closed** — W3X-002 and W3X-004 with
+  code, W3X-003 root-caused as a provider property (the plan prompt asks for
+  the largest output of the six adapters and the provider runs at ~13
+  completion tokens per second, so a complete plan costs ~137s against a 120s
+  timeout; the fallback was announced and deterministic, which is the trust
+  model the timeout was designed around), and W3X-001 recorded as an
+  observation. **No task is queued.**
   Two things outside this repo's control, unchanged: GitHub Actions still
   refuses every job (billing suspended since before c73118c, so CI never ran on
   any W2X commit - v0.3.5 was built and verified locally from the same steps

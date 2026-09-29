@@ -20,9 +20,19 @@ Gates: web 285/285 (was 278; +7 in sourceLabel.test.ts), tsc clean, build ok;
 server 788/788 unchanged (this task moved no server code); trace 48/48, e2e
 28/28. `graphify update .` ran clean.
 
-**Next: W3X-003 is the last one open.** The plan call consumed the whole 120s
-budget while the chat call on the same provider answered in 67s, so the root
-cause - why the plan call differs - comes before any timeout change.
+**Next: nothing is queued.** W3X-003, the last walk-test finding, is closed —
+not by a timeout change but by the measurement. The plan call is the only one
+of the six LLM adapters whose prompt asks for a large structured object, and
+the provider generates at ~13 completion tokens per second, so 1785 tokens is
+~137s against a 120s budget. That is a property of the provider, not the
+harness: the fallback it produced was announced, deterministic and correct,
+which is the trust model the timeout was designed around. Temperature is not
+the variable and `max_tokens` truncates the JSON mid-object (a cap buys a
+faster fallback, not a faster answer), so the path to a faster plan runs
+through the prompt's output size, not `timeouts.py`. The measurement is in
+`walktest-w3/FINDINGS.md` for the next session that asks.
+
+Gates: web 285/285, tsc clean, build ok; server 788/788, trace 48/48, e2e 28/28.
 
 ## Recent completions
 

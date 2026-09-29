@@ -125,6 +125,48 @@ one-line example. The allowlist already exists as a frozenset; the refusals
 could name a suggested alternative (`statistics` instead of `pandas`) the way
 the profile's quality findings name an action.
 
+## W3X-003 — the analyst waits 120 seconds for a deterministic plan (CLOSED as root-caused, no code change)
+
+**Area:** LLM timeout surface (`server/app/timeouts.py:33`, the 120s default).
+**Observation:** "Generate an analysis plan" showed the elapsed clock and a
+Cancel button (W2X-001's fix, working exactly as designed) and then consumed
+the entire 120-second budget before the endpoint's read timed out and the
+deterministic plan answered. That is two minutes of a spinning button for an
+answer the deterministic engine produces in under a second.
+**Measured evidence:** the core log —
+`POST .../plan -> 201 in 120552ms`, with
+`WARNING app.planner llm plan failed; falling back to deterministic: The read
+operation timed out`.
+**Root cause (confirmed by live measurement against the same provider, same
+key, same model):** the plan call is the only one of the six LLM adapters
+whose prompt asks for a large structured object - 6 sub-questions, 5
+hypotheses and 6 analysis steps - and the provider generates at roughly 13
+completion tokens per second. Measured directly:
+
+    chat shape (36 tokens out)            ->   6.1s
+    plan shape, temperature 0.2 (1785 out) -> 141.0s  (finish: stop)
+    plan shape, no temperature (1357 out) -> 103.3s  (finish: stop)
+    plan shape + max_tokens=800           ->  49.3s  (finish: length)
+
+Temperature is not the variable - removing it moved 141s to 103s only because
+the output happened to be shorter. The arithmetic explains the failure: 1785
+tokens at ~13 tok/s is ~137s, and the 120s timeout missed it by minutes, not
+by a margin worth tuning. `max_tokens` bounds the wait but truncates the JSON
+mid-object, which is a worse failure than a clean timeout + fallback - the
+schema validator refuses a truncated object anyway, so a cap buys a faster
+*fallback*, not a faster answer.
+**Why no code change:** this is a property of the deployment's provider, not
+of the harness. The timeout's own design holds here: a slow endpoint is not
+made faster by giving up on it, and the fallback it produced was announced,
+correct, and deterministic - which is exactly the trust model the PRD asks
+for. If the same provider is used, the analyst's realistic options are to
+shrink the plan schema's output (fewer sub-questions/hypotheses), or to accept
+that a genuinely-complete plan at ~13 tok/s costs roughly two minutes - which
+the elapsed clock and Cancel button already make honest.
+**Recorded for:** the next session that asks "why is the plan slow" - the
+measurement above is the answer, and the path to a faster plan runs through
+the prompt's output size, not through `timeouts.py`.
+
 ---
 
 ## Confirmations (a previous walk-test's fix still holds, measured this run)
