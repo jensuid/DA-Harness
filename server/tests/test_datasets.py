@@ -208,3 +208,91 @@ def test_attach_rejects_empty_file(tmp_path) -> None:
         )
 
     assert response.status_code == 400
+
+
+def test_attach_rejects_the_same_filename_twice(tmp_path) -> None:
+    """W5X-001: a second attach of the same filename is refused with a
+    sentence naming the dataset already attached, and nothing is written."""
+    data_dir = _temp_env(tmp_path)
+
+    with TestClient(app) as client:
+        case_id = _make_case(client)
+        first = client.post(
+            f"/cases/{case_id}/datasets",
+            files={"file": ("sales.csv", CSV, "text/csv")},
+        )
+        assert first.status_code == 201
+        first_id = first.json()["id"]
+
+        second = client.post(
+            f"/cases/{case_id}/datasets",
+            files={"file": ("sales.csv", CSV, "text/csv")},
+        )
+
+    assert second.status_code == 409
+    detail = second.json()["detail"]
+    assert "sales.csv" in detail
+    assert first_id in detail
+    assert "already attached" in detail
+
+    # The refusal must leave the dataset list unchanged.
+    with TestClient(app) as client:
+        listed = client.get(f"/cases/{case_id}/datasets")
+
+    assert listed.status_code == 200
+    assert len(listed.json()) == 1
+    assert listed.json()[0]["id"] == first_id
+    # And no second file was written to disk.
+    assert len(list((data_dir / case_id).glob("*.csv"))) == 1
+
+
+def test_attach_accepts_two_different_filenames(tmp_path) -> None:
+    """W5X-001: the refusal is per filename - a different file still attaches."""
+    _temp_env(tmp_path)
+
+    with TestClient(app) as client:
+        case_id = _make_case(client)
+        first = client.post(
+            f"/cases/{case_id}/datasets",
+            files={"file": ("sales.csv", CSV, "text/csv")},
+        )
+        second = client.post(
+            f"/cases/{case_id}/datasets",
+            files={
+                "file": (
+                    "orders.csv",
+                    b"order_id,region\n1,north\n2,south\n",
+                    "text/csv",
+                )
+            },
+        )
+
+    assert first.status_code == 201
+    assert second.status_code == 201
+
+    with TestClient(app) as client:
+        listed = client.get(f"/cases/{case_id}/datasets")
+
+    assert len(listed.json()) == 2
+    assert {d["filename"] for d in listed.json()} == {"sales.csv", "orders.csv"}
+
+
+def test_the_same_filename_is_allowed_in_a_different_case(tmp_path) -> None:
+    """W5X-001: the check is within one case - another case may attach the
+    same filename, because its dataset is never this case's label."""
+    _temp_env(tmp_path)
+
+    with TestClient(app) as client:
+        first_case = _make_case(client)
+        second_case = _make_case(client)
+        first = client.post(
+            f"/cases/{first_case}/datasets",
+            files={"file": ("sales.csv", CSV, "text/csv")},
+        )
+        second = client.post(
+            f"/cases/{second_case}/datasets",
+            files={"file": ("sales.csv", CSV, "text/csv")},
+        )
+
+    assert first.status_code == 201
+    assert second.status_code == 201

@@ -1475,6 +1475,24 @@ async def attach_dataset(
             status_code=400, detail="only .csv, .parquet, and .xlsx files are supported"
         )
 
+    # W5X-001: a second attach of the same filename is refused before the file
+    # is written, because two same-named datasets are indistinguishable in
+    # every panel that labels by filename. The sentence names the dataset the
+    # analyst already has, so it is an answer rather than a bare error - the
+    # same shape `POST /cases` answers a duplicate question+dataset (W2X-010).
+    existing = db.execute(
+        "SELECT id FROM datasets WHERE case_id = ? AND filename = ?",
+        (case_id, file.filename),
+    ).fetchone()
+    if existing is not None:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                f"{file.filename} is already attached to this case as dataset "
+                f"{existing['id']}; delete it first if you want to replace it."
+            ),
+        )
+
     content = await file.read()
     if not content.strip():
         raise HTTPException(status_code=400, detail="uploaded file is empty")

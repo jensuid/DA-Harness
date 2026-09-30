@@ -719,3 +719,40 @@ Gates now: web 285/285, tsc clean, build ok; server 793/793, trace 48/48,
 e2e 28/28.
 
 ## Recent completions
+
+## Next action
+
+**WALK-UX-005 is done, and it upgraded one observation to a task.** The
+fifth walk-test had one question — can a human reach W3X-001 (the Data
+panel accepting the same filename twice), or is it only an artefact of the
+harness synthesising a `File`? — and the answer is measured: **a human can
+reach it, and it needs a fix.** A real file on disk, attached a second time
+through the same file input a human re-selecting a file uses, was accepted
+silently: `POST .../datasets -> 201 in 39ms` with no warning, "Data sources:
+2", two dataset rows with the identical filename, and every panel that
+labels by filename left ambiguous. W3 recorded this as an observation
+because its second attach came from a synthesised `File`; W5 reproduced it
+through the real input path, so the frequency is now "every time the same
+file is attached twice to one case".
+
+The queued task is **W5X-001** (contract in `ai/TASKS.md`): a same-filename
+refusal with a full sentence naming the existing dataset, matching how
+`POST /cases` answers a duplicate question+dataset. The endpoint keeps no
+duplicate check for filename within a case today; only case creation does.
+Cheapest guard, no dedupe, no silent behaviour change.
+
+Everything else held, on a new retail-inventory domain with no terminal:
+the LLM plan answered in **6.5 seconds** with `source: llm` (W4: 12.4s; W3:
+120s timeout), the Python contract was used with zero refusals, the case
+reopened after the loop and rendered its LLM plan (W4X-001 did not
+regress), and the finding validated honestly as `insufficient_evidence` so
+`loop_closed` stayed false — the contract behaving, not a failure.
+
+**Next: W5X-001 is the only open task.** Its acceptance criteria are written;
+the walk-test material is the measured record.
+
+Gates now: web 286/286, tsc clean, build ok; server 793/793, trace 48/48,
+e2e 28/28. No code changed this walk-test, so the gate numbers carried from
+v0.3.6.
+
+## Recent completions

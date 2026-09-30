@@ -614,6 +614,42 @@ describe('CaseWorkspace', () => {
     expect(await screen.findByText('new.csv')).toBeInTheDocument()
   })
 
+  // W5X-001: attaching the same filename twice was silently accepted, leaving
+  // two datasets indistinguishable in every panel that labels by filename. The
+  // core now refuses before it writes the file, and the sentence it answers is
+  // the one the panel shows - naming the dataset that is already attached.
+  it('shows the core\'s refusal when the same filename is attached twice', async () => {
+    vi.mocked(api.getCase).mockResolvedValue({
+      id: 'c1', question: 'Q?', dataset: 'sales.csv', created_at: '', updated_at: '',
+    })
+    vi.mocked(api.getContext).mockResolvedValue(emptyContext())
+    vi.mocked(api.getProgress).mockResolvedValue(progress)
+    vi.mocked(api.listDatasets).mockResolvedValue([dataset])
+    vi.mocked(api.listRuns).mockResolvedValue([])
+    vi.mocked(api.listFindings).mockResolvedValue([])
+    vi.mocked(api.listChat).mockResolvedValue([])
+    vi.mocked(api.getProfile).mockResolvedValue(profile)
+    vi.mocked(api.attachDataset).mockRejectedValue(
+      new api.ApiError(
+        409,
+        'sales.csv is already attached to this case as dataset d1; delete it first if you want to replace it.',
+      ),
+    )
+
+    const user = userEvent.setup()
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+    await screen.findByText(/3 rows, 3 columns, 0 duplicate/i)
+
+    const dataPanel = screen.getByRole('heading', { name: 'Data' }).parentElement!
+    const input = within(dataPanel).getByLabelText(/attach a dataset/i)
+    await user.upload(input, new File(['a,b\n1,2\n'], 'sales.csv', { type: 'text/csv' }))
+
+    // The refusal names the file and the dataset that already holds it.
+    expect(await screen.findByText(/already attached to this case as dataset d1/i))
+      .toBeInTheDocument()
+    expect(screen.getByText(/delete it first/i)).toBeInTheDocument()
+  })
+
   it('generates code from a question and runs it when the analyst chooses', async () => {
     mockEmptyCase()
     vi.mocked(api.generateCode).mockResolvedValue({

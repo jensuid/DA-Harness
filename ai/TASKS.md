@@ -508,7 +508,10 @@ MILESTONE: the fifth walk-test (WALK-UX-005 - W3X-001 validated as
 TASK: The Data panel's attach endpoint accepts the same filename twice
       within one case, creating two dataset rows that are
       indistinguishable everywhere the filename is the label.
-STATUS: OPEN (queued - walked and measured, not yet fixed).
+STATUS: DONE. The attach endpoint refuses a filename already attached to the
+           case before the file is written, answering with a sentence that
+           names the existing dataset (HTTP 409). The panel renders the
+           sentence through its existing error surface - no new UI.
 WHY: WALK-UX-005 attached a real file from disk a second time through the
      same file input and the panel accepted it silently - `POST
      /cases/{id}/datasets -> 201 in 39ms` with no warning, "Data sources:
@@ -541,7 +544,7 @@ VERIFICATION: server pytest; web vitest; walk-test material stays as the
               measured record.
 ```
 
-### Carried follow-ups from the fifth walk-test (WALK-UX-005 - one open)
+### Carried follow-ups from the fifth walk-test (WALK-UX-005 - closed)
 
 WALK-UX-005 validated the one open observation and found nothing new: all
 prior fixes held (plan 6.5s with `source: llm`; Python contract used with
@@ -550,9 +553,18 @@ zero refusals; case reopen rendered the LLM plan). The material is in
 
 **MAJOR**
 
-- **W5X-001 — OPEN (see contract above).** The Data panel accepts the same
-  filename twice, silently. Measured this run through the same file input a
-  human uses, so it is no longer a harness artefact.
+- **W5X-001 — CLOSED.** The Data panel accepted the same filename twice,
+  silently, leaving two datasets indistinguishable in every panel that labels
+  by filename. The attach endpoint now checks for a same-filename dataset in
+  the case before it writes the file, and answers 409 with a sentence naming
+  the existing dataset and how to replace it: "sales.csv is already attached
+  to this case as dataset d1; delete it first if you want to replace it." The
+  panel's existing `Attach failed:` surface renders it, so no UI changed. The
+  check is per-case, so a different case may still attach the same filename.
+  Three server tests (refused, two different filenames accepted, same
+  filename allowed in another case) and one web test (the refusal renders)
+  pin it. Gates: server 796/796, web 287/287 (120/120 in the file that
+  changed), tsc clean, build ok, trace 48/48, e2e ALL PASS.
 
 ### Carried follow-ups from the third walk-test (WALK-UX-003 - closed)
 
