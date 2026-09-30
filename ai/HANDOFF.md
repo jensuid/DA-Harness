@@ -20,12 +20,23 @@ order (it is defined after the base `button:hover`), but `.next-action-link`
 is a class lower in specificity and needed its own `background: none` on
 hover or the base rule painted a tint box behind inline link text.
 
-**Next: phase 3 of the audit's plan** - dark mode (a token swap, which is why
-the remap onto tokens was worth doing first), skeleton loaders so a slow
-panel's wait is a shape rather than a freeze, semantic zone composition
-(`header`/`nav`/`aside`/`footer`; the skip link's landmark is already there),
-and an iconography decision. None is blocking; all are documented in the
-audit's section 9.
+**Next: DMDARK, dark mode as a token swap** - the contract is written and
+sitting in `ai/TASKS.md`, including the decision made with the analyst: a
+three-state Light / Dark / System control (System by default) as a new
+Appearance row in the existing DAH Settings dialog, driven by ONE mechanism -
+a `data-theme` attribute on `<html>` resolved from `matchMedia`, with no
+`@media` block racing the class. Phase 3's other three items (skeleton
+loaders, zone composition, iconography) are documented in the audit's section
+9 and are not started.
+
+The visual verification harness now lives in `verification/visual/` -
+`verify_visual.py` starts an isolated core on 8124, seeds a case, serves the
+bundle, and drives Chrome over CDP; `drive_chrome.js` has a `shots` mode and a
+`verify` mode that reads the browser's COMPUTED styles. Run it before
+claiming a surface changed. It is verified working from its new home: every
+UI-REDUX assertion reproduces. It refuses to start if 8124 is busy, because a
+core already there would answer the health check and a seeded case would
+land in its store - the running app's own core owns 8123.
 
 Gates now: server 796/796, web 287/287, tsc clean, build ok.
 

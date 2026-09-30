@@ -40,6 +40,9 @@ walktest-w3/logs/
 walktest-w4/data/
 walktest-w4/logs/
 
+# Visual verification output (screenshots are reproduced, not source)
+verification/visual/shots/
+
 # Uploaded datasets (dev)
 server/data/
 

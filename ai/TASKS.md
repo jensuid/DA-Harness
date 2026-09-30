@@ -497,6 +497,75 @@ SUMMARY: the loop a first-time analyst walks without a terminal, proven on
          core - recorded because a walk-test that only reports new findings
          cannot tell you the old ones regressed.
 
+### DMDARK contract (dark mode as a token swap)
+
+```
+TASK ID: DMDARK
+MILESTONE: phase 3 item 9 of `docs/UI-UX Audit & Redesign Plan.md`.
+           Prerequisite done: UI-REDUX remapped the quality ramp and every
+           shadow onto named tokens, so this defines values rather than
+           refactors rules.
+TASK: the workspace has one appearance. An analyst works long sessions on
+      data, and the reference the docs name is a modern IDE, where a dark
+      surface is the default expectation - and the Tauri window's own chrome
+      already follows the OS, so a light body under a dark macOS titlebar is
+      a visible mismatch, not a preference.
+STATUS: OPEN.
+DECISION MADE (with the analyst): a three-state control - Light / Dark /
+        System - defaulting to System, as a new Appearance row in the existing
+        DAH Settings dialog (`LlmSettingsPanel`, already `role="dialog"
+        aria-label="DAH settings"`, which reads once per open and saves on
+        change). Not auto-only: the analyst wants dark without changing the
+        whole system. Not toggle-only: System is the correct zero-config
+        default for a native app whose chrome already tracks the OS.
+WHY: the token layer anticipates this - it is why the remap onto names was
+    worth doing before it. The work is redefining values, not restructuring.
+ROOT CAUSE: n/a - this is polish the architecture was built for, not a fault.
+NON-GOALS: no new browser-side dependency touching the filesystem or DuckDB
+           (DEC-001); persistence is localStorage in the webview, not a
+           store plugin. No change to panel contracts, DOM text or
+           `data-testid` values. No restructuring of the token names - the
+           point is that they do not move.
+CONSTRAINTS: AT-32 (0 critical a11y violations) holds in BOTH appearances -
+             contrast must be measured, not eyeballed. Motion budget
+             (AT-27/AT-30) and `prefers-reduced-motion` are unaffected but
+             must still pass. Tests are the contract: a test that reads a
+             stylesheet for a colour must not break on the swap.
+MECHANISM (decided): ONE driver - a `data-theme` attribute on <html>. A small
+             resolver maps System -> `matchMedia('(prefers-color-scheme:
+             dark)')` and writes the attribute; it also listens so an OS
+             switch re-themes a running app. CSS has a SINGLE mechanism
+             (`[data-theme="dark"]` redefining the `:root` tokens) - no
+             `@media (prefers-color-scheme)` block racing a class. One place
+             to test, one place to be wrong.
+ACCEPTANCE CRITERIA:
+  1. Light is byte-for-byte the current appearance - the swap changes
+     nothing when it is not active.
+  2. System resolves to the OS preference at launch and re-resolves when the
+     OS changes while the app is open.
+  3. The choice persists across launches (localStorage) and the setting
+     dialog shows the current state.
+  4. MEANING SURVIVES THE SWAP: `--color-danger` still reads as red,
+     `--color-warn` still reads as amber, `--color-ok` still reads as green,
+     and the `.quality-*` severity ramp keeps its climb. A status that
+     changes meaning with the theme is the failure mode this criterion
+     exists to catch.
+  5. Contrast in dark meets the same bar the light surfaces meet (AT-32) -
+     text, borders and the accent on the dark surface, measured.
+  6. The meta theme-color tracks the resolved appearance.
+  7. `verification/visual/verify_visual.py verify` runs green in BOTH
+     appearances - extend its block to assert the dark tokens resolve, and
+     capture a dark `shots` set.
+  8. Gates stay green: web 287/287+, tsc clean, build ok, server 796/796.
+
+OPEN SUB-DECISIONS (small, decide while implementing):
+  - Whether the seven stage glyphs and the accent-surface anchors need a
+    dark-specific adjustment, or whether the same token values carry. Verify,
+    do not assume.
+  - Whether the monospace data surfaces need a lighter weight on dark to keep
+    their density without glaring.
+```
+
 ### UI-REDUX contract (the shell's visual and interaction craft)
 
 ```
