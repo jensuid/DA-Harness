@@ -9,10 +9,19 @@
 
 /* The light theme, named (P9-F1-001). The values are the palette the CSS
    below already used, so the theme is the existing one named rather than a
-   new one invented; a dark theme is a swap of these same names. The panels
-   read them as CSS custom properties until F2 adopts the utility classes
-   that reference them. */
+   new one invented; a dark theme is a swap of these same names (DMDARK).
+   Every colour the shell renders reads one of these, so swapping the block
+   under `[data-theme="dark"]` is the whole of dark mode - no second palette
+   of utility classes, no `@media` rule racing the attribute. The new names
+   below are the values the component rules and `lib/ui.tsx` held inline;
+   the light values are exactly those, so light is the appearance it was.
+
+   `color-scheme` is the UA's own switch: form controls and scrollbars render
+   in the appearance the document declares, so a field under dark is a dark
+   field without a per-element rule, and under light it is the field the shell
+   always rendered. */
 :root {
+  color-scheme: light;
   --color-bg: #fafafa;
   --color-surface: #ffffff;
   --color-surface-muted: #f4f4f4;
@@ -34,7 +43,110 @@
    the anchor surfaces (the rail, the decision) read one value - it was an
    inline fallback before, so this is the value it already had, named. */
   --color-accent-surface: #f7f9fc;
+  /* The filled verb's own pair. `button.primary` and the skip link put white
+     text on the accent, so the fill needs a depth the link's accent does not:
+     a lighter accent reads as a link on a dark surface and would not carry
+     white text at the same contrast the light primary carries. In light these
+     are the accent and the accent-text; in dark the accent lightens for the
+     link and this stays the mid-tone the white text sits on. */
+  --color-accent-strong: #4a6fa5;
+  --color-accent-strong-hover: #1a4a7a;
+  /* A failure is a different statement from a danger surface, so it has its
+     own red rather than the danger token's: `.fail` is the verdict that a
+     claim did not reproduce, and reading it as the refusal red conflates two
+     meanings the shell keeps apart. */
+  --color-fail: #8a1a1a;
+  /* The notice's own ink: the warn token is the amber a chip carries, and the
+     notice's sentence is darker still, so it keeps its depth on the warn
+     surface in both appearances. */
+  --color-notice-ink: #6a5410;
+  /* The monospace surfaces: code sits in a recessed surface of its own, chips
+     and verdicts carry a heavier border than a panel, and tables separate
+     cells with a hairline lighter than the panel's own border. Three names,
+     because those are three different weights of edge. */
+  --color-code-bg: #f0f0f0;
+  --color-chip-border: #bbbbbb;
+  --color-table-border: #e2e2e2;
+  --color-hairline: #eeeeee;
+  /* The on-screen chart's grid: the recharts tree keys off this, and the core's
+     own artifact SVG never does, so a chart on screen and the chart the case
+     holds can differ in chrome without differing in geometry. */
+  --color-chart-grid: #e5e7eb;
+  /* The overlay and the two shadows the dialog and the banners carry. A
+     pure-black scrim and shadow read as grey dirt on a warm surface in light,
+     so they carry the accent's own cool hue; in dark they deepen, because a
+     hue-tinted shadow on an already dark surface is invisible. */
+  --color-scrim: rgba(20, 30, 48, 0.38);
+  --shadow-sm: 0 2px 8px rgba(30, 45, 70, 0.1);
+  --shadow-lg: 0 6px 28px rgba(20, 30, 48, 0.22);
   --radius: 0.4rem;
+}
+
+/* DMDARK: the swap. Every name above gets a dark value, and nothing else
+   changes - the selectors the panels read, the rules that size them and the
+   DOM text a test matches are all untouched, so the swap is the whole of the
+   work and light is the appearance it was. The block sits after every `:root`
+   rule in source order, which is what makes the same names win here.
+
+   The values were measured, not chosen for mood (AT-32's bar holds in both
+   appearances): every text-on-surface pair in dark clears 4.5:1, and the
+   three status inks keep their meaning - red still reads red, amber amber,
+   green green - because the hue family is preserved and only the lightness
+   moves onto the dark surface. A status that changed meaning with the theme
+   is the failure mode this block is written against.
+
+   Two surfaces this could have needed its own values for, and does not: the
+   stage glyphs and the accent-surface anchors read the same names, because a
+   glyph is an ink on a surface and the anchor's tint was darkened to
+   #1f242f, so the panel that matters still says so without glowing; and the
+   monospace data surfaces keep their weight, because the glare at that
+   density is the ink, not the stroke - #e9eaee rather than white is what
+   carries the density into dark. */
+[data-theme='dark'] {
+  color-scheme: dark;
+  --color-bg: #15171c;
+  --color-surface: #1c1f25;
+  --color-surface-muted: #252932;
+  --color-border: #333945;
+  --color-text: #e9eaee;
+  --color-text-muted: #9aa1ad;
+  --color-accent: #8fb2e0;
+  --color-accent-text: #a8c6ec;
+  --color-ok: #7fd692;
+  --color-ok-bg: #1c2a20;
+  --color-ok-border: #3f6b46;
+  --color-warn: #dcb45f;
+  --color-warn-bg: #2a2516;
+  --color-warn-border: #6b5c2e;
+  --color-danger: #ef8a76;
+  --color-danger-bg: #2b1d1a;
+  --color-danger-border: #6e453c;
+  --color-accent-surface: #1f242f;
+  --color-accent-strong: #4a6fa5;
+  --color-accent-strong-hover: #3d5f91;
+  --color-fail: #ff9385;
+  --color-notice-ink: #e0c684;
+  --color-code-bg: #232830;
+  --color-chip-border: #3b414d;
+  --color-table-border: #333945;
+  --color-hairline: #2b303a;
+  --color-chart-grid: #2e3440;
+  --color-scrim: rgba(0, 0, 0, 0.55);
+  --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+/* The UA's own field styling is the light appearance, and it holds no token to
+   swap - so the dark override is on the attribute rather than on a name. The
+   background and the ink are the shell's own surfaces, so a field matches the
+   panel it sits on instead of carrying the UA's neutral; the border-color
+   alone is overridden, because the UA already draws the shape. */
+[data-theme='dark'] input,
+[data-theme='dark'] select,
+[data-theme='dark'] textarea {
+  background: var(--color-surface);
+  color: var(--color-text);
+  border-color: var(--color-border);
 }
 
 /* The bundled face (T1): Geist is a variable font, so one woff2 per subset
@@ -64,8 +176,8 @@
 
 :root {
   font-family: 'Geist', system-ui, sans-serif;
-  color: #1a1a1a;
-  background: #fafafa;
+  color: var(--color-text);
+  background: var(--color-bg);
 }
 
 main {
@@ -84,7 +196,7 @@ input:focus-visible,
 select:focus-visible,
 textarea:focus-visible,
 [tabindex]:focus-visible {
-  outline: 2px solid #1a4a7a;
+  outline: 2px solid var(--color-accent-text);
   outline-offset: 2px;
 }
 
@@ -131,11 +243,11 @@ main.wide {
 }
 
 .stage.attention {
-  color: #8a6a1a;
+  color: var(--color-warn);
 }
 
 .stage.current {
-  color: #1a4a7a;
+  color: var(--color-accent-text);
   font-weight: 700;
 }
 
@@ -143,7 +255,7 @@ main.wide {
    styles status with the accent and the warn ink; a stage that is done is the
    positive pole, so it carries the ok ink - the one place a status is green. */
 .stage.done {
-  color: #2a7a2a;
+  color: var(--color-ok);
 }
 
 /* The case overview's labelled rows (UX 45): a label, then the fact, one per
@@ -252,15 +364,17 @@ button:disabled {
    the accent, so the loop's next step and the screens' primary verbs - New
    case, Ask, Create - stop sharing a shape with Rename and Cancel. */
 button.primary {
-  border-color: var(--color-accent);
-  background: var(--color-accent);
+  border-color: var(--color-accent-strong);
+  background: var(--color-accent-strong);
+  /* DMDARK: as .skip-link - the fill holds across the swap so the white it
+     carries is the same white in both appearances. */
   color: #ffffff;
   font-weight: 600;
 }
 
 button.primary:hover {
-  border-color: var(--color-accent-text);
-  background: var(--color-accent-text);
+  border-color: var(--color-accent-strong-hover);
+  background: var(--color-accent-strong-hover);
 }
 
 button.primary:active {
@@ -272,7 +386,7 @@ button.link {
   padding: 0;
   border: none;
   background: none;
-  color: #4a6fa5;
+  color: var(--color-accent);
   text-decoration: underline;
   cursor: pointer;
   font: inherit;
@@ -292,9 +406,9 @@ button.case {
   flex-direction: column;
   width: 100%;
   text-align: left;
-  border: 1px solid #ddd;
-  border-radius: 0.4rem;
-  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
   padding: 0.75rem;
   cursor: pointer;
   font: inherit;
@@ -305,14 +419,14 @@ button.case {
 }
 
 .case-dataset {
-  color: #666;
+  color: var(--color-text-muted);
   font-size: 0.9rem;
 }
 
 .panel {
-  border: 1px solid #ddd;
-  border-radius: 0.4rem;
-  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
   padding: 1rem;
   margin: 1rem 0;
 }
@@ -321,9 +435,9 @@ button.case {
   display: inline-block;
   margin: 0.15rem 0.3rem 0.15rem 0;
   padding: 0.1rem 0.5rem;
-  border: 1px solid #bbb;
+  border: 1px solid var(--color-chip-border);
   border-radius: 1rem;
-  background: #f4f4f4;
+  background: var(--color-surface-muted);
   font-size: 0.8rem;
   font-family: ui-monospace, monospace;
 }
@@ -331,7 +445,7 @@ button.case {
 code {
   font-family: ui-monospace, monospace;
   font-size: 0.85em;
-  background: #f0f0f0;
+  background: var(--color-code-bg);
   padding: 0.1rem 0.3rem;
   border-radius: 0.25rem;
 }
@@ -346,9 +460,9 @@ code {
   font-weight: 600;
   margin: 0.5rem 0;
   padding: 0.4rem 0.8rem;
-  border: 1px solid #bbb;
-  border-radius: 0.4rem;
-  background: #fff;
+  border: 1px solid var(--color-chip-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
   cursor: pointer;
 }
 
@@ -393,8 +507,29 @@ button.small {
   height: auto;
 }
 
+/* DMDARK: the on-screen chart reads the same tokens the panels do, so a chart
+   follows the appearance without a second palette. recharts paints the grid
+   and the axes through presentation attributes (#e5e7eb, #666) that a CSS rule
+   overrides, and the class names are recharts' own - the core's artifact SVG
+   in `.chart[data-testid='chart-svg']` carries none of them, so the chart the
+   case *holds* is untouched and only the chart the analyst *looks at* moves.
+   The axis tick is filled rather than stroked, which is why its rule reads
+   `fill`. */
+.chart .recharts-cartesian-grid line {
+  stroke: var(--color-chart-grid);
+}
+.chart .recharts-cartesian-axis-line {
+  stroke: var(--color-text-muted);
+}
+.chart .recharts-cartesian-axis-tick-line {
+  fill: var(--color-text-muted);
+}
+.chart .recharts-cartesian-axis-tick-value {
+  fill: var(--color-text-muted);
+}
+
 .warn {
-  color: #a03a2a;
+  color: var(--color-danger);
 }
 
 /* A chat turn's question is the analyst's own voice, so it carries the weight
@@ -408,7 +543,7 @@ button.small {
    phrased within it, but the analysis carries a stated limitation. A failure
    is a different statement, so it reads differently rather than louder. */
 .fail {
-  color: #8a1a1a;
+  color: var(--color-fail);
   font-weight: 600;
 }
 
@@ -419,26 +554,26 @@ button.small {
   border-radius: 1rem;
   font-size: 0.8rem;
   font-family: ui-monospace, monospace;
-  border: 1px solid #bbb;
-  background: #f4f4f4;
+  border: 1px solid var(--color-chip-border);
+  background: var(--color-surface-muted);
 }
 
 .verdict.pass {
-  color: #2a7a2a;
-  border-color: #9cc29c;
-  background: #f2f9f2;
+  color: var(--color-ok);
+  border-color: var(--color-ok-border);
+  background: var(--color-ok-bg);
 }
 
 .verdict.concern {
-  color: #8a6a1a;
-  border-color: #d9c48a;
-  background: #faf6ec;
+  color: var(--color-warn);
+  border-color: var(--color-warn-border);
+  background: var(--color-warn-bg);
 }
 
 .verdict.fail {
-  color: #a03a2a;
-  border-color: #d9a094;
-  background: #faf0ee;
+  color: var(--color-danger);
+  border-color: var(--color-danger-border);
+  background: var(--color-danger-bg);
 }
 
 .kind-toggle {
@@ -486,7 +621,7 @@ select {
 .chain .chip + .chip::before {
   content: '→';
   margin-right: 0.3rem;
-  color: #666;
+  color: var(--color-text-muted);
 }
 
 /* An EDA result is as wide as its columns - a numeric distribution carries
@@ -500,13 +635,13 @@ table.eda {
 
 table.eda th,
 table.eda td {
-  border: 1px solid #e2e2e2;
+  border: 1px solid var(--color-table-border);
   padding: 0.3rem 0.5rem;
   text-align: left;
 }
 
 table.eda th {
-  background: #f4f4f4;
+  background: var(--color-surface-muted);
   font-family: ui-monospace, monospace;
   font-size: 0.85rem;
 }
@@ -522,9 +657,9 @@ table.eda td {
   display: flex;
   flex-direction: column;
   width: 100%;
-  border: 1px solid #ddd;
-  border-radius: 0.4rem;
-  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
   padding: 0.75rem;
   font: inherit;
 }
@@ -555,12 +690,12 @@ table.eda td {
 }
 
 button.danger {
-  color: #a03a2a;
-  border-color: #d9a094;
+  color: var(--color-danger);
+  border-color: var(--color-danger-border);
 }
 
 button.danger:hover {
-  background: #faf0ee;
+  background: var(--color-danger-bg);
 }
 
 .visually-hidden {
@@ -674,16 +809,16 @@ button.danger:hover {
   max-width: 48rem;
   margin: 0 auto;
   padding: 0.6rem 0.9rem;
-  border: 1px solid #d9c48a;
+  border: 1px solid var(--color-warn-border);
   border-top: none;
-  border-radius: 0 0 0.4rem 0.4rem;
-  background: #faf6ec;
-  color: #6a5410;
+  border-radius: 0 0 var(--radius) var(--radius);
+  background: var(--color-warn-bg);
+  color: var(--color-notice-ink);
   font-size: 0.92rem;
   /* C3: a pure-black shadow on a warm surface reads as grey dirt; the tint
      carries the accent's own cool hue the way a shadow on a coloured surface
      does in light. */
-  box-shadow: 0 2px 8px rgba(30, 45, 70, 0.1);
+  box-shadow: var(--shadow-sm);
 }
 
 /* The concern tone is deliberate: the answer the private repository always
@@ -719,7 +854,7 @@ button.danger:hover {
   background: var(--color-warn-bg);
   color: var(--color-warn);
   font-size: 0.92rem;
-  box-shadow: 0 2px 8px rgba(30, 45, 70, 0.1);
+  box-shadow: var(--shadow-sm);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -771,7 +906,7 @@ button.danger:hover {
   padding: 4vh 1rem;
   /* C3: the scrim and the dialog's shadow carry a hue rather than black, so
      the overlay reads as the surface dimmed rather than as a grey film. */
-  background: rgba(20, 30, 48, 0.38);
+  background: var(--color-scrim);
 }
 
 .llm-settings form {
@@ -781,7 +916,7 @@ button.danger:hover {
   border-radius: var(--radius);
   background: var(--color-surface);
   color: var(--color-text);
-  box-shadow: 0 6px 28px rgba(20, 30, 48, 0.22);
+  box-shadow: var(--shadow-lg);
 }
 
 .llm-settings h2 {
@@ -829,6 +964,45 @@ button.danger:hover {
   margin: 0.8rem 0 0;
   font-size: 0.9rem;
   color: var(--color-danger);
+}
+
+/* DMDARK: the appearance row. A fieldset and a radio group rather than three
+   checkboxes, because the three states are one choice and a radio group says
+   so to a screen reader - the legend is the label the group needs, and the
+   checked state is the current one the dialog has to show. The row reads the
+   dialog's own tokens, so it follows the appearance it chooses. */
+.llm-settings-appearance {
+  margin: 0 0 0.4rem;
+  padding: 0;
+  border: none;
+}
+
+.llm-settings-appearance legend {
+  padding: 0;
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+
+.llm-settings-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0.5rem 0.9rem 0 0;
+  font-size: 0.92rem;
+  cursor: pointer;
+}
+
+/* The base input rule is full-width; a radio is the one control that must not
+   be. */
+.llm-settings-option input {
+  width: auto;
+  margin: 0;
+}
+
+.llm-settings-hint {
+  margin: 0.5rem 0 0;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
 }
 
 /* P9-F3: the motion gate, for the JS-driven kind. The surfaces animate through
@@ -952,7 +1126,7 @@ button.danger:hover {
 }
 
 .collapse-toggle:hover {
-  background: var(--color-accent-surface, #f7f9fc);
+  background: var(--color-accent-surface);
 }
 
 .collapse-mark {
@@ -1100,9 +1274,13 @@ ul.overview {
   z-index: 300;
   margin: 0;
   padding: 0.5rem 0.9rem;
-  border: 1px solid var(--color-accent);
+  border: 1px solid var(--color-accent-strong);
   border-radius: var(--radius);
-  background: var(--color-accent);
+  background: var(--color-accent-strong);
+  /* DMDARK: the ink is literal white rather than a token because the fill it
+     sits on is the one colour that does not move between appearances -
+     #4a6fa5 against white is 5.11:1 in either theme, and a dark accent
+     behind it would fall to 2.5. */
   color: #ffffff;
   font: inherit;
   font-weight: 600;

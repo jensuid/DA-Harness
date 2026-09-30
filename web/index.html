@@ -16,6 +16,30 @@
       content="DAH - a data analysis harness: state the question, explore the data, and follow the evidence from finding to decision."
     />
     <title>DAH - Data Analysis Harness</title>
+    <!-- DMDARK: the resolved appearance lands on <html> before the body renders.
+         The bundle is a deferred module, so without this the first paint is
+         the light default even under a dark system preference - which is the
+         mismatch this task exists to end. `src/theme.ts` is the one driver of
+         the attribute; this is the same formula, for the first paint only, and
+         the resolver re-applies the stored choice and adds the OS listener
+         once the bundle mounts. -->
+    <script>
+      ;(function () {
+        try {
+          var stored = localStorage.getItem('dah-theme')
+          var dark =
+            stored !== 'light' &&
+            window.matchMedia('(prefers-color-scheme: dark)').matches
+          var root = document.documentElement
+          root.setAttribute('data-theme', dark ? 'dark' : 'light')
+          var meta = document.querySelector('meta[name="theme-color"]')
+          if (meta) meta.setAttribute('content', dark ? '#15171c' : '#fafafa')
+        } catch (e) {
+          /* localStorage or matchMedia unavailable: the light default renders
+             and the bundle's resolver takes over when it mounts. */
+        }
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>

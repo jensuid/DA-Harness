@@ -810,3 +810,49 @@ repo's control: the app is unsigned (DEC-006), and CI is suspended (billing).
 
 Gates now: server 796/796, web 287/287, tsc clean, build ok, trace 48/48,
 e2e ALL PASS.
+## UI-REDUX, the shell's visual and interaction craft
+
+Moved from `ai/HANDOFF.md` when DMDARK landed.
+
+## Next action
+
+**UI-REDUX is done: the shell's surfaces, type and buttons now carry hierarchy
+and give feedback.** Phase 1 and phase 2 of the audit in
+`docs/UI-UX Audit & Redesign Plan.md` landed: a base button system (hover
+shift, one-pixel press, transitions, a filled `primary` variant for each
+screen's one verb), the bundled Geist face with a display-weight h1, the
+quality severity ramp and every shadow remapped onto the shell's own tokens,
+the workflow rail as a connected spine, accent-tinted anchor surfaces for the
+rail and the decision, a skip-to-content link, and favicon plus document
+metadata. `lucide-react` (declared, imported nowhere) is gone.
+
+Verified in a real Chrome over CDP against a real core on an isolated data
+dir, reading computed styles rather than source: the body resolves
+`Geist, system-ui, sans-serif` with `document.fonts.check('16px Geist')`
+true, a real pointer move moves a button's background to the accent surface,
+and the link-styled next-action keeps its transparent hover. The one subtlety
+worth carrying: `button.link` keeps its link character on hover by source
+order (it is defined after the base `button:hover`), but `.next-action-link`
+is a class lower in specificity and needed its own `background: none` on
+hover or the base rule painted a tint box behind inline link text.
+
+**Next: DMDARK, dark mode as a token swap** - the contract is written and
+sitting in `ai/TASKS.md`, including the decision made with the analyst: a
+three-state Light / Dark / System control (System by default) as a new
+Appearance row in the existing DAH Settings dialog, driven by ONE mechanism -
+a `data-theme` attribute on `<html>` resolved from `matchMedia`, with no
+`@media` block racing the class. Phase 3's other three items (skeleton
+loaders, zone composition, iconography) are documented in the audit's section
+9 and are not started.
+
+The visual verification harness now lives in `verification/visual/` -
+`verify_visual.py` starts an isolated core on 8124, seeds a case, serves the
+bundle, and drives Chrome over CDP; `drive_chrome.js` has a `shots` mode and a
+`verify` mode that reads the browser's COMPUTED styles. Run it before
+claiming a surface changed. It is verified working from its new home: every
+UI-REDUX assertion reproduces. It refuses to start if 8124 is busy, because a
+core already there would answer the health check and a seeded case would
+land in its store - the running app's own core owns 8123.
+
+Gates now: server 796/796, web 287/287, tsc clean, build ok.
+

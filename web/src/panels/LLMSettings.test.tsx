@@ -183,3 +183,81 @@ describe('LlmSettingsPanel', () => {
     await waitFor(() => expect(get).toHaveBeenCalled())
   })
 })
+
+// DMDARK: the appearance row. The three states are a window preference, so the
+// row applies on change - the dialog saves on change - and there is nothing to
+// fetch and no save to wait for. What is under test is the control reaching the
+// resolver: the row is the only surface that moves the attribute, and a row
+// that rendered without wiring it would be a row the analyst cannot use.
+describe('LlmSettingsPanel appearance row', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+    localStorage.clear()
+    document.documentElement.removeAttribute('data-theme')
+  })
+
+  it('shows the three states with the current one selected', async () => {
+    vi.spyOn(api, 'getLlmConfig').mockResolvedValue(STORED)
+    render(<LlmSettingsPanel />)
+    window.dispatchEvent(new CustomEvent(SETTINGS_EVENT))
+
+    expect(await screen.findByText('Appearance')).toBeInTheDocument()
+    // System is the zero-config default, so it is the one checked on a fresh
+    // store.
+    expect(screen.getByRole('radio', { name: 'System' })).toBeChecked()
+    expect(screen.getByRole('radio', { name: 'Light' })).not.toBeChecked()
+    expect(screen.getByRole('radio', { name: 'Dark' })).not.toBeChecked()
+  })
+
+  it('reflects a choice the previous launch persisted', async () => {
+    localStorage.setItem('dah-theme', 'dark')
+    vi.spyOn(api, 'getLlmConfig').mockResolvedValue(STORED)
+    render(<LlmSettingsPanel />)
+    window.dispatchEvent(new CustomEvent(SETTINGS_EVENT))
+
+    expect(await screen.findByRole('radio', { name: 'Dark' })).toBeChecked()
+  })
+
+  it('applies Dark on change and keeps it, with no save', async () => {
+    // The row is not part of the LLM form's submit: an appearance moves the
+    // attribute the moment it is chosen, because there is nothing to wait for.
+    vi.spyOn(api, 'getLlmConfig').mockResolvedValue(STORED)
+    render(<LlmSettingsPanel />)
+    window.dispatchEvent(new CustomEvent(SETTINGS_EVENT))
+    await screen.findByText('Appearance')
+
+    await userEvent.click(screen.getByRole('radio', { name: 'Dark' }))
+
+    expect(document.documentElement.getAttribute('data-theme')).toBe('dark')
+    expect(localStorage.getItem('dah-theme')).toBe('dark')
+  })
+
+  it('moves back to Light when Light is chosen', async () => {
+    localStorage.setItem('dah-theme', 'dark')
+    vi.spyOn(api, 'getLlmConfig').mockResolvedValue(STORED)
+    render(<LlmSettingsPanel />)
+    window.dispatchEvent(new CustomEvent(SETTINGS_EVENT))
+    await screen.findByText('Appearance')
+
+    await userEvent.click(screen.getByRole('radio', { name: 'Light' }))
+
+    expect(document.documentElement.getAttribute('data-theme')).toBe('light')
+    expect(localStorage.getItem('dah-theme')).toBe('light')
+  })
+
+  it('does not post the appearance to the core', async () => {
+    // The credential is the core's business; the appearance is the window's.
+    // A row that smuggled its choice into the LLM save would send a field the
+    // core has no use for.
+    vi.spyOn(api, 'getLlmConfig').mockResolvedValue(STORED)
+    const put = vi
+      .spyOn(api, 'putLlmConfig')
+      .mockResolvedValue({ ...STORED, configured: true, provider: 'DAH_LLM_API_KEY' })
+    render(<LlmSettingsPanel />)
+    window.dispatchEvent(new CustomEvent(SETTINGS_EVENT))
+    await screen.findByText('Appearance')
+    await userEvent.click(screen.getByRole('radio', { name: 'Dark' }))
+
+    expect(put).not.toHaveBeenCalled()
+  })
+})

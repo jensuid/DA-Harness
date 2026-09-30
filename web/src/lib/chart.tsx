@@ -233,7 +233,7 @@ export function ChartTree({
       role="img"
       aria-label={title || `${kind} chart of ${y} by ${x}`}
     >
-      <CartesianGrid stroke="#e5e7eb" strokeDasharray="3 3" />
+      <CartesianGrid strokeDasharray="3 3" />
       <XAxis
         dataKey={x}
         name={x}

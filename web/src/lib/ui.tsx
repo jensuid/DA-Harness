@@ -18,39 +18,49 @@ import { cva, type VariantProps } from 'class-variance-authority'
 // runtime dependency on a styled library. DEC-001's "no new dependency" is
 // about the browser contract - the frontend never touches the filesystem or
 // DuckDB directly - and a class vocabulary does not touch it.
+//
+// DMDARK: every colour here reads the custom properties `index.css` owns, so
+// the appearance swap is the whole of dark mode and this vocabulary does not
+// need a second, dark copy of itself. The arbitrary values are the same names
+// the stylesheet declares, and the light values are exactly the ones these
+// classes held inline, so light is the appearance it was.
 export const tokens = {
   // The page and the surfaces on it.
-  bg: 'bg-[#fafafa]',
-  surface: 'bg-white',
-  surfaceMuted: 'bg-[#f4f4f4]',
+  bg: 'bg-[var(--color-bg)]',
+  surface: 'bg-[var(--color-surface)]',
+  surfaceMuted: 'bg-[var(--color-surface-muted)]',
   // The hairlines that separate them.
-  border: 'border-[#ddd]',
+  border: 'border-[var(--color-border)]',
   // The ink.
-  text: 'text-[#1a1a1a]',
-  textMuted: 'text-[#666]',
+  text: 'text-[var(--color-text)]',
+  textMuted: 'text-[var(--color-text-muted)]',
   // The one accent the current CSS uses for its rules and links.
-  accent: 'text-[#4a6fa5]',
-  accentText: 'text-[#1a4a7a]',
-  accentRule: 'border-[#4a6fa5]',
-  accentSurface: 'bg-[#f7f9fc]',
+  accent: 'text-[var(--color-accent)]',
+  accentText: 'text-[var(--color-accent-text)]',
+  accentRule: 'border-[var(--color-accent)]',
+  accentSurface: 'bg-[var(--color-accent-surface)]',
   // The three statuses DAH renders as text-plus-chip, never as colour alone
   // (accessibility.ts's STATUS_CLASSES audit pins this). Each is a pair: the
   // ink and the tint it sits on, so a chip reads at any size.
-  ok: { text: 'text-[#2a7a2a]', bg: 'bg-[#f2f9f2]', border: 'border-[#9cc29c]' },
+  ok: {
+    text: 'text-[var(--color-ok)]',
+    bg: 'bg-[var(--color-ok-bg)]',
+    border: 'border-[var(--color-ok-border)]',
+  },
   warn: {
-    text: 'text-[#8a6a1a]',
-    bg: 'bg-[#faf6ec]',
-    border: 'border-[#d9c48a]',
+    text: 'text-[var(--color-warn)]',
+    bg: 'bg-[var(--color-warn-bg)]',
+    border: 'border-[var(--color-warn-border)]',
   },
   danger: {
-    text: 'text-[#a03a2a]',
-    bg: 'bg-[#faf0ee]',
-    border: 'border-[#d9a094]',
+    text: 'text-[var(--color-danger)]',
+    bg: 'bg-[var(--color-danger-bg)]',
+    border: 'border-[var(--color-danger-border)]',
   },
   // The page's hairline rules and the borders a panel draws between its own
   // parts are two different weights on purpose: a panel's own separator is
   // lighter than the panel's own border, so a group inside reads as inside.
-  hairline: 'border-[#eee]',
+  hairline: 'border-[var(--color-hairline)]',
 } as const
 
 // The composed surfaces the panels build on. A panel is a card with a border
@@ -71,7 +81,8 @@ export const surfaces = {
   // landmark, not only a style: the workspace's own tests reach a panel with
   // `heading.closest('.panel')` and the zone CSS scopes to `.zone .panel`.
   panel:
-    'panel border border-[#ddd] rounded-[0.4rem] bg-white p-4 my-4 ' + tokens.text,
+    'panel border border-[var(--color-border)] rounded-[0.4rem] bg-[var(--color-surface)] p-4 my-4 ' +
+    tokens.text,
   // A panel whose own list is its body: the panel's padding already frames it,
   // so the list is flush rather than indented, and the margins below the
   // hairline rule are the same every list had (my-2).
@@ -90,7 +101,7 @@ export const surfaces = {
   // set no display, so a `subpanel` div was a block; a `label` needs `block`
   // explicitly or a border-top stretches with the label's inline width
   // (RefinePanel, ContextPanel).
-  subpanel: 'block border-t border-[#eee] mt-3 pt-3',
+  subpanel: 'block border-t border-[var(--color-hairline)] mt-3 pt-3',
   // A proposal or a rationale: the accent's left rule marks it as the panel's
   // own support rather than another paragraph (W-009). `.rationale` is the
   // same surface with its own tighter padding; both are the one accent rule.
@@ -98,12 +109,12 @@ export const surfaces = {
     'border-l-[3px] ' + tokens.accentRule + ' ' + tokens.accentSurface + ' p-2 px-3 my-2',
   rationale:
     'border-l-[3px] ' + tokens.accentRule + ' ' + tokens.accentSurface + ' p-2 px-3 mt-3 mb-2',
-  card: 'border border-[#ddd] rounded-[0.4rem] bg-white p-3 ' + tokens.text,
+  card: 'border border-[var(--color-border)] rounded-[0.4rem] bg-[var(--color-surface)] p-3 ' + tokens.text,
   // A run row and a chat turn are separated by hairlines, not by margins. The
   // turn keeps its own name because the padding it carries (0.75rem) is
   // tighter than a run row's (0.5rem), and both are what the CSS set.
-  row: 'py-2 border-t border-[#eee]',
-  turn: 'py-3 border-t border-[#eee]',
+  row: 'py-2 border-t border-[var(--color-hairline)]',
+  turn: 'py-3 border-t border-[var(--color-hairline)]',
   // A form's control row: a flex gap with the vertical margin the CSS set.
   rowGap: 'flex gap-2 my-4',
   // The case list's action row: flex with wrap (the buttons are short and

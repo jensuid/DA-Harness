@@ -24,6 +24,11 @@ import { useEffect, useState } from 'react'
 import { getLlmConfig, putLlmConfig, type LlmConfig, type LlmStatus } from '../api'
 import { SETTINGS_EVENT, LLM_CHANGED_EVENT } from '../shell'
 import { Button } from '../lib/ui'
+import {
+  applyTheme,
+  readThemeChoice,
+  type ThemeChoice,
+} from '../theme'
 
 type Phase = 'closed' | 'loading' | 'ready' | 'saving' | 'saved' | 'error'
 
@@ -32,6 +37,17 @@ export function LlmSettingsPanel() {
   const [config, setConfig] = useState<LlmConfig>({ api_key: '', model: '', base_url: '' })
   const [error, setError] = useState<string | null>(null)
   const [savedStatus, setSavedStatus] = useState<LlmStatus | null>(null)
+
+  // DMDARK: the appearance row reads the stored choice once, when the panel
+  // mounts, and applies on change - the dialog saves on change, and an
+  // appearance is a window preference rather than a deployment property, so
+  // there is nothing to fetch and no restart to wait for.
+  const [choice, setChoice] = useState<ThemeChoice>(() => readThemeChoice())
+
+  const choose = (next: ThemeChoice) => {
+    setChoice(next)
+    applyTheme(next)
+  }
 
   // The shell dispatches this event from the menu bar; a browser host never
   // receives it, so the panel stays closed there unless something else opens
@@ -131,6 +147,27 @@ export function LlmSettingsPanel() {
             placeholder="https://api.openai.com/v1"
           />
         </label>
+        <fieldset className="llm-settings-appearance">
+          <legend>Appearance</legend>
+          {/* System is first because it is the default, and the default is the
+              zero-config one; the order is the priority. */}
+          {(['system', 'light', 'dark'] as const).map((value) => (
+            <label key={value} className="llm-settings-option">
+              <input
+                type="radio"
+                name="dah-appearance"
+                value={value}
+                checked={choice === value}
+                onChange={() => choose(value)}
+              />
+              <span>{value === 'system' ? 'System' : value === 'light' ? 'Light' : 'Dark'}</span>
+            </label>
+          ))}
+          <p className="llm-settings-hint">
+            System follows your computer&apos;s setting and re-themes DAH when it
+            changes; Light and Dark are DAH&apos;s own.
+          </p>
+        </fieldset>
         <div className="llm-settings-actions">
           <Button type="submit" disabled={phase === 'saving'}>
             {phase === 'saving' ? 'Saving…' : 'Save'}

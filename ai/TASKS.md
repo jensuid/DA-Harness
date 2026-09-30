@@ -510,7 +510,11 @@ TASK: the workspace has one appearance. An analyst works long sessions on
       surface is the default expectation - and the Tauri window's own chrome
       already follows the OS, so a light body under a dark macOS titlebar is
       a visible mismatch, not a preference.
-STATUS: OPEN.
+STATUS: DONE. Dark mode shipped as a token swap - one driver, one
+          mechanism, measured in both appearances. The resolver is
+          `web/src/theme.ts`; the swap is the `[data-theme='dark']` block in
+          `index.css`; the control is the Appearance row in the settings
+          dialog. See the done-record below for what was measured.
 DECISION MADE (with the analyst): a three-state control - Light / Dark /
         System - defaulting to System, as a new Appearance row in the existing
         DAH Settings dialog (`LlmSettingsPanel`, already `role="dialog"
@@ -558,12 +562,49 @@ ACCEPTANCE CRITERIA:
      capture a dark `shots` set.
   8. Gates stay green: web 287/287+, tsc clean, build ok, server 796/796.
 
-OPEN SUB-DECISIONS (small, decide while implementing):
-  - Whether the seven stage glyphs and the accent-surface anchors need a
-    dark-specific adjustment, or whether the same token values carry. Verify,
-    do not assume.
-  - Whether the monospace data surfaces need a lighter weight on dark to keep
-    their density without glaring.
+OPEN SUB-DECISIONS (resolved, measured - see the done-record below):
+  - The stage glyphs and the accent-surface anchors carry on the same token
+    values. The glyphs are ink on a surface, so they follow the swap; the
+    one adjustment is the anchor's own tint, darkened to #1f242f, so the
+    panel that matters still says so without glowing. Verified in Chrome:
+    `.decision` reads rgb(31,36,47) under dark.
+  - The monospace surfaces keep their weight. The glare at that density is
+    the ink, not the stroke: #e9eaee rather than white carries the density
+    into dark, and `code` measures 12.32:1 against its surface.
+
+DONE-RECORD (DMDARK):
+  What changed - `web/src/theme.ts` is the resolver (read/resolve/apply, a
+  matchMedia listener that re-themes only while System is held); an inline
+  bootstrap in `web/index.html` sets the attribute and the meta before first
+  paint; `index.css` holds the dark block and every hardcoded colour in the
+  component rules moved onto tokens; `lib/ui.tsx` and `lib/chart.tsx` read
+  those tokens, so the panels follow the swap; an Appearance fieldset in
+  `LLMSettingsPanel` is the three-state control. Light is unchanged because
+  every dark value sits under `[data-theme='dark']` and the light values are
+  the ones the rules held.
+  Measured, not asserted - 53 checks in `verify_visual.py verify`, green:
+  light's 15 computed values and both hover reads are byte-identical to the
+  pre-DMDARK baseline (criterion 1); the tokens resolve to the dark values and
+  every surface wears the token it reads; contrast is measured per surface in
+  BOTH appearances - light min 4.68:1 (.llm-status), dark min 5.11:1, all
+  above 4.5 (criterion 5); the three statuses keep their hue families and the
+  severity ramp keeps its climb, neutral below amber below red, in both
+  (criterion 4); the control pass clicks the banner's Configure, chooses Dark
+  (attribute + localStorage), System, flips the emulated OS and watches the
+  attribute re-resolve, then proves a stated Light does not follow the OS
+  (criteria 2 and 3); the meta tracks the resolved appearance (criterion 6).
+  Six dark shots are captured by `shots` (04/05/06) alongside the light set.
+  What broke / lessons - `document.body` carries no background (it is on
+  <html>), and the first `.panel` is the accent-surface anchor, so the first
+  two assertions measured the wrong things; the checks now compare a surface
+  to the token it reads rather than to a hardcoded expectation. Chrome's CSSOM
+  does not expand a `var()` inside a shorthand, so the ramp is measured by
+  putting the elements on the page and reading the cascade, not by walking
+  cssRules. A profile directory reused across runs keeps localStorage, so the
+  harness clears it at the start of every run.
+  Gates: web 301/301 (9 resolver + 5 appearance-row tests added), tsc clean,
+  build ok, visual verify green in both appearances; server 796/796
+  untouched - no server file changed.
 ```
 
 ### UI-REDUX contract (the shell's visual and interaction craft)
@@ -2422,5 +2463,5 @@ ID: WALK-UX-004
 PRIORITY: high
 STATUS: PENDING
 
-Contracts for the rolling window (the two most recent: W3X-003-PROMPT and
-W3X-004). Older blocks are in `ai/TASKS-ARCHIVE.md`.
+Contracts for the rolling window (the two most recent: DMDARK and
+UI-REDUX). Older blocks are in `ai/TASKS-ARCHIVE.md`.

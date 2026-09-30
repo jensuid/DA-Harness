@@ -3,25 +3,29 @@ the motion, the on-screen chart). P8, P7, P6, P5, P4, P3, P2, P1 and P0 are all
 COMPLETE (see the phase table below). Every phase the roadmap and the
 conformance evaluation asked for is delivered; no phase is open.
 
-- **Active task:** UI-REDUX - the shell's visual and interaction craft,
-  phase 1 and phase 2 of the audit in `docs/UI-UX Audit & Redesign Plan.md`.
-  A base button system (hover shift, one-pixel press, transitions, a filled
-  `primary` variant for each screen's one verb), the bundled Geist face with
-  a display-weight h1, the quality severity ramp and every shadow remapped
-  onto the shell's own tokens, the workflow rail as a connected spine,
-  accent-tinted anchor surfaces for the rail and the decision, a
-  skip-to-content link, and favicon plus document metadata. `lucide-react`
-  (declared, imported nowhere) is removed. Verified live in a real Chrome
-  over CDP against a real core on an isolated data dir - computed styles,
-  not source claims.
-    **STATUS: DONE, committed and pushed.** Phase 3 of the audit's plan
-  remains open and is the natural next task: dark mode (a token swap, which
-  is why the remap onto tokens came first), skeleton loaders, semantic zone
-  composition, and an iconography decision. No phase is open; this is a
-  task, not a phase.
-  Sebelumnya: v0.3.7 (the release W5X-001 ships in), W5X-001 (the Data
-  panel's duplicate filename), WALK-UX-005 (validasi W3X-001), WALK-UX-004
-  (validasi fix W3X + temuan regresi W4X-001), v0.3.6, W3X-003-PROMPT,
+- **Active task:** DMDARK - dark mode as a token swap, phase 3 item 9 of
+  the audit in `docs/UI-UX Audit & Redesign Plan.md`. One driver
+  (`web/src/theme.ts`) writes `data-theme` on `<html>` and the meta
+  `theme-color`; one mechanism (the `[data-theme='dark']` block in
+  `index.css`) redefines the `:root` tokens; one control (an Appearance
+  fieldset in the settings dialog) offers Light / Dark / System, System by
+  default, persisted in localStorage and re-resolved live when the OS
+  preference moves. Every component colour in `index.css`, `lib/ui.tsx` and
+  `lib/chart.tsx` reads the tokens, so the panels follow the swap.
+    **STATUS: DONE, committed and pushed.** Light measured byte-identical to
+  the pre-DMDARK baseline (15 computed reads and both hover reads); 53 checks
+  in the visual harness green in both appearances, with contrast measured per
+  surface (light min 4.68:1, dark min 5.11:1, all above 4.5), the three
+  statuses keeping their hue families, the severity ramp keeping its climb,
+  and a control pass exercising the dialog, the persistence and the live OS
+  re-resolution. Six dark shots captured.
+  Phase 3's other three items remain open: skeleton loaders, semantic zone
+  composition, and an iconography decision. No phase is open; this is a task,
+  not a phase.
+  Sebelumnya: UI-REDUX (the shell's visual and interaction craft, phases 1
+  and 2), v0.3.7 (the release W5X-001 ships in), W5X-001 (the Data panel's
+  duplicate filename), WALK-UX-005 (validasi W3X-001), WALK-UX-004 (validasi
+  fix W3X + temuan regresi W4X-001), v0.3.6, W3X-003-PROMPT,
   W3X-002, W3X-004, WALK-UX-003.
   Sebelumnya: W2X-008 + W2X-013 (the density), W2X-002 + W2X-005 (the first
   thing the app says), W2X-006 + W2X-007 (the analysis editor), W2X-012 phase
@@ -313,7 +317,7 @@ conformance evaluation asked for is delivered; no phase is open.
 
 ## How to run (web)
 
-- Web tests: `cd web && npm test` (17 tests; vitest, jsdom, no network)
+- Web tests: `cd web && npm test` (19 files, 301 tests; vitest, jsdom, no network)
 - Web build: `cd web && npm run build` (tsc -b + vite)
 - Desktop bundle: `cd web && npm run build:desktop` (absolute API URL for the
   Tauri shell)
