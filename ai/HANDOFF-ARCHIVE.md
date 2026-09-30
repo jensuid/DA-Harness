@@ -856,3 +856,51 @@ land in its store - the running app's own core owns 8123.
 
 Gates now: server 796/796, web 287/287, tsc clean, build ok.
 
+## DMDARK, dark mode as a token swap
+
+Moved from `ai/HANDOFF.md` when SKEL was queued as the next task.
+
+## Next action
+
+**DMDARK is done: dark mode is a token swap.** One driver (`web/src/theme.ts`)
+writes `data-theme` on `<html>` and the meta `theme-color`; one mechanism (the
+`[data-theme='dark']` block in `index.css`) redefines the `:root` tokens; one
+control (an Appearance fieldset in the settings dialog) offers Light / Dark /
+System, System by default, persisted in localStorage and re-resolved live when
+the OS preference moves. Every hardcoded colour in the component rules, in
+`lib/ui.tsx` and in `lib/chart.tsx` moved onto the tokens, so the panels
+follow the swap - a pure CSS-var swap in `index.css` alone would not have
+themed them, and that was the one finding worth carrying.
+
+Light is byte-for-byte the appearance it was, and this was measured rather
+than asserted: the visual harness's 15 computed reads and both hover reads are
+identical to the pre-DMDARK baseline, and 53 checks are green with the dark
+tokens resolving, contrast measured per surface in both appearances (light min
+4.68:1, dark min 5.11:1, all above 4.5), the three statuses keeping their hue
+families, the severity ramp keeping its climb, and a control pass that clicks
+the dialog, persists a choice, flips the emulated OS and watches the attribute
+re-resolve. Six dark shots are captured alongside the light set.
+
+Two lessons for the next measurement-driven surface: assert a surface against
+the token it reads, not against a hardcoded expectation - `document.body`
+carries no background (it is on `<html>`) and the first `.panel` is the
+accent-surface anchor, so the first two assertions measured the wrong things;
+and Chrome's CSSOM does not expand a `var()` inside a shorthand, so the ramp
+is measured by putting the elements on the page and reading the cascade
+instead of walking `cssRules`. The reused Chrome profile keeps localStorage
+between runs, so the harness clears it at the start of every run.
+
+**Next: phase 3's remaining three items** - skeleton loaders, semantic zone
+composition and iconography, documented in section 9 of
+`docs/UI-UX Audit & Redesign Plan.md` and not started. Nothing else is open:
+the carried follow-ups are closed and no walk-test finding is queued.
+
+The visual harness in `verification/visual/` is the gate for any surface:
+`verify_visual.py verify` starts an isolated core on 8124, seeds a case,
+serves the bundle and drives Chrome over CDP, and its assertions now fail the
+run (`process.exit(1)` propagates through the wrapper's `check=True`). Run it
+before claiming a surface changed.
+
+Gates now: web 301/301, tsc clean, build ok, visual verify green in both
+appearances, server 796/796 (no server file changed).
+

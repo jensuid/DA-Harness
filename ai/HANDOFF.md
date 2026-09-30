@@ -1,48 +1,38 @@
 ## Next action
 
-**DMDARK is done: dark mode is a token swap.** One driver (`web/src/theme.ts`)
-writes `data-theme` on `<html>` and the meta `theme-color`; one mechanism (the
-`[data-theme='dark']` block in `index.css`) redefines the `:root` tokens; one
-control (an Appearance fieldset in the settings dialog) offers Light / Dark /
-System, System by default, persisted in localStorage and re-resolved live when
-the OS preference moves. Every hardcoded colour in the component rules, in
-`lib/ui.tsx` and in `lib/chart.tsx` moved onto the tokens, so the panels
-follow the swap - a pure CSS-var swap in `index.css` alone would not have
-themed them, and that was the one finding worth carrying.
+**DMDARK is done and pushed** (`286b3fa`) - dark mode as a token swap, 53
+visual checks green in both appearances, light measured byte-identical. Its
+contract and its measured done-record are in `ai/TASKS.md`; the lessons worth
+carrying are in the archive entry this section replaced.
 
-Light is byte-for-byte the appearance it was, and this was measured rather
-than asserted: the visual harness's 15 computed reads and both hover reads are
-identical to the pre-DMDARK baseline, and 53 checks are green with the dark
-tokens resolving, contrast measured per surface in both appearances (light min
-4.68:1, dark min 5.11:1, all above 4.5), the three statuses keeping their hue
-families, the severity ramp keeping its climb, and a control pass that clicks
-the dialog, persists a choice, flips the emulated OS and watches the attribute
-re-resolve. Six dark shots are captured alongside the light set.
+**Next: SKEL, skeleton loaders** - phase 3 item 10 of
+`docs/UI-UX Audit & Redesign Plan.md` (observation I4). The contract is
+written and sitting in `ai/TASKS.md`; the shape of it mirrors DMDARK: ONE
+mechanism (`surfaces.skeleton` in `lib/ui.tsx` + one `.skeleton` rule in
+`index.css`), not a skeleton per panel; each panel wraps the shape it already
+renders with the same row and wrap counts; the sentence states stay for
+assistive tech (`role="status"` / `aria-busy` unchanged); the shimmer is one
+animation gated through `prefers-reduced-motion` and the gate is measured; the
+skeleton reads a token so `verify` is green in both appearances.
 
-Two lessons for the next measurement-driven surface: assert a surface against
-the token it reads, not against a hardcoded expectation - `document.body`
-carries no background (it is on `<html>`) and the first `.panel` is the
-accent-surface anchor, so the first two assertions measured the wrong things;
-and Chrome's CSSOM does not expand a `var()` inside a shorthand, so the ramp
-is measured by putting the elements on the page and reading the cascade
-instead of walking `cssRules`. The reused Chrome profile keeps localStorage
-between runs, so the harness clears it at the start of every run.
+**Two decisions the contract leaves open**, and they are the only things to
+confirm before writing code: whether case open loads its ~12 artifacts
+concurrently or in stages (which decides one full-workspace skeleton beat
+against per-panel skeletons - measure it first, the way DMDARK measured its
+surfaces), and whether to shimmer at all rather than ship a static darker
+surface. Lean shimmer-with-gate: one animation, and the gate is the
+constraint that makes it safe.
 
-**Next: phase 3's remaining three items** - skeleton loaders, semantic zone
-composition and iconography, documented in section 9 of
-`docs/UI-UX Audit & Redesign Plan.md` and not started. Nothing else is open:
-the carried follow-ups are closed and no walk-test finding is queued.
-
-The visual harness in `verification/visual/` is the gate for any surface:
-`verify_visual.py verify` starts an isolated core on 8124, seeds a case,
-serves the bundle and drives Chrome over CDP, and its assertions now fail the
-run (`process.exit(1)` propagates through the wrapper's `check=True`). Run it
-before claiming a surface changed.
+Phase 3's other two items stay queued after SKEL: the iconography decision
+(item 12) before zone composition (item 11), because stage marks may become
+icons and zone composition migrates panel roots from `<div>` to
+`<section>`/`<aside>` - the largest test surface, deliberately last and
+per-panel. No carried follow-up is open and no walk-test finding is queued.
 
 Gates now: web 301/301, tsc clean, build ok, visual verify green in both
-appearances, server 796/796 (no server file changed).
+appearances, server 796/796.
 
-## Recent completions
+## Recent completions## Recent completions
 
 The last tasks to land, newest first. The contract and done-record for each
 is in `ai/TASKS.md` (rolling window) or `ai/TASKS-ARCHIVE.md`.

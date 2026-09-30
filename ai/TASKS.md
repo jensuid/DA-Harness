@@ -2463,5 +2463,68 @@ ID: WALK-UX-004
 PRIORITY: high
 STATUS: PENDING
 
+### SKEL contract (skeleton loaders, phase 3 item 10)
+
+```
+TASK ID: SKEL
+MILESTONE: phase 3 item 10 of `docs/UI-UX Audit & Redesign Plan.md` (I4).
+           DMDARK (item 9) is done, so the token layer the skeletons read is
+           already in place and already measured in both appearances.
+TASK: loading is a sentence today ("Loading...", "Asking..."), which is
+      screen-reader-friendly but leaves the workspace blank while ~12
+      artifacts fetch on case open. Shape-match each panel's skeleton behind
+      the existing sentence state, so a panel reads as its own shape while it
+      waits and the sentence stays for assistive tech.
+STATUS: PENDING - planned with the analyst, not started. This contract is the
+        handoff for a fresh session; the two decisions at the bottom are the
+        only open ones.
+WHY: the audit's I4 is a workspace observation, not a bug. A data-dense
+    surface that arrives all at once after a blank beat reads as slow even
+    when it is not; a shape-matched skeleton is the panel saying what it will
+    hold.
+ROOT CAUSE: n/a - polish the architecture anticipates, like DMDARK.
+NON-GOALS: no replacement of the sentence states (they keep role="status" /
+           aria-busy and the AT audit keeps passing); no new dependency
+           (DEC-001); no change to panel contracts, DOM text or data-testid
+           values; no new layout - a skeleton wraps the shape the panel
+           already renders, with the same row/wrap counts.
+CONSTRAINTS: ONE mechanism, the way DMDARK taught - one skeleton surface in
+             `lib/ui.tsx` and one `.skeleton` rule in `index.css`, not a
+             skeleton per panel. Motion budget (AT-27/AT-30) still holds: the
+             shimmer is one animation, gated through the same
+             prefers-reduced-motion rule, and the gate is measured. AT-32
+             holds in BOTH appearances - the skeleton reads a token
+             (surface-muted and its shimmer), never a hardcoded hex.
+MECHANISM (decided, mirroring DMDARK): `surfaces.skeleton` in `lib/ui.tsx`
+             composed from the existing tokens; a single `.skeleton` rule plus
+             one keyframe in `index.css`; the reduced-motion block kills the
+             animation (verify whether the three existing
+             prefers-reduced-motion blocks should become one while there).
+             Each panel renders its own shape - CaseList three case rows,
+             WorkflowRail its seven stage marks, DataPanel overview plus
+             table, and so on - by wrapping the shape it already renders.
+ACCEPTANCE CRITERIA:
+  1. Panels show a shape-matched skeleton while their fetch is in flight, and
+     the skeleton is gone by the time the panel's data renders - no skeleton
+     left behind, no panel that renders blank first.
+  2. The sentence state still reaches a screen reader: role="status" /
+     aria-busy are unchanged, and the a11y suite still passes.
+  3. The shimmer is one animation, and `prefers-reduced-motion: reduce`
+     disables it - measured in the browser, not asserted in source.
+  4. The skeleton follows the appearance: it reads the same token names, and
+     `verify_visual.py verify` is green in BOTH light and dark with the
+     skeleton resolving dark tokens.
+  5. Light is unchanged where no skeleton renders, and the skeleton adds no
+     new layout - the panel's measured geometry is the same once data lands.
+  6. Gates stay green: web 301+, tsc clean, build ok, server 796/796.
+OPEN DECISIONS (small, decide while implementing - the analyst's two):
+  - Whether case open loads its artifacts concurrently or in stages, which
+    decides one full-workspace skeleton beat against per-panel skeletons.
+    Measure first, as DMDARK did with its surfaces.
+  - Whether to shimmer at all, or to ship a static darker surface. Lean
+    shimmer-with-gate: it is one animation and the gate is the constraint
+    that makes it safe.
+```
+
 Contracts for the rolling window (the two most recent: DMDARK and
 UI-REDUX). Older blocks are in `ai/TASKS-ARCHIVE.md`.

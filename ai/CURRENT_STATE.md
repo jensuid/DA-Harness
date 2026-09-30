@@ -12,16 +12,17 @@ conformance evaluation asked for is delivered; no phase is open.
   default, persisted in localStorage and re-resolved live when the OS
   preference moves. Every component colour in `index.css`, `lib/ui.tsx` and
   `lib/chart.tsx` reads the tokens, so the panels follow the swap.
-    **STATUS: DONE, committed and pushed.** Light measured byte-identical to
+    **STATUS: DONE, committed and pushed (286b3fa).** Light measured byte-identical to
   the pre-DMDARK baseline (15 computed reads and both hover reads); 53 checks
   in the visual harness green in both appearances, with contrast measured per
   surface (light min 4.68:1, dark min 5.11:1, all above 4.5), the three
   statuses keeping their hue families, the severity ramp keeping its climb,
   and a control pass exercising the dialog, the persistence and the live OS
   re-resolution. Six dark shots captured.
-  Phase 3's other three items remain open: skeleton loaders, semantic zone
-  composition, and an iconography decision. No phase is open; this is a task,
-  not a phase.
+  **Next task: SKEL, skeleton loaders** - phase 3 item 10, contract written and
+  sitting in `ai/TASKS.md`, planned with the analyst but not started. Phase 3's
+  other two items (iconography decision, then zone composition) queue after it.
+  No phase is open; this is a task, not a phase.
   Sebelumnya: UI-REDUX (the shell's visual and interaction craft, phases 1
   and 2), v0.3.7 (the release W5X-001 ships in), W5X-001 (the Data panel's
   duplicate filename), WALK-UX-005 (validasi W3X-001), WALK-UX-004 (validasi
