@@ -113,7 +113,7 @@ export const surfaces = {
 } as const
 
 // The four button shapes the current CSS defines: `button`, `button.link`,
-// `button.small` and `button.danger`. class-variance-authority types the
+// `button.small` and `button.danger`, plus `primary` (UI-REDUX I3). class-variance-authority types the
 // variants so a typo is a compile error rather than an unstyled button.
 // `button` is the shape everything renders when no variant is named, and it
 // carries the base rule's own properties so a bare `<Button>` is the button
@@ -122,6 +122,11 @@ export const buttonVariants = cva('button', {
   variants: {
     variant: {
       default: 'mt-4 px-4 py-2',
+      // I3: the one action a panel asks for. Filled with the accent so the
+      // loop's next step and the screens' primary verbs stop sharing a shape
+      // with Rename and Cancel - the shape is the hierarchy the panels lost
+      // when every button looked alike.
+      primary: 'mt-4 px-4 py-2 primary',
       link: 'link',
       small: 'small',
       danger: 'danger',

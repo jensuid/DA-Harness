@@ -52,7 +52,7 @@ export function CaseList({
           onChange={(e) => setTerm(e.target.value)}
           placeholder="Search by question or dataset…"
         />
-        <Button type="button" onClick={onCreate}>
+        <Button type="button" onClick={onCreate} variant="primary">
           New case
         </Button>
       </div>

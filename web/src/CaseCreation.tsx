@@ -124,7 +124,7 @@ export function CaseCreation({
             case.
           </p>
         )}
-        <Button type="submit" disabled={saving}>
+        <Button type="submit" disabled={saving} variant="primary">
           {saving ? 'Saving…' : 'Create case'}
         </Button>
         {error && <p role="alert">Failed: {error}</p>}

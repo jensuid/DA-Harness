@@ -18,7 +18,11 @@ export default defineConfig({
     strictPort: true,
     proxy: {
       '/api': {
-        target: 'http://127.0.0.1:8123',
+        // The core's default port is the one the Tauri shell's sidecar binds;
+        // DAH_CORE_PORT lets a second, isolated core answer instead - a
+        // visual check against seeded data, without touching the case store
+        // the running app owns.
+        target: `http://127.0.0.1:${Number(process.env.DAH_CORE_PORT ?? 8123)}`,
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
       },

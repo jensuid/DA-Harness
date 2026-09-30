@@ -86,7 +86,7 @@ export function DecisionPanel({
   )
 
   return (
-    <div className={surfaces.panel}>
+    <div className={surfaces.panel + ' decision'}>
       <h2 className={surfaces.heading}>Decision</h2>
       <p className={surfaces.note}>
         What this case established, and what it did not. DAH informs decisions;

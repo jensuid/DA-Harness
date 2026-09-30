@@ -112,7 +112,7 @@ export function Chat({
           placeholder="How many datasets does this case have?"
           disabled={busy}
         />
-        <Button type="submit" disabled={busy || !message.trim()}>
+        <Button type="submit" disabled={busy || !message.trim()} variant="primary">
           {busy ? 'Asking…' : 'Ask'}
         </Button>
       </form>

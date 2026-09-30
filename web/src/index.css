@@ -30,11 +30,40 @@
   --color-danger: #a03a2a;
   --color-danger-bg: #faf0ee;
   --color-danger-border: #d9a094;
+/* The accent's own tinted surface, named so `.collapse-toggle`'s fallback and
+   the anchor surfaces (the rail, the decision) read one value - it was an
+   inline fallback before, so this is the value it already had, named. */
+  --color-accent-surface: #f7f9fc;
   --radius: 0.4rem;
 }
 
+/* The bundled face (T1): Geist is a variable font, so one woff2 per subset
+   carries the whole weight range the shell uses, and the pair ships in the
+   bundle rather than being fetched - an offline desktop app renders the same
+   face a browser does, and DEC-001's "no network from the browser" is kept.
+   The SIL OFL license sits beside the files in public/fonts. system-ui stays
+   as the fallback so nothing renders unstyled before the face loads. */
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/fonts/geist-latin.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/fonts/geist-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
+    U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
+    U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
 :root {
-  font-family: system-ui, sans-serif;
+  font-family: 'Geist', system-ui, sans-serif;
   color: #1a1a1a;
   background: #fafafa;
 }
@@ -159,8 +188,16 @@ ul.overview li:nth-child(2) {
   }
 }
 
+/* T2: the workspace's h1 is a long, user-written question - the single
+   largest piece of text on any screen - and it read at the same size as a
+   panel heading. It carries the display weight now: larger, tighter-tracked,
+   balanced so a question does not orphan one word onto its own line. */
 h1 {
-  font-size: 1.5rem;
+  font-size: 1.75rem;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+  margin: 0.25rem 0 1rem;
 }
 
 label {
@@ -178,8 +215,56 @@ input {
 button {
   margin-top: 1rem;
   padding: 0.5rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-text);
   font: inherit;
   cursor: pointer;
+  /* I1/I2: the shell's primary actions had no hover, no press and no
+     transition, so the buttons an analyst uses every click felt inert while
+     the rows around them reacted. The feedback is the cheapest kind that
+     reads - a background shift on hover, a one-pixel press - and every
+     transition is inside the interaction budget AT-27 measures, so the
+     response the analyst makes is not paid back in latency. */
+  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease,
+    transform 0.12s ease, box-shadow 0.18s ease;
+}
+
+/* The hover sits here, immediately after the base rule, so every later
+   component rule (`button.link`, `button.danger`, `.chip`, `.case-open`,
+   `.collapse-toggle`) at equal or higher specificity still wins - a button
+   with its own hover keeps its own hover. */
+button:hover {
+  border-color: var(--color-accent);
+  background: var(--color-accent-surface);
+}
+
+button:active {
+  transform: translateY(1px);
+}
+
+button:disabled {
+  cursor: default;
+}
+
+/* I3: the one action a panel asks for reads as the one action. Filled with
+   the accent, so the loop's next step and the screens' primary verbs - New
+   case, Ask, Create - stop sharing a shape with Rename and Cancel. */
+button.primary {
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+  color: #ffffff;
+  font-weight: 600;
+}
+
+button.primary:hover {
+  border-color: var(--color-accent-text);
+  background: var(--color-accent-text);
+}
+
+button.primary:active {
+  transform: translateY(1px);
 }
 
 button.link {
@@ -496,30 +581,37 @@ button.danger:hover {
 }
 
 .quality-issue {
-  border-left: 3px solid #d9a800;
-  background: #fdf6e3;
+  border-left: 3px solid var(--color-warn-border);
+  background: var(--color-warn-bg);
   padding: 0.4rem 0.6rem;
   margin-top: 0.4rem;
   font-size: 0.9rem;
 }
 
+/* C1/C2: the severity ramp used a second palette - Material reds and grays -
+   beside the shell's own tokens, so a high-severity issue and a refused
+   action were two different reds for one meaning. The ramp now climbs the
+   shell's own tokens: the default issue is the warn note, a high one is the
+   danger note, a low one is a neutral surface - the same three states the
+   rest of the shell renders, so a severity reads as a status the analyst has
+   seen before rather than a third vocabulary. */
 .quality-issue.severity-high {
-  border-left-color: #b3261e;
-  background: #fdecea;
+  border-left-color: var(--color-danger);
+  background: var(--color-danger-bg);
 }
 
 .quality-issue.severity-low {
-  border-left-color: #9aa0a6;
-  background: #f1f3f4;
+  border-left-color: var(--color-border);
+  background: var(--color-surface-muted);
 }
 
 .quality-observed {
-  color: #202124;
+  color: var(--color-text);
 }
 
 .quality-impact {
   display: block;
-  color: #5f6368;
+  color: var(--color-text-muted);
   margin-top: 0.15rem;
 }
 
@@ -588,7 +680,10 @@ button.danger:hover {
   background: #faf6ec;
   color: #6a5410;
   font-size: 0.92rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  /* C3: a pure-black shadow on a warm surface reads as grey dirt; the tint
+     carries the accent's own cool hue the way a shadow on a coloured surface
+     does in light. */
+  box-shadow: 0 2px 8px rgba(30, 45, 70, 0.1);
 }
 
 /* The concern tone is deliberate: the answer the private repository always
@@ -624,7 +719,7 @@ button.danger:hover {
   background: var(--color-warn-bg);
   color: var(--color-warn);
   font-size: 0.92rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 8px rgba(30, 45, 70, 0.1);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -674,7 +769,9 @@ button.danger:hover {
   align-items: flex-start;
   justify-content: center;
   padding: 4vh 1rem;
-  background: rgba(0, 0, 0, 0.35);
+  /* C3: the scrim and the dialog's shadow carry a hue rather than black, so
+     the overlay reads as the surface dimmed rather than as a grey film. */
+  background: rgba(20, 30, 48, 0.38);
 }
 
 .llm-settings form {
@@ -684,7 +781,7 @@ button.danger:hover {
   border-radius: var(--radius);
   background: var(--color-surface);
   color: var(--color-text);
-  box-shadow: 0 6px 28px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 6px 28px rgba(20, 30, 48, 0.22);
 }
 
 .llm-settings h2 {
@@ -819,6 +916,15 @@ button.danger:hover {
   cursor: pointer;
 }
 
+/* The base button's hover paints a tinted box behind whatever it touches, and
+   this action is meant to read as a sentence the analyst follows, not as a
+   button - so its hover keeps the link's character: the underline and the
+   accent's ink, with no box around it. `button.link` keeps the same character
+   by source order; this class is a notch lower in specificity, so it says so. */
+.next-action-link:hover {
+  background: none;
+}
+
 /* W2X-008: the disclosure. A collapsed surface is a summary the analyst scans
    and a region one click away, so the toggle reads as a panel's own header
    rather than a generic button - the mark is decorative and the summary is
@@ -898,6 +1004,129 @@ button.danger:hover {
 
 @media (prefers-reduced-motion: reduce) {
   .call-progress {
+    transition: none;
+  }
+}
+
+/* UI-REDUX T6: the overview's seven facts are counts an analyst compares at a
+   glance, and proportional digits shift width as they change between cases;
+   tabular figures hold the column so 3 and 30 line up. The rest of the shell
+   already reads numbers in monospace, which carries the same property. */
+ul.overview {
+  font-variant-numeric: tabular-nums;
+}
+
+/* UI-REDUX L2: the rail's stages were a bulleted list, so the case's progress
+   read as seven lines rather than as a ladder. The marks are unchanged - the
+   glyphs are what makes a status readable to a screen reader, and the a11y
+   audit pins them - and a rule now runs through them behind a fixed-width
+   column, so a stage sits on the line and the completed ones above it read as
+   ground already covered. */
+.stage-list {
+  position: relative;
+  margin-top: 0.75rem;
+}
+
+.stage-list::before {
+  content: '';
+  position: absolute;
+  left: 0.55rem;
+  top: 0.55rem;
+  bottom: 0.55rem;
+  width: 1px;
+  background: var(--color-border);
+}
+
+.stage-list li.stage {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0.28rem 0;
+}
+
+.stage-mark {
+  position: relative;
+  z-index: 1;
+  flex: none;
+  width: 1.1rem;
+  height: 1.1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* The glyph masks the rule behind it, so the line reads as connecting the
+     stages rather than running through them. --anchor-bg is the rail's own
+     background, so the mask is the surface the mark sits on. */
+  background: var(--anchor-bg, var(--color-surface));
+  border-radius: 50%;
+}
+
+/* UI-REDUX L1: every surface in the workspace is the same white card, so
+   nothing in the hierarchy said which panel is the anchor. The rail orients -
+   it is the sticky surface, the one read first and returned to - and it
+   carries the accent's own tinted surface now rather than a new border, so it
+   reads as a different weight of the same vocabulary. `.zone` qualifies the
+   selector so it wins the cascade over the panel's own `bg-white` without a
+   specificity fight. */
+.zone .workflow-rail {
+  --anchor-bg: var(--color-accent-surface);
+  background: var(--anchor-bg);
+}
+
+/* The loop's exit is the other anchor: the last panel in the work zone, and
+   the one the whole loop exists to reach. It carries the same tint so the two
+   surfaces that matter most - where the case stands, and what it concluded -
+   read as one weight, distinct from the pickers between them. */
+.zone .decision {
+  background: var(--color-accent-surface);
+}
+
+/* The anchor's headings carry the accent's own ink so the tint reads as
+   intentional rather than as a washed-out panel. */
+.zone .workflow-rail h2,
+.zone .decision h2 {
+  color: var(--color-accent-text);
+}
+
+/* UI-REDUX S1: a keyboard user's first tab crosses the sticky rail and every
+   panel's controls before the content it came for. The link is the standard
+   accompaniment to the landmark App.tsx already renders, and it is visible
+   only when it has focus - the visually-hidden pattern the shell already
+   uses, which keeps it from the sighted layout entirely until it is needed. */
+.skip-link {
+  position: absolute;
+  left: 1rem;
+  top: 0.5rem;
+  z-index: 300;
+  margin: 0;
+  padding: 0.5rem 0.9rem;
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius);
+  background: var(--color-accent);
+  color: #ffffff;
+  font: inherit;
+  font-weight: 600;
+  transform: translateY(-150%);
+  transition: transform 0.18s ease;
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+/* UI-REDUX I1/I2: the button's feedback is motion - a shift on hover, a
+   press on click - and the reduced-motion gate the shell honours everywhere
+   else honours it here too. The feedback is decorative; the button's own
+   colour change on hover is carried by `background`, which this rule leaves
+   alone, so a keyboard user still sees which control they are on. */
+@media (prefers-reduced-motion: reduce) {
+  button {
+    transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+  }
+  button:active {
+    transform: none;
+  }
+  .skip-link {
     transition: none;
   }
 }

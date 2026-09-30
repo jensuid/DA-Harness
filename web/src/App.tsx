@@ -23,10 +23,17 @@ export function App() {
   // does not wrap is a screen the analyst's setting does not reach.
   return (
     <ReducedMotion>
+      {/* UI-REDUX S1: the skip link is the standard accompaniment to the
+          landmark below - a keyboard user's first tab reaches this instead of
+          the sticky rail's controls, and it is invisible to the sighted layout
+          until it has focus. */}
+      <a className="skip-link" href="#content">
+        Skip to content
+      </a>
       {view.kind === 'workspace' ? (
         // The workspace spreads to three zones (UX 8); the list and the
         // creation form stay single-column narrow.
-        <main className="wide">
+        <main className="wide" id="content">
           <NoticeLayer />
           <LlmStatusBanner />
           <LlmSettingsPanel />
@@ -39,7 +46,7 @@ export function App() {
           />
         </main>
       ) : view.kind === 'create' ? (
-        <main>
+        <main id="content">
           <NoticeLayer />
           <LlmStatusBanner />
           <LlmSettingsPanel />
@@ -52,7 +59,7 @@ export function App() {
           />
         </main>
       ) : (
-        <main>
+        <main id="content">
           {/* FIX-UPDATES-009 (W-005): mounted on every screen because the
             native Check for Updates menu item can be pulled on any of them,
             and inert until a notice arrives - it is not a loading state. The

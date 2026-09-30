@@ -789,3 +789,24 @@ Gates now: server 796/796 (three tests added), web 287/287, tsc clean, build
 ok, trace 48/48, e2e ALL PASS.
 
 ## Recent completions
+
+---
+
+## Next action
+
+**v0.3.7 is published: the release the W5X-001 fix ships in.** All three
+version files moved together — `server/pyproject.toml`,
+`desktop/package.json`, `desktop/src-tauri/tauri.conf.json` — the sidecar was
+repackaged so the stamp the spec writes is 0.3.7, and `tauri build` produced
+the `.app` and the DMG from that bundle. Smoke-tested as a real launch: the
+packaged core answers `/health` ok and `/updates/latest` reports
+`current: 0.3.7`, so the version a Check for Updates reads is the version
+this release is.
+
+The DMG (sha256 b1635955803967f8f0e44124c25bfcac42389820efbd0b101db6ece216c6119) is unsigned, as every release has been since DEC-006 deferred signing for a single-user app. Nothing is queued: all five walk-tests' findings are closed, and their fixes are validated and shipped. GitHub Actions still refuses every job (billing suspended), so the release was built and verified locally from the same steps `release.yml` runs.
+
+**Next: nothing is open.** The two remaining limits are both outside this
+repo's control: the app is unsigned (DEC-006), and CI is suspended (billing).
+
+Gates now: server 796/796, web 287/287, tsc clean, build ok, trace 48/48,
+e2e ALL PASS.

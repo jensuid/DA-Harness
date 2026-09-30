@@ -3,6 +3,18 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- UI-REDUX P2: the bundle shipped no document metadata at all. The
+         favicon is the Tauri icon the desktop shell already stamps the .app
+         with, so the browser tab and the dock read as one product, and the
+         theme-colour is the shell's own accent so an installed PWA-style
+         chrome matches. -->
+    <link rel="icon" type="image/png" href="/favicon-32.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="theme-color" content="#fafafa" />
+    <meta
+      name="description"
+      content="DAH - a data analysis harness: state the question, explore the data, and follow the evidence from finding to decision."
+    />
     <title>DAH - Data Analysis Harness</title>
   </head>
   <body>

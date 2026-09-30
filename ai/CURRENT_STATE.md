@@ -3,24 +3,25 @@ the motion, the on-screen chart). P8, P7, P6, P5, P4, P3, P2, P1 and P0 are all
 COMPLETE (see the phase table below). Every phase the roadmap and the
 conformance evaluation asked for is delivered; no phase is open.
 
-- **Active task:** v0.3.7 - the release the W5X-001 fix ships in. All three
-  version files moved together (server/pyproject.toml, desktop/package.json,
-  desktop/src-tauri/tauri.conf.json), the PyInstaller sidecar was repackaged
-  so the stamp the spec writes is 0.3.7, and `tauri build` produced the .app
-  and the DMG from that bundle. Smoke-tested as a real launch: the packaged
-  core answers `/health` ok and `/updates/latest` reports `current: 0.3.7`,
-  so the version a Check for Updates reads is the version this release is.
-  The DMG (sha256
-  b1635955803967f8f0e44124c25bfcac42389820efbd0b101db6ece216c6119) is
-  unsigned, as every release has been since DEC-006 deferred signing for a
-  single-user app.
-    **STATUS: DONE, committed and pushed.** No task is queued - all five
-  walk-tests' findings are closed and shipped. GitHub Actions still refuses
-  every job (billing suspended), so the release was built and verified
-  locally from the same steps `release.yml` runs.
-  Sebelumnya: W5X-001 (the Data panel's duplicate filename), WALK-UX-005
-  (validasi W3X-001), WALK-UX-004 (validasi fix W3X + temuan regresi
-  W4X-001), v0.3.6 (rilis tempat fix W3X dan W4X-001 masuk), W3X-003-PROMPT,
+- **Active task:** UI-REDUX - the shell's visual and interaction craft,
+  phase 1 and phase 2 of the audit in `docs/UI-UX Audit & Redesign Plan.md`.
+  A base button system (hover shift, one-pixel press, transitions, a filled
+  `primary` variant for each screen's one verb), the bundled Geist face with
+  a display-weight h1, the quality severity ramp and every shadow remapped
+  onto the shell's own tokens, the workflow rail as a connected spine,
+  accent-tinted anchor surfaces for the rail and the decision, a
+  skip-to-content link, and favicon plus document metadata. `lucide-react`
+  (declared, imported nowhere) is removed. Verified live in a real Chrome
+  over CDP against a real core on an isolated data dir - computed styles,
+  not source claims.
+    **STATUS: DONE, committed and pushed.** Phase 3 of the audit's plan
+  remains open and is the natural next task: dark mode (a token swap, which
+  is why the remap onto tokens came first), skeleton loaders, semantic zone
+  composition, and an iconography decision. No phase is open; this is a
+  task, not a phase.
+  Sebelumnya: v0.3.7 (the release W5X-001 ships in), W5X-001 (the Data
+  panel's duplicate filename), WALK-UX-005 (validasi W3X-001), WALK-UX-004
+  (validasi fix W3X + temuan regresi W4X-001), v0.3.6, W3X-003-PROMPT,
   W3X-002, W3X-004, WALK-UX-003.
   Sebelumnya: W2X-008 + W2X-013 (the density), W2X-002 + W2X-005 (the first
   thing the app says), W2X-006 + W2X-007 (the analysis editor), W2X-012 phase

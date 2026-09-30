@@ -1,27 +1,40 @@
 ## Next action
 
-**v0.3.7 is published: the release the W5X-001 fix ships in.** All three
-version files moved together — `server/pyproject.toml`,
-`desktop/package.json`, `desktop/src-tauri/tauri.conf.json` — the sidecar was
-repackaged so the stamp the spec writes is 0.3.7, and `tauri build` produced
-the `.app` and the DMG from that bundle. Smoke-tested as a real launch: the
-packaged core answers `/health` ok and `/updates/latest` reports
-`current: 0.3.7`, so the version a Check for Updates reads is the version
-this release is.
+**UI-REDUX is done: the shell's surfaces, type and buttons now carry hierarchy
+and give feedback.** Phase 1 and phase 2 of the audit in
+`docs/UI-UX Audit & Redesign Plan.md` landed: a base button system (hover
+shift, one-pixel press, transitions, a filled `primary` variant for each
+screen's one verb), the bundled Geist face with a display-weight h1, the
+quality severity ramp and every shadow remapped onto the shell's own tokens,
+the workflow rail as a connected spine, accent-tinted anchor surfaces for the
+rail and the decision, a skip-to-content link, and favicon plus document
+metadata. `lucide-react` (declared, imported nowhere) is gone.
 
-The DMG (sha256 b1635955803967f8f0e44124c25bfcac42389820efbd0b101db6ece216c6119) is unsigned, as every release has been since DEC-006 deferred signing for a single-user app. Nothing is queued: all five walk-tests' findings are closed, and their fixes are validated and shipped. GitHub Actions still refuses every job (billing suspended), so the release was built and verified locally from the same steps `release.yml` runs.
+Verified in a real Chrome over CDP against a real core on an isolated data
+dir, reading computed styles rather than source: the body resolves
+`Geist, system-ui, sans-serif` with `document.fonts.check('16px Geist')`
+true, a real pointer move moves a button's background to the accent surface,
+and the link-styled next-action keeps its transparent hover. The one subtlety
+worth carrying: `button.link` keeps its link character on hover by source
+order (it is defined after the base `button:hover`), but `.next-action-link`
+is a class lower in specificity and needed its own `background: none` on
+hover or the base rule painted a tint box behind inline link text.
 
-**Next: nothing is open.** The two remaining limits are both outside this
-repo's control: the app is unsigned (DEC-006), and CI is suspended (billing).
+**Next: phase 3 of the audit's plan** - dark mode (a token swap, which is why
+the remap onto tokens was worth doing first), skeleton loaders so a slow
+panel's wait is a shape rather than a freeze, semantic zone composition
+(`header`/`nav`/`aside`/`footer`; the skip link's landmark is already there),
+and an iconography decision. None is blocking; all are documented in the
+audit's section 9.
 
-Gates now: server 796/796, web 287/287, tsc clean, build ok, trace 48/48,
-e2e ALL PASS.
+Gates now: server 796/796, web 287/287, tsc clean, build ok.
 
 ## Recent completions
 
 The last tasks to land, newest first. The contract and done-record for each
 is in `ai/TASKS.md` (rolling window) or `ai/TASKS-ARCHIVE.md`.
 
+- **UI-REDUX, the shell's visual and interaction craft** - phase 1 and 2 of the audit in `docs/UI-UX Audit & Redesign Plan.md`: a base button system with hover/press/transition and a filled `primary` variant per screen's verb, the bundled Geist face with a display-weight h1, the quality ramp and shadows remapped onto the shell's tokens, the rail as a connected spine, accent-tinted anchor surfaces (rail, decision), a skip-to-content link, favicon and document metadata, and `lucide-react` removed. Verified live in Chrome over CDP on an isolated core. Phase 3 (dark mode, skeletons, zone composition, iconography) remains open. Gates: server 796/796, web 287/287, tsc clean, build ok.
 - **v0.3.7, the release W5X-001 ships in** - all three version files moved together, the sidecar repackaged so the stamp the spec writes is 0.3.7, and the DMG rebuilt from that bundle (sha256 b1635955803967f8f0e44124c25bfcac42389820efbd0b101db6ece216c6119). Smoke-tested as a real launch: health ok, and the packaged core's own `/updates/latest` answers `current: 0.3.7`, so the Check for Updates item reads this release's number. Gates: server 796/796, web 287/287, tsc clean, build ok, trace 48/48, e2e ALL PASS.
 - **W5X-001, the Data panel's duplicate filename** - the attach endpoint refuses a filename already attached to the case before it writes the file, answering 409 with a sentence naming the existing dataset and how to replace it. The check is per-case, so another case may still attach the same filename, and case creation's duplicate handling is untouched. The panel's existing `Attach failed:` surface renders the sentence, so no UI changed. Three server tests and one web test pin it. Gates: server 796/796, web 287/287, tsc clean, build ok, trace 48/48, e2e ALL PASS.
 - **WALK-UX-005, the fifth walk-test** - a focused validation of the one open observation: W3X-001 (the Data panel accepts the same filename twice). A real file on disk, attached a second time through the same file input, was accepted silently (201 in 39ms, no warning, "Data sources: 2"), so the observation became a MAJOR finding with measured frequency - queued as W5X-001, now closed. Everything else held: the LLM plan answered in 6.5s with `source: llm`, the Python contract was used with zero refusals, and the case reopened with its LLM plan intact. Material and the harness's honest limits are in `walktest-w5/FINDINGS.md`.

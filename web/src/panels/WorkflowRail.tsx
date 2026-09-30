@@ -75,7 +75,7 @@ export function WorkflowRail({
       ) : (
         <p>Every stage has an artifact behind it.</p>
       )}
-      <ul className={surfaces.panelList}>
+      <ul className={surfaces.panelList + ' stage-list'}>
         {progress.stages.map((stage) => {
           const status = stageStatus(stage.name, progress, qualityWarning)
           return (
@@ -84,7 +84,13 @@ export function WorkflowRail({
               className={`stage ${status}`}
               aria-label={`stage ${stage.name}: ${status}`}
             >
-              {STAGE_MARKS[status]} {stage.name}
+              {/* L2: the glyph stays the status the audit pins it as; the
+                  fixed-width span is what the rule through the stages aligns
+                  on, so a stage reads as a rung rather than a bullet. */}
+              <span className="stage-mark" aria-hidden="true">
+                {STAGE_MARKS[status]}
+              </span>{' '}
+              {stage.name}
             </li>
           )
         })}
