@@ -497,6 +497,63 @@ SUMMARY: the loop a first-time analyst walks without a terminal, proven on
          core - recorded because a walk-test that only reports new findings
          cannot tell you the old ones regressed.
 
+### W5X-001 contract (the Data panel accepts the same filename twice)
+
+```
+TASK ID: W5X-001
+MILESTONE: the fifth walk-test (WALK-UX-005 - W3X-001 validated as
+           reachable by a human, now a real finding with measured
+           frequency). One MAJOR finding, queued for fix. Walk-through
+           material: walktest-w5/FINDINGS.md, REPORT.md, CAPTURE-SHEET.md.
+TASK: The Data panel's attach endpoint accepts the same filename twice
+      within one case, creating two dataset rows that are
+      indistinguishable everywhere the filename is the label.
+STATUS: OPEN (queued - walked and measured, not yet fixed).
+WHY: WALK-UX-005 attached a real file from disk a second time through the
+     same file input and the panel accepted it silently - `POST
+     /cases/{id}/datasets -> 201 in 39ms` with no warning, "Data sources:
+     2", and two dataset rows with the identical filename. W3 recorded
+     this as an observation because the second attach came from a
+     synthesised File object; W5 reproduced it through the same file
+     input a human re-selecting a file uses, so it is a real finding with
+     frequency "every time the same file is attached twice to one case".
+ROOT CAUSE: there is no duplicate check for filename within a case on the
+            attach endpoint - only for question+dataset on case creation
+            (W2X-010). The second change event goes through the same
+            attach() handler (web/src/panels/DataPanel.tsx:48) the first
+            one did.
+NON-GOALS: do not deduplicate silently, do not change case creation's
+           duplicate handling, do not alter the accept flow for a
+           different filename.
+CONSTRAINTS: state the collision in a full sentence naming the existing
+             dataset, so the analyst can act; match how POST /cases
+             answers a duplicate question+dataset (W2X-010 pattern).
+ACCEPTANCE CRITERIA:
+  1. Attaching a file whose filename already exists in the case is
+     refused with a sentence that names the existing dataset.
+  2. A file with a new filename is still accepted and profiled.
+  3. After the refusal the dataset list is unchanged (no half-written
+     row, no second stored file).
+TESTS: one API test posting the same filename twice (expect a refusal with
+       the sentence) and one posting two different filenames (expect both
+       accepted); one web assert that the panel renders the sentence.
+VERIFICATION: server pytest; web vitest; walk-test material stays as the
+              measured record.
+```
+
+### Carried follow-ups from the fifth walk-test (WALK-UX-005 - one open)
+
+WALK-UX-005 validated the one open observation and found nothing new: all
+prior fixes held (plan 6.5s with `source: llm`; Python contract used with
+zero refusals; case reopen rendered the LLM plan). The material is in
+`walktest-w5/FINDINGS.md`.
+
+**MAJOR**
+
+- **W5X-001 — OPEN (see contract above).** The Data panel accepts the same
+  filename twice, silently. Measured this run through the same file input a
+  human uses, so it is no longer a harness artefact.
+
 ### Carried follow-ups from the third walk-test (WALK-UX-003 - closed)
 
 None remain open. The three MAJOR findings are closed (W3X-002 and W3X-004

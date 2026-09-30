@@ -681,3 +681,41 @@ Gates now: web 285/285, tsc clean, build ok; server 793/793, trace 48/48,
 e2e 28/28.
 
 ## Recent completions
+
+## Next action
+
+**WALK-UX-004 is done: both W3X fixes held, and the walk-test found the one
+thing no suite could.** The fourth walk-test ran the full loop on a new
+domain (B2B SaaS renewals, 3,000 seeded rows) with the same slow provider W3
+measured, and answered the two questions it existed for: the LLM plan
+answered in 12.4 seconds with `source: llm` (W3: 120 seconds and a
+deterministic fallback), and the Python panel's contract turned the naive
+analyst's first interaction from three blind refusals into zero — the first
+run used `dataset.rows` straight from the page and returned a 201.
+
+The run's one finding was the regression the fix it validated had
+introduced: W3X-003-PROMPT's shrunken prompt no longer asks for
+`context_basis`, `validate_plan` treats the field as optional, and
+`PlanPanel` read it unconditionally — so a case with an LLM plan could not
+be reopened, the whole workspace blanking with a TypeError. W4X-001 guards
+the field, marks it optional in the type, and adds one test; the prompt,
+validator and deterministic planner are untouched, because the shrink is
+what keeps the plan inside the budget and this is its cost, paid on the
+client. Verified live: the case reopened and rendered `by llm for
+saas_renewals_2026.csv`.
+
+**Next: nothing is queued.** Every phase is delivered, all four walk-test 3
+findings are closed, and their fixes are now validated in an analyst's
+hands. W3X-001 (a filename accepted twice) stays an unmeasured observation;
+the same Data panel accepted the same name four times in this run's failed
+attach attempts, all from the harness's own file-synthesis path, so a human
+selecting a file twice is still the only way to reach it. Two things
+outside this repo's control, unchanged: GitHub Actions still refuses every
+job (billing), and the packaged app is unsigned by DEC-006.
+
+**v0.3.6 is the release the W3X fixes and this fix ship in.**
+
+Gates now: web 285/285, tsc clean, build ok; server 793/793, trace 48/48,
+e2e 28/28.
+
+## Recent completions

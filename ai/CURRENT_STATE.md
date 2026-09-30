@@ -3,45 +3,32 @@ the motion, the on-screen chart). P8, P7, P6, P5, P4, P3, P2, P1 and P0 are all
 COMPLETE (see the phase table below). Every phase the roadmap and the
 conformance evaluation asked for is delivered; no phase is open.
 
-- **Active task:** WALK-UX-004 — the fourth walk-test, the validation run for
-  the two W3X fixes a suite cannot prove. It ran the full loop on a new
-  domain (B2B SaaS subscription renewals, 3,000 seeded rows, six planted
-  anomalies) with the same slow provider W3 measured, a live Chromium and an
-  isolated data dir, and answered both questions it existed for. **The LLM
-  plan answered in 12.4 seconds with `source: llm`** — W3 measured 120
-  seconds and a deterministic fallback on the same provider, key and model —
-  carrying 4 sub-questions / 3 hypotheses / 4 steps / 3 data requirements,
-  exactly the shrunk prompt's caps. **The Python panel's contract turned the
-  naive analyst's first interaction from three blind refusals into zero**:
-  the first run used `dataset.rows` straight from the page and returned a
-  201 (W3: three refusals — `pandas`, `csv`, `path`).
-  The run's one finding was a regression the fix it validated had
-  introduced (W4X-001): W3X-003-PROMPT's shrunken prompt no longer asks for
-  `context_basis`, `validate_plan` treats the field as optional, and
-  `PlanPanel` read it unconditionally — so a case with an LLM plan could not
-  be reopened, the whole workspace blanking with a TypeError the moment the
-  analyst went back and clicked the case again. Fixed in this tree and
-  verified live: the case reopened and rendered `by llm for
-  saas_renewals_2026.csv`.
-  The loop closed end to end with no terminal: attach, profile, plan,
-  Python run, SQL run, interpret, draft, accept, validate, reviewer audit,
-  chat (LLM, 20s), implication, export (337KB), reopen. Nine prior fixes
-  were measured holding; W2X-003 (chart survives reopen) is recorded as
-  **not observed** — the harness cannot type multi-line code into the
-  controlled textarea, so the run that would have chartable numeric columns
-  was never produced.
-    **STATUS: DONE, committed and pushed.** W4X-001 landed in the same
-  commit as the walk-test's material, on top of the v0.3.6 release.
-  Sebelumnya: v0.3.6 (the release the W3X fixes and this fix ship in),
-  W3X-003-PROMPT (the plan prompt's output size), W3X-002, W3X-004,
-  WALK-UX-003.
-  **No task is queued.** All four walk-test 3 findings are closed and now
-  validated in an analyst's hands. W3X-001 (a filename accepted twice) stays
-  an unmeasured observation; this run's four same-name attaches all came
-  from the harness's own file-synthesis path, so a human re-selecting a
-  file twice remains the only way to reach it. Two things outside this
-  repo's control, unchanged: GitHub Actions still refuses every job (billing
-  suspended), and the packaged app is unsigned by DEC-006.
+- **Active task:** W5X-001 — the Data panel accepts the same filename twice
+  within one case. WALK-UX-005, the fifth walk-test, was run to answer one
+  question: can a human reach what W3 recorded as an observation, or is it
+  only an artefact of the harness synthesising a `File`? The answer is
+  measured: **a human can reach it.** A real file on disk, attached a second
+  time through the same file input a human re-selecting a file uses, was
+  accepted silently - `POST .../datasets -> 201 in 39ms` with no warning,
+  "Data sources: 2", two dataset rows with the identical filename, and every
+  panel that labels by filename left ambiguous.
+  All prior fixes held on the new retail-inventory domain: the LLM plan
+  answered in 6.5s with `source: llm` (W4: 12.4s; W3: 120s timeout), the
+  Python contract was used with zero refusals, and the case reopened with
+  its LLM plan intact (W4X-001 did not regress). The loop's own verdict was
+  honest - the finding validated `insufficient_evidence`, so `loop_closed`
+  stayed false, which is the contract behaving, not a failure.
+    **STATUS: OPEN, queued - walked and measured, not yet fixed.** The
+  contract and acceptance criteria are in `ai/TASKS.md`; the measured record
+  is `walktest-w5/FINDINGS.md`. No code changed in the walk-test, so the
+  gate numbers carry from v0.3.6: web 286/286, tsc clean, build ok; server
+  793/793, trace 48/48, e2e 28/28.
+  Sebelumnya: WALK-UX-004 (validasi fix W3X + temuan regresi W4X-001), v0.3.6
+  (rilis tempat fix W3X dan W4X-001 masuk), W3X-003-PROMPT, W3X-002,
+  W3X-004, WALK-UX-003.
+  **Only W5X-001 is open.** Two things outside this repo's control,
+  unchanged: GitHub Actions still refuses every job (billing suspended), and
+  the packaged app is unsigned by DEC-006.
   Sebelumnya: W2X-008 + W2X-013 (the density), W2X-002 + W2X-005 (the first
   thing the app says), W2X-006 + W2X-007 (the analysis editor), W2X-012 phase
   B (the settings surface), W2X-012 phase A (the status surface), WALK-UX-002
