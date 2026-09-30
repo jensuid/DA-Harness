@@ -2434,6 +2434,37 @@ expect(timeline.getByText(/case created/)).toBeInTheDocument()
       expect(screen.getByText(/by deterministic/i)).toBeInTheDocument()
     })
 
+    it('renders an LLM plan that carries no context_basis (W4X-001)', async () => {
+      // W4X-001, measured by WALK-UX-004: the W3X-003-PROMPT shrink dropped
+      // context_basis from the prompt, and validate_plan treats the field as
+      // optional, so an accepted LLM plan can be persisted without it. The
+      // panel used to read body.context_basis.length unconditionally, which
+      // unmounted the whole workspace when the case was reopened. A plan
+      // without the field must render like any other.
+      mockEmptyCase()
+      vi.mocked(api.getPlan).mockResolvedValue({
+        id: 'p1', case_id: 'c1', dataset_id: 'd1',
+        question: 'Why did revenue decline?',
+        plan: {
+          objective: 'Explain the Q2 revenue decline.',
+          primary_question: 'Why did revenue decline?',
+          sub_questions: ['How does revenue differ across region?'],
+          hypotheses: [],
+          data_requirements: [],
+          analysis_steps: [],
+        },
+        source: 'llm',
+        created_at: '',
+      })
+
+      render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+      expect(await screen.findByText(/objective: explain the q2 revenue decline\./i)).toBeInTheDocument()
+      expect(screen.getByText('How does revenue differ across region?')).toBeInTheDocument()
+      // the source line renders without the context_basis clause
+      expect(screen.getByText(/by llm/i)).toBeInTheDocument()
+      expect(screen.queryByText(/read from/i)).not.toBeInTheDocument()
+    })
+
     it('says plainly when no plan exists yet, rather than failing', async () => {
       mockEmptyCase()
       render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)

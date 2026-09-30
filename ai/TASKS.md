@@ -2025,6 +2025,99 @@ SUMMARY: the Python engine is the one a Python-fluent analyst reaches for
          cannot drift. Nothing in the sandbox, the endpoints, the capability
          set or the refusal messages moved.
 
+### W4X-001 contract (the plan panel assumes a field the LLM plan omits)
+
+```
+TASK ID: W4X-001
+MILESTONE: the fourth walk-test (WALK-UX-004 - a regression W3X-003-PROMPT
+           introduced, measured on a real LLM plan)
+CAPABILITY: UX / Reliability (the plan surface, the case workspace)
+GOAL: a case with an LLM plan could not be reopened. The whole workspace
+      unmounted with "Cannot read properties of undefined (reading 'length')"
+      the moment the analyst left the case and came back - the loop closed,
+      and then the door closed behind it.
+CONTEXT: W3X-003-PROMPT shrank the plan prompt so the answer arrives inside
+         the 120s budget. Part of that shrink was dropping the
+         `context_basis` field from what the prompt asks for, and
+         `validate_plan` (planner.py:323) treats the field as optional - a
+         plan with none is a valid plan. So an accepted LLM plan now persists
+         without the field, which is correct on the server side and fatal on
+         the client side: `PlanPanel.tsx:155` read `body.context_basis.length`
+         unconditionally, and the workspace has no error boundary, so one
+         undefined field blanked the entire page.
+         WALK-UX-004 measured this end to end: the plan call answered in
+         12.4s with `source: llm` and 4 sub-questions / 3 hypotheses /
+         4 steps / 3 data requirements (W3X-003-PROMPT holding), and the
+         case was then unopenable until the panel was fixed.
+INPUTS: `LLMPlanner.prompt` (asks for the schema without context_basis),
+        `validate_plan`'s optional treatment of the same field, the
+        deterministic planner's own context_basis emission (planner.py:275,
+        which is why the bug never showed with the fallback engine), and
+        PlanPanel's render of the plan.
+RELEVANT FILES: web/src/panels/PlanPanel.tsx (the guard),
+                web/src/api.ts (PlanBody.context_basis becomes optional),
+                web/src/CaseWorkspace.test.tsx (+1 test: an LLM plan with no
+                context_basis renders, and the source line shows without the
+                clause),
+                ai/TASKS.md, ai/HANDOFF.md, ai/CURRENT_STATE.md.
+REQUIRED CHANGE:
+  - The panel reads the field defensively: `body.context_basis &&
+    body.context_basis.length > 0`. The join clause disappears when the field
+    is absent, which is what the field means - nothing was read from a
+    context object, so nothing is claimed.
+  - The type moves with it: `context_basis?: string[]` in PlanBody, so a
+    future reader cannot assume the field is always present. The store is
+    the authority, not the type.
+  - No server change: the field's optionality is correct there (a plan made
+    before the context object existed has none, and a malformed one is a
+    validation problem rather than a silent drop). The prompt is also
+    unchanged - the W3X-003-PROMPT shrink is what keeps the plan inside the
+    budget, and this is its cost, paid on the client.
+NON-GOALS: re-adding context_basis to the LLM prompt (that reopens the
+           timeout), making the field required in validate_plan, adding an
+           error boundary to the workspace (a separate hardening task), and
+           any change to the deterministic planner, the endpoints or the
+           capability set.
+CONSTRAINTS: green only. Shell-only. No new dependency (DEC-001). No LLM
+             call in the test.
+ACCEPTANCE CRITERIA:
+- [x] a plan persisted without context_basis renders in PlanPanel instead of
+      unmounting the workspace
+- [x] the source line renders without the "read from" clause when the field
+      is absent
+- [x] a plan carrying context_basis still renders the clause, unchanged
+- [x] the workspace reopens after the fix - measured live in WALK-UX-004,
+      not only in jsdom
+- [x] the deterministic planner's own context_basis path is untouched
+TESTS: web 1 in CaseWorkspace.test.tsx - an LLM plan with every optional
+       field absent renders, its objective and sub-question show, and the
+       source line reads `by llm` with no `read from` clause.
+VERIFICATION: `cd web && npm test` green (285 = 284 + 1); `npx tsc -b`
+              clean; `npm run build` ok; and the live browser check in
+              WALK-UX-004: the case with the LLM plan reopened and rendered
+              `by llm for saas_renewals_2026.csv`.
+STATE UPDATE: TASKS/CURRENT_STATE/HANDOFF gain the fix. No schema change.
+```
+
+TASK: W4X-001 - the plan panel stops assuming the LLM plan's optional field
+ID: W4X-001
+PRIORITY: high
+STATUS: DONE
+SUMMARY: WALK-UX-004's first finding was a regression the fix it existed to
+         validate had introduced. W3X-003-PROMPT shrank the plan prompt so
+         the answer fits the 120s budget, and part of that shrink was
+         dropping `context_basis` from the request; `validate_plan` treats
+         the field as optional, so an accepted LLM plan persists without
+         it. `PlanPanel` read the field unconditionally and the workspace
+         has no error boundary, so a case with an LLM plan could not be
+         reopened at all - the loop closed, and the door closed behind it.
+         The panel now reads the field defensively and the type marks it
+         optional, so the join clause simply disappears when the field is
+         absent, which is what the field means. The prompt, the validator
+         and the deterministic planner are untouched - the shrink is what
+         keeps the plan inside the budget, and this is its cost, paid on the
+         client.
+
 ### WALK-UX-004 contract (the fourth walk-test)
 
 ```

@@ -152,7 +152,7 @@ export function PlanPanel({
       <h2 className={surfaces.heading}>Plan</h2>
       <p className={surfaces.note}>
         {sourceWith(plan.source, 'plan', `for ${datasets[0].filename}`)}
-        {body.context_basis.length > 0 &&
+        {body.context_basis && body.context_basis.length > 0 &&
           ` — read from ${body.context_basis.join(', ')}`}
       </p>
       <h3 className={surfaces.subheading}>Objective</h3>

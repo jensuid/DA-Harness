@@ -637,3 +637,47 @@ shell text moves), tsc clean, build ok, e2e 28/28, trace 48/48.
 
 Gates now: web 285/285, tsc clean, build ok; server 788/788, trace 48/48,
 e2e 28/28.
+
+## Next action
+
+**W3X-003-PROMPT is done: the LLM plan prompt asks for less, so the answer
+arrives inside the budget.** The third walk-test's measured wait (a plan call
+that burned all 120s and fell back deterministically) was root-caused as the
+prompt's output size, not the timeout: the plan is the only one of the six
+adapters that asks for a large structured object, and the provider generates
+at ~10-13 tokens per second, so the 1785-token plan the prompt asked for was
+~137s. The fix moved the request, not the contract.
+
+The prompt is now reachable without posting it — `LLMPlanner.prompt` holds the
+text `plan` sends, byte-for-byte — and it asks for at most 4 sub-questions, 3
+hypotheses, 4 steps and 3 data requirements, one short clause per string. A
+live re-measurement against the same provider answered 508 tokens in 52.3s
+(`finish_reason: stop`) — inside the budget, not a truncated object the
+validator would refuse. The validator's ceilings are untouched: an engine that
+answers with the full contract still passes, and the deterministic planner
+still produces up to it. Only what the LLM is *asked* for shrank.
+
+Honest about the limit: a ~10 tok/s provider is never fast, and the rate is the
+provider's. The fix moved the plan from "times out and falls back" to "answers
+inside the budget" — a faster plan still needs a faster provider, and the
+measurement (`walktest-w3/measure_plan_prompt.py`) is committed so the next
+session can re-check rather than assume.
+
+Gates: server 793/793 (was 788; +5 in test_llm_adapters.py), web 285/285
+unchanged (this task moved no web code), tsc clean, build ok; trace 48/48,
+e2e 28/28. `graphify update .` ran clean.
+
+**Next: nothing is queued.** Every phase the roadmap asked for is delivered,
+all three walk-test findings are closed, and the W3X-003 follow-up this queued
+task existed for is done. W3X-001 (a filename accepted twice by the Data
+panel) is recorded as an observation, unqueued because its frequency is
+unmeasured — the cheapest guard if it repeats is a same-filename refusal
+naming the existing dataset. Two things outside this repo's control, unchanged:
+GitHub Actions still refuses every job (billing suspended, so CI never ran on
+any W3X commit; v0.3.5 was built and verified locally from the same steps
+`release.yml` runs), and the packaged app is unsigned by DEC-006.
+
+Gates now: web 285/285, tsc clean, build ok; server 793/793, trace 48/48,
+e2e 28/28.
+
+## Recent completions

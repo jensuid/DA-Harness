@@ -78,7 +78,10 @@ export interface PlanBody {
   hypotheses: { statement: string; rationale: string; check: string }[]
   data_requirements: { requirement: string; detail: string }[]
   analysis_steps: { action: string; detail: string }[]
-  context_basis: string[]
+  // Optional in the store: validate_plan accepts a plan with none (a plan
+  // made before the context object existed, or an LLM plan whose prompt did
+  // not ask for it), so the panel must not assume the field is present.
+  context_basis?: string[]
 }
 
 export interface Plan {
