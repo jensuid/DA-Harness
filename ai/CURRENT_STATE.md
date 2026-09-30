@@ -3,23 +3,25 @@ the motion, the on-screen chart). P8, P7, P6, P5, P4, P3, P2, P1 and P0 are all
 COMPLETE (see the phase table below). Every phase the roadmap and the
 conformance evaluation asked for is delivered; no phase is open.
 
-- **Active task:** W5X-001 — the Data panel accepted the same filename twice
-  within one case. WALK-UX-005 measured it through the same file input a
-  human re-selecting a file uses: 201 in 39ms, no warning, two dataset rows
-  with the identical filename. The attach endpoint now refuses before it
-  writes the file, answering 409 with a sentence naming the existing dataset
-  and how to replace it: "sales.csv is already attached to this case as
-  dataset d1; delete it first if you want to replace it." The panel's existing
-  `Attach failed:` surface renders it, so no UI changed. The check is
-  per-case, so a different case may still attach the same filename.
-    **STATUS: DONE, committed and pushed.** Three server tests and one web
-  test pin it. No task is queued - all five walk-tests' findings are closed.
-  Two things outside this repo's control, unchanged: GitHub Actions still
-  refuses every job (billing suspended), and the packaged app is unsigned by
-  DEC-006.
-  Sebelumnya: WALK-UX-005 (validasi W3X-001 - sekarang W5X-001), WALK-UX-004
-  (validasi fix W3X + temuan regresi W4X-001), v0.3.6 (rilis tempat fix W3X
-  dan W4X-001 masuk), W3X-003-PROMPT, W3X-002, W3X-004, WALK-UX-003.
+- **Active task:** v0.3.7 - the release the W5X-001 fix ships in. All three
+  version files moved together (server/pyproject.toml, desktop/package.json,
+  desktop/src-tauri/tauri.conf.json), the PyInstaller sidecar was repackaged
+  so the stamp the spec writes is 0.3.7, and `tauri build` produced the .app
+  and the DMG from that bundle. Smoke-tested as a real launch: the packaged
+  core answers `/health` ok and `/updates/latest` reports `current: 0.3.7`,
+  so the version a Check for Updates reads is the version this release is.
+  The DMG (sha256
+  b1635955803967f8f0e44124c25bfcac42389820efbd0b101db6ece216c6119) is
+  unsigned, as every release has been since DEC-006 deferred signing for a
+  single-user app.
+    **STATUS: DONE, committed and pushed.** No task is queued - all five
+  walk-tests' findings are closed and shipped. GitHub Actions still refuses
+  every job (billing suspended), so the release was built and verified
+  locally from the same steps `release.yml` runs.
+  Sebelumnya: W5X-001 (the Data panel's duplicate filename), WALK-UX-005
+  (validasi W3X-001), WALK-UX-004 (validasi fix W3X + temuan regresi
+  W4X-001), v0.3.6 (rilis tempat fix W3X dan W4X-001 masuk), W3X-003-PROMPT,
+  W3X-002, W3X-004, WALK-UX-003.
   Sebelumnya: W2X-008 + W2X-013 (the density), W2X-002 + W2X-005 (the first
   thing the app says), W2X-006 + W2X-007 (the analysis editor), W2X-012 phase
   B (the settings surface), W2X-012 phase A (the status surface), WALK-UX-002

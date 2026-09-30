@@ -4,7 +4,7 @@ Source of truth for **where we are** on the global roadmap
 (`docs/Implementation Roadmap.md`). Every phase completion must update this
 file together with `CURRENT_STATE.md` and `TASKS.md`.
 
-**Current stage: P9 UI/UX Redesign — COMPLETE (4 of 4). No phase is open; v0.3.5 is published.**
+**Current stage: P9 UI/UX Redesign — COMPLETE (4 of 4). No phase is open; v0.3.7 is published.**
 
 ```
 P0 Foundation          DONE  ✓
@@ -26,7 +26,8 @@ P8 Analytical Contract COMPLETE ✓  (all 10 checklist items; every PRD threshol
                               traces end to end; v0.3.0, v0.3.1 and v0.3.2 are published)
 P9 UI/UX Redesign       COMPLETE ✓  (all 4 phases: the foundation, the surfaces,
                               the motion, the on-screen chart; 19 walk-test
-                              findings closed; v0.3.5 published)
+                              findings closed; v0.3.5 published; the walk-test
+                              follow-ups W3X/W4X/W5X closed in v0.3.6 and v0.3.7)
                               ← we are here
 ```
 

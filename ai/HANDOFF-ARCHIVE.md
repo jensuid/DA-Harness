@@ -756,3 +756,36 @@ e2e 28/28. No code changed this walk-test, so the gate numbers carried from
 v0.3.6.
 
 ## Recent completions
+
+## Next action
+
+**W5X-001 is done: the Data panel no longer accepts the same filename twice.**
+The fifth walk-test measured a real file, attached a second time through the
+same file input a human re-selecting a file uses, being accepted silently —
+two dataset rows with the identical filename, no warning, and every panel
+that labels by filename left ambiguous. The attach endpoint now checks for a
+same-filename dataset in the case **before it writes the file**, and answers
+409 with a sentence the analyst can act on: "sales.csv is already attached to
+this case as dataset d1; delete it first if you want to replace it."
+
+The refusal follows the W2X-010 pattern the contract named: a full sentence
+identifying the collision, not a bare error. The `Attach failed:` surface the
+DataPanel already owned renders it, so no UI code changed — the sentence is
+the answer, and the panel was already built to show sentences. Three server
+tests pin the behaviour (same filename refused with the sentence and nothing
+written; two different filenames both accepted; the same filename still
+allowed in a *different* case, because its dataset is never this case's
+label), and one web test asserts the refusal renders.
+
+The check happens after the format guard and before the content read, so it
+refuses before touching disk. Non-goals held: no silent dedupe, and case
+creation's duplicate handling is untouched.
+
+**Next: nothing is queued.** All five walk-tests' findings are closed. Two
+things outside this repo's control, unchanged: GitHub Actions still refuses
+every job (billing suspended), and the packaged app is unsigned by DEC-006.
+
+Gates now: server 796/796 (three tests added), web 287/287, tsc clean, build
+ok, trace 48/48, e2e ALL PASS.
+
+## Recent completions
