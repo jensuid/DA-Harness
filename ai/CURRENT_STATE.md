@@ -41,7 +41,10 @@ conformance evaluation asked for is delivered; no phase is open.
   **Next task: none is queued** - item 11's four findings are all landed now
   (the panel landmark floor, the iconography, the zone composition), so the
   plan's phase 3 is complete and what remains is its own roadmap entry, not
-  an open item. No phase is open; this is a task, not a phase.
+  an open item. **v0.3.8 is published** (tag `v0.3.8`), bundling the five UI
+  tasks that landed after v0.3.7: DMDARK, SKEL, ICON, ZONE-A and ZONE-B - the
+  audit plan's twelve items are all resolved. No phase is open; this is a
+  task, not a phase.
   Sebelumnya: ZONE-A (panel landmarks), ICON (iconography), SKEL (skeleton
   loaders), DMDARK (dark mode as a token swap), UI-REDUX (the shell's visual
   and interaction craft, phases 1 and 2), v0.3.7 (the release W5X-001 ships
@@ -103,14 +106,18 @@ conformance evaluation asked for is delivered; no phase is open.
   is green in both appearances with 78 checks; the harness's own checks are
   unchanged by ZONE-B. Desktop shell 30 Rust tests (unchanged; no shell code moved);
   P2, P3 and P4 gates
-  PASS; **v0.2.0, v0.3.0, v0.3.1, v0.3.2, v0.3.3, v0.3.4 and v0.3.5 released**
+  PASS; **v0.2.0, v0.3.0, v0.3.1, v0.3.2, v0.3.3, v0.3.4, v0.3.5, v0.3.6,
+  v0.3.7 and v0.3.8 released**
   (tags `v0.2.0` on `ec819fc`, `v0.3.0` on `ab56541`, `v0.3.1` on `19cefc1`,
-  `v0.3.2` on `2ff1bca`, `v0.3.3` on `30db6e9`, `v0.3.4` on `d8bec6a`).
+  `v0.3.2` on `2ff1bca`, `v0.3.3` on `30db6e9`, `v0.3.4` on `d8bec6a`,
+  `v0.3.5` on `1ace6a0`, `v0.3.6` on `0d15052`, `v0.3.7` on `78c13ac`).
   v0.3.4 was a hollow tag - it pointed at a version bump, and every W2X fix
   landed after it - so v0.3.5 is the release those thirteen fixes actually
   shipped in. Its bump commit restored the convention that all three version
   files move together (the 0.3.4 bump had moved only `server/pyproject.toml`,
   and a 0.3.4 core shipped in an app that called itself 0.3.3).
+  v0.3.8 is the release the five UI tasks after v0.3.7 ship in (DMDARK, SKEL,
+  ICON, ZONE-A, ZONE-B) - the audit plan's twelve items all resolved.
 - **e2e:** all 28 real-server steps PASS (re-run at this tree); the
   requirement-traceability matrix 48/48 PASS; the web suite 285/285, tsc
   clean and the build ok - the reports the matrix cites as its measured

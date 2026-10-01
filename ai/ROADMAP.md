@@ -4,7 +4,7 @@ Source of truth for **where we are** on the global roadmap
 (`docs/Implementation Roadmap.md`). Every phase completion must update this
 file together with `CURRENT_STATE.md` and `TASKS.md`.
 
-**Current stage: P9 UI/UX Redesign — COMPLETE (4 of 4). No phase is open; v0.3.7 is published.**
+**Current stage: P9 UI/UX Redesign — COMPLETE (4 of 4). No phase is open; v0.3.8 is published.**
 
 ```
 P0 Foundation          DONE  ✓
@@ -27,7 +27,11 @@ P8 Analytical Contract COMPLETE ✓  (all 10 checklist items; every PRD threshol
 P9 UI/UX Redesign       COMPLETE ✓  (all 4 phases: the foundation, the surfaces,
                               the motion, the on-screen chart; 19 walk-test
                               findings closed; v0.3.5 published; the walk-test
-                              follow-ups W3X/W4X/W5X closed in v0.3.6 and v0.3.7)
+                              follow-ups W3X/W4X/W5X closed in v0.3.6 and v0.3.7;
+                              the UI/UX audit plan's twelve items all resolved
+                              in v0.3.8: the restyle, the dark mode, the
+                              skeletons, the marks, the landmarks and the zone
+                              composition)
                               ← we are here
 ```
 
@@ -49,7 +53,7 @@ production-grade**.
 | P6 Post-Launch Evolution | Scale and intelligence | DONE | — | all 5 checklist items: cross-case recall (P6-MEMORY-001), agentic analysis (P6-AGENT-002), analytical-shape templates (P6-TEMPLATE-003), the versioned migration path (P6-MIGRATE-004) and the update check (P6-UPDATE-005) |
 | P7 Product Modes | The spec's LEARN and EVALUATE modes, and the UI surface for the P6 capabilities | DONE | — | all 4 checklist items: EVALUATE (P7-EVAL-001 + P7-SHELL-002), the closed web-shell gap (P7-SHELL-002..009, eight surfaces), LEARN (P7-LEARN-001 + P7-SHELL-010) and multi-agent workflows (P7-AGENT-001 + P7-SHELL-011); a real-server end-to-end run (P7-E2E-001), a hand walkthrough (P7-WALK-001), the packaged app's CORS fix (P7-CORS-001) and the CSV fix (P7-CSV-002) |
 | P8 Analytical Contract | Close the PRD's Level 1 breadth gaps and make "done" measurable | DONE | — | all 10 checklist items: the case's context object (P8-CONTEXT-001), quality beyond missingness (P8-QUALITY-002), the nine validation dimensions (P8-VALID-003), the causal guard (P8-CAUSAL-004), the analytical golden suite (P8-GOLDEN-005), the orientation spine (P8-SHELL-006), question refinement (P8-REFINE-007), the decision view (P8-DECISION-008), the measurement layer (P8-MEASURE-009) and the traceability matrix (P8-TRACE-010); server 686, web 138, 28/28 e2e, schema v13 |
-| P9 UI/UX Redesign | The redesign the walk-test and the conformance evaluation asked for | DONE | — | all 4 phases: the foundation (P9-F1-001: tooling, tokens, the panel split), the surfaces (P9-F2-001 the walk-test's last three, P9-F2-002 the restyle), the motion (P9-F3-001) and the on-screen chart (P9-F4-001, with the re-walk that found the missing `format` field). web 216, server 728, 28/28 e2e, trace 48/48; v0.3.5 published |
+| P9 UI/UX Redesign | The redesign the walk-test and the conformance evaluation asked for | DONE | — | all 4 phases: the foundation (P9-F1-001: tooling, tokens, the panel split), the surfaces (P9-F2-001 the walk-test's last three, P9-F2-002 the restyle), the motion (P9-F3-001) and the on-screen chart (P9-F4-001, with the re-walk that found the missing `format` field). The audit plan's twelve items are all resolved: UI-REDUX (phases 1 and 2), DMDARK, SKEL, ICON, ZONE-A and ZONE-B. web 330, server 796, 28/28 e2e, trace 48/48; v0.3.5 published |
 
 ## Phase gate definitions (what "done" means)
 
@@ -74,18 +78,19 @@ production-grade**.
   and reviewer agent roles behind one approval gate; question refinement; the
   decision view that closes the loop; case export/import round trip; the
   measurement layer and the requirement-traceability matrix.
-- **Test status:** server 686 passed; web 138 passed; desktop shell 22 Rust
+- **Test status:** server 796 passed; web 330 passed; desktop shell 30 Rust
   tests. The P2, P3 and P4 gates PASS, and the verification runners are green:
   the real-server e2e journey (28/28), the analytical golden suite (21/21
   reference and workflow), AT-04's refinement thresholds, the measurement
   layer (9/9) and the traceability matrix (48/48 rows; AT-48's own 15/15 and
   33/33).
-- **Active task:** none open. P8 Analytical Contract is COMPLETE at 10 of 10 -
-  the PRD's Level 1 breadth gaps are closed and every one of its 48 acceptance
-  thresholds now traces from the PRD, through the UX surface, the
-  implementation and the test, to a measured or asserted threshold
-  (`verification/trace/REPORT.md`). v0.2.0 is published and tagged on
-  `ec819fc`; v0.3.0 is the release to tag now that the phase is closed.
+- **Active task:** none open. P9 UI/UX Redesign is COMPLETE (4 of 4) and the
+  audit plan's twelve items are all resolved, so no phase and no task is
+  queued. Every one of the PRD's 48 acceptance thresholds traces from the PRD,
+  through the UX surface, the implementation and the test, to a measured or
+  asserted threshold (`verification/trace/REPORT.md`). v0.3.8 is published
+  (tag `v0.3.8`), bundling the five UI tasks that landed after v0.3.7:
+  DMDARK, SKEL, ICON, ZONE-A and ZONE-B.
 - **Known issues / blockers:** none in the code. Two are environmental:
   (1) GitHub Actions refuses every job with "recent account payments have
   failed" - an account-billing problem (Settings > Billing & plans), so
