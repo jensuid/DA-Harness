@@ -5,7 +5,7 @@
  */
 
 import { type LearnWalk } from '../api'
-import { surfaces } from '../lib/ui'
+import { Skeleton, surfaces } from '../lib/ui'
 
 // W2X-008: the panel renders its body directly. The collapse is the Case
 // record group's own disclosure, which carries this panel's derived summary -
@@ -29,7 +29,10 @@ export function LearnPanel({
         // as guidance, rather than reporting the same failure twice.
         <p className={surfaces.note}>The walk could not be read: {error}</p>
       ) : !walk ? (
-        <p className={surfaces.note}>Loading the walk…</p>
+        <>
+          <p className={surfaces.note + ' visually-hidden'}>Loading the walk…</p>
+          <Skeleton shape="rows" count={4} />
+        </>
       ) : (
         <WalkBody walk={walk} />
       )}

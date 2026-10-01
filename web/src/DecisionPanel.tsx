@@ -24,7 +24,7 @@ import {
   putDecision,
 } from './api'
 import { messageOf } from './CaseList'
-import { Button, surfaces } from './lib/ui'
+import { Button, Skeleton, surfaces } from './lib/ui'
 
 const STATUS_MARKS: Record<string, string> = {
   supported: '✓',
@@ -74,7 +74,8 @@ export function DecisionPanel({
     return (
       <div className={surfaces.panel}>
         <h2 className={surfaces.heading}>Decision</h2>
-        <p className={surfaces.note}>Reading the case's decision…</p>
+        <p className={surfaces.note + ' visually-hidden'}>Reading the case's decision…</p>
+        <Skeleton shape="rows" count={3} />
       </div>
     )
   }

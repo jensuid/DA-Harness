@@ -72,6 +72,15 @@
      own artifact SVG never does, so a chart on screen and the chart the case
      holds can differ in chrome without differing in geometry. */
   --color-chart-grid: #e5e7eb;
+  /* SKEL: the waiting surface's sweep. The bar itself is `--color-surface-muted`
+     - the same recessed tone a code block or a chip sits on - so a waiting
+     panel is the panel it will be, in the tone the shell already uses for
+     "this is a surface that holds something"; the sweep is a single lighter
+     pass across it. Both read names, so the appearance swap carries the
+     skeleton the way it carries every other surface, and the value is an
+     overlay rather than a hex so it lightens whichever muted surface the
+     appearance defines. */
+  --color-skeleton-shimmer: rgba(255, 255, 255, 0.65);
   /* The overlay and the two shadows the dialog and the banners carry. A
      pure-black scrim and shadow read as grey dirt on a warm surface in light,
      so they carry the accent's own cool hue; in dark they deepen, because a
@@ -131,6 +140,10 @@
   --color-table-border: #333945;
   --color-hairline: #2b303a;
   --color-chart-grid: #2e3440;
+  /* SKEL: the sweep is the same lighter pass on the dark muted surface - white
+     at a low alpha, because a full-strength band on an already dark surface
+     would flash rather than drift. */
+  --color-skeleton-shimmer: rgba(255, 255, 255, 0.1);
   --color-scrim: rgba(0, 0, 0, 0.55);
   --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.5);
@@ -1179,6 +1192,49 @@ button.danger:hover {
 @media (prefers-reduced-motion: reduce) {
   .call-progress {
     transition: none;
+  }
+}
+
+/* SKEL (I4): the one waiting surface. A panel whose fetch is in flight renders
+   the shape it is about to render, and the shape is built from this one rule:
+   a bar of the muted surface with a single sweep across it. The geometry is
+   the panel's own - `lib/ui.tsx`'s `Skeleton` composes this class with the
+   same row, list and wrap classes the real surface uses, so a waiting panel
+   occupies the room its data will and nothing reflows when the data lands.
+
+   One animation, and one gate. The sweep is decoration - the muted bar alone
+   carries the shape, which is what a screen reader and a reduced-motion user
+   both read - so `prefers-reduced-motion: reduce` stops it and the panel still
+   reads as waiting. The sentence the shape stands in for is not removed; it is
+   `.visually-hidden`, so assistive tech still announces exactly what it
+   announced before this task. */
+.skeleton {
+  display: block;
+  background-color: var(--color-surface-muted);
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--color-skeleton-shimmer) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  background-repeat: no-repeat;
+  animation: skeleton-sweep 1.6s ease-in-out infinite;
+  border-radius: calc(var(--radius) * 0.5);
+}
+
+@keyframes skeleton-sweep {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
   }
 }
 

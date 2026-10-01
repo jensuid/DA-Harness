@@ -20,7 +20,7 @@ import {
 } from "../api"
 import { sourceWith } from '../sourceLabel'
 import { messageOf } from '../CaseList'
-import { Button, surfaces } from '../lib/ui'
+import { Button, Skeleton, surfaces } from '../lib/ui'
 import { CallProgress, useCallProgress } from '../lib/progress'
 
 export const AGENT_COPY: Record<AgentRole, {
@@ -178,7 +178,8 @@ export function AgentPanel({
     return (
       <div className={surfaces.panel}>
         <h2 className={surfaces.heading}>{copy.title}</h2>
-        <p className={surfaces.note}>{copy.loading}</p>
+        <p className={surfaces.note + ' visually-hidden'}>{copy.loading}</p>
+        <Skeleton shape="rows" count={2} />
       </div>
     )
   }

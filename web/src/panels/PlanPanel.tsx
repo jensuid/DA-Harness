@@ -8,16 +8,18 @@ import { useEffect, useState } from 'react'
 import { ApiError, type Dataset, type Plan, createPlan, getPlan } from '../api'
 import { sourceWith } from '../sourceLabel'
 import { messageOf } from '../CaseList'
-import { Button, surfaces } from '../lib/ui'
+import { Skeleton, Button, surfaces } from '../lib/ui'
 import { CallProgress, useCallProgress } from '../lib/progress'
 
 export function PlanPanel({
   caseId,
   datasets,
+  loading,
   onChanged,
 }: {
   caseId: string
   datasets: Dataset[]
+  loading: boolean
   onChanged: () => void
 }) {
   const [plan, setPlan] = useState<Plan | null>(null)
@@ -96,6 +98,18 @@ export function PlanPanel({
     }
   }
 
+  if (loading) {
+    // SKEL: `datasets` is workspace-owned state that is still in flight, so
+    // "attach a dataset before planning" would be guidance about a case the
+    // shell has not read. The shape is the plan's own list of steps.
+    return (
+      <div className={surfaces.panel}>
+        <h2 className={surfaces.heading}>Plan</h2>
+        <p className={surfaces.note + ' visually-hidden'}>Loading the plan…</p>
+        <Skeleton shape="rows" count={4} />
+      </div>
+    )
+  }
   if (datasets.length === 0) {
     return (
       <div className={surfaces.panel}>
@@ -140,7 +154,10 @@ export function PlanPanel({
         ) : error ? (
           <p role="alert">The plan could not be read: {error}</p>
         ) : (
-          <p className={surfaces.note}>Loading the plan…</p>
+          <>
+            <p className={surfaces.note + ' visually-hidden'}>Loading the plan…</p>
+            <Skeleton shape="rows" count={4} />
+          </>
         )}
       </div>
     )

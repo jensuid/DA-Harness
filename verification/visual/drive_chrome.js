@@ -187,6 +187,7 @@ async function readTheme() {
       attr: root.getAttribute('data-theme'),
       bg: tok('--color-bg'),
       surface: tok('--color-surface'),
+      surfaceMuted: tok('--color-surface-muted'),
       text: tok('--color-text'),
       accent: tok('--color-accent'),
       accentSurface: tok('--color-accent-surface'),
@@ -228,6 +229,28 @@ async function readTheme() {
       // always render an issue, so the ramp is put on the page itself and
       // read through the cascade - getComputedStyle resolves the tokens in
       // whichever appearance is active, which is what the analyst would see.
+      // SKEL: the one waiting surface, put on the page and read through the
+      // cascade the way the ramp is. The bar is the muted surface and the
+      // sweep is the shimmer token, so a misspelled name or a rule the dark
+      // block lost falls back to an inherited colour here; the animation is
+      // the motion the gate has to stop, measured rather than asserted in the
+      // source.
+      skeleton: (() => {
+        const bar = document.createElement('span')
+        bar.className = 'skeleton'
+        document.body.appendChild(bar)
+        const cs = getComputedStyle(bar)
+        const read = {
+          bg: cs.backgroundColor,
+          image: cs.backgroundImage,
+          animation: cs.animationName,
+          duration: cs.animationDuration,
+          iterations: cs.animationIterationCount,
+          radius: cs.borderRadius,
+        }
+        bar.remove()
+        return read
+      })(),
       rampRules: (() => {
         const host = document.createElement('ul')
         host.className = 'quality-issues'
@@ -262,6 +285,7 @@ async function readTheme() {
         '--color-fail', '--color-notice-ink', '--color-code-bg',
         '--color-chip-border', '--color-table-border', '--color-hairline',
         '--color-chart-grid', '--color-scrim', '--shadow-sm', '--shadow-lg',
+        '--color-skeleton-shimmer',
       ].map(tok),
     }
   })()`)
@@ -543,6 +567,19 @@ async function verify() {
   if (!theme.ramp.length) console.log('  NOTE light ramp: no quality issues rendered')
   checkRamp(theme, 'light')
 
+  // SKEL criterion 3: the waiting surface reads its tokens in light. The bar
+  // is the muted surface - a waiting panel is the panel it will be, in the
+  // tone the shell already uses - and the sweep is the shimmer, so the
+  // appearance swap carries the skeleton the way it carries every other
+  // surface. `animation-name` is the motion budget's whole account for this
+  // task: one name, running.
+  check('light skeleton wears the muted surface',
+    theme.skeleton.bg, rgbOf(theme.surfaceMuted))
+  check('light skeleton carries the sweep',
+    /linear-gradient/.test(theme.skeleton.image), true)
+  check('light skeleton sweep runs', theme.skeleton.animation, 'skeleton-sweep')
+  check('light skeleton sweep repeats', theme.skeleton.iterations, 'infinite')
+
   // DMDARK criterion 2: the dark palette resolves through the same property
   // names - every surface follows the swap, and the meta tracks it, with no
   // reload and no re-render of the DOM.
@@ -569,6 +606,40 @@ async function verify() {
   }
   if (!theme.ramp.length) console.log('  NOTE dark ramp: no quality issues rendered')
   checkRamp(theme, 'dark')
+
+  // SKEL in the other appearance: the same property names resolve the same
+  // surface, so a dark workspace waits in the shape it will render too. A
+  // token that resolved only in light would make the skeleton a light-only
+  // surface.
+  check('dark skeleton wears the muted surface',
+    theme.skeleton.bg, rgbOf(theme.surfaceMuted))
+  check('dark skeleton carries the sweep',
+    /linear-gradient/.test(theme.skeleton.image), true)
+  check('dark skeleton sweep runs', theme.skeleton.animation, 'skeleton-sweep')
+
+  // SKEL: the motion gate, measured through the OS's own emulator while the
+  // preference still drives the theme. The sweep is decoration - the muted bar
+  // alone carries the shape - so a reduced-motion workspace stops it and still
+  // reads as waiting. `animation-name` resolving to `none` is the measurement,
+  // and the surface under it is unchanged in either appearance.
+  for (const appearance of ['light', 'dark']) {
+    await send('Emulation.setEmulatedMedia', {
+      features: [
+        { name: 'prefers-color-scheme', value: appearance },
+        { name: 'prefers-reduced-motion', value: 'reduce' },
+      ],
+    })
+    await sleep(500)
+    const gated = await readTheme()
+    check(`${appearance} attr under the gate`, gated.attr, appearance)
+    check(`${appearance} gate stops the sweep`, gated.skeleton.animation, 'none')
+    check(`${appearance} gate keeps the surface`,
+      gated.skeleton.bg, rgbOf(gated.surfaceMuted))
+  }
+  // `setEmulatedMedia` replaces the feature set, so this clears the motion
+  // emulation and leaves the OS on dark - the state the System-resolution
+  // checks below resolve against.
+  await setAppearance('dark')
 
   // DMDARK criterion 3: the control reaches the resolver. The banner's
   // Configure verb opens the only dialog the shell has, and the appearance

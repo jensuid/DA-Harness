@@ -5,7 +5,7 @@
  */
 
 import { CaseProgress, QualityIssue } from '../api'
-import { surfaces } from '../lib/ui'
+import { Skeleton, surfaces } from '../lib/ui'
 
 export function CaseOverview({
   question,
@@ -34,9 +34,22 @@ export function CaseOverview({
   // that never stated one is described by the question it was created with, so
   // the objective is never blank.
   const objective = purpose.trim() || question
-  const total = progress ? progress.stages.length : 0
-  const done = progress ? progress.completed.length : 0
-  const validated = progress ? progress.counts['validated_findings'] ?? 0 : 0
+  // SKEL: `progress` lands with the workspace's first batch, so its absence is
+  // the in-flight signal - and until it lands every count below would read as
+  // a case that has nothing, which is a different sentence from a case the
+  // shell has not read yet.
+  if (!progress) {
+    return (
+      <div className={surfaces.panel + ' case-overview'}>
+        <h2 className={surfaces.heading}>Case overview</h2>
+        <p className={surfaces.note + ' visually-hidden'}>Reading the case…</p>
+        <Skeleton shape="facts" />
+      </div>
+    )
+  }
+  const total = progress.stages.length
+  const done = progress.completed.length
+  const validated = progress.counts['validated_findings'] ?? 0
 
   return (
     <div className={surfaces.panel + ' case-overview'}>

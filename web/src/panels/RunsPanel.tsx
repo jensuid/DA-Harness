@@ -25,7 +25,7 @@ import {
 } from "../api"
 import { sourceLabel } from '../sourceLabel'
 import { messageOf } from '../CaseList'
-import { Button, surfaces } from '../lib/ui'
+import { Button, Skeleton, surfaces } from '../lib/ui'
 import { CallProgress, useCallProgress } from '../lib/progress'
 import { MotionSurface } from '../lib/motion'
 import { ChartSurface } from '../lib/chart'
@@ -36,12 +36,26 @@ export function RunsPanel({
   runs,
   datasets,
   onChanged,
+  loading,
 }: {
   caseId: string
   runs: RunSummary[]
   datasets: Dataset[]
+  loading: boolean
   onChanged: () => void
 }) {
+  if (loading) {
+    // SKEL: the workspace's read is in flight, so "no analysis has run yet"
+    // would describe a case the shell has not read. The shape is the run
+    // rows the panel renders once a run exists.
+    return (
+      <div className={surfaces.panel}>
+        <h2 className={surfaces.heading}>Runs</h2>
+        <p className={surfaces.note + ' visually-hidden'}>Reading the runs…</p>
+        <Skeleton shape="rows" count={Math.max(runs.length, 3)} />
+      </div>
+    )
+  }
   if (runs.length === 0) {
     return (
       <div className={surfaces.panel}>

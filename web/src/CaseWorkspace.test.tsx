@@ -440,6 +440,72 @@ describe('CaseWorkspace', () => {
       new api.ApiError(404, 'run not found'),
     )
   })
+  it('waits as its own shape: every panel renders a skeleton while the read is in flight (SKEL)', () => {
+    // I4's observation was a workspace that goes blank while ~12 artifacts
+    // fetch. This is case open frozen in its first beat - the reads never
+    // resolve, so `loading` stays true and this is what an analyst sees in
+    // that window - and the composition assertion for the fix: the workspace
+    // reads as the shape it is about to be, panel by panel, and none of the
+    // panels renders the empty state it would render for a case that has
+    // nothing. That is the distinction the workspace-owned panels could not
+    // make on their own, which is why they take the flag.
+    const pending = () => new Promise<never>(() => {})
+    vi.mocked(api.getCase).mockReturnValue(pending())
+    vi.mocked(api.getContext).mockReturnValue(pending())
+    vi.mocked(api.getProgress).mockReturnValue(pending())
+    vi.mocked(api.listDatasets).mockReturnValue(pending())
+    vi.mocked(api.listRuns).mockReturnValue(pending())
+    vi.mocked(api.listFindings).mockReturnValue(pending())
+    vi.mocked(api.listChat).mockReturnValue(pending())
+    vi.mocked(api.getProfile).mockReturnValue(pending())
+    vi.mocked(api.getDecision).mockReturnValue(pending())
+    vi.mocked(api.getAgentState).mockReturnValue(pending())
+    vi.mocked(api.getRoleAgentState).mockReturnValue(pending())
+    vi.mocked(api.getLearnWalk).mockReturnValue(pending())
+    vi.mocked(api.getCaseHistory).mockReturnValue(pending())
+
+    render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+    // The waiting workspace, read as the mapping an analyst sees: each panel
+    // that waits renders the shape it will fill, scoped to its own heading.
+    // A panel missing from this map is a panel the flag does not reach; a
+    // shape that disagrees with the panel it belongs to is a shape that
+    // contradicts the data that replaces it.
+    const shapes = [...document.querySelectorAll('[data-skeleton]')].map(
+      (el) =>
+        (el.closest('.panel')?.querySelector('h2')?.textContent ?? '(no panel)') +
+        '=' +
+        el.getAttribute('data-skeleton'),
+    )
+    expect(new Set(shapes)).toEqual(
+      new Set([
+        'Where this case stands=stages',
+        'Case overview=facts',
+        'Data=table',
+        'Plan=rows',
+        'Explore the data (EDA)=form',
+        'Runs=rows',
+        'Audit submitted work (EVALUATE)=form',
+        'Evidence graph=rows',
+        'Decision=rows',
+        'Context=form',
+        'Agent=rows',
+        'Reviewer=rows',
+      ]),
+    )
+    // The empty states are the sentences a case with nothing renders; while
+    // the read is in flight they are not the sentences the workspace shows -
+    // the distinction the workspace-owned panels could not make alone.
+    expect(screen.queryByText(/No data attached yet/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/No analysis has run yet/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Attach a dataset before planning/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Profile a dataset first/i)).not.toBeInTheDocument()
+    // The sentence the shape stands in for is still in the DOM for assistive
+    // tech - one per waiting panel, visually hidden, still announced.
+    const sentences = document.querySelectorAll('.visually-hidden')
+    expect(sentences.length).toBeGreaterThanOrEqual(shapes.length)
+    expect([...sentences].every((el) => /…$/.test(el.textContent ?? ''))).toBe(true)
+  })
+
   it('shows the question, the derived stage, the next action and the artifacts', async () => {
     mockEmptyCase()
     render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)

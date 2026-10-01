@@ -7682,8 +7682,93 @@ SUMMARY: the Check for Updates menu item performed a check the core
          the parsed answer, which is also how a transport that kept no body at
          all still reaches the window.
 
-Contracts for the rolling window (the two most recent: W3X-004 and
-FIX-UPDATES-009). Older blocks are in `ai/TASKS-ARCHIVE.md`.
+### UI-REDUX contract (the shell's visual and interaction craft)
+
+```
+TASK ID: UI-REDUX
+MILESTONE: the audit written as `docs/UI-UX Audit & Redesign Plan.md`,
+           phase 1 and phase 2 of its fix plan. Dark mode, skeleton loaders,
+           zone composition and iconography are phase 3 and remain open.
+TASK: the workspace's surfaces, type and buttons carried no visual hierarchy
+      and no interaction feedback: every button was the same shape with no
+      hover, press or transition; the type stack was the system default with
+      the workspace's own question at the same size as a panel heading; a
+      second (Material) palette ran beside the shell's tokens; the rail read
+      as a bulleted list rather than a progress spine; no anchor surface said
+      which panel matters; the bundle had no favicon or document metadata.
+STATUS: DONE. Phase 1 and phase 2 of the audit's plan are implemented; phase
+          3 (dark mode, skeleton loaders, semantic zone composition,
+          iconography) is deferred and remains documented as open.
+WHY: the audit (skill `redesign-existing-projects`, adapted to a desktop
+    analytical workspace) found the shell's a11y, motion and copy discipline
+    already strong - guaranteed focus-visible, a structural audit, a reduced-
+    motion budget, no cliched marketing prose - but the visual craft had not
+    been paid the same attention, so the surfaces an analyst stares at all
+    day gave back nothing: no hierarchy, no hover, one weight of card.
+ROOT CAUSE: the base `button` rule in web/src/index.css set only margin,
+            padding, font and cursor - no hover, no press, no transition -
+            and only three hover rules existed app-wide; the font stack was
+            `system-ui, sans-serif`; the `.quality-*` ramp used Material
+            reds and grays instead of the shell's tokens; every surface was
+            `surfaces.panel` (identical white, identical 0.4rem radius);
+            lucide-react was declared but imported nowhere; index.html had
+            no favicon, description or theme-color.
+NON-GOALS: no DOM text changes (the tests are the contract), no new
+           browser-side dependency touching the filesystem or DuckDB
+           (DEC-001), no change to panel contracts or `data-testid` values,
+           no dark mode yet (phase 3).
+CONSTRAINTS: AT-32 (0 critical a11y violations) and AT-27 (200ms
+             interaction response) must hold; `prefers-reduced-motion` must
+             null every motion this adds; the token layer stays the
+             vocabulary the panels use (no literal className="panel").
+ACCEPTANCE CRITERIA:
+  1. Every button reacts to the pointer: a hover background shift, a
+     one-pixel press, and a transition inside AT-27's budget.
+  2. The shell renders a bundled face (Geist, SIL OFL) rather than the
+     system stack, and the workspace's h1 carries display weight.
+  3. A `primary` filled variant marks the one verb each screen asks for.
+  4. The quality severity ramp and every shadow read the shell's own tokens.
+  5. The workflow rail is a connected spine the stages sit on, and the rail
+     and the decision carry a distinct anchor surface.
+  6. A keyboard user gets a skip-to-content link, visible only on focus.
+  7. The bundle ships a favicon and document metadata; the unused
+     lucide-react dependency is gone.
+  8. All gates stay green: no test count changes except additions.
+
+UI-REDUX done-record: implemented in web/src/index.css (button system,
+@font-face for Geist, h1 display weight, the quality remap onto tokens, the
+stage spine, the anchor surfaces, the skip link, tinted shadows, reduced-
+motion coverage), web/src/lib/ui.tsx (the `primary` variant), App.tsx (the
+skip link and the `#content` landmark id), panels/WorkflowRail.tsx (the
+stage-mark spans and the `stage-list`), DecisionPanel.tsx (the anchor), the
+three primary verbs (New case, Create case, Ask), web/index.html (metadata
+and favicon), and web/vite.config.ts (a DAH_CORE_PORT override so an
+isolated second core can answer the /api proxy). Geist and the favicon ship
+in web/public/.
+
+Verified live in a real Chrome over CDP against a real core on an isolated
+data dir - computed styles, not source claims: the body resolves
+`Geist, system-ui, sans-serif` and `document.fonts.check('16px Geist')` is
+true (the face is fetched, not just registered); the h1 computes to 28px /
+line-height 1.2 / -0.02em; a base button's computed transition lists all five
+properties and a real pointer move moves its background from #ffffff to the
+accent surface; the primary computes to the accent fill with white 600 text;
+the rail and the decision both compute to the accent surface; seven stage
+marks carry the anchor background that masks the spine; the skip link is
+present and translated -63px off-canvas until focused; the link-styled
+next-action keeps its transparent background on hover. The `.quality-*`
+remap is covered by the build and the suite (no quality issue renders
+without an analysis run).
+
+Gates: web vitest 287/287 (18 files); `npx tsc -b` clean; `vite build` ok;
+      server pytest 796/796. Trace and e2e unchanged by this pass (CSS,
+      props and dev-server config only) and were green at the last release.
+STATE UPDATE: TASKS/HANDOFF gain the task; phase 3 of the audit's plan
+              becomes the carried follow-up. No schema change.
+```
+
+Contracts for the rolling window (the two most recent: SKEL and
+DMDARK). Older blocks are in `ai/TASKS-ARCHIVE.md`.
 
 ### FIX-UPDATES-009 contract
 

@@ -8,7 +8,7 @@ import {
   updateCase,
 } from './api'
 import { Templates } from './Templates'
-import { Button, surfaces } from './lib/ui'
+import { Button, Skeleton, surfaces } from './lib/ui'
 import { MotionSurface } from './lib/motion'
 
 // The list is the front door: find a case again, or start a new one. The search
@@ -57,7 +57,12 @@ export function CaseList({
         </Button>
       </div>
       {error && <p role="alert">Failed to load cases: {error}</p>}
-      {loading && <p>Loading…</p>}
+      {loading && (
+        <>
+          <p className="visually-hidden">Loading…</p>
+          <Skeleton shape="rows" count={3} />
+        </>
+      )}
       {!loading && !error && cases.length === 0 && (
         <p>{term ? 'No cases match that search.' : 'No cases yet - create one.'}</p>
       )}

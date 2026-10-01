@@ -5,7 +5,7 @@
  */
 
 import { type ClaimTrace, type EvidenceGraph, type EvidenceNode } from '../api'
-import { surfaces } from '../lib/ui'
+import { Skeleton, surfaces } from '../lib/ui'
 
 // W2X-008: a projection with nothing to project and no control to offer is
 // not orientation - the overview's "Still to come" names the graph, and this
@@ -16,11 +16,26 @@ export function EvidencePanel({
   evidence,
   error,
   empty,
+  loading,
 }: {
   evidence: EvidenceGraph | null
   error: string | null
   empty: boolean
+  loading: boolean
 }) {
+  if (loading) {
+    // SKEL: the graph is a projection the workspace reads late, and a panel
+    // that renders nothing while it waits is a panel that arrives late - the
+    // overview's "Still to come" names the graph, so the anchor has to
+    // resolve to something while the read is in flight.
+    return (
+      <div className={surfaces.panel}>
+        <h2 className={surfaces.heading}>Evidence graph</h2>
+        <p className={surfaces.note + ' visually-hidden'}>Reading the evidence…</p>
+        <Skeleton shape="rows" count={3} />
+      </div>
+    )
+  }
   if (empty) {
     // A 400 is the case having no artifacts to graph, so a young case reads
     // the core's own sentence about what would build one - not a failed

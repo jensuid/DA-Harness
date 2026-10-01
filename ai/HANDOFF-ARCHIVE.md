@@ -904,3 +904,36 @@ before claiming a surface changed.
 Gates now: web 301/301, tsc clean, build ok, visual verify green in both
 appearances, server 796/796 (no server file changed).
 
+## Next action
+
+**DMDARK is done and pushed** (`286b3fa`) - dark mode as a token swap, 53
+visual checks green in both appearances, light measured byte-identical. Its
+contract and its measured done-record are in `ai/TASKS.md`; the lessons worth
+carrying are in the archive entry this section replaced.
+
+**Next: SKEL, skeleton loaders** - phase 3 item 10 of
+`docs/UI-UX Audit & Redesign Plan.md` (observation I4). The contract is
+written and sitting in `ai/TASKS.md`; the shape of it mirrors DMDARK: ONE
+mechanism (`surfaces.skeleton` in `lib/ui.tsx` + one `.skeleton` rule in
+`index.css`), not a skeleton per panel; each panel wraps the shape it already
+renders with the same row and wrap counts; the sentence states stay for
+assistive tech (`role="status"` / `aria-busy` unchanged); the shimmer is one
+animation gated through `prefers-reduced-motion` and the gate is measured; the
+skeleton reads a token so `verify` is green in both appearances.
+
+**Two decisions the contract leaves open**, and they are the only things to
+confirm before writing code: whether case open loads its ~12 artifacts
+concurrently or in stages (which decides one full-workspace skeleton beat
+against per-panel skeletons - measure it first, the way DMDARK measured its
+surfaces), and whether to shimmer at all rather than ship a static darker
+surface. Lean shimmer-with-gate: one animation, and the gate is the
+constraint that makes it safe.
+
+Phase 3's other two items stay queued after SKEL: the iconography decision
+(item 12) before zone composition (item 11), because stage marks may become
+icons and zone composition migrates panel roots from `<div>` to
+`<section>`/`<aside>` - the largest test surface, deliberately last and
+per-panel. No carried follow-up is open and no walk-test finding is queued.
+
+Gates now: web 301/301, tsc clean, build ok, visual verify green in both
+appearances, server 796/796.

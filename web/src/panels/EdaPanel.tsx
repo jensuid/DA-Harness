@@ -14,17 +14,19 @@ import {
   runEda,
 } from "../api"
 import { messageOf } from '../CaseList'
-import { Button, surfaces } from '../lib/ui'
+import { Button, Skeleton, surfaces } from '../lib/ui'
 import { formatValue } from './RunsPanel'
 
 export function EdaPanel({
   caseId,
   datasets,
   profiles,
+  loading,
 }: {
   caseId: string
   datasets: Dataset[]
   profiles: Record<string, Profile>
+  loading: boolean
 }) {
   const profiled = datasets.filter((d) => profiles[d.id] !== undefined)
   const [chosen, setChosen] = useState('')
@@ -41,6 +43,18 @@ export function EdaPanel({
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  if (loading) {
+    // SKEL: the profiles land last in the workspace's read, so "profile a
+    // dataset first" would be guidance about a case the shell is still
+    // reading. The shape is the op's own form.
+    return (
+      <div className={surfaces.panel}>
+        <h2 className={surfaces.heading}>Explore the data (EDA)</h2>
+        <p className={surfaces.note + ' visually-hidden'}>Reading the profiles…</p>
+        <Skeleton shape="form" />
+      </div>
+    )
+  }
   if (profiled.length === 0) {
     return (
       <div className={surfaces.panel}>

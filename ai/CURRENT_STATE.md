@@ -3,31 +3,45 @@ the motion, the on-screen chart). P8, P7, P6, P5, P4, P3, P2, P1 and P0 are all
 COMPLETE (see the phase table below). Every phase the roadmap and the
 conformance evaluation asked for is delivered; no phase is open.
 
-- **Active task:** DMDARK - dark mode as a token swap, phase 3 item 9 of
-  the audit in `docs/UI-UX Audit & Redesign Plan.md`. One driver
-  (`web/src/theme.ts`) writes `data-theme` on `<html>` and the meta
-  `theme-color`; one mechanism (the `[data-theme='dark']` block in
-  `index.css`) redefines the `:root` tokens; one control (an Appearance
-  fieldset in the settings dialog) offers Light / Dark / System, System by
-  default, persisted in localStorage and re-resolved live when the OS
-  preference moves. Every component colour in `index.css`, `lib/ui.tsx` and
-  `lib/chart.tsx` reads the tokens, so the panels follow the swap.
-    **STATUS: DONE, committed and pushed (286b3fa).** Light measured byte-identical to
-  the pre-DMDARK baseline (15 computed reads and both hover reads); 53 checks
-  in the visual harness green in both appearances, with contrast measured per
-  surface (light min 4.68:1, dark min 5.11:1, all above 4.5), the three
-  statuses keeping their hue families, the severity ramp keeping its climb,
-  and a control pass exercising the dialog, the persistence and the live OS
-  re-resolution. Six dark shots captured.
-  **Next task: SKEL, skeleton loaders** - phase 3 item 10, contract written and
-  sitting in `ai/TASKS.md`, planned with the analyst but not started. Phase 3's
-  other two items (iconography decision, then zone composition) queue after it.
+- **Active task:** SKEL - skeleton loaders, phase 3 item 10 of the audit
+  in `docs/UI-UX Audit & Redesign Plan.md` (observation I4). Loading was a
+  sentence - screen-reader-friendly, but the workspace was blank while ~12
+  artifacts fetched on case open. Now one `Skeleton` component in
+  `web/src/lib/ui.tsx` (five shapes - rows / stages / facts / table / form -
+  composed from the same `surfaces` classes the real panels render) and one
+  `.skeleton` rule in `web/src/index.css` (a bar of `--color-surface-muted`
+  with a `--color-skeleton-shimmer` sweep, one keyframe, gated through
+  `prefers-reduced-motion`). Each waiting panel keeps its sentence -
+  `visually-hidden` beside the shape, so assistive tech still announces it and
+  the DOM text and testids are unchanged - and the shape is `aria-hidden`.
+  Panels that read workspace-owned state (Data, Runs, Eda, Evaluate, Evidence,
+  Context, Plan) take a new `loading` prop from one `CaseWorkspace` flag
+  that is
+  true only until the first `load()` resolves, so no panel flashes its
+  skeleton at every save.
+    **STATUS: DONE, committed and pushed.** Measured: 13 new visual checks in
+  both appearances (the bar resolves `--color-surface-muted`, the sweep runs,
+  and under Chrome's emulated `prefers-reduced-motion: reduce`
+  `animation-name` is `none` while the surface keeps its token); a pre-SKEL vs
+  post-SKEL pixel diff of ZERO changed pixels in every settled workspace
+  shot; web 312/312 (+10 skeleton tests and one composition test that
+  freezes case open in its first beat and asserts twelve panels each wait
+  in the shape they will fill).
+  **Next task: phase 3's last two items - iconography (12), then zone
+  composition (11)** - the order the plan set, because stage marks may become
+  icons and zone composition migrates panel roots from `<div>` to
+  `<section>`/`<aside>`, the largest test surface, deliberately last and
+  per-panel. Iconography is a decision task first: the audit's item 12 asks
+  whether the stage marks, the severity glyphs and the verb icons should be a
+  drawn set or typographic, and `lucide-react` was already removed by
+  UI-REDUX, so a drawn set means new SVG assets. Read `docs/UI-UX Audit &
+  Redesign Plan.md` around line 162 before starting.
   No phase is open; this is a task, not a phase.
-  Sebelumnya: UI-REDUX (the shell's visual and interaction craft, phases 1
-  and 2), v0.3.7 (the release W5X-001 ships in), W5X-001 (the Data panel's
-  duplicate filename), WALK-UX-005 (validasi W3X-001), WALK-UX-004 (validasi
-  fix W3X + temuan regresi W4X-001), v0.3.6, W3X-003-PROMPT,
-  W3X-002, W3X-004, WALK-UX-003.
+  Sebelumnya: DMDARK (dark mode as a token swap), UI-REDUX (the shell's visual
+  and interaction craft, phases 1 and 2), v0.3.7 (the release W5X-001 ships
+  in), W5X-001 (the Data panel's duplicate filename), WALK-UX-005 (validasi
+  W3X-001), WALK-UX-004 (validasi fix W3X + temuan regresi W4X-001), v0.3.6,
+  W3X-003-PROMPT, W3X-002, W3X-004, WALK-UX-003.
   Sebelumnya: W2X-008 + W2X-013 (the density), W2X-002 + W2X-005 (the first
   thing the app says), W2X-006 + W2X-007 (the analysis editor), W2X-012 phase
   B (the settings surface), W2X-012 phase A (the status surface), WALK-UX-002
@@ -81,15 +95,12 @@ conformance evaluation asked for is delivered; no phase is open.
   `desktop/bundle_dmg.sh`, so the shipped triple is what the developer's
   machine produces. Restoring an enforced Intel lane needs a self-hosted
   runner.
-- **Test status:** server 793/793 passed (788 held, five tests added in
-  `server/tests/test_llm_adapters.py` pinning the plan prompt's requested
-  output - the caps read out of the prompt's own sentence and each below the
-  validator's ceiling, a plan at the validator's full ceilings still passing
-  `validate_plan`, `plan` posting exactly the prompt `prompt` builds, the
-  stated intent carried, and the profile truncation holding). The web suite is
-  285/285 unchanged (this task moved no web code), tsc clean and the build ok.
-  Desktop
-  shell 30 Rust tests (unchanged; no shell code moved);
+- **Test status:** server 796/796 passed, unchanged by SKEL (no server file
+  moved). The web suite is 311/311 (20 files; +10 skeleton tests and +1 file
+  for SKEL), tsc clean and the build ok. The visual harness is green in both
+  appearances with 66 checks, 13 of them SKEL's own (the surface, the sweep,
+  and the reduced-motion gate, read through the cascade and the OS emulator).
+  Desktop shell 30 Rust tests (unchanged; no shell code moved);
   P2, P3 and P4 gates
   PASS; **v0.2.0, v0.3.0, v0.3.1, v0.3.2, v0.3.3, v0.3.4 and v0.3.5 released**
   (tags `v0.2.0` on `ec819fc`, `v0.3.0` on `ab56541`, `v0.3.1` on `19cefc1`,
@@ -318,7 +329,7 @@ conformance evaluation asked for is delivered; no phase is open.
 
 ## How to run (web)
 
-- Web tests: `cd web && npm test` (19 files, 301 tests; vitest, jsdom, no network)
+- Web tests: `cd web && npm test` (20 files, 312 tests; vitest, jsdom, no network)
 - Web build: `cd web && npm run build` (tsc -b + vite)
 - Desktop bundle: `cd web && npm run build:desktop` (absolute API URL for the
   Tauri shell)

@@ -12,7 +12,7 @@ import { useEffect, useState } from 'react'
 
 import { type CaseContext, getContext, putContext } from './api'
 import { messageOf } from './CaseList'
-import { Button, surfaces } from './lib/ui'
+import { Button, Skeleton, surfaces } from './lib/ui'
 
 type Lists = 'sub_questions' | 'hypotheses' | 'constraints'
 
@@ -26,7 +26,15 @@ function empty(): CaseContext {
   return { case_id: '', purpose: '', sub_questions: [], hypotheses: [], constraints: [], updated_at: null }
 }
 
-export function ContextPanel({ caseId, onChanged }: { caseId: string; onChanged: () => void }) {
+export function ContextPanel({
+  caseId,
+  loading,
+  onChanged,
+}: {
+  caseId: string
+  loading: boolean
+  onChanged: () => void
+}) {
   const [context, setContext] = useState<CaseContext>(empty())
   const [dirty, setDirty] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -80,6 +88,20 @@ export function ContextPanel({ caseId, onChanged }: { caseId: string; onChanged:
     } finally {
       setBusy(false)
     }
+  }
+
+  if (loading) {
+    // SKEL: the panel's read is in flight and its empty state is an editable
+    // form - a young case and a case the shell has not read yet look the same
+    // shape. The skeleton is that shape: the purpose field and the three
+    // lists, in the same subpanels the real form fills in.
+    return (
+      <div className={surfaces.panel}>
+        <h2 className={surfaces.heading}>Context</h2>
+        <p className={surfaces.note + ' visually-hidden'}>Reading the context…</p>
+        <Skeleton shape="form" count={3} />
+      </div>
+    )
   }
 
   return (

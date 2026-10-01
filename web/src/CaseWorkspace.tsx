@@ -185,6 +185,14 @@ export function CaseWorkspace({
   const [walkError, setWalkError] = useState<string | null>(null)
   const [walkMissing, setWalkMissing] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // SKEL: the workspace's own read is in flight. This is true only until the
+  // first `load()` completes - a reload after a write leaves it false, so a
+  // panel keeps rendering the data it has while the refetch happens rather
+  // than flashing its skeleton at every save. The panels that read
+  // workspace-owned state cannot tell "the fetch has not landed" from "the
+  // case has nothing" on their own, so this is the one signal that separates
+  // a young case from a case the shell has not read yet.
+  const [loading, setLoading] = useState(true)
 
   async function load() {
     setError(null)
@@ -282,6 +290,10 @@ export function CaseWorkspace({
       )
     } catch (err) {
       setError(messageOf(err))
+    } finally {
+      // SKEL: the first read is over; every panel that was waiting on the
+      // workspace's own state renders its real shape now.
+      setLoading(false)
     }
   }
 
@@ -384,6 +396,7 @@ export function CaseWorkspace({
               caseId={caseId}
               datasets={datasets}
               profiles={profiles}
+              loading={loading}
               onChanged={() => void load()}
             />
             </div>
@@ -391,10 +404,11 @@ export function CaseWorkspace({
             <PlanPanel
               caseId={caseId}
               datasets={datasets}
+              loading={loading}
               onChanged={() => void load()}
             />
             </div>
-            <EdaPanel caseId={caseId} datasets={datasets} profiles={profiles} />
+            <EdaPanel caseId={caseId} datasets={datasets} profiles={profiles} loading={loading} />
             {/* W2X-008: Runs stays mounted on a young case. Hiding a panel that
                 carries no artifact is right only when the panel carries no
                 control either - this one holds "Draft a finding", the only
@@ -407,6 +421,7 @@ export function CaseWorkspace({
               caseId={caseId}
               runs={runs}
               datasets={datasets}
+              loading={loading}
               onChanged={() => void load()}
             />
             </div>
@@ -425,6 +440,7 @@ export function CaseWorkspace({
               datasets={datasets}
               profiles={profiles}
               evaluations={evaluations}
+              loading={loading}
               onChanged={() => void load()}
             />
             </div>
@@ -432,6 +448,7 @@ export function CaseWorkspace({
               evidence={evidence}
               error={evidenceError}
               empty={evidenceEmpty}
+              loading={loading}
             />
             {/* UX 46: the loop's exit, last in the work zone - after the
                 evidence graph, because a decision is what the evidence is
@@ -444,7 +461,7 @@ export function CaseWorkspace({
         </section>
         <section className="zone intelligence" aria-label="intelligence">
           <MotionSurface variant="enter" className="contents">
-            <ContextPanel caseId={caseId} onChanged={() => void load()} />
+            <ContextPanel caseId={caseId} loading={loading} onChanged={() => void load()} />
             <AgentPanel
               caseId={caseId}
               role="analyst"

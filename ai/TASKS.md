@@ -607,91 +607,6 @@ DONE-RECORD (DMDARK):
   untouched - no server file changed.
 ```
 
-### UI-REDUX contract (the shell's visual and interaction craft)
-
-```
-TASK ID: UI-REDUX
-MILESTONE: the audit written as `docs/UI-UX Audit & Redesign Plan.md`,
-           phase 1 and phase 2 of its fix plan. Dark mode, skeleton loaders,
-           zone composition and iconography are phase 3 and remain open.
-TASK: the workspace's surfaces, type and buttons carried no visual hierarchy
-      and no interaction feedback: every button was the same shape with no
-      hover, press or transition; the type stack was the system default with
-      the workspace's own question at the same size as a panel heading; a
-      second (Material) palette ran beside the shell's tokens; the rail read
-      as a bulleted list rather than a progress spine; no anchor surface said
-      which panel matters; the bundle had no favicon or document metadata.
-STATUS: DONE. Phase 1 and phase 2 of the audit's plan are implemented; phase
-          3 (dark mode, skeleton loaders, semantic zone composition,
-          iconography) is deferred and remains documented as open.
-WHY: the audit (skill `redesign-existing-projects`, adapted to a desktop
-    analytical workspace) found the shell's a11y, motion and copy discipline
-    already strong - guaranteed focus-visible, a structural audit, a reduced-
-    motion budget, no cliched marketing prose - but the visual craft had not
-    been paid the same attention, so the surfaces an analyst stares at all
-    day gave back nothing: no hierarchy, no hover, one weight of card.
-ROOT CAUSE: the base `button` rule in web/src/index.css set only margin,
-            padding, font and cursor - no hover, no press, no transition -
-            and only three hover rules existed app-wide; the font stack was
-            `system-ui, sans-serif`; the `.quality-*` ramp used Material
-            reds and grays instead of the shell's tokens; every surface was
-            `surfaces.panel` (identical white, identical 0.4rem radius);
-            lucide-react was declared but imported nowhere; index.html had
-            no favicon, description or theme-color.
-NON-GOALS: no DOM text changes (the tests are the contract), no new
-           browser-side dependency touching the filesystem or DuckDB
-           (DEC-001), no change to panel contracts or `data-testid` values,
-           no dark mode yet (phase 3).
-CONSTRAINTS: AT-32 (0 critical a11y violations) and AT-27 (200ms
-             interaction response) must hold; `prefers-reduced-motion` must
-             null every motion this adds; the token layer stays the
-             vocabulary the panels use (no literal className="panel").
-ACCEPTANCE CRITERIA:
-  1. Every button reacts to the pointer: a hover background shift, a
-     one-pixel press, and a transition inside AT-27's budget.
-  2. The shell renders a bundled face (Geist, SIL OFL) rather than the
-     system stack, and the workspace's h1 carries display weight.
-  3. A `primary` filled variant marks the one verb each screen asks for.
-  4. The quality severity ramp and every shadow read the shell's own tokens.
-  5. The workflow rail is a connected spine the stages sit on, and the rail
-     and the decision carry a distinct anchor surface.
-  6. A keyboard user gets a skip-to-content link, visible only on focus.
-  7. The bundle ships a favicon and document metadata; the unused
-     lucide-react dependency is gone.
-  8. All gates stay green: no test count changes except additions.
-
-UI-REDUX done-record: implemented in web/src/index.css (button system,
-@font-face for Geist, h1 display weight, the quality remap onto tokens, the
-stage spine, the anchor surfaces, the skip link, tinted shadows, reduced-
-motion coverage), web/src/lib/ui.tsx (the `primary` variant), App.tsx (the
-skip link and the `#content` landmark id), panels/WorkflowRail.tsx (the
-stage-mark spans and the `stage-list`), DecisionPanel.tsx (the anchor), the
-three primary verbs (New case, Create case, Ask), web/index.html (metadata
-and favicon), and web/vite.config.ts (a DAH_CORE_PORT override so an
-isolated second core can answer the /api proxy). Geist and the favicon ship
-in web/public/.
-
-Verified live in a real Chrome over CDP against a real core on an isolated
-data dir - computed styles, not source claims: the body resolves
-`Geist, system-ui, sans-serif` and `document.fonts.check('16px Geist')` is
-true (the face is fetched, not just registered); the h1 computes to 28px /
-line-height 1.2 / -0.02em; a base button's computed transition lists all five
-properties and a real pointer move moves its background from #ffffff to the
-accent surface; the primary computes to the accent fill with white 600 text;
-the rail and the decision both compute to the accent surface; seven stage
-marks carry the anchor background that masks the spine; the skip link is
-present and translated -63px off-canvas until focused; the link-styled
-next-action keeps its transparent background on hover. The `.quality-*`
-remap is covered by the build and the suite (no quality issue renders
-without an analysis run).
-
-Gates: web vitest 287/287 (18 files); `npx tsc -b` clean; `vite build` ok;
-      server pytest 796/796. Trace and e2e unchanged by this pass (CSS,
-      props and dev-server config only) and were green at the last release.
-STATE UPDATE: TASKS/HANDOFF gain the task; phase 3 of the audit's plan
-              becomes the carried follow-up. No schema change.
-```
-
 ### W5X-001 contract (the Data panel accepts the same filename twice)
 
 ```
@@ -2475,9 +2390,10 @@ TASK: loading is a sentence today ("Loading...", "Asking..."), which is
       artifacts fetch on case open. Shape-match each panel's skeleton behind
       the existing sentence state, so a panel reads as its own shape while it
       waits and the sentence stays for assistive tech.
-STATUS: PENDING - planned with the analyst, not started. This contract is the
-        handoff for a fresh session; the two decisions at the bottom are the
-        only open ones.
+STATUS: DONE. One skeleton surface, one CSS rule, one animation, one gate;
+        every panel that waits renders a shape-matched skeleton and keeps
+        its sentence in the DOM for assistive tech. The done-record at the
+        bottom of this block is the measured close-out.
 WHY: the audit's I4 is a workspace observation, not a bug. A data-dense
     surface that arrives all at once after a blank beat reads as slow even
     when it is not; a shape-matched skeleton is the panel saying what it will
@@ -2517,14 +2433,83 @@ ACCEPTANCE CRITERIA:
   5. Light is unchanged where no skeleton renders, and the skeleton adds no
      new layout - the panel's measured geometry is the same once data lands.
   6. Gates stay green: web 301+, tsc clean, build ok, server 796/796.
-OPEN DECISIONS (small, decide while implementing - the analyst's two):
-  - Whether case open loads its artifacts concurrently or in stages, which
-    decides one full-workspace skeleton beat against per-panel skeletons.
-    Measure first, as DMDARK did with its surfaces.
-  - Whether to shimmer at all, or to ship a static darker surface. Lean
-    shimmer-with-gate: it is one animation and the gate is the constraint
-    that makes it safe.
+OPEN DECISIONS (settled while implementing - both measured, both closed):
+  - Concurrency: MEASURED. The workspace's 16 reads are 9-40 ms each and
+    368 ms wall when the first six fan out through `Promise.all`; there is
+    no staged beat to design around, so case open is one beat and
+    per-panel skeletons driven by each panel's own in-flight state is the
+    shape that fits. Restructuring `load()` would save ~100 ms and not
+    change the shape, so it was not done.
+  - Shimmer: shimmer-with-gate, as leaned. One keyframe (`skeleton-sweep`),
+    one `.skeleton` rule, killed by a `prefers-reduced-motion` block, and
+    the gate is measured through Chrome's own media emulator in both
+    appearances (`animation-name` resolves to `none`), not asserted in the
+    source.
+  - The contract's other open question - whether the existing
+    `prefers-reduced-motion` blocks should become one - was checked and
+    LEFT ALONE. There are five, and the motion suite reads them with
+    anchored regexes (`[data-motion-surface]` held visible, the shell
+    notice's own rule). Merging is a pure refactor with no measured benefit
+    and it risks those anchors, so the fifth block was added beside its
+    peers instead.
+
+DONE-RECORD (SKEL):
+  ONE mechanism, as DMDARK taught: `Skeleton` in web/src/lib/ui.tsx (one
+  component, five shapes - `rows`, `stages`, `facts`, `table`, `form` -
+  composed from the existing `surfaces` row/list/subpanel classes and
+  `stage-list`/`ul.overview`, so a waiting panel occupies the room its data
+  will) and one `.skeleton` rule in web/src/index.css (a bar of
+  `--color-surface-muted` with a single `--color-skeleton-shimmer` sweep).
+  The panels that own their fetch (WorkflowRail, CaseOverview, Decision,
+  Plan, Agents, Learn, History, CaseList, Templates) derive in-flight from
+  the state they already hold; the panels that read workspace-owned state
+  and could not tell "unread" from "empty" (Data, Runs, Eda, Evaluate,
+  Evidence, Context, Plan) take a new `loading` prop from one `CaseWorkspace`
+  flag that is true only until the first `load()` resolves - a reload after
+  a write leaves it false, so no panel flashes its skeleton at every save.
+
+  The sentence is not replaced: each one gains `visually-hidden` beside the
+  shape, so the DOM text, the `role`/`aria-busy` attributes and every
+  `data-testid` are unchanged, and the shape itself is `aria-hidden` so a
+  screen reader does not then announce the bars. CaseOverview is the one
+  panel whose empty state was actively misleading (zeros for every count
+  while its read was in flight); it now derives loading from `progress ===
+  null` and renders its seven facts as bars. Evidence rendered `null` while
+  it waited and now renders the shape, so the overview's anchor resolves to
+  something during the fetch.
+
+  Measured, not asserted: the web suite gained web/src/skeleton.test.tsx
+  (10 tests) covering the shapes' counts, the sentence's presence and
+  `visually-hidden` class per panel, the shape's `aria-hidden`, the single
+  keyframe, and the reduced-motion rule stopping the sweep, plus one
+  composition test in CaseWorkspace.test.tsx that freezes case open in its
+  first beat and asserts the mapping an analyst sees - twelve panels, each
+  waiting in the shape it will fill, none rendering the empty state a case
+  with nothing renders; the visual
+  harness gained a `.skeleton` probe read through the cascade in both
+  appearances plus 13 checks - the bar resolves `--color-surface-muted`
+  (light rgb(244,244,244), dark rgb(37,41,50)), the sweep is a gradient
+  running `skeleton-sweep` infinitely, and under emulated
+  `prefers-reduced-motion: reduce` `animation-name` is `none` in BOTH
+  appearances while the surface keeps reading its token.
+
+  Criterion 5, pixel-measured: a pre-SKEL `shots` capture (source stashed,
+  fresh run) diffed against the post-SKEL capture is ZERO changed pixels in
+  every settled workspace shot (02/03/05/06) and the dark list; the list
+  shot differs only in the case-row region, by the same 0.53% a post-SKEL
+  run-to-run control diff shows, which is the isolated core's random case
+  id. The settled workspace renders byte-for-byte what it did before SKEL.
+
+Gates: web vitest 312/312 (20 files, +10 skeleton tests, +1 file, +1
+      composition test); `npx tsc
+      -b` clean; `vite build` ok; `verify_visual.py verify` green in both
+      appearances (66 checks, +13 skeleton/gate checks); server pytest
+      796/796 unchanged. Trace and e2e untouched by this pass (props, one
+      new optional prop per panel, CSS, and harness probes only).
+STATE UPDATE: TASKS/HANDOFF gain the task; phase 3's remaining two items
+              (iconography 12, then zone composition 11) are the carried
+              follow-up. No schema change.
 ```
 
-Contracts for the rolling window (the two most recent: DMDARK and
-UI-REDUX). Older blocks are in `ai/TASKS-ARCHIVE.md`.
+Contracts for the rolling window (the two most recent: SKEL and
+DMDARK). Older blocks are in `ai/TASKS-ARCHIVE.md`.

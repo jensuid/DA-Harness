@@ -5,7 +5,7 @@
  */
 
 import { type CaseProgress } from '../api'
-import { surfaces } from '../lib/ui'
+import { Skeleton, surfaces } from '../lib/ui'
 
 // W2X-005: the stage's action is an action in the product, not an endpoint.
 // The rail's "Next" is the first thing an analyst reads, and a raw HTTP path
@@ -33,7 +33,16 @@ export function WorkflowRail({
     progress?.stage && progress.stage in STAGE_PANEL
       ? STAGE_PANEL[progress.stage]
       : null
-  if (!progress) return <p className={surfaces.note}>Loading workflow…</p>
+  if (!progress)
+    return (
+      <div className={surfaces.panel + ' workflow-rail'}>
+        <h2 className={surfaces.heading}>Where this case stands</h2>
+        {/* SKEL: the sentence stays - visually hidden, still announced - while
+          the shape of the rail stands in for it. */}
+        <p className={surfaces.note + ' visually-hidden'}>Loading workflow…</p>
+        <Skeleton shape="stages" />
+      </div>
+    )
   return (
     <div className={surfaces.panel + ' workflow-rail'}>
       <h2 className={surfaces.heading}>Where this case stands</h2>

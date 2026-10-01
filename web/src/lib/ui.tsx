@@ -215,3 +215,129 @@ export function Card({
     </Tag>
   )
 }
+
+/**
+ * SKEL (I4): the one waiting surface.
+ *
+ * Loading is a sentence today, and the sentence stays - it is what assistive
+ * tech announces, and removing it would make the wait silent. What the eye
+ * gets is this: the shape the panel is about to render, built from the same
+ * surfaces and the same row classes the real content uses, so a waiting panel
+ * occupies the room its data will and nothing reflows when the data lands.
+ *
+ * ONE mechanism, the way DMDARK taught: one component, one CSS rule, one
+ * animation. The shapes are the geometries the workspace already owns - a
+ * list of rows, the rail's rungs, the overview's facts, a table, a form - and
+ * each panel passes the count it will render, so a waiting shape cannot
+ * disagree with the data that replaces it. A shape this file does not know
+ * is a new shape the shell does not have.
+ */
+export type SkeletonShape = 'rows' | 'stages' | 'facts' | 'table' | 'form'
+
+// The count a shape renders when the panel does not know its own yet - the
+// rail's seven stages, the overview's seven facts, three rows or three
+// fields. These are the shapes' own sizes, not guesses: a panel that can
+// count its real rows passes them.
+const SKELETON_COUNT: Record<SkeletonShape, number> = {
+  rows: 3,
+  stages: 7,
+  facts: 7,
+  table: 4,
+  form: 3,
+}
+
+// One bar of a waiting shape. `.skeleton` (index.css) is the animated surface
+// and the token read; the classes a caller adds are the bar's size alone, so
+// the shape is the geometry the real content will occupy.
+function Bar({ className = '' }: { className?: string }) {
+  return <span className={'skeleton ' + className} />
+}
+
+const BAR = 'h-[0.85rem] rounded-[0.2rem]'
+
+export function Skeleton({
+  shape = 'rows',
+  count,
+  className,
+}: {
+  shape?: SkeletonShape
+  count?: number
+  className?: string
+}) {
+  const n = count ?? SKELETON_COUNT[shape]
+  const items = Array.from({ length: n }, (_, i) => i)
+  // The shape is presentational. The sentence beside it is what assistive
+  // tech announces - it stays in the DOM, visually hidden - and a reader who
+  // hears "loading" followed by a list of bars gains nothing from the bars.
+  return (
+    <div className={className} aria-hidden="true" data-skeleton={shape}>
+      {shape === 'rows' && (
+        // A case row, a run row, a timeline event, a finding: a hairline-
+        // separated row carrying a line and a shorter line under it, on the
+        // same `surfaces.row` the real rows separate with.
+        <ul className={surfaces.panelList}>
+          {items.map((i) => (
+            <li key={i} className={surfaces.row}>
+              <Bar className={BAR + ' w-[65%]'} />
+              <Bar className={BAR + ' w-[38%] mt-[0.4rem]'} />
+            </li>
+          ))}
+        </ul>
+      )}
+      {shape === 'stages' && (
+        // The rail's rungs: the fixed-width mark a stage glyph sits in, then
+        // the stage's name. `stage-list` draws the spine the marks mask, so
+        // a waiting rail reads as the rail.
+        <ul className={surfaces.panelList + ' stage-list'}>
+          {items.map((i) => (
+            <li key={i} className="stage">
+              <Bar className="w-[1.1rem] h-[1.1rem] rounded-full" />
+              <Bar className={BAR + ' w-[55%]'} />
+            </li>
+          ))}
+        </ul>
+      )}
+      {shape === 'facts' && (
+        // The overview: one line per fact, on the same `ul.overview` the real
+        // facts tabulate. The widths alternate the way a label-and-value line
+        // does, so the shape does not read as seven identical rules.
+        <ul className="overview">
+          {items.map((i) => (
+            <li key={i}>
+              <Bar className={BAR + (i % 2 === 0 ? ' w-[72%]' : ' w-[56%]')} />
+            </li>
+          ))}
+        </ul>
+      )}
+      {shape === 'table' && (
+        // The Data panel: a filename line, then its columns as a row of
+        // cells the width of a table's, so a waiting dataset reads as the
+        // overview-plus-table the profile fills in.
+        <ul className={surfaces.panelList}>
+          {items.map((i) => (
+            <li key={i} className={surfaces.row}>
+              <Bar className={BAR + ' w-[42%]'} />
+              <ul className={surfaces.panelList + ' mt-[0.4rem]'}>
+                {[0, 1, 2].map((cell) => (
+                  <li key={cell} className="skeleton h-[0.8rem] mt-[0.3rem] rounded-[0.2rem]" />
+                ))}
+              </ul>
+            </li>
+          ))}
+        </ul>
+      )}
+      {shape === 'form' && (
+        // Context, EDA, Evaluate: a label and the field under it, on the
+        // subpanel's own separator so a waiting form reads as its fields.
+        <ul className={surfaces.panelList}>
+          {items.map((i) => (
+            <li key={i} className={surfaces.subpanel}>
+              <Bar className="h-[0.8rem] w-[30%] mb-[0.4rem]" />
+              <Bar className="h-[2.6rem] w-full rounded-[0.35rem]" />
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
+}

@@ -10,7 +10,7 @@
  */
 
 import { CaseHistory } from '../api'
-import { surfaces } from '../lib/ui'
+import { Skeleton, surfaces } from '../lib/ui'
 
 export function HistoryPanel({
   history,
@@ -30,7 +30,10 @@ export function HistoryPanel({
         // as guidance, rather than reporting the same failure twice.
         <p className={surfaces.note}>The timeline could not be read: {error}</p>
       ) : !history ? (
-        <p className={surfaces.note}>Loading the timeline…</p>
+        <>
+          <p className={surfaces.note + ' visually-hidden'}>Loading the timeline…</p>
+          <Skeleton shape="rows" count={4} />
+        </>
       ) : (
         <HistoryBody history={history} />
       )}

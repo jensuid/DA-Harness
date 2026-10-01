@@ -8,7 +8,7 @@ import {
   promoteCaseToTemplate,
 } from './api'
 import { messageOf } from './CaseList'
-import { Button, surfaces } from './lib/ui'
+import { Button, Skeleton, surfaces } from './lib/ui'
 
 // Templates are the other thing a user comes to the front door for: the shape
 // of an investigation that was worked out once, offered to the next one. They
@@ -48,7 +48,14 @@ export function Templates({ onOpen }: { onOpen: (caseId: string) => void }) {
         runs or findings - and every step it proposes is still yours to accept.
       </p>
       {error && <p role="alert">Failed to load templates: {error}</p>}
-      {loading && <p className={surfaces.note}>Loading…</p>}
+      {loading && (
+        // SKEL: the template list's read is in flight; the shape is the same
+        // three rows the case list waits on, the sentence still announced.
+        <>
+          <p className={surfaces.note + ' visually-hidden'}>Loading…</p>
+          <Skeleton shape="rows" count={3} />
+        </>
+      )}
       {!loading && !error && templates.length === 0 && (
         <p className={surfaces.note}>No templates yet - save one from a case.</p>
       )}

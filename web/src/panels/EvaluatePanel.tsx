@@ -7,7 +7,7 @@
 import { useState } from 'react'
 import { ApiError, type Dataset, type Evaluation, type Profile, evaluateDataset } from '../api'
 import { messageOf } from '../CaseList'
-import { Button, surfaces } from '../lib/ui'
+import { Button, Skeleton, surfaces } from '../lib/ui'
 import { Verdict } from './FindingsPanel'
 
 // W-017: a 400 from the audit endpoint is the contract naming what to fix, but
@@ -43,18 +43,32 @@ export function EvaluatePanel({
   datasets,
   profiles,
   evaluations,
+  loading,
   onChanged,
 }: {
   caseId: string
   datasets: Dataset[]
   profiles: Record<string, Profile>
   evaluations: Evaluation[]
+  loading: boolean
   onChanged: () => void
 }) {
   // An audit is meaningless without a profile: the Data and Quality axes judge
   // the code against profiled columns. The panel is absent rather than offering
   // a submission that cannot succeed.
   const profiled = datasets.filter((d) => profiles[d.id] !== undefined)
+  if (loading) {
+    // SKEL: the profiles land last in the workspace's read, so the guidance
+    // below would be about a case the shell is still reading. The shape is
+    // the audit's own form - the code field, then the claim.
+    return (
+      <div className={surfaces.panel}>
+        <h2 className={surfaces.heading}>Audit submitted work (EVALUATE)</h2>
+        <p className={surfaces.note + ' visually-hidden'}>Reading the profiles…</p>
+        <Skeleton shape="form" count={2} />
+      </div>
+    )
+  }
   const [chosen, setChosen] = useState('')
   const [kind, setKind] = useState<'sql' | 'python'>('sql')
   const [code, setCode] = useState('')

@@ -7,7 +7,7 @@
 import { useState } from 'react'
 import { type Dataset, type Profile, attachDataset, profileDataset } from '../api'
 import { messageOf } from '../CaseList'
-import { Button, surfaces } from '../lib/ui'
+import { Button, Skeleton, surfaces } from '../lib/ui'
 import { QualityList } from './CaseOverview'
 import { GeneratePanel } from './GeneratePanel'
 import { RunCodePanel } from './RunCodePanel'
@@ -16,11 +16,13 @@ export function DataPanel({
   caseId,
   datasets,
   profiles,
+  loading,
   onChanged,
 }: {
   caseId: string
   datasets: Dataset[]
   profiles: Record<string, Profile>
+  loading: boolean
   onChanged: () => void
 }) {
   const [busy, setBusy] = useState(false)
@@ -77,7 +79,16 @@ export function DataPanel({
         />
       </label>
       {error && <p role="alert">Attach failed: {error}</p>}
-      {datasets.length === 0 ? (
+      {loading ? (
+        // SKEL: the workspace's read is in flight, so "no data attached yet"
+        // would be a sentence about a case the shell has not read. The shape
+        // is the overview-plus-table the profile fills in; the sentence stays
+        // for assistive tech, visually hidden.
+        <>
+          <p className={surfaces.note + ' visually-hidden'}>Reading the data…</p>
+          <Skeleton shape="table" count={Math.max(datasets.length, 1)} />
+        </>
+      ) : datasets.length === 0 ? (
         <p className={surfaces.note}>No data attached yet - this is where the loop starts.</p>
       ) : (
         <ul className={surfaces.panelList}>
