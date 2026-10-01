@@ -1152,6 +1152,46 @@ button.danger:hover {
   padding-top: 0.4rem;
 }
 
+/* ZONE-B (L3): the density is grouped, not spaced away. The architecture's
+   own principles are "visual grouping: related information should appear
+   physically together" and "progressive disclosure, not information overload",
+   and the thesis names "Modern IDE + Notion-like workspace + analytical notebook
+   + AI copilot" rather than a dashboard's flat panels. So the zones' flat
+   stacks read as two or three blocks instead of seven equal cards.
+
+   The group is a surfaced block in its own right, but it deliberately does not
+   carry the `panel` class: `heading.closest('.panel')` is how the workspace's
+   tests reach a panel, and a group that answered that selector would make
+   every panel inside it resolve to the group. The panels inside keep their
+   class and their region - only their own card treatment comes out, the way
+   `.record-group` already did, so the pair reads as one surface with two
+   headings rather than as a card containing two cards. */
+.zone-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+}
+
+.zone-group .panel {
+  margin: 0;
+  padding: 0.6rem 0.75rem;
+  border: none;
+  background: none;
+}
+
+/* The two surfaces a group joins are separated by the hairline the panels'
+   own borders used to draw, so the pair still reads as two steps of one
+   stage rather than as one undifferentiated block. The combinator reads the
+   group's direct children because a rail anchor wrapper (`#plan`, `#evaluate`)
+   may sit between them. */
+.zone-group > * + * {
+  border-top: 1px solid var(--color-hairline);
+}
+
 /* The case's record group: three disclosures, one panel. The inner panels
    carry their own margins, so the group's gap does the spacing instead. */
 .zone-record .record-group {

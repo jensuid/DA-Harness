@@ -1004,3 +1004,40 @@ entry. No carried follow-up is open and no walk-test finding is queued.
 
 Gates now: web 320/320, tsc clean, build ok, visual verify green in both
 appearances (78 checks, +12 mark/token), server 796/796.
+
+**ZONE-A is done and pushed** - the semantic half of the audit's item 11
+(finding P4): every panel root that carried `surfaces.panel` and was not
+already inside a `Disclosure` is a `<section aria-labelledby>` named by the
+`<h2>` it already rendered, so a reader navigating by region now finds the
+zones *and* the fourteen panels inside them; a `<div>` carried no role. The
+ids come from `useId` (the two mounted `AgentPanel`s keep distinct names),
+the three zones stay labelled `<section>` (`<aside>` declined, measured), the
+two mastheads gained a `<header>`, and `<nav>`/`<footer>` were declined - no
+link set, no footer content. Learn, History and PromoteTemplate keep `<div>`
+roots on purpose: their `Disclosure` is already the named region.
+
+The swap was geometry-neutral by construction and measured against a
+stashed baseline: four of six shots byte-identical, both full-page
+workspace shots identical in both appearances, the list shot's diff
+confined to the seeded case's own row band (rows 181-308, the same band the
+ICON-vs-ICON same-code control reproduces) and the viewport workspace shot's
+75 px all one grey-level of antialiasing. No layout moved. Five new landmark
+tests assert the structure, and the zone-name regexes were anchored because
+"Audit submitted work (EVALUATE)" contains the word "work". One latent
+hazard fixed on the way: EvaluatePanel's hook block sat below its loading
+early return, so a render that took the return skipped its hooks.
+
+**Next: ZONE-B** - item 11's other two findings, L3 (the zones' density) and
+L4 (Chat below the fold in the intelligence zone). Its contract is already
+written (`ai/TASKS.md`, just after the ZONE-A block) with the acceptance
+criteria, so the session starts there rather than re-deriving scope. Step 0
+is a read, not a change: `docs/UX-UI Architecture.md` sec. 2, closing the
+plan's open question 4 (where the mental model puts the copilot) as a
+written decision before any layout moves - L3/L4 both change layout and
+tests, unlike ZONE-A, and if the read says Chat belongs where it is, L4
+closes as a decision and only L3 remains. With items 11 and 12 otherwise
+closed, ZONE-B is the last of the plan's phase 3; after it, the next phase
+is its own roadmap entry.
+
+Gates now: web 325/325 (21 files, +5 landmark tests), tsc clean, build ok,
+visual verify green in both appearances (78 checks), server 796/796.

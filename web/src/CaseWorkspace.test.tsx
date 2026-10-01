@@ -2579,6 +2579,103 @@ expect(timeline.getByText(/case created/)).toBeInTheDocument()
       })
     })
 
+    // ZONE-B (phase 3 item 11, findings L3 + L4). The audit measured the
+    // intelligence zone stacking five surfaces with the copilot last, and the
+    // three zones stacking same-weight cards with no group between them. The
+    // architecture's own principles decided both: sec. 2's diagram has no
+    // copilot node because it is the per-stage answer to "what should I do
+    // next?" - an always-question, so it cannot sit below the fold - and the
+    // architecture names visual grouping and progressive disclosure over a
+    // flat stack.
+    describe('ZONE-B zone composition', () => {
+      // `toBeBefore` is not in the installed jest-dom, so document order is
+      // read through the DOM's own bit: a node that follows another carries
+      // DOCUMENT_POSITION_FOLLOWING in the comparison.
+      const follows = (a: Element, b: Element) =>
+        Boolean(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING)
+
+      it('puts the copilot first in the intelligence zone (L4)', async () => {
+        mockEmptyCase()
+        render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+        const intelligence = await screen.findByRole('region', { name: /^intelligence$/i })
+        const chat = within(intelligence).getByRole('region', { name: 'Ask this case' })
+        const context = within(intelligence).getByRole('region', { name: 'Context' })
+        const agent = within(intelligence).getByRole('region', { name: 'Agent' })
+        const reviewer = within(intelligence).getByRole('region', { name: 'Reviewer' })
+
+        // The zone's own list in `docs/UX-UI Architecture.md` sec. 8 names
+        // "AI assistance" before "context" and before "suggestions"; the
+        // layout had it inverted. The copilot answers an always-question, so
+        // it is the first surface in the zone, not the last.
+        expect(follows(chat, context)).toBe(true)
+        expect(follows(chat, agent)).toBe(true)
+        expect(follows(chat, reviewer)).toBe(true)
+        // Context is the model's own node, so it stays its own surface between
+        // the copilot and the agents rather than joining either.
+        expect(follows(context, agent)).toBe(true)
+      })
+
+      it('groups the work zone\'s explore surfaces: Plan and EDA (L3)', async () => {
+        mockEmptyCase()
+        render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+        const plan = await screen.findByRole('region', { name: 'Plan' })
+        const eda = screen.getByRole('region', { name: 'Explore the data (EDA)' })
+        const group = plan.closest('.zone-group')
+
+        // The two "what to look at" surfaces over the profile are one block,
+        // so the pair reads as the explore step rather than two of the zone's
+        // seven equal cards.
+        expect(group).not.toBeNull()
+        expect(eda.closest('.zone-group')).toBe(group)
+        // The rail's anchor still resolves, and the panel it points at is the
+        // panel itself, not the group around it.
+        expect(document.getElementById('plan')).toContainElement(plan)
+      })
+
+      it('groups the work zone\'s review surfaces: Evaluate and Evidence (L3)', async () => {
+        mockEmptyCase()
+        render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+        const audit = await screen.findByRole('region', { name: 'Audit submitted work (EVALUATE)' })
+        const graph = screen.getByRole('region', { name: 'Evidence graph' })
+        const group = audit.closest('.zone-group')
+
+        // Both surfaces answer "what backs this case\'s claims", so they are one
+        // block before the decision.
+        expect(group).not.toBeNull()
+        expect(graph.closest('.zone-group')).toBe(group)
+        expect(document.getElementById('evaluate')).toContainElement(audit)
+      })
+
+      it('groups the intelligence zone\'s two agents (L3)', async () => {
+        mockEmptyCase()
+        render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+        const agent = await screen.findByRole('region', { name: 'Agent' })
+        const reviewer = screen.getByRole('region', { name: 'Reviewer' })
+
+        // One mechanism in two roles, so they read as one block beside the
+        // copilot rather than as two more cards.
+        const group = agent.closest('.zone-group')
+        expect(group).not.toBeNull()
+        expect(reviewer.closest('.zone-group')).toBe(group)
+        // The group is a surface, not a panel: `heading.closest('.panel')` is
+        // how the workspace reaches a panel, so a group that answered that
+        // selector would make both agents resolve to it.
+        expect(group?.classList.contains('panel')).toBe(false)
+      })
+
+      it('keeps a grouped panel a region named by its own heading', async () => {
+        // The ZONE-A floor holds inside a group: the panel keeps its section,
+        // its heading id and the label the heading supplies, so a reader
+        // navigating by region still finds the step the group gathers.
+        mockEmptyCase()
+        render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+        const plan = await screen.findByRole('region', { name: 'Plan' })
+        expect(plan.tagName).toBe('SECTION')
+        const heading = within(plan).getByRole('heading', { level: 2, name: 'Plan' })
+        expect(plan.getAttribute('aria-labelledby')).toBe(heading.getAttribute('id'))
+      })
+    })
+
     it('marks the data stage with a warning when the profiler found a defect', async () => {
       mockEmptyCase()
       vi.mocked(api.getProfile).mockResolvedValue({

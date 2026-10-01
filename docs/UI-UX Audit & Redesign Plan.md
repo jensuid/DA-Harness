@@ -255,9 +255,27 @@ stack. Each item names the files it touches.
     text or CSS change) and measured: four of six shots byte-identical, and
     the settled workspace's full-page shot identical in both appearances.
     STILL OPEN as ZONE-B: L3 (the zones' density) and L4 (Chat below the fold
-    in the intelligence zone). L4 needs the placement confirmed against
-    `docs/UX-UI Architecture.md` §2 before any layout change (open question
-    4); both change layout and tests, unlike ZONE-A.
+    in the intelligence zone). RESOLVED as ZONE-B. L4: the copilot moved to the
+    top of the intelligence zone (Chat, then Context, then the two agents) —
+    open question 4 above records the §2/§8/§22 reasoning, and the move is a
+    reorder, never an enlargement, because §22 says the copilot must not
+    dominate. L3: the density is grouped, not spaced away — the architecture's
+    own principles ("visual grouping: related information should appear
+    physically together", "progressive disclosure, not information overload";
+    §1's thesis lists "Modern IDE + Notion-like workspace + analytical notebook
+    + AI copilot") are served by putting the flat stacks into surfaced groups so
+    a zone reads as two or three blocks instead of seven equal cards. A
+    disclosure collapse was measured as unavailable here: every work-zone panel
+    is a rail anchor (`#data`, `#plan`, `#runs`, `#findings`, `#evaluate`), so a
+    collapsed group would send "Go to the Evaluate panel" to a hidden surface,
+    and ZONE-A's landed contract makes each panel a named `<section>` region
+    while W2X-008's rule makes a Disclosure-nested panel a `<div>` — the two
+    cannot both hold. So the groups are visual: a `.zone-group` block that
+    holds its panels the way `.record-group` already holds the case's record,
+    and the panels inside keep their region, their heading id and their
+    `.panel` class. Grouped: Plan + EDA (the two "what to look at" surfaces over
+    the profile), Evaluate + Evidence (the two "what backs the claim" review
+    surfaces), and the two agents (one mechanism in two roles).
 12. **Iconography decision (P1)** — RESOLVED (typographic): `lucide-react` was
     removed in UI-REDUX, and the audit's open question is closed in favour of
     text glyphs formalized as one vocabulary - `MARKS` in `web/src/lib/ui.tsx`
@@ -315,6 +333,25 @@ stack. Each item names the files it touches.
 3. **Webfont choice.** Geist and Outfit are the closest fits to an IDE/analytical
    aesthetic; a serif header pairing suits "Notion-like" but may clash with monospace
    data. Needs a decision before Phase 1 item 2.
-4. **Chat placement (L4).** Moving it changes the intelligence zone's composition and
+4. **Chat placement (L4).** RESOLVED (ZONE-B) — the copilot sits at the **top** of
+   the intelligence zone: Chat first, then Context, then the two agents. Three
+   readings of the architecture decided it, and the first is the one that made
+   it a decision rather than a preference. (a) `docs/UX-UI Architecture.md` §2's
+   diagram has **no copilot node**: its nodes are the three inputs (CONTEXT,
+   DATA, QUESTION) and the loop's seven stages. The copilot is not a stage and
+   not an input; it is the per-stage support that answers "What should I do
+   next?" — one of the three questions §2 says the user must *always*
+   understand. A surface answering an always-question cannot sit below the
+   fold of the zone that exists to answer it. (b) §8 lists the intelligence
+   zone's contents with "AI assistance" first, before "context" and before
+   "suggestions"; the layout had that inverted (Context, Agent, Agent, Chat),
+   the AI surfaces second-to-fourth and the conversational one last. (c) §22
+   constrains the copilot's *form*, not its rank: "The AI should not dominate
+   the application" — so the fix is a reorder, never an enlargement. Chat
+   stays a panel among panels, the same size and the same contract, no
+   chatbot frame; the turn list grows downward as it does today and the two
+   agents sit directly below it rather than three panels above it. §22's
+   warning is about the copilot taking over the page, which a same-size panel
+   in first position does not do.
    possibly its tests; worth confirming against `docs/UX- UI Architecture.md` §2's
    mental model before acting.

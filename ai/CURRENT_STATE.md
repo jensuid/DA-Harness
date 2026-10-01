@@ -3,49 +3,51 @@ the motion, the on-screen chart). P8, P7, P6, P5, P4, P3, P2, P1 and P0 are all
 COMPLETE (see the phase table below). Every phase the roadmap and the
 conformance evaluation asked for is delivered; no phase is open.
 
-- **Active task:** ZONE-A - panel landmarks, phase 3 item 11 part 1 of the
-  audit in `docs/UI-UX Audit & Redesign Plan.md` (finding P4: div-soup in
-  panels). Every panel root that carried `surfaces.panel` and was not
-  already inside a `Disclosure` is a `<section aria-labelledby>` named by the
-  `<h2>` it already rendered - one source of truth for the name, no
-  duplicated `aria-label`. `useId` gives the two mounted `AgentPanel`s
-  distinct heading ids. The three zones stay labelled `<section>`
-  (`<aside>` declined, measured: a named region is a better navigation
-  surface than an unnamed complementary one, and the work zone is the page's
-  primary content); the two page mastheads (workspace, case list) gained a
-  `<header>`; `<nav>`/`<footer>` were declined - the shell has no link set
-  and no footer content, so either would be semantic washing. Learn,
-  History and PromoteTemplate keep their `<div>` roots on purpose, because
-  their `Disclosure` is already the named region and a second labelled
-  region inside it would name the same thing twice. EvaluatePanel's hook
-  block moved above its loading early return - a hook below a return the
-  render takes is a hook the render skips, and the workspace's one `loading`
-  flag flips on every case open.
+- **Active task:** ZONE-B - phase 3 item 11's other two findings, L3 (the
+  zones' density) and L4 (Chat below the fold in the intelligence zone).
+  L4: the copilot moved to the **top** of the intelligence zone - Chat, then
+  Context, then the two `AgentPanel`s wrapped in a `.zone-group`. The
+  architecture's sec. 2 mental-model diagram has no copilot node because the
+  copilot answers "What should I do next?", one of the three questions the
+  user must always be able to answer, so it cannot sit below the fold; sec.
+  8 lists "AI assistance" first in the zone; sec. 22 constrains the
+  copilot's form ("must not dominate"), not its rank, so the move is a
+  reorder, never an enlargement. Plan open question 4 is closed with that
+  reasoning.
+  L3: visual grouping through a new `.zone-group` block modelled on the
+  existing `.record-group` vocabulary - Plan + EDA (the work zone's explore
+  pair), Evaluate + Evidence (the review pair) and the two agents (one
+  mechanism in two roles). A group is a surfaced, bordered, padded flex
+  column; its inner `.panel`s drop their own border/background/padding and
+  separate via `.zone-group > * + *`. The wrapper carries no `panel` class,
+  because the workspace reaches a panel through `heading.closest('.panel')`
+  and the `#plan`/`#evaluate` anchor divs sit between the group and its
+  panels. Disclosure-collapse was measured as unavailable for these groups:
+  every work-zone panel is a rail anchor, so a collapsed group would hide a
+  "Go to panel" target, and ZONE-A's landed contract (panels are named
+  `<section>` regions) conflicts with W2X-008's rule that a
+  Disclosure-nested panel is a `<div>`.
     **STATUS: DONE, committed and pushed.** Measured against a stashed
-  pre-ZONE-A baseline: four of six shots byte-identical, both full-page
-  workspace shots identical in both appearances, the list shot's diff
-  confined to the seeded case's own row band (rows 181-308, the same band
-  the ICON-vs-ICON same-code control reproduces) and the viewport workspace
-  shot's 75 px all one grey-level of antialiasing - no layout moved, as the
-  swap is geometry-neutral by construction (no class, text or CSS change).
-  Five new landmark tests assert the structure; the zone-name regexes were
-  anchored because "Audit submitted work (EVALUATE)" contains "work".
-  **Next task: ZONE-B** - item 11's other two findings, L3 (the zones'
-  density) and L4 (Chat below the fold in the intelligence zone); its
-  contract is already written in this file's TASKS counterpart (`ai/TASKS.md`,
-  just after the ZONE-A block) with the acceptance criteria, so the session
-  starts there. Both move
-  layout and tests, and L4 needs the placement confirmed against
-  `docs/UX-UI Architecture.md` sec. 2 before any change (plan open question
-  4). Items 11 and 12 are otherwise closed, so the plan's phase 3 is
-  complete and the next phase is its own roadmap entry.
-  No phase is open; this is a task, not a phase.
-  Sebelumnya: ICON (iconography), SKEL (skeleton loaders), DMDARK (dark mode
-  as a token swap), UI-REDUX (the shell's visual and interaction craft,
-  phases 1 and 2), v0.3.7 (the release W5X-001 ships in), W5X-001 (the Data
-  panel's duplicate filename), WALK-UX-005 (validasi W3X-001), WALK-UX-004
-  (validasi fix W3X + temuan regresi W4X-001), v0.3.6, W3X-003-PROMPT,
-  W3X-002, W3X-004, WALK-UX-003.
+  pre-ZONE-B baseline: the masthead is unchanged to the pixel (0 changed
+  px), the orientation zone shows 10-13 px of one grey-level antialiasing,
+  and the entire intended diff sits inside the work and intelligence zones;
+  both full-page shots are 23 px shorter, which is the grouping removing
+  duplicate borders and padding. The list shot's diff is the seeded case's
+  own row band - the same-code control reproduces the identical band on an
+  unchanged tree, so it is seeding variance, not layout.
+  Five new tests assert the composition: the copilot's rank in the zone,
+  the three groups, the group-is-not-a-panel floor, and that a grouped
+  panel keeps its named `<section>`.
+  **Next task: none is queued** - item 11's four findings are all landed now
+  (the panel landmark floor, the iconography, the zone composition), so the
+  plan's phase 3 is complete and what remains is its own roadmap entry, not
+  an open item. No phase is open; this is a task, not a phase.
+  Sebelumnya: ZONE-A (panel landmarks), ICON (iconography), SKEL (skeleton
+  loaders), DMDARK (dark mode as a token swap), UI-REDUX (the shell's visual
+  and interaction craft, phases 1 and 2), v0.3.7 (the release W5X-001 ships
+  in), W5X-001 (the Data panel's duplicate filename), WALK-UX-005 (validasi
+  W3X-001), WALK-UX-004 (validasi fix W3X + temuan regresi W4X-001),
+  v0.3.6, W3X-003-PROMPT, W3X-002, W3X-004, WALK-UX-003.
 
 - **Done before that:** P8-TRACE-010 - the requirement-traceability matrix
   (AT-48). The PRD's section 59 control artifact is code: 48 rows, one per
@@ -94,12 +96,12 @@ conformance evaluation asked for is delivered; no phase is open.
   `desktop/bundle_dmg.sh`, so the shipped triple is what the developer's
   machine produces. Restoring an enforced Intel lane needs a self-hosted
   runner.
-- **Test status:** server 796/796 passed, unchanged by ZONE-A (no server
-  file moved). The web suite is 325/325 (21 files; +5 landmark tests in
-  `CaseWorkspace.test.tsx`), tsc clean and the build ok. The visual harness
+- **Test status:** server 796/796 passed, unchanged by ZONE-B (no server
+  file moved). The web suite is 330/330 (21 files; +5 composition tests in
+  `CaseWorkspace.test.tsx` for ZONE-B, on top of ZONE-A's five landmarks),
+  tsc clean and the build ok. The visual harness
   is green in both appearances with 78 checks; the harness's own checks are
-  unchanged by ZONE-A, so they still measure the surface it left alone.
-  Desktop shell 30 Rust tests (unchanged; no shell code moved);
+  unchanged by ZONE-B. Desktop shell 30 Rust tests (unchanged; no shell code moved);
   P2, P3 and P4 gates
   PASS; **v0.2.0, v0.3.0, v0.3.1, v0.3.2, v0.3.3, v0.3.4 and v0.3.5 released**
   (tags `v0.2.0` on `ec819fc`, `v0.3.0` on `ab56541`, `v0.3.1` on `19cefc1`,

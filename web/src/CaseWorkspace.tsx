@@ -410,15 +410,21 @@ export function CaseWorkspace({
               onChanged={() => void load()}
             />
             </div>
-            <div id="plan">
-            <PlanPanel
-              caseId={caseId}
-              datasets={datasets}
-              loading={loading}
-              onChanged={() => void load()}
-            />
+            {/* ZONE-B (L3): the two "what to look at" surfaces over the profile
+                are one block - the plan says what to examine and the EDA ops
+                examine it, so the pair reads as the explore step rather than as
+                two of the zone's seven equal cards. */}
+            <div className="zone-group">
+              <div id="plan">
+              <PlanPanel
+                caseId={caseId}
+                datasets={datasets}
+                loading={loading}
+                onChanged={() => void load()}
+              />
+              </div>
+              <EdaPanel caseId={caseId} datasets={datasets} profiles={profiles} loading={loading} />
             </div>
-            <EdaPanel caseId={caseId} datasets={datasets} profiles={profiles} loading={loading} />
             {/* W2X-008: Runs stays mounted on a young case. Hiding a panel that
                 carries no artifact is right only when the panel carries no
                 control either - this one holds "Draft a finding", the only
@@ -444,22 +450,28 @@ export function CaseWorkspace({
                 />
               </div>
             ) : null}
-            <div id="evaluate">
-            <EvaluatePanel
-              caseId={caseId}
-              datasets={datasets}
-              profiles={profiles}
-              evaluations={evaluations}
-              loading={loading}
-              onChanged={() => void load()}
-            />
+            {/* ZONE-B (L3): the two review surfaces are one block - the audit
+                and the evidence graph both answer "what backs this case's
+                claims", so they read as the validate step rather than as two
+                more cards in the stack. */}
+            <div className="zone-group">
+              <div id="evaluate">
+              <EvaluatePanel
+                caseId={caseId}
+                datasets={datasets}
+                profiles={profiles}
+                evaluations={evaluations}
+                loading={loading}
+                onChanged={() => void load()}
+              />
+              </div>
+              <EvidencePanel
+                evidence={evidence}
+                error={evidenceError}
+                empty={evidenceEmpty}
+                loading={loading}
+              />
             </div>
-            <EvidencePanel
-              evidence={evidence}
-              error={evidenceError}
-              empty={evidenceEmpty}
-              loading={loading}
-            />
             {/* UX 46: the loop's exit, last in the work zone - after the
                 evidence graph, because a decision is what the evidence is
                 for. */}
@@ -471,27 +483,47 @@ export function CaseWorkspace({
         </section>
         <section className="zone intelligence" aria-label="intelligence">
           <MotionSurface variant="enter" className="contents">
-            <ContextPanel caseId={caseId} loading={loading} onChanged={() => void load()} />
-            <AgentPanel
-              caseId={caseId}
-              role="analyst"
-              agent={agent}
-              onAgent={setAgent}
-              onChanged={() => void load()}
-            />
-            <AgentPanel
-              caseId={caseId}
-              role="reviewer"
-              agent={reviewer}
-              onAgent={setReviewer}
-              onChanged={() => void load()}
-            />
+            {/* ZONE-B (L4): the copilot is first in this zone. The mental model
+                puts it there - `docs/UX-UI Architecture.md` sec. 2's diagram has
+                no copilot node, because it is not a stage in the loop: it is
+                the per-stage support that answers "What should I do next?", one
+                of the three questions sec. 2 says the analyst must always
+                understand, and a surface answering an always-question cannot
+                sit below the fold of the zone that exists to answer it. Sec. 8
+                lists the zone's contents with "AI assistance" first, before
+                "context" and before "suggestions". Sec. 22 constrains the form,
+                not the rank - "The AI should not dominate the application" - so
+                this is a reorder and never an enlargement: the panel keeps its
+                size, its contract and its region, and the turns grow downward
+                as they did when it was last. */}
             <Chat
               caseId={caseId}
               turns={turns}
               onTurn={(turn) => setTurns((prior) => [...prior, turn])}
               onOpenCase={onOpenCase}
             />
+            <ContextPanel caseId={caseId} loading={loading} onChanged={() => void load()} />
+            {/* ZONE-B (L3): the two agents are one mechanism in two roles - the
+                same component mounted twice over the same case - so they read
+                as one block rather than two equal cards beside the copilot.
+                Sec. 22's copilot is contextual, and a grouped pair is not a
+                dominating one. */}
+            <div className="zone-group">
+              <AgentPanel
+                caseId={caseId}
+                role="analyst"
+                agent={agent}
+                onAgent={setAgent}
+                onChanged={() => void load()}
+              />
+              <AgentPanel
+                caseId={caseId}
+                role="reviewer"
+                agent={reviewer}
+                onAgent={setReviewer}
+                onChanged={() => void load()}
+              />
+            </div>
           </MotionSurface>
         </section>
       </div>

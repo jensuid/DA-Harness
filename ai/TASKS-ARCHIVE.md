@@ -8094,3 +8094,144 @@ STATE UPDATE: TASKS/HANDOFF gain the task; phase 3's remaining two items
               (iconography 12, then zone composition 11) are the carried
               follow-up. No schema change.
 ```
+
+### ICON contract (iconography - phase 3 item 12)
+
+```
+TASK ID: ICON
+PHASE: P3 polish (docs/UI-UX Audit & Redesign Plan.md item 12, finding P1)
+STATUS: DONE
+
+INTENT: Resolve the iconography question the audit left open, and make the
+  answer deliberate rather than inherited. `lucide-react` is already gone
+  (UI-REDUX), so the dependency half of P1 is closed; what remains is the
+  decision the plan's open question 1 names - drawn set or typographic - and
+  the inconsistency the audit did not measure: the shell's status marks are
+  one vocabulary in name only.
+
+THE DECISION (closed by measurement, recorded here and in the plan doc):
+  typographic, not drawn. The shell keeps text glyphs and formalizes them.
+  Reasons, each measured:
+  1. Status is text-plus-glyph by contract (AT-32, `auditStatusNotColorOnly`).
+     A drawn mark is `aria-hidden` by nature, so it needs a duplicated label
+     to carry the same meaning - which is exactly what the sentence beside it
+     already provides. The glyph's job is to be the eye's handle on a status
+     the sentence already states.
+  2. DEC-001: no new package, and a bundled icon set is a second visual
+     vocabulary the shell would have to maintain beside the token layer it
+     just built (DMDARK). Nothing in the measured inventory needs it.
+  3. The audit found the copy already right and there are no toolbars - the
+     app has no icon-shaped slots. Verb icons would restate the verb every
+     button already names in a sentence, which is the design language the
+     whole workspace is built in.
+  4. What IS broken is the vocabulary, not the medium. Measured from source:
+     one meaning (concern) has TWO glyphs - `⚠` in the rail, the decision
+     panel and the check rows, and `!` in the audit's verdict chips; the same
+     six glyphs render at five different treatments (a circled 1.1rem mark in
+     the rail, a pill chip, a bold inline, and bare text in three panels); no
+     module owns the characters, so every panel redefines them inline.
+
+MECHANISM (one vocabulary, one component - the shape SKEL taught):
+  - `MARKS` in `web/src/lib/ui.tsx`: one record naming the five statuses the
+    shell has - `pass`, `concern`, `fail`, `current`, `pending` - to their
+    glyphs. Every site reads it; no panel redefines a glyph.
+  - `Mark` in `lib/ui.tsx`, for the marks that STAND ALONE (the rail's rungs,
+    the decision panel's key findings): the glyph in a fixed 1.1rem
+    inline-flex box, coloured by the status's own token, `aria-hidden` (the
+    label or sentence beside it is what assistive tech reads), carrying
+    `data-mark` so the treatment is testable. The rail keeps `.stage-mark`
+    for the spine's anchor mask, so the rail's mark carries both classes and
+    the settled rail does not move a pixel.
+  - The marks INSIDE a sentence (verdict chips, check rows, agent steps,
+    learn stages) stay text nodes: `getByText` joins only an element's direct
+    text children, so wrapping them would break the contract tests that read
+    `✗ evidence` as one string. They read their glyph from `MARKS` and their
+    colour from the container's status class, which already reads tokens.
+
+CONSISTENCY FIXES THE VOCABULARY IMPLIES (all in scope):
+  - `Verdict`'s concern glyph is `!`; it becomes `MARKS.concern`, so one
+    meaning has one glyph everywhere.
+  - The decision panel's fallback for an unvalidated finding is `●`
+    (current); it becomes `MARKS.pending` - an unvalidated finding is not
+    started, not the stage the loop is on.
+  - The agent panel renders a pending step on a `concern` (amber) chip;
+    pending is not a concern, so it renders on a neutral chip and the glyph
+    reads `MARKS.pending`.
+  - The agent panel's step marks and the learn panel's stage marks read from
+    `MARKS` rather than inline ternaries.
+
+NON-GOALS: no new dependency (DEC-001), no drawn SVG mark assets, no icons on
+  panel headings or verb buttons, no change to DOM text beyond the glyph
+  characters named above, no new layout, and no change to the accessibility
+  audit's surface (`aria-hidden` marks stay hidden; the labels and sentences
+  it reads are unchanged).
+
+ACCEPTANCE CRITERIA:
+  1. No component outside `lib/ui.tsx` names a glyph character: the five
+     literals live in `MARKS` and nowhere else.
+  2. The rail's rungs and the decision panel's key findings render `Mark`;
+     a test asserts each status's mark resolves its token colour.
+  3. One meaning has one glyph: a test asserts the concern glyph is the same
+     character on the rail, the decision panel, the check rows and the
+     verdict chips.
+  4. The settled workspace's pixel diff is confined to the marks themselves
+     (measured against a pre-ICON baseline): no layout moves - the rail's
+     marks keep their rungs and their size; what changes is the glyph's own
+     ink (the complete stage's rung takes the ok token and every mark takes
+     weight 700).
+  5. `auditStatusNotColorOnly` still returns zero violations and the
+     accessibility suite is green.
+  6. Gates: web vitest green; `npx tsc --noEmit` clean; `vite build` ok;
+     `verify_visual.py verify` green in both appearances; server pytest
+     unchanged.
+```
+
+
+DONE-RECORD (ICON):
+  The decision is recorded in the plan doc (item 12, open question 1) and in
+  the vocabulary itself: `MARKS` in web/src/lib/ui.tsx names the shell's five
+  statuses - pass `✓`, concern `⚠`, fail `✗`, current `●`, pending `○` - and
+  no component outside that file names a glyph character (criterion 1, held by
+  a test AND by grep). `Mark` renders the one treatment for a mark that stands
+  alone: a 1.1rem inline-flex box, the status's own token for the colour, and
+  `aria-hidden` - the label or sentence beside it is what assistive tech
+  announces, which is why `auditStatusNotColorOnly` still returns zero
+  violations. The rail's rungs carry `mark <status> stage-mark`, so the
+  vocabulary's treatment lands on the spine's own anchor mask.
+
+  The three consistency fixes the vocabulary implies, each pinned by a test:
+  the audit's verdict chip read `!` for a concern while everything else read
+  `⚠` - one meaning, two marks - and now reads `MARKS.concern`; the decision
+  panel's fallback for an unvalidated finding was `●` (current, the stage the
+  loop is on) and now reads `○` (pending, not started); the agent panel sat a
+  pending step on an amber `concern` chip and now renders the neutral chip,
+  so the chip and the glyph say the same thing.
+
+  Marks inside a sentence stay text nodes - `getByText` joins only an
+  element's direct text children, so wrapping them would break the contract
+  tests that read `✗ evidence` as one string. They read their character from
+  `MARKS` and their colour from the container's status class, which already
+  reads tokens.
+
+  Criterion 4, pixel-measured against a pre-ICON baseline (source stashed,
+  fresh `shots` run): the settled workspace differs by 857 px in light and
+  1395 px in dark out of 2.1M - 0.041% and 0.061% - and every changed cell is
+  in one column, x 24-72, the rail's seven rungs. No layout moved. The list
+  shot's 4.49% is a 1px content shift plus the isolated core's random case
+  id, both present in an ICON-vs-ICON run-to-run control (same 1px shift at
+  the same rows, 0.565%).
+
+  The visual harness gained a `.mark` probe read through the cascade: each of
+  the five marks resolves its own token in BOTH appearances (light
+  rgb(42,122,42) / rgb(138,106,26) / rgb(160,58,42) / rgb(74,111,165) /
+  rgb(102,102,102), dark rgb(127,214,146) / rgb(220,180,95) / rgb(239,138,118)
+  / rgb(143,178,224) / rgb(154,161,173)), and the box measures 17.5938px -
+  the rung's own room, so a mark outside the rail reads as the same mark.
+
+Gates: web vitest 320/320 (21 files, +8 icon tests in a new file); `npx tsc
+      --noEmit` clean; `vite build` ok; `verify_visual.py verify` green in
+      both appearances (78 checks, +12 mark/token); server pytest 796/796
+      unchanged. Trace and e2e untouched (no API or state change).
+STATE UPDATE: TASKS/HANDOFF gain the task; phase 3's last item (zone
+              composition 11) is the carried follow-up. No schema change.
+
