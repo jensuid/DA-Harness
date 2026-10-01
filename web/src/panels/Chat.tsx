@@ -4,7 +4,7 @@
  * panel is still pure over its props.
  */
 
-import { useEffect, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import { type ConversationTurn, getCase, postChat } from '../api'
 import { sourceLabel } from '../sourceLabel'
 import { messageOf } from '../CaseList'
@@ -26,6 +26,7 @@ export function Chat({
   // A previous case cited by an answer is looked up once, however many turns
   // cite it, and only for `case:` grounds - the other kinds are not
   // case-scoped. The lookup is a read-only GET and writes nothing.
+  const headingId = useId()
   const [priorQuestions, setPriorQuestions] = useState<Record<string, string | null>>({})
   useEffect(() => {
     const cited = turns
@@ -97,8 +98,11 @@ export function Chat({
   }
 
   return (
-    <div className={surfaces.panel}>
-      <h2 className={surfaces.heading}>Ask this case</h2>
+    <section
+      className={surfaces.panel}
+      aria-labelledby={headingId}
+    >
+      <h2 className={surfaces.heading} id={headingId}>Ask this case</h2>
       <p className={surfaces.note}>
         Answers come from this case's artifacts. The memory is cross-case: it
         may recall findings from your other cases, and it says when it cannot
@@ -147,7 +151,7 @@ export function Chat({
           </li>
         ))}
       </ul>
-    </div>
+    </section>
   )
 }
 

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import {
   type Template,
   type TemplateShape,
@@ -19,6 +19,7 @@ import { Button, Skeleton, surfaces } from './lib/ui'
 // mutating its own copy, so what it shows is what the core has - the same
 // discipline the case list keeps.
 export function Templates({ onOpen }: { onOpen: (caseId: string) => void }) {
+  const headingId = useId()
   const [templates, setTemplates] = useState<Template[]>([])
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
@@ -40,8 +41,11 @@ export function Templates({ onOpen }: { onOpen: (caseId: string) => void }) {
   }, [])
 
   return (
-    <section className={surfaces.panel}>
-      <h2 className={surfaces.heading}>Templates</h2>
+    <section
+      className={surfaces.panel}
+      aria-labelledby={headingId}
+    >
+      <h2 className={surfaces.heading} id={headingId}>Templates</h2>
       <p className={surfaces.note}>
         A saved case's plan, proposals and findings, offered to the next case
         that asks the same kind of question. Only the shape travels - no data,

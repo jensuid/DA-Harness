@@ -971,3 +971,36 @@ starting. No carried follow-up is open and no walk-test finding is queued.
 
 Gates now: web 312/312, tsc clean, build ok, visual verify green in both
 appearances (66 checks, +13 skeleton/gate), server 796/796.
+
+## Next action
+
+**ICON is done and pushed** - the audit's open icon question is closed
+typographically: `MARKS` in `web/src/lib/ui.tsx` names the shell's five
+statuses to their glyphs and `Mark` renders the one treatment a mark that
+stands alone gets, so no component outside that file names a glyph
+character. A drawn set was declined measured - status is text-plus-glyph by
+contract (AT-32), so an `aria-hidden` drawn mark needs a duplicated label to
+carry what the sentence already states; DEC-001 bars a package; and the app
+has no icon-shaped slots, only buttons that already name their verb. The
+inventory showed an unowned vocabulary, not the wrong medium: `concern` had
+two glyphs, an unvalidated finding read as the stage the loop is on (`●`
+where it means pending), and a pending agent step sat on an amber chip. All
+three now read the one glyph and the one colour their status owns.
+
+Criterion 4 was pixel-measured against a stashed pre-ICON baseline: the
+settled workspace differs by 857 px (light) / 1395 px (dark) out of 2.1M -
+0.041% / 0.061% - and every changed cell is one column wide, the rail's seven
+rungs. No layout moved. The visual harness gained a `.mark` probe read
+through the cascade, so each mark's token resolution is measured in both
+appearances (12 new checks, 78 total).
+
+**Next: phase 3's last item, zone composition (11)** - the position the plan
+left it in, because it migrates panel roots from `<div>` to
+`<section>`/`<aside>`, the largest test surface in the phase, done last and
+per-panel. Read `docs/UI-UX Audit & Redesign Plan.md` around line 229 for the
+scope (Chat's position in the intelligence zone is bundled with it). After
+that the plan's phase 3 is closed and the next phase is its own roadmap
+entry. No carried follow-up is open and no walk-test finding is queued.
+
+Gates now: web 320/320, tsc clean, build ok, visual verify green in both
+appearances (78 checks, +12 mark/token), server 796/796.

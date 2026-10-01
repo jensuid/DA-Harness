@@ -2448,11 +2448,15 @@ expect(timeline.getByText(/case created/)).toBeInTheDocument()
       mockEmptyCase()
       render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
       await waitFor(() =>
-        expect(screen.getByRole('region', { name: /orientation/i })).toBeInTheDocument(),
+        expect(screen.getByRole('region', { name: /^orientation$/i })).toBeInTheDocument(),
       )
-      const orientation = screen.getByRole('region', { name: /orientation/i })
+      const orientation = screen.getByRole('region', { name: /^orientation$/i })
       const work = screen.getByRole('region', { name: /^work$/i })
-      const intelligence = screen.getByRole('region', { name: /intelligence/i })
+      const intelligence = screen.getByRole('region', { name: /^intelligence$/i })
+
+      // ZONE-A: the names are anchored now because every panel is its own
+      // named region as well, and "Audit submitted work (EVALUATE)" contains
+      // the word the work zone is named for.
 
       // The rail is what makes the stage visible without scrolling (UX 5).
       expect(within(orientation).getByText(/where this case stands/i)).toBeInTheDocument()
@@ -2468,6 +2472,111 @@ expect(timeline.getByText(/case created/)).toBeInTheDocument()
       expect(within(intelligence).getByRole('heading', { name: /ask this case/i })).toBeInTheDocument()
       expect(within(intelligence).getByRole('heading', { name: 'Agent' })).toBeInTheDocument()
       expect(within(intelligence).queryByRole('heading', { name: 'Runs' })).not.toBeInTheDocument()
+    })
+
+    // ZONE-A (phase 3 item 11, finding P4): the panels are landmarks, not
+    // divs. The audit found every panel was a `<div className={surfaces.panel}>`
+    // with no role, so a reader navigating by region found the three zones and
+    // never the thirteen panels inside them. Each panel's first child was
+    // already its own `<h2>`, so the region is named by the heading it already
+    // had - one source of truth for the name, and `aria-labelledby` carrying
+    // the same text to the role.
+    describe('ZONE-A panel landmarks', () => {
+      it('renders every panel as a region named by its own heading', async () => {
+        mockEmptyCase()
+        render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+        // Every panel the workspace mounts on a young case. A region whose
+        // name is the panel's own title is the structure a reader scans by.
+        for (const name of [
+          'Where this case stands', 'Case overview', 'Refine the question',
+          'Data', 'Plan', 'Explore the data (EDA)', 'Runs',
+          'Audit submitted work (EVALUATE)', 'Evidence graph', 'Decision',
+          'Context', 'Agent', 'Reviewer', 'Ask this case',
+        ]) {
+          const region = await screen.findByRole('region', { name })
+          expect(region.tagName).toBe('SECTION')
+          // The name is not a duplicate label: it is the heading inside the
+          // region, so the heading supplies the id and the role reads it.
+          const heading = within(region).getByRole('heading', { level: 2, name })
+          expect(heading).toHaveAttribute('id')
+          expect(region.getAttribute('aria-labelledby'))
+            .toBe(heading.getAttribute('id'))
+        }
+      })
+
+      it('gives the two agent panels distinct heading ids', async () => {
+        mockEmptyCase()
+        render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+        // One AgentPanel component, mounted twice. A literal id would collide,
+        // so the id comes from useId and each region keeps its own name.
+        const analyst = await screen.findByRole('region', { name: 'Agent' })
+        const reviewer = await screen.findByRole('region', { name: 'Reviewer' })
+        expect(analyst).not.toBe(reviewer)
+        expect(
+          within(analyst).getByRole('heading', { level: 2 }).getAttribute('id'),
+        ).not.toBe(
+          within(reviewer).getByRole('heading', { level: 2 }).getAttribute('id'),
+        )
+      })
+
+      it('nests each panel inside the zone it belongs to', async () => {
+        mockEmptyCase()
+        render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+        // The landmark structure reads page -> zone -> panel: a region named
+        // for a panel is inside the zone the audit placed it in, never beside.
+        const zones = {
+          orientation: await screen.findByRole('region', { name: /^orientation$/i }),
+          work: screen.getByRole('region', { name: /^work$/i }),
+          intelligence: screen.getByRole('region', { name: /^intelligence$/i }),
+        }
+        expect(zones.orientation).toContainElement(
+          screen.getByRole('region', { name: 'Where this case stands' }))
+        expect(zones.work).toContainElement(
+          screen.getByRole('region', { name: 'Data' }))
+        expect(zones.intelligence).toContainElement(
+          screen.getByRole('region', { name: 'Ask this case' }))
+        // A panel cannot leak into another zone.
+        expect(zones.orientation).not.toContainElement(
+          screen.getByRole('region', { name: 'Data' }))
+      })
+
+      it('wraps the masthead in a header element', async () => {
+        mockEmptyCase()
+        render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+        // The page's own name is the case's question; the block that carries
+        // the h1 and the way back is the page's banner, so it is a `<header>`.
+        const heading = await screen.findByRole('heading', { level: 1 })
+        const banner = heading.closest('header')
+        expect(banner).not.toBeNull()
+        expect(banner).toContainElement(
+          screen.getByRole('button', { name: /back to cases/i }))
+      })
+
+      it('keeps the disclosure-nested panels as divs, not regions', async () => {
+        mockEmptyCase()
+        const user = userEvent.setup()
+        render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
+        // Learn, history and the template promotion sit inside a `Disclosure`,
+        // which is already a named region - the toggle is its label and the
+        // body is the region it controls. A second labelled region inside it
+        // would name the same thing twice, so those panels keep their div root.
+        // The group starts closed; an analyst opens it, so the test does too.
+        for (const [toggleName, regionId] of [
+          [/learn this case/i, 'record-learn'],
+          [/case history/i, 'record-history'],
+          [/save as a template/i, 'record-template'],
+        ] as const) {
+          await user.click(await screen.findByRole('button', { name: toggleName }))
+          const region = await screen.findByRole('region', { name: toggleName })
+          // The disclosure's own region, named by its toggle.
+          expect(region.id).toBe(`${regionId}-region`)
+          // The panel inside it is a surface, not a second named region.
+          const panel = within(region).getByRole('heading', {
+            level: 2, name: toggleName,
+          }).parentElement
+          expect(panel?.tagName).toBe('DIV')
+        }
+      })
     })
 
     it('marks the data stage with a warning when the profiler found a defect', async () => {
@@ -3124,7 +3233,7 @@ expect(timeline.getByText(/case created/)).toBeInTheDocument()
       vi.mocked(api.proposeRefinement).mockResolvedValue(proposal)
       const user = userEvent.setup()
       render(<CaseWorkspace caseId="c1" onBack={() => {}} onOpenCase={() => {}} />)
-      const orientation = screen.getByRole('region', { name: /orientation/i })
+      const orientation = screen.getByRole('region', { name: /^orientation$/i })
 
       // Nothing is proposed by opening the case: the GET is read-only.
       expect(vi.mocked(api.proposeRefinement)).not.toHaveBeenCalled()
@@ -3224,10 +3333,10 @@ expect(timeline.getByText(/case created/)).toBeInTheDocument()
 
     it('lives in the orientation zone, where the question is described', async () => {
       const { panel } = await openWithProposal()
-      const orientation = screen.getByRole('region', { name: /orientation/i })
+      const orientation = screen.getByRole('region', { name: /^orientation$/i })
       expect(orientation).toContainElement(panel)
       // ...and not in the intelligence zone beside the assistants.
-      const intelligence = screen.getByRole('region', { name: /intelligence/i })
+      const intelligence = screen.getByRole('region', { name: /^intelligence$/i })
       expect(intelligence).not.toContainElement(panel)
     })
 
@@ -3336,9 +3445,9 @@ expect(timeline.getByText(/case created/)).toBeInTheDocument()
 
     it('lives in the work zone, where the loop exits', async () => {
       const { panel } = await openDecision()
-      const work = screen.getByRole('region', { name: /work/i })
+      const work = screen.getByRole('region', { name: /^work$/i })
       expect(work).toContainElement(panel)
-      const intelligence = screen.getByRole('region', { name: /intelligence/i })
+      const intelligence = screen.getByRole('region', { name: /^intelligence$/i })
       expect(intelligence).not.toContainElement(panel)
     })
 

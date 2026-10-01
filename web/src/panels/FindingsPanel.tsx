@@ -4,7 +4,7 @@
  * panel is still pure over its props.
  */
 
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import { type Finding, type ValidationResult, validateFinding } from '../api'
 import { messageOf } from '../CaseList'
 import { Button, MARKS, surfaces } from '../lib/ui'
@@ -19,17 +19,24 @@ export function FindingsPanel({
   findings: Finding[]
   onChanged: () => void
 }) {
+  const headingId = useId()
   if (findings.length === 0) {
     return (
-      <div className={surfaces.panel}>
-        <h2 className={surfaces.heading}>Findings</h2>
+      <section
+        className={surfaces.panel}
+        aria-labelledby={headingId}
+      >
+        <h2 className={surfaces.heading} id={headingId}>Findings</h2>
         <p className={surfaces.note}>No findings yet - a run can draft one.</p>
-      </div>
+      </section>
     )
   }
   return (
-    <div className={surfaces.panel}>
-      <h2 className={surfaces.heading}>Findings</h2>
+    <section
+      className={surfaces.panel}
+      aria-labelledby={headingId}
+    >
+      <h2 className={surfaces.heading} id={headingId}>Findings</h2>
       <ul className={surfaces.panelList}>
         {findings.map((finding) => (
           <li key={finding.id}>
@@ -37,7 +44,7 @@ export function FindingsPanel({
           </li>
         ))}
       </ul>
-    </div>
+    </section>
   )
 }
 

@@ -15,7 +15,7 @@
 // implications are the analyst's own words, written by the analyst. No engine
 // drafts them, because a tool that drafts the action to take is a tool making
 // the decision.
-import { useEffect, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 
 import {
   type DecisionView,
@@ -43,6 +43,7 @@ export function DecisionPanel({
   caseId: string
   onChanged: () => void
 }) {
+  const headingId = useId()
   const [view, setView] = useState<DecisionView | null>(null)
   const [missing, setMissing] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -67,21 +68,27 @@ export function DecisionPanel({
 
   if (missing) {
     return (
-      <div className={surfaces.panel}>
-        <h2 className={surfaces.heading}>Decision</h2>
+      <section
+        className={surfaces.panel}
+        aria-labelledby={headingId}
+      >
+        <h2 className={surfaces.heading} id={headingId}>Decision</h2>
         <p className={surfaces.note}>
           The decision view could not be read: {error ?? 'the case has no decision yet'}
         </p>
-      </div>
+      </section>
     )
   }
   if (!view) {
     return (
-      <div className={surfaces.panel}>
-        <h2 className={surfaces.heading}>Decision</h2>
+      <section
+        className={surfaces.panel}
+        aria-labelledby={headingId}
+      >
+        <h2 className={surfaces.heading} id={headingId}>Decision</h2>
         <p className={surfaces.note + ' visually-hidden'}>Reading the case's decision…</p>
         <Skeleton shape="rows" count={3} />
-      </div>
+      </section>
     )
   }
 
@@ -92,8 +99,11 @@ export function DecisionPanel({
   )
 
   return (
-    <div className={surfaces.panel + ' decision'}>
-      <h2 className={surfaces.heading}>Decision</h2>
+    <section
+      className={surfaces.panel + ' decision'}
+      aria-labelledby={headingId}
+    >
+      <h2 className={surfaces.heading} id={headingId}>Decision</h2>
       <p className={surfaces.note}>
         What this case established, and what it did not. DAH informs decisions;
         it does not make them.
@@ -179,7 +189,7 @@ export function DecisionPanel({
       <Implications caseId={caseId} view={view} onChanged={onChanged} />
 
       <Export caseId={caseId} question={view.question} />
-    </div>
+    </section>
   )
 }
 

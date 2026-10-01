@@ -4,7 +4,7 @@
  * panel is still pure over its props.
  */
 
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import { ApiError, type Dataset, type Evaluation, type Profile, evaluateDataset } from '../api'
 import { messageOf } from '../CaseList'
 import { Button, Skeleton, surfaces } from '../lib/ui'
@@ -56,19 +56,11 @@ export function EvaluatePanel({
   // An audit is meaningless without a profile: the Data and Quality axes judge
   // the code against profiled columns. The panel is absent rather than offering
   // a submission that cannot succeed.
-  const profiled = datasets.filter((d) => profiles[d.id] !== undefined)
-  if (loading) {
-    // SKEL: the profiles land last in the workspace's read, so the guidance
-    // below would be about a case the shell is still reading. The shape is
-    // the audit's own form - the code field, then the claim.
-    return (
-      <div className={surfaces.panel}>
-        <h2 className={surfaces.heading}>Audit submitted work (EVALUATE)</h2>
-        <p className={surfaces.note + ' visually-hidden'}>Reading the profiles…</p>
-        <Skeleton shape="form" count={2} />
-      </div>
-    )
-  }
+  // ZONE-A: the heading id and the panel's own state sit above the loading
+  // early return, because a hook below a return the render takes is a hook
+  // the render skips - the workspace's one `loading` flag flips on every case
+  // open, so the panel's hook count has to be the same on both sides of it.
+  const headingId = useId()
   const [chosen, setChosen] = useState('')
   const [kind, setKind] = useState<'sql' | 'python'>('sql')
   const [code, setCode] = useState('')
@@ -76,16 +68,35 @@ export function EvaluatePanel({
   const [audit, setAudit] = useState<Evaluation | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const profiled = datasets.filter((d) => profiles[d.id] !== undefined)
+  if (loading) {
+    // SKEL: the profiles land last in the workspace's read, so the guidance
+    // below would be about a case the shell is still reading. The shape is
+    // the audit's own form - the code field, then the claim.
+    return (
+      <section
+        className={surfaces.panel}
+        aria-labelledby={headingId}
+      >
+        <h2 className={surfaces.heading} id={headingId}>Audit submitted work (EVALUATE)</h2>
+        <p className={surfaces.note + ' visually-hidden'}>Reading the profiles…</p>
+        <Skeleton shape="form" count={2} />
+      </section>
+    )
+  }
 
   if (profiled.length === 0) {
     return (
-      <div className={surfaces.panel}>
-        <h2 className={surfaces.heading}>Audit submitted work (EVALUATE)</h2>
+      <section
+        className={surfaces.panel}
+        aria-labelledby={headingId}
+      >
+        <h2 className={surfaces.heading} id={headingId}>Audit submitted work (EVALUATE)</h2>
         <p className={surfaces.note}>
           Attach and profile a dataset first - an audit judges the work against
           the data it claims to read.
         </p>
-      </div>
+      </section>
     )
   }
 
@@ -115,8 +126,11 @@ export function EvaluatePanel({
   const prior = evaluations.filter((e) => e.dataset_id === datasetId)
 
   return (
-    <div className={surfaces.panel}>
-      <h2 className={surfaces.heading}>Audit submitted work (EVALUATE)</h2>
+    <section
+      className={surfaces.panel}
+      aria-labelledby={headingId}
+    >
+      <h2 className={surfaces.heading} id={headingId}>Audit submitted work (EVALUATE)</h2>
       <p className={surfaces.note}>
         Paste work that came from elsewhere and the claim it was offered to
         support. DAH runs it against the data and answers nine questions, each
@@ -207,7 +221,7 @@ export function EvaluatePanel({
           </ul>
         </div>
       )}
-    </div>
+    </section>
   )
 }
 

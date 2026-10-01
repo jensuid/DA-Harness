@@ -4,6 +4,7 @@
  * panel is still pure over its props.
  */
 
+import { useId } from 'react'
 import { type CaseProgress } from '../api'
 import { Mark, MARKS, type MarkName, Skeleton, surfaces } from '../lib/ui'
 
@@ -29,23 +30,30 @@ export function WorkflowRail({
   progress: CaseProgress | null
   qualityWarning: boolean
 }) {
+  const headingId = useId()
   const target =
     progress?.stage && progress.stage in STAGE_PANEL
       ? STAGE_PANEL[progress.stage]
       : null
   if (!progress)
     return (
-      <div className={surfaces.panel + ' workflow-rail'}>
-        <h2 className={surfaces.heading}>Where this case stands</h2>
+      <section
+        className={surfaces.panel + ' workflow-rail'}
+        aria-labelledby={headingId}
+      >
+        <h2 className={surfaces.heading} id={headingId}>Where this case stands</h2>
         {/* SKEL: the sentence stays - visually hidden, still announced - while
           the shape of the rail stands in for it. */}
         <p className={surfaces.note + ' visually-hidden'}>Loading workflow…</p>
         <Skeleton shape="stages" />
-      </div>
+      </section>
     )
   return (
-    <div className={surfaces.panel + ' workflow-rail'}>
-      <h2 className={surfaces.heading}>Where this case stands</h2>
+    <section
+      className={surfaces.panel + ' workflow-rail'}
+      aria-labelledby={headingId}
+    >
+      <h2 className={surfaces.heading} id={headingId}>Where this case stands</h2>
       {/* One text node: the sentence stays readable in the DOM and in a screen
           reader, and a test can assert on it without reaching across elements. */}
       <p>
@@ -106,7 +114,7 @@ export function WorkflowRail({
           )
         })}
       </ul>
-    </div>
+    </section>
   )
 }
 

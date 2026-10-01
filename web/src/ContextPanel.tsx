@@ -8,7 +8,7 @@
 // failed save leaves the server identical to the form rather than merging the
 // two. Nothing is written until Save; closing the panel discards the edits,
 // which is why the panel says when there are unsaved ones.
-import { useEffect, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 
 import { type CaseContext, getContext, putContext } from './api'
 import { messageOf } from './CaseList'
@@ -35,6 +35,7 @@ export function ContextPanel({
   loading: boolean
   onChanged: () => void
 }) {
+  const headingId = useId()
   const [context, setContext] = useState<CaseContext>(empty())
   const [dirty, setDirty] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -96,17 +97,23 @@ export function ContextPanel({
     // shape. The skeleton is that shape: the purpose field and the three
     // lists, in the same subpanels the real form fills in.
     return (
-      <div className={surfaces.panel}>
-        <h2 className={surfaces.heading}>Context</h2>
+      <section
+        className={surfaces.panel}
+        aria-labelledby={headingId}
+      >
+        <h2 className={surfaces.heading} id={headingId}>Context</h2>
         <p className={surfaces.note + ' visually-hidden'}>Reading the context…</p>
         <Skeleton shape="form" count={3} />
-      </div>
+      </section>
     )
   }
 
   return (
-    <div className={surfaces.panel}>
-      <h2 className={surfaces.heading}>Context</h2>
+    <section
+      className={surfaces.panel}
+      aria-labelledby={headingId}
+    >
+      <h2 className={surfaces.heading} id={headingId}>Context</h2>
       <p className={surfaces.note}>
         What this case is for. The planner reads it, so a plan is built from
         stated intent rather than from a question string alone.
@@ -171,6 +178,6 @@ export function ContextPanel({
           <span className={surfaces.note}>saved</span>
         )}
       </div>
-    </div>
+    </section>
   )
 }

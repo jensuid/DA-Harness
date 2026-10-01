@@ -4,6 +4,7 @@
  * panel is still pure over its props.
  */
 
+import { useId } from 'react'
 import { CaseProgress, QualityIssue } from '../api'
 import { Skeleton, surfaces } from '../lib/ui'
 
@@ -30,6 +31,7 @@ export function CaseOverview({
   // shape, rather than twelve panels each saying the same nothing.
   pending: string[]
 }) {
+  const headingId = useId()
   // The analyst's stated purpose outranks the question when both exist; a case
   // that never stated one is described by the question it was created with, so
   // the objective is never blank.
@@ -40,11 +42,14 @@ export function CaseOverview({
   // shell has not read yet.
   if (!progress) {
     return (
-      <div className={surfaces.panel + ' case-overview'}>
-        <h2 className={surfaces.heading}>Case overview</h2>
+      <section
+        className={surfaces.panel + ' case-overview'}
+        aria-labelledby={headingId}
+      >
+        <h2 className={surfaces.heading} id={headingId}>Case overview</h2>
         <p className={surfaces.note + ' visually-hidden'}>Reading the case…</p>
         <Skeleton shape="facts" />
-      </div>
+      </section>
     )
   }
   const total = progress.stages.length
@@ -52,8 +57,11 @@ export function CaseOverview({
   const validated = progress.counts['validated_findings'] ?? 0
 
   return (
-    <div className={surfaces.panel + ' case-overview'}>
-      <h2 className={surfaces.heading}>Case overview</h2>
+    <section
+      className={surfaces.panel + ' case-overview'}
+      aria-labelledby={headingId}
+    >
+      <h2 className={surfaces.heading} id={headingId}>Case overview</h2>
       {/* One text node per fact: the label and its value stay in the same
           element, so each sentence reads whole in the DOM and in a screen
           reader, and nothing has to reach across elements to match one. */}
@@ -85,7 +93,7 @@ export function CaseOverview({
           </li>
         )}
       </ul>
-    </div>
+    </section>
   )
 }
 

@@ -18,7 +18,7 @@
 // The panel sits in the orientation zone because it is about the question
 // itself rather than about the work - it is the thing a case is organised
 // around, and the overview beside it describes the case it organises.
-import { useEffect, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 
 import {
   acceptRefinement,
@@ -46,6 +46,7 @@ export function RefinePanel({
   question: string
   onChanged: () => void
 }) {
+  const headingId = useId()
   const [proposal, setProposal] = useState<Refinement | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -128,8 +129,11 @@ export function RefinePanel({
     proposal && (proposal.status === 'accepted' || proposal.status === 'rejected' || proposal.status === 'edited')
 
   return (
-    <div className={surfaces.panel}>
-      <h2 className={surfaces.heading}>Refine the question</h2>
+    <section
+      className={surfaces.panel}
+      aria-labelledby={headingId}
+    >
+      <h2 className={surfaces.heading} id={headingId}>Refine the question</h2>
       <p className={surfaces.note}>
         A vague question is sharpened with what the profile measured - real
         columns, measured ranges - and nothing is changed until you decide.
@@ -305,6 +309,6 @@ export function RefinePanel({
           )}
         </div>
       )}
-    </div>
+    </section>
   )
 }

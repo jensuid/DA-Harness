@@ -4,6 +4,7 @@
  * panel is still pure over its props.
  */
 
+import { useId } from 'react'
 import { type ClaimTrace, type EvidenceGraph, type EvidenceNode } from '../api'
 import { Skeleton, surfaces } from '../lib/ui'
 
@@ -23,17 +24,21 @@ export function EvidencePanel({
   empty: boolean
   loading: boolean
 }) {
+  const headingId = useId()
   if (loading) {
     // SKEL: the graph is a projection the workspace reads late, and a panel
     // that renders nothing while it waits is a panel that arrives late - the
     // overview's "Still to come" names the graph, so the anchor has to
     // resolve to something while the read is in flight.
     return (
-      <div className={surfaces.panel}>
-        <h2 className={surfaces.heading}>Evidence graph</h2>
+      <section
+        className={surfaces.panel}
+        aria-labelledby={headingId}
+      >
+        <h2 className={surfaces.heading} id={headingId}>Evidence graph</h2>
         <p className={surfaces.note + ' visually-hidden'}>Reading the evidence…</p>
         <Skeleton shape="rows" count={3} />
-      </div>
+      </section>
     )
   }
   if (empty) {
@@ -42,21 +47,27 @@ export function EvidencePanel({
     // review. The panel stays because the overview's "Still to come" points
     // here, and the sentence is the next action's own guidance.
     return (
-      <div className={surfaces.panel}>
-        <h2 className={surfaces.heading}>Evidence graph</h2>
+      <section
+        className={surfaces.panel}
+        aria-labelledby={headingId}
+      >
+        <h2 className={surfaces.heading} id={headingId}>Evidence graph</h2>
         <p className={surfaces.note}>{error}</p>
-      </div>
+      </section>
     )
   }
   if (!evidence) return null
   return (
-    <div className={surfaces.panel}>
-      <h2 className={surfaces.heading}>Evidence graph</h2>
+    <section
+      className={surfaces.panel}
+      aria-labelledby={headingId}
+    >
+      <h2 className={surfaces.heading} id={headingId}>Evidence graph</h2>
       <GraphBody graph={evidence} />
       {error && (
         <p role="alert">The graph could not be read: {error}</p>
       )}
-    </div>
+    </section>
   )
 }
 

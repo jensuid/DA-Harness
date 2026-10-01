@@ -4,7 +4,7 @@
  * panel is still pure over its props.
  */
 
-import { useEffect, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import { ApiError, type Dataset, type Plan, createPlan, getPlan } from '../api'
 import { sourceWith } from '../sourceLabel'
 import { messageOf } from '../CaseList'
@@ -22,6 +22,7 @@ export function PlanPanel({
   loading: boolean
   onChanged: () => void
 }) {
+  const headingId = useId()
   const [plan, setPlan] = useState<Plan | null>(null)
   const [missing, setMissing] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -103,26 +104,35 @@ export function PlanPanel({
     // "attach a dataset before planning" would be guidance about a case the
     // shell has not read. The shape is the plan's own list of steps.
     return (
-      <div className={surfaces.panel}>
-        <h2 className={surfaces.heading}>Plan</h2>
+      <section
+        className={surfaces.panel}
+        aria-labelledby={headingId}
+      >
+        <h2 className={surfaces.heading} id={headingId}>Plan</h2>
         <p className={surfaces.note + ' visually-hidden'}>Loading the plan…</p>
         <Skeleton shape="rows" count={4} />
-      </div>
+      </section>
     )
   }
   if (datasets.length === 0) {
     return (
-      <div className={surfaces.panel}>
-        <h2 className={surfaces.heading}>Plan</h2>
+      <section
+        className={surfaces.panel}
+        aria-labelledby={headingId}
+      >
+        <h2 className={surfaces.heading} id={headingId}>Plan</h2>
         <p className={surfaces.note}>Attach a dataset before planning the analysis.</p>
-      </div>
+      </section>
     )
   }
 
   if (!plan) {
     return (
-      <div className={surfaces.panel}>
-        <h2 className={surfaces.heading}>Plan</h2>
+      <section
+        className={surfaces.panel}
+        aria-labelledby={headingId}
+      >
+        <h2 className={surfaces.heading} id={headingId}>Plan</h2>
         {missing ? (
           <>
             <p className={surfaces.note}>
@@ -159,14 +169,17 @@ export function PlanPanel({
             <Skeleton shape="rows" count={4} />
           </>
         )}
-      </div>
+      </section>
     )
   }
 
   const body = plan.plan
   return (
-    <div className={surfaces.panel}>
-      <h2 className={surfaces.heading}>Plan</h2>
+    <section
+      className={surfaces.panel}
+      aria-labelledby={headingId}
+    >
+      <h2 className={surfaces.heading} id={headingId}>Plan</h2>
       <p className={surfaces.note}>
         {sourceWith(plan.source, 'plan', `for ${datasets[0].filename}`)}
         {body.context_basis && body.context_basis.length > 0 &&
@@ -207,7 +220,7 @@ export function PlanPanel({
           </li>
         ))}
       </ul>
-    </div>
+    </section>
   )
 }
 

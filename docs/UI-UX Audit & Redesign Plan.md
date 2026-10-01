@@ -236,9 +236,28 @@ stack. Each item names the files it touches.
    tokens and the `.quality-*` remap both survive the swap.
 10. **Skeleton loaders (I4)** — shape-matched per panel behind the existing sentence
     states, gated through the same reduced-motion rule.
-11. **Zone composition (L3, L4, P4)** — revisit Chat's position in the intelligence
-    zone, and migrate panel roots from `<div>` to `<section>`/`<aside>`. Largest test
-    surface; do last and per-panel.
+11. **Zone composition (L3, L4, P4)** — P4 RESOLVED as ZONE-A: every panel
+    root is now a `<section aria-labelledby>` named by the `<h2>` it already
+    rendered, so a reader navigating by region finds the zones *and* the
+    fourteen panels inside them (a `<div>` carried no role). The ids come from
+    `useId`, so the two mounted `AgentPanel`s keep distinct names. The three
+    zones stay labelled `<section>` — `<aside>` was declined, measured: the
+    zones' names (orientation / work / intelligence) are the mental model the
+    workspace is built on, and a named region is a better navigation surface
+    than an unnamed complementary one; the work zone is the page's primary
+    content. `<header>` wraps the two mastheads that already existed
+    (workspace and case list); `<nav>`/`<footer>` were declined — the shell
+    has no link set and no footer content, so either would be semantic
+    washing. The three panels nested in a `Disclosure` (Learn, History,
+    PromoteTemplate) keep their `<div>` root on purpose: the disclosure is
+    already the named region, so a second one inside it would name the same
+    thing twice. The swap was geometry-neutral by construction (no class,
+    text or CSS change) and measured: four of six shots byte-identical, and
+    the settled workspace's full-page shot identical in both appearances.
+    STILL OPEN as ZONE-B: L3 (the zones' density) and L4 (Chat below the fold
+    in the intelligence zone). L4 needs the placement confirmed against
+    `docs/UX-UI Architecture.md` §2 before any layout change (open question
+    4); both change layout and tests, unlike ZONE-A.
 12. **Iconography decision (P1)** — RESOLVED (typographic): `lucide-react` was
     removed in UI-REDUX, and the audit's open question is closed in favour of
     text glyphs formalized as one vocabulary - `MARKS` in `web/src/lib/ui.tsx`

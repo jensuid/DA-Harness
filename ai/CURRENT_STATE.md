@@ -3,45 +3,46 @@ the motion, the on-screen chart). P8, P7, P6, P5, P4, P3, P2, P1 and P0 are all
 COMPLETE (see the phase table below). Every phase the roadmap and the
 conformance evaluation asked for is delivered; no phase is open.
 
-- **Active task:** ICON - iconography, phase 3 item 12 of the audit
-  in `docs/UI-UX Audit & Redesign Plan.md` (finding P1). The audit's open
-  question - drawn icons or typographic glyphs - is closed typographically:
-  `MARKS` in `web/src/lib/ui.tsx` names the shell's five statuses (pass,
-  concern, fail, current, pending) and no component outside that file names
-  a glyph character. `Mark` renders the one treatment a mark that stands
-  alone gets - a 1.1rem inline-flex box, the status's own token, `aria-hidden`
-  - so the label or sentence beside it is what assistive tech announces and
-  `auditStatusNotColorOnly` still returns zero violations. The rail's rungs
-  carry `mark <status> stage-mark`, so the vocabulary lands on the spine's
-  own anchor mask.
-    A drawn set was declined measured: status is text-plus-glyph by contract
-  (AT-32), so an `aria-hidden` drawn mark needs a duplicated label to carry
-  what the sentence already states; DEC-001 bars a package; and the app has
-  no icon-shaped slots - verb icons would restate the verb every button
-  already names. What was broken was the vocabulary, not the medium:
-  `concern` had two glyphs (`!` in the audit's verdict chips elsewhere
-  `⚠`), the decision panel's unvalidated finding read as the stage the loop
-  is on, and a pending agent step sat on an amber chip. All three now read
-  the one glyph and the one colour their status owns.
-    **STATUS: DONE, committed and pushed.** Measured: a pixel diff against a
-  stashed pre-ICON baseline is confined to the rail's rungs - 857 px (light)
-  and 1395 px (dark) of 2.1M, 0.041% / 0.061%, no layout moved; the visual
-  harness gained a `.mark` probe read through the cascade so each mark's own
-  token resolution is measured in both appearances (12 new checks, 78
-  total); web 320/320 (+8 icon tests in a new file).
-  **Next task: phase 3's LAST item - zone composition (11)** - the position
-  the plan left it in, because it migrates panel roots from `<div>` to
-  `<section>`/`<aside>`, the largest test surface in the phase, done last and
-  per-panel, with Chat's position in the intelligence zone bundled with it.
-  Read `docs/UI-UX Audit & Redesign Plan.md` around line 229 before starting.
-  After it the plan's phase 3 is closed.
+- **Active task:** ZONE-A - panel landmarks, phase 3 item 11 part 1 of the
+  audit in `docs/UI-UX Audit & Redesign Plan.md` (finding P4: div-soup in
+  panels). Every panel root that carried `surfaces.panel` and was not
+  already inside a `Disclosure` is a `<section aria-labelledby>` named by the
+  `<h2>` it already rendered - one source of truth for the name, no
+  duplicated `aria-label`. `useId` gives the two mounted `AgentPanel`s
+  distinct heading ids. The three zones stay labelled `<section>`
+  (`<aside>` declined, measured: a named region is a better navigation
+  surface than an unnamed complementary one, and the work zone is the page's
+  primary content); the two page mastheads (workspace, case list) gained a
+  `<header>`; `<nav>`/`<footer>` were declined - the shell has no link set
+  and no footer content, so either would be semantic washing. Learn,
+  History and PromoteTemplate keep their `<div>` roots on purpose, because
+  their `Disclosure` is already the named region and a second labelled
+  region inside it would name the same thing twice. EvaluatePanel's hook
+  block moved above its loading early return - a hook below a return the
+  render takes is a hook the render skips, and the workspace's one `loading`
+  flag flips on every case open.
+    **STATUS: DONE, committed and pushed.** Measured against a stashed
+  pre-ZONE-A baseline: four of six shots byte-identical, both full-page
+  workspace shots identical in both appearances, the list shot's diff
+  confined to the seeded case's own row band (rows 181-308, the same band
+  the ICON-vs-ICON same-code control reproduces) and the viewport workspace
+  shot's 75 px all one grey-level of antialiasing - no layout moved, as the
+  swap is geometry-neutral by construction (no class, text or CSS change).
+  Five new landmark tests assert the structure; the zone-name regexes were
+  anchored because "Audit submitted work (EVALUATE)" contains "work".
+  **Next task: ZONE-B** - item 11's other two findings, L3 (the zones'
+  density) and L4 (Chat below the fold in the intelligence zone). Both move
+  layout and tests, and L4 needs the placement confirmed against
+  `docs/UX-UI Architecture.md` sec. 2 before any change (plan open question
+  4). Items 11 and 12 are otherwise closed, so the plan's phase 3 is
+  complete and the next phase is its own roadmap entry.
   No phase is open; this is a task, not a phase.
-  Sebelumnya: SKEL (skeleton loaders), DMDARK (dark mode as a token swap),
-  UI-REDUX (the shell's visual and interaction craft, phases 1 and 2),
-  v0.3.7 (the release W5X-001 ships in), W5X-001 (the Data panel's duplicate
-  filename), WALK-UX-005 (validasi W3X-001), WALK-UX-004 (validasi fix W3X +
-  temuan regresi W4X-001), v0.3.6, W3X-003-PROMPT, W3X-002, W3X-004,
-  WALK-UX-003.
+  Sebelumnya: ICON (iconography), SKEL (skeleton loaders), DMDARK (dark mode
+  as a token swap), UI-REDUX (the shell's visual and interaction craft,
+  phases 1 and 2), v0.3.7 (the release W5X-001 ships in), W5X-001 (the Data
+  panel's duplicate filename), WALK-UX-005 (validasi W3X-001), WALK-UX-004
+  (validasi fix W3X + temuan regresi W4X-001), v0.3.6, W3X-003-PROMPT,
+  W3X-002, W3X-004, WALK-UX-003.
 
 - **Done before that:** P8-TRACE-010 - the requirement-traceability matrix
   (AT-48). The PRD's section 59 control artifact is code: 48 rows, one per
@@ -90,12 +91,11 @@ conformance evaluation asked for is delivered; no phase is open.
   `desktop/bundle_dmg.sh`, so the shipped triple is what the developer's
   machine produces. Restoring an enforced Intel lane needs a self-hosted
   runner.
-- **Test status:** server 796/796 passed, unchanged by ICON (no server file
-  moved). The web suite is 320/320 (21 files; +8 icon tests and +1 file for
-  ICON), tsc clean and the build ok. The visual harness is green in both
-  appearances with 78 checks, 12 of them ICON's own (the five marks each
-  resolving their own token in both appearances, and the mark's box measuring
-  the rung's room).
+- **Test status:** server 796/796 passed, unchanged by ZONE-A (no server
+  file moved). The web suite is 325/325 (21 files; +5 landmark tests in
+  `CaseWorkspace.test.tsx`), tsc clean and the build ok. The visual harness
+  is green in both appearances with 78 checks; the harness's own checks are
+  unchanged by ZONE-A, so they still measure the surface it left alone.
   Desktop shell 30 Rust tests (unchanged; no shell code moved);
   P2, P3 and P4 gates
   PASS; **v0.2.0, v0.3.0, v0.3.1, v0.3.2, v0.3.3, v0.3.4 and v0.3.5 released**
@@ -325,7 +325,7 @@ conformance evaluation asked for is delivered; no phase is open.
 
 ## How to run (web)
 
-- Web tests: `cd web && npm test` (21 files, 320 tests; vitest, jsdom, no network)
+- Web tests: `cd web && npm test` (21 files, 325 tests; vitest, jsdom, no network)
 - Web build: `cd web && npm run build` (tsc -b + vite)
 - Desktop bundle: `cd web && npm run build:desktop` (absolute API URL for the
   Tauri shell)

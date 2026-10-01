@@ -44,19 +44,24 @@ export function CaseList({
 
   return (
     <section>
-      <h1>Analysis Cases</h1>
-      <div className={surfaces.rowGap}>
-        <input
-          aria-label="Search cases"
-          value={term}
-          onChange={(e) => setTerm(e.target.value)}
-          placeholder="Search by question or dataset…"
-        />
-        <Button type="button" onClick={onCreate} variant="primary">
-          New case
-        </Button>
-      </div>
-      {error && <p role="alert">Failed to load cases: {error}</p>}
+      {/* ZONE-A: the page's masthead - its name and the controls that open a
+          new case. Same element the workspace's own top uses, so the two
+          screens name themselves the same way. */}
+      <header>
+        <h1>Analysis Cases</h1>
+        <div className={surfaces.rowGap}>
+          <input
+            aria-label="Search cases"
+            value={term}
+            onChange={(e) => setTerm(e.target.value)}
+            placeholder="Search by question or dataset…"
+          />
+          <Button type="button" onClick={onCreate} variant="primary">
+            New case
+          </Button>
+        </div>
+        {error && <p role="alert">Failed to load cases: {error}</p>}
+      </header>
       {loading && (
         <>
           <p className="visually-hidden">Loading…</p>

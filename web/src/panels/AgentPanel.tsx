@@ -4,7 +4,7 @@
  * panel is still pure over its props.
  */
 
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import {
   type AgentRole,
   type AgentState,
@@ -87,6 +87,7 @@ export function AgentPanel({
   // W2X-001: the panel's three actions share one endpoint family but are three
   // separate requests; a shared flag made the reject button read "Running…"
   // while a proposal was what was in flight. Each names the thing it is doing.
+  const headingId = useId()
   const [busy, setBusy] = useState<'' | 'propose' | 'approve' | 'reject'>('')
   const progress = useCallProgress()
   const [reason, setReason] = useState('')
@@ -176,11 +177,14 @@ export function AgentPanel({
 
   if (!agent) {
     return (
-      <div className={surfaces.panel}>
-        <h2 className={surfaces.heading}>{copy.title}</h2>
+      <section
+        className={surfaces.panel}
+        aria-labelledby={headingId}
+      >
+        <h2 className={surfaces.heading} id={headingId}>{copy.title}</h2>
         <p className={surfaces.note + ' visually-hidden'}>{copy.loading}</p>
         <Skeleton shape="rows" count={2} />
-      </div>
+      </section>
     )
   }
 
@@ -189,8 +193,11 @@ export function AgentPanel({
   const end = finished ? agent.history[agent.history.length - 1] : null
 
   return (
-    <div className={surfaces.panel}>
-      <h2 className={surfaces.heading}>{copy.title}</h2>
+    <section
+      className={surfaces.panel}
+      aria-labelledby={headingId}
+    >
+      <h2 className={surfaces.heading} id={headingId}>{copy.title}</h2>
       <p className={surfaces.note}>{copy.blurb}</p>
       <div className={surfaces.buttonRow}>
         <Button
@@ -266,7 +273,7 @@ export function AgentPanel({
           </ul>
         </div>
       )}
-    </div>
+    </section>
   )
 }
 

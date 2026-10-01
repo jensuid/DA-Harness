@@ -4,7 +4,7 @@
  * panel is still pure over its props.
  */
 
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import {
   type Dataset,
   type EdaOp,
@@ -29,6 +29,7 @@ export function EdaPanel({
   loading: boolean
 }) {
   const profiled = datasets.filter((d) => profiles[d.id] !== undefined)
+  const headingId = useId()
   const [chosen, setChosen] = useState('')
   const [op, setOp] = useState<EdaOp>('distribution')
   // The picks are advisory: an effective value is resolved against the current
@@ -48,21 +49,27 @@ export function EdaPanel({
     // dataset first" would be guidance about a case the shell is still
     // reading. The shape is the op's own form.
     return (
-      <div className={surfaces.panel}>
-        <h2 className={surfaces.heading}>Explore the data (EDA)</h2>
+      <section
+        className={surfaces.panel}
+        aria-labelledby={headingId}
+      >
+        <h2 className={surfaces.heading} id={headingId}>Explore the data (EDA)</h2>
         <p className={surfaces.note + ' visually-hidden'}>Reading the profiles…</p>
         <Skeleton shape="form" />
-      </div>
+      </section>
     )
   }
   if (profiled.length === 0) {
     return (
-      <div className={surfaces.panel}>
-        <h2 className={surfaces.heading}>Explore the data (EDA)</h2>
+      <section
+        className={surfaces.panel}
+        aria-labelledby={headingId}
+      >
+        <h2 className={surfaces.heading} id={headingId}>Explore the data (EDA)</h2>
         <p className={surfaces.note}>
           Profile a dataset first - the ops read its columns and their types.
         </p>
-      </div>
+      </section>
     )
   }
 
@@ -105,8 +112,11 @@ export function EdaPanel({
   }
 
   return (
-    <div className={surfaces.panel}>
-      <h2 className={surfaces.heading}>Explore the data (EDA)</h2>
+    <section
+      className={surfaces.panel}
+      aria-labelledby={headingId}
+    >
+      <h2 className={surfaces.heading} id={headingId}>Explore the data (EDA)</h2>
       <p className={surfaces.note}>
         Segment a measure by a category, correlate two columns, or read a
         column's distribution. Each runs read-only like any query, and none is
@@ -249,7 +259,7 @@ export function EdaPanel({
       </form>
       {error && <p role="alert">The op could not run: {error}</p>}
       {result && <EdaResultTable result={result} />}
-    </div>
+    </section>
   )
 }
 

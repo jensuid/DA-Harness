@@ -5,7 +5,7 @@
  * panel's contract - the split is structural, and the tests that assert
  * the rendered output are the contract that it changed nothing.
  */
-import { useEffect, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import {
   type Case,
   type CaseContext,
@@ -95,9 +95,13 @@ export function CaseRecord({
   historyError: string | null
   historyMissing: boolean
 }) {
+  const headingId = useId()
   return (
-    <div className={surfaces.panel + ' zone-record'}>
-      <h2 className={surfaces.heading}>Case record</h2>
+    <section
+      className={surfaces.panel + ' zone-record'}
+      aria-labelledby={headingId}
+    >
+      <h2 className={surfaces.heading} id={headingId}>Case record</h2>
       <p className={surfaces.note}>
         The walk, the timeline and this case's template. Each opens to its own
         detail.
@@ -119,7 +123,7 @@ export function CaseRecord({
           <PromoteTemplate caseId={caseId} question={question} />
         </Disclosure>
       </div>
-    </div>
+    </section>
   )
 }
 
@@ -326,11 +330,17 @@ export function CaseWorkspace({
 
   return (
     <section>
-      <Button type="button" onClick={onBack} variant="link">
-        ← Back to cases
-      </Button>
-      <h1>{caseRow?.question ?? '…'}</h1>
-      {error && <p role="alert">Something went wrong: {error}</p>}
+      {/* ZONE-A: the page's masthead - the way back and the case's own
+          question, which is the page's name. `<header>` is the element for
+          the block that names the page, and the h1 inside it is the heading
+          the landmark structure already rests on. */}
+      <header>
+        <Button type="button" onClick={onBack} variant="link">
+          ← Back to cases
+        </Button>
+        <h1>{caseRow?.question ?? '…'}</h1>
+        {error && <p role="alert">Something went wrong: {error}</p>}
+      </header>
 
       {/* UX 8: three zones - where am I, what am I doing, what can help me.
           Every panel here already existed with its own contract; the layout

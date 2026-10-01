@@ -4,7 +4,7 @@
  * panel is still pure over its props.
  */
 
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import { type Dataset, type Profile, attachDataset, profileDataset } from '../api'
 import { messageOf } from '../CaseList'
 import { Button, Skeleton, surfaces } from '../lib/ui'
@@ -25,6 +25,7 @@ export function DataPanel({
   loading: boolean
   onChanged: () => void
 }) {
+  const headingId = useId()
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -66,8 +67,11 @@ export function DataPanel({
   }
 
   return (
-    <div className={surfaces.panel}>
-      <h2 className={surfaces.heading}>Data</h2>
+    <section
+      className={surfaces.panel}
+      aria-labelledby={headingId}
+    >
+      <h2 className={surfaces.heading} id={headingId}>Data</h2>
       <label className="file-button">
         {busy ? 'Attaching…' : 'Attach a CSV, Parquet or Excel file'}
         <input
@@ -158,7 +162,7 @@ export function DataPanel({
           onChanged={onChanged}
         />
       )}
-    </div>
+    </section>
   )
 }
 

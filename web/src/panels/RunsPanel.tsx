@@ -4,7 +4,7 @@
  * panel is still pure over its props.
  */
 
-import { useEffect, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import {
   type ChartImage,
   type ChartKind,
@@ -44,29 +44,39 @@ export function RunsPanel({
   loading: boolean
   onChanged: () => void
 }) {
+  const headingId = useId()
   if (loading) {
     // SKEL: the workspace's read is in flight, so "no analysis has run yet"
     // would describe a case the shell has not read. The shape is the run
     // rows the panel renders once a run exists.
     return (
-      <div className={surfaces.panel}>
-        <h2 className={surfaces.heading}>Runs</h2>
+      <section
+        className={surfaces.panel}
+        aria-labelledby={headingId}
+      >
+        <h2 className={surfaces.heading} id={headingId}>Runs</h2>
         <p className={surfaces.note + ' visually-hidden'}>Reading the runs…</p>
         <Skeleton shape="rows" count={Math.max(runs.length, 3)} />
-      </div>
+      </section>
     )
   }
   if (runs.length === 0) {
     return (
-      <div className={surfaces.panel}>
-        <h2 className={surfaces.heading}>Runs</h2>
+      <section
+        className={surfaces.panel}
+        aria-labelledby={headingId}
+      >
+        <h2 className={surfaces.heading} id={headingId}>Runs</h2>
         <p className={surfaces.note}>No analysis has run yet.</p>
-      </div>
+      </section>
     )
   }
   return (
-    <div className={surfaces.panel}>
-      <h2 className={surfaces.heading}>Runs</h2>
+    <section
+      className={surfaces.panel}
+      aria-labelledby={headingId}
+    >
+      <h2 className={surfaces.heading} id={headingId}>Runs</h2>
       <ul className={surfaces.panelList}>
         {runs.map((run) => (
           <li key={run.id}>
@@ -79,7 +89,7 @@ export function RunsPanel({
           </li>
         ))}
       </ul>
-    </div>
+    </section>
   )
 }
 

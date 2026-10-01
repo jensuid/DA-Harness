@@ -7962,4 +7962,135 @@ DONE-RECORD (DMDARK):
   untouched - no server file changed.
 ```
 
-Contracts for the rolling window (the two most recent: W3X-003-PROMPT and W3X-004). Older blocks are in `ai/TASKS-ARCHIVE.md`.
+### SKEL contract (skeleton loaders, phase 3 item 10)
+
+```
+TASK ID: SKEL
+MILESTONE: phase 3 item 10 of `docs/UI-UX Audit & Redesign Plan.md` (I4).
+           DMDARK (item 9) is done, so the token layer the skeletons read is
+           already in place and already measured in both appearances.
+TASK: loading is a sentence today ("Loading...", "Asking..."), which is
+      screen-reader-friendly but leaves the workspace blank while ~12
+      artifacts fetch on case open. Shape-match each panel's skeleton behind
+      the existing sentence state, so a panel reads as its own shape while it
+      waits and the sentence stays for assistive tech.
+STATUS: DONE. One skeleton surface, one CSS rule, one animation, one gate;
+        every panel that waits renders a shape-matched skeleton and keeps
+        its sentence in the DOM for assistive tech. The done-record at the
+        bottom of this block is the measured close-out.
+WHY: the audit's I4 is a workspace observation, not a bug. A data-dense
+    surface that arrives all at once after a blank beat reads as slow even
+    when it is not; a shape-matched skeleton is the panel saying what it will
+    hold.
+ROOT CAUSE: n/a - polish the architecture anticipates, like DMDARK.
+NON-GOALS: no replacement of the sentence states (they keep role="status" /
+           aria-busy and the AT audit keeps passing); no new dependency
+           (DEC-001); no change to panel contracts, DOM text or data-testid
+           values; no new layout - a skeleton wraps the shape the panel
+           already renders, with the same row/wrap counts.
+CONSTRAINTS: ONE mechanism, the way DMDARK taught - one skeleton surface in
+             `lib/ui.tsx` and one `.skeleton` rule in `index.css`, not a
+             skeleton per panel. Motion budget (AT-27/AT-30) still holds: the
+             shimmer is one animation, gated through the same
+             prefers-reduced-motion rule, and the gate is measured. AT-32
+             holds in BOTH appearances - the skeleton reads a token
+             (surface-muted and its shimmer), never a hardcoded hex.
+MECHANISM (decided, mirroring DMDARK): `surfaces.skeleton` in `lib/ui.tsx`
+             composed from the existing tokens; a single `.skeleton` rule plus
+             one keyframe in `index.css`; the reduced-motion block kills the
+             animation (verify whether the three existing
+             prefers-reduced-motion blocks should become one while there).
+             Each panel renders its own shape - CaseList three case rows,
+             WorkflowRail its seven stage marks, DataPanel overview plus
+             table, and so on - by wrapping the shape it already renders.
+ACCEPTANCE CRITERIA:
+  1. Panels show a shape-matched skeleton while their fetch is in flight, and
+     the skeleton is gone by the time the panel's data renders - no skeleton
+     left behind, no panel that renders blank first.
+  2. The sentence state still reaches a screen reader: role="status" /
+     aria-busy are unchanged, and the a11y suite still passes.
+  3. The shimmer is one animation, and `prefers-reduced-motion: reduce`
+     disables it - measured in the browser, not asserted in source.
+  4. The skeleton follows the appearance: it reads the same token names, and
+     `verify_visual.py verify` is green in BOTH light and dark with the
+     skeleton resolving dark tokens.
+  5. Light is unchanged where no skeleton renders, and the skeleton adds no
+     new layout - the panel's measured geometry is the same once data lands.
+  6. Gates stay green: web 301+, tsc clean, build ok, server 796/796.
+OPEN DECISIONS (settled while implementing - both measured, both closed):
+  - Concurrency: MEASURED. The workspace's 16 reads are 9-40 ms each and
+    368 ms wall when the first six fan out through `Promise.all`; there is
+    no staged beat to design around, so case open is one beat and
+    per-panel skeletons driven by each panel's own in-flight state is the
+    shape that fits. Restructuring `load()` would save ~100 ms and not
+    change the shape, so it was not done.
+  - Shimmer: shimmer-with-gate, as leaned. One keyframe (`skeleton-sweep`),
+    one `.skeleton` rule, killed by a `prefers-reduced-motion` block, and
+    the gate is measured through Chrome's own media emulator in both
+    appearances (`animation-name` resolves to `none`), not asserted in the
+    source.
+  - The contract's other open question - whether the existing
+    `prefers-reduced-motion` blocks should become one - was checked and
+    LEFT ALONE. There are five, and the motion suite reads them with
+    anchored regexes (`[data-motion-surface]` held visible, the shell
+    notice's own rule). Merging is a pure refactor with no measured benefit
+    and it risks those anchors, so the fifth block was added beside its
+    peers instead.
+
+DONE-RECORD (SKEL):
+  ONE mechanism, as DMDARK taught: `Skeleton` in web/src/lib/ui.tsx (one
+  component, five shapes - `rows`, `stages`, `facts`, `table`, `form` -
+  composed from the existing `surfaces` row/list/subpanel classes and
+  `stage-list`/`ul.overview`, so a waiting panel occupies the room its data
+  will) and one `.skeleton` rule in web/src/index.css (a bar of
+  `--color-surface-muted` with a single `--color-skeleton-shimmer` sweep).
+  The panels that own their fetch (WorkflowRail, CaseOverview, Decision,
+  Plan, Agents, Learn, History, CaseList, Templates) derive in-flight from
+  the state they already hold; the panels that read workspace-owned state
+  and could not tell "unread" from "empty" (Data, Runs, Eda, Evaluate,
+  Evidence, Context, Plan) take a new `loading` prop from one `CaseWorkspace`
+  flag that is true only until the first `load()` resolves - a reload after
+  a write leaves it false, so no panel flashes its skeleton at every save.
+
+  The sentence is not replaced: each one gains `visually-hidden` beside the
+  shape, so the DOM text, the `role`/`aria-busy` attributes and every
+  `data-testid` are unchanged, and the shape itself is `aria-hidden` so a
+  screen reader does not then announce the bars. CaseOverview is the one
+  panel whose empty state was actively misleading (zeros for every count
+  while its read was in flight); it now derives loading from `progress ===
+  null` and renders its seven facts as bars. Evidence rendered `null` while
+  it waited and now renders the shape, so the overview's anchor resolves to
+  something during the fetch.
+
+  Measured, not asserted: the web suite gained web/src/skeleton.test.tsx
+  (10 tests) covering the shapes' counts, the sentence's presence and
+  `visually-hidden` class per panel, the shape's `aria-hidden`, the single
+  keyframe, and the reduced-motion rule stopping the sweep, plus one
+  composition test in CaseWorkspace.test.tsx that freezes case open in its
+  first beat and asserts the mapping an analyst sees - twelve panels, each
+  waiting in the shape it will fill, none rendering the empty state a case
+  with nothing renders; the visual
+  harness gained a `.skeleton` probe read through the cascade in both
+  appearances plus 13 checks - the bar resolves `--color-surface-muted`
+  (light rgb(244,244,244), dark rgb(37,41,50)), the sweep is a gradient
+  running `skeleton-sweep` infinitely, and under emulated
+  `prefers-reduced-motion: reduce` `animation-name` is `none` in BOTH
+  appearances while the surface keeps reading its token.
+
+  Criterion 5, pixel-measured: a pre-SKEL `shots` capture (source stashed,
+  fresh run) diffed against the post-SKEL capture is ZERO changed pixels in
+  every settled workspace shot (02/03/05/06) and the dark list; the list
+  shot differs only in the case-row region, by the same 0.53% a post-SKEL
+  run-to-run control diff shows, which is the isolated core's random case
+  id. The settled workspace renders byte-for-byte what it did before SKEL.
+
+Gates: web vitest 312/312 (20 files, +10 skeleton tests, +1 file, +1
+      composition test); `npx tsc
+      -b` clean; `vite build` ok; `verify_visual.py verify` green in both
+      appearances (66 checks, +13 skeleton/gate checks); server pytest
+      796/796 unchanged. Trace and e2e untouched by this pass (props, one
+      new optional prop per panel, CSS, and harness probes only).
+STATE UPDATE: TASKS/HANDOFF gain the task; phase 3's remaining two items
+              (iconography 12, then zone composition 11) are the carried
+              follow-up. No schema change.
+```

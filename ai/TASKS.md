@@ -2269,139 +2269,6 @@ ID: WALK-UX-004
 PRIORITY: high
 STATUS: PENDING
 
-### SKEL contract (skeleton loaders, phase 3 item 10)
-
-```
-TASK ID: SKEL
-MILESTONE: phase 3 item 10 of `docs/UI-UX Audit & Redesign Plan.md` (I4).
-           DMDARK (item 9) is done, so the token layer the skeletons read is
-           already in place and already measured in both appearances.
-TASK: loading is a sentence today ("Loading...", "Asking..."), which is
-      screen-reader-friendly but leaves the workspace blank while ~12
-      artifacts fetch on case open. Shape-match each panel's skeleton behind
-      the existing sentence state, so a panel reads as its own shape while it
-      waits and the sentence stays for assistive tech.
-STATUS: DONE. One skeleton surface, one CSS rule, one animation, one gate;
-        every panel that waits renders a shape-matched skeleton and keeps
-        its sentence in the DOM for assistive tech. The done-record at the
-        bottom of this block is the measured close-out.
-WHY: the audit's I4 is a workspace observation, not a bug. A data-dense
-    surface that arrives all at once after a blank beat reads as slow even
-    when it is not; a shape-matched skeleton is the panel saying what it will
-    hold.
-ROOT CAUSE: n/a - polish the architecture anticipates, like DMDARK.
-NON-GOALS: no replacement of the sentence states (they keep role="status" /
-           aria-busy and the AT audit keeps passing); no new dependency
-           (DEC-001); no change to panel contracts, DOM text or data-testid
-           values; no new layout - a skeleton wraps the shape the panel
-           already renders, with the same row/wrap counts.
-CONSTRAINTS: ONE mechanism, the way DMDARK taught - one skeleton surface in
-             `lib/ui.tsx` and one `.skeleton` rule in `index.css`, not a
-             skeleton per panel. Motion budget (AT-27/AT-30) still holds: the
-             shimmer is one animation, gated through the same
-             prefers-reduced-motion rule, and the gate is measured. AT-32
-             holds in BOTH appearances - the skeleton reads a token
-             (surface-muted and its shimmer), never a hardcoded hex.
-MECHANISM (decided, mirroring DMDARK): `surfaces.skeleton` in `lib/ui.tsx`
-             composed from the existing tokens; a single `.skeleton` rule plus
-             one keyframe in `index.css`; the reduced-motion block kills the
-             animation (verify whether the three existing
-             prefers-reduced-motion blocks should become one while there).
-             Each panel renders its own shape - CaseList three case rows,
-             WorkflowRail its seven stage marks, DataPanel overview plus
-             table, and so on - by wrapping the shape it already renders.
-ACCEPTANCE CRITERIA:
-  1. Panels show a shape-matched skeleton while their fetch is in flight, and
-     the skeleton is gone by the time the panel's data renders - no skeleton
-     left behind, no panel that renders blank first.
-  2. The sentence state still reaches a screen reader: role="status" /
-     aria-busy are unchanged, and the a11y suite still passes.
-  3. The shimmer is one animation, and `prefers-reduced-motion: reduce`
-     disables it - measured in the browser, not asserted in source.
-  4. The skeleton follows the appearance: it reads the same token names, and
-     `verify_visual.py verify` is green in BOTH light and dark with the
-     skeleton resolving dark tokens.
-  5. Light is unchanged where no skeleton renders, and the skeleton adds no
-     new layout - the panel's measured geometry is the same once data lands.
-  6. Gates stay green: web 301+, tsc clean, build ok, server 796/796.
-OPEN DECISIONS (settled while implementing - both measured, both closed):
-  - Concurrency: MEASURED. The workspace's 16 reads are 9-40 ms each and
-    368 ms wall when the first six fan out through `Promise.all`; there is
-    no staged beat to design around, so case open is one beat and
-    per-panel skeletons driven by each panel's own in-flight state is the
-    shape that fits. Restructuring `load()` would save ~100 ms and not
-    change the shape, so it was not done.
-  - Shimmer: shimmer-with-gate, as leaned. One keyframe (`skeleton-sweep`),
-    one `.skeleton` rule, killed by a `prefers-reduced-motion` block, and
-    the gate is measured through Chrome's own media emulator in both
-    appearances (`animation-name` resolves to `none`), not asserted in the
-    source.
-  - The contract's other open question - whether the existing
-    `prefers-reduced-motion` blocks should become one - was checked and
-    LEFT ALONE. There are five, and the motion suite reads them with
-    anchored regexes (`[data-motion-surface]` held visible, the shell
-    notice's own rule). Merging is a pure refactor with no measured benefit
-    and it risks those anchors, so the fifth block was added beside its
-    peers instead.
-
-DONE-RECORD (SKEL):
-  ONE mechanism, as DMDARK taught: `Skeleton` in web/src/lib/ui.tsx (one
-  component, five shapes - `rows`, `stages`, `facts`, `table`, `form` -
-  composed from the existing `surfaces` row/list/subpanel classes and
-  `stage-list`/`ul.overview`, so a waiting panel occupies the room its data
-  will) and one `.skeleton` rule in web/src/index.css (a bar of
-  `--color-surface-muted` with a single `--color-skeleton-shimmer` sweep).
-  The panels that own their fetch (WorkflowRail, CaseOverview, Decision,
-  Plan, Agents, Learn, History, CaseList, Templates) derive in-flight from
-  the state they already hold; the panels that read workspace-owned state
-  and could not tell "unread" from "empty" (Data, Runs, Eda, Evaluate,
-  Evidence, Context, Plan) take a new `loading` prop from one `CaseWorkspace`
-  flag that is true only until the first `load()` resolves - a reload after
-  a write leaves it false, so no panel flashes its skeleton at every save.
-
-  The sentence is not replaced: each one gains `visually-hidden` beside the
-  shape, so the DOM text, the `role`/`aria-busy` attributes and every
-  `data-testid` are unchanged, and the shape itself is `aria-hidden` so a
-  screen reader does not then announce the bars. CaseOverview is the one
-  panel whose empty state was actively misleading (zeros for every count
-  while its read was in flight); it now derives loading from `progress ===
-  null` and renders its seven facts as bars. Evidence rendered `null` while
-  it waited and now renders the shape, so the overview's anchor resolves to
-  something during the fetch.
-
-  Measured, not asserted: the web suite gained web/src/skeleton.test.tsx
-  (10 tests) covering the shapes' counts, the sentence's presence and
-  `visually-hidden` class per panel, the shape's `aria-hidden`, the single
-  keyframe, and the reduced-motion rule stopping the sweep, plus one
-  composition test in CaseWorkspace.test.tsx that freezes case open in its
-  first beat and asserts the mapping an analyst sees - twelve panels, each
-  waiting in the shape it will fill, none rendering the empty state a case
-  with nothing renders; the visual
-  harness gained a `.skeleton` probe read through the cascade in both
-  appearances plus 13 checks - the bar resolves `--color-surface-muted`
-  (light rgb(244,244,244), dark rgb(37,41,50)), the sweep is a gradient
-  running `skeleton-sweep` infinitely, and under emulated
-  `prefers-reduced-motion: reduce` `animation-name` is `none` in BOTH
-  appearances while the surface keeps reading its token.
-
-  Criterion 5, pixel-measured: a pre-SKEL `shots` capture (source stashed,
-  fresh run) diffed against the post-SKEL capture is ZERO changed pixels in
-  every settled workspace shot (02/03/05/06) and the dark list; the list
-  shot differs only in the case-row region, by the same 0.53% a post-SKEL
-  run-to-run control diff shows, which is the isolated core's random case
-  id. The settled workspace renders byte-for-byte what it did before SKEL.
-
-Gates: web vitest 312/312 (20 files, +10 skeleton tests, +1 file, +1
-      composition test); `npx tsc
-      -b` clean; `vite build` ok; `verify_visual.py verify` green in both
-      appearances (66 checks, +13 skeleton/gate checks); server pytest
-      796/796 unchanged. Trace and e2e untouched by this pass (props, one
-      new optional prop per panel, CSS, and harness probes only).
-STATE UPDATE: TASKS/HANDOFF gain the task; phase 3's remaining two items
-              (iconography 12, then zone composition 11) are the carried
-              follow-up. No schema change.
-```
-
 ### ICON contract (iconography - phase 3 item 12)
 
 ```
@@ -2541,5 +2408,113 @@ Gates: web vitest 320/320 (21 files, +8 icon tests in a new file); `npx tsc
       unchanged. Trace and e2e untouched (no API or state change).
 STATE UPDATE: TASKS/HANDOFF gain the task; phase 3's last item (zone
               composition 11) is the carried follow-up. No schema change.
-Contracts for the rolling window (the two most recent: ICON and
-SKEL). Older blocks are in `ai/TASKS-ARCHIVE.md`.
+### ZONE-A contract (panel landmarks - phase 3 item 11, part 1 of 2)
+
+TASK ID: ZONE-A
+PHASE: P3 polish (docs/UI-UX Audit & Redesign Plan.md item 11, finding P4)
+STATUS: DONE. Every panel root that carried `surfaces.panel` and was not
+        already inside a `Disclosure` is a `<section aria-labelledby>` whose
+        name is the `<h2>` it already rendered - one source of truth for the
+        name, no duplicated `aria-label`. `useId` gives the two mounted
+        `AgentPanel`s distinct heading ids. The three zones stay labelled
+        `<section>` (`<aside>` declined, measured: a named region is a better
+        navigation surface than an unnamed complementary one, and the work
+        zone is the page's primary content); the two page mastheads gained a
+        `<header>`; `<nav>`/`<footer>` were declined - no link set, no footer
+        content. Learn/History/PromoteTemplate keep their `<div>` roots on
+        purpose, because their `Disclosure` is already the named region.
+        EvaluatePanel's hook block moved above its loading early return: a
+        hook below a return the render takes is a hook the render skips, and
+        the workspace's one `loading` flag flips on every case open.
+        Measured: 5 new landmark tests (every panel a region named by its
+        own heading; the two agents distinct; zones still the three regions;
+        the masthead a `header`; disclosure-nested panels still `div`), the
+        zone-name regexes anchored because "Audit submitted work" contains
+        "work", and a stashed-baseline pixel diff of nothing: four of six
+        shots byte-identical, both full-page workspace shots identical in
+        both appearances, the list shot's diff confined to the seeded case's
+        own row band (the ICON-vs-ICON control shows the same band, same
+        rows 181-308) and the viewport workspace shot's 75 px all one
+        grey-level antialiasing.
+TASK: ZONE-A is done; ZONE-B (L3 density, L4 Chat's position) is the carried
+      follow-up, its own task - both change layout and tests, and L4 needs
+      the placement confirmed against `docs/UX-UI Architecture.md` sec. 2
+      before any change (plan open question 4). With 11 and 12 closed, the
+      plan's phase 3 is complete; the next phase is its own roadmap entry.
+
+THE MEASURED PROBLEM (P4, from the audit's own grep): `<main>` and
+`<section aria-label>` are used well, but every panel is a
+`<div className={surfaces.panel}>`. A `<div>` carries no role, so a
+screen-reader user navigating by region lands on the three zones and never on
+the thirteen panels inside them - the panels are where the work and the
+headings are. The zones are ALREADY labelled `<section aria-label=
+"orientation|work|intelligence">`, which is why the audit's own note credits
+them; the gap is the panel roots.
+
+SCOPE (the semantic layer only - one part of item 11; L3 density and L4
+Chat's position are ZONE-B, a separate task):
+
+MECHANISM (one pattern, per panel):
+  - Each panel component takes `const headingId = useId()` and renders its
+    root as `<section className={surfaces.panel} aria-labelledby={headingId}>`
+    with `id={headingId}` on the heading it already renders. Every panel's
+    first child is already an `<h2 className={surfaces.heading}>` (verified by
+    grep before the change), so the label is the heading's own text - one
+    source of truth, no duplicated `aria-label` string, and React's `useId`
+    keeps the ids unique for the two mounted instances of `AgentPanel`.
+  - Panels rendered inside a `Disclosure` (`LearnPanel`, `HistoryPanel`,
+    `PromoteTemplate`) keep their `<div>` root: the Disclosure is already a
+    named `role="region"` (its toggle is the label), so a second labelled
+    region inside it would name the same thing twice. This is the one rule
+    the mechanism has, and a test pins it.
+  - The three zones stay labelled `<section>`. `<aside>` was considered and
+    declined, measured: `aside` is `complementary`, and the three zones' names
+    - orientation / work / intelligence - are the mental model the whole
+    workspace is built on; a named region is a better navigation surface than
+    an unnamed complementary one, and the audit already credited the pattern.
+    The work zone is the primary content of `<main>`, so it is not
+    complementary in any reading.
+  - `<header>` wraps the two page mastheads that already exist: the
+    workspace's Back link + h1, and the case list's h1 + search. A masthead is
+    a real header element; the h1 inside it is the page's own name.
+  - `<nav>` and `<footer>` are declined, recorded here so the question does
+    not reopen: the shell has no set of navigational links (the rail's one
+    `Go to {panel}` button scrolls, and the cases are a list of buttons, not
+    links), and no footer content exists. Adding either would be semantic
+    washing - a tag whose implied content is not there.
+
+PANELS IN SCOPE (16 roots):
+  orientation zone - WorkflowRail, CaseOverview, RefinePanel, CaseRecord
+  work zone - DataPanel, PlanPanel, EdaPanel, RunsPanel, FindingsPanel,
+              EvaluatePanel, EvidencePanel, DecisionPanel
+  intelligence zone - ContextPanel, AgentPanel (x2 instances), Chat
+  elsewhere - Templates (its root is already a `<section>`, so it takes only
+              the `aria-labelledby` + heading id)
+
+NON-GOALS: no layout change, no CSS change, no DOM text change, no testid
+change, no panel contract change. L3 (density) and L4 (Chat's position) are
+ZONE-B. The sentence states, the skeleton shapes and the marks are untouched.
+
+ACCEPTANCE CRITERIA:
+  1. No panel root in scope is a `<div>`; a test asserts each renders a
+     `<section>` whose accessible name is its own heading's text, and asserts
+     the Disclosure-nested panels are still `<div>` (the rule above).
+  2. The two mounted AgentPanels carry distinct heading ids (useId, not a
+     hardcoded literal) - a test asserts two regions named by role, one per
+     agent.
+  3. The zones are still the three regions named orientation / work /
+     intelligence; the existing zone tests are tightened from unanchored
+     regexes to anchored names, because panel regions now exist and
+     "Audit submitted work (EVALUATE)" contains the word "work".
+  4. The settled workspace's pixel diff against a pre-ZONE-A baseline is ZERO
+     changed pixels in every workspace shot (the class set is unchanged and
+     Tailwind's Preflight zeroes the margins of every element, so a tag swap
+     is geometry-neutral); measured, not asserted.
+  5. `verify_visual.py verify` is green in both appearances; the accessibility
+     surface (`auditStatusNotColorOnly`, the contrast checks) is unchanged and
+     green.
+  6. Gates: web vitest green; `npx tsc --noEmit` clean; `vite build` ok;
+     server pytest unchanged.
+
+Contracts for the rolling window (the two most recent: ZONE-A and
+ICON). Older blocks are in `ai/TASKS-ARCHIVE.md`.
