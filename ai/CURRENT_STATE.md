@@ -31,7 +31,10 @@ conformance evaluation asked for is delivered; no phase is open.
   Five new landmark tests assert the structure; the zone-name regexes were
   anchored because "Audit submitted work (EVALUATE)" contains "work".
   **Next task: ZONE-B** - item 11's other two findings, L3 (the zones'
-  density) and L4 (Chat below the fold in the intelligence zone). Both move
+  density) and L4 (Chat below the fold in the intelligence zone); its
+  contract is already written in this file's TASKS counterpart (`ai/TASKS.md`,
+  just after the ZONE-A block) with the acceptance criteria, so the session
+  starts there. Both move
   layout and tests, and L4 needs the placement confirmed against
   `docs/UX-UI Architecture.md` sec. 2 before any change (plan open question
   4). Items 11 and 12 are otherwise closed, so the plan's phase 3 is

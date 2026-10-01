@@ -2516,5 +2516,56 @@ ACCEPTANCE CRITERIA:
   6. Gates: web vitest green; `npx tsc --noEmit` clean; `vite build` ok;
      server pytest unchanged.
 
+### ZONE-B contract (zone density and Chat's position - phase 3 item 11, part 2 of 2)
+
+TASK ID: ZONE-B
+PHASE: P3 polish (docs/UI-UX Audit & Redesign Plan.md item 11, findings L3 + L4)
+STATUS: TODO
+
+THE MEASURED PROBLEM (the audit's own findings, phase 3 item 11's other half;
+                     ZONE-A closed P4, this closes L3 and L4):
+  - L3 (Medium), density vs. the thesis: the orientation zone stacks rail +
+    overview + refine + record group; the work zone stacks seven panels; the
+    intelligence zone stacks five with Chat last. `docs/UX-UI Architecture.md`
+    explicitly warns against information overload. W2X-008 already collapsed
+    three panels into one disclosure group - that is the precedent and the
+    mechanism, not more of it for its own sake.
+  - L4 (Medium): Chat sits below the fold in the intelligence zone, though the
+    copilot is a thesis-level element of the mental model.
+
+ORDER OF WORK (unlike ZONE-A this changes layout, so it changes tests - the
+             pixel diff is expected to be non-zero and that is the point):
+  0. Read `docs/UX-UI Architecture.md` sec. 2 first and close the plan's open
+     question 4 as a written decision before any code: where does the mental
+     model put the copilot? A layout change made against the model is a
+     decision; one made without it is a preference. Record the answer in the
+     plan doc's open question 4 and in this contract.
+  1. L4 first (the smaller, better bounded change), then L3 (density across
+     all three zones, which may re-shape L4's answer). If the sec. 2 read says
+     the copilot belongs where it is, L4 closes as a decision and only L3
+     remains - an acceptable and cheaper outcome than moving a panel to no
+     purpose.
+
+NON-GOALS: no panel contract change, no rendered-text change, no new package
+          (DEC-001); status stays text-plus-glyph (AT-32). The landmark
+          structure ZONE-A just landed is the floor any layout builds on: a
+          panel that moves keeps its section, its heading id and its label.
+
+ACCEPTANCE CRITERIA:
+  1. Open question 4 is closed in the plan doc with the sec. 2 reasoning
+     named, whether or not the answer moves Chat.
+  2. Any panel that moves keeps its `aria-labelledby` region and its heading -
+     the ZONE-A landmark tests must stay green unmodified.
+  3. The zones stay the three named regions orientation / work / intelligence
+     unless the sec. 2 read says otherwise; if it does, the zone tests move
+     with the decision, not against it.
+  4. A pre-ZONE-B pixel baseline is taken (stash, as ZONE-A did) and the diff
+     characterized per shot. The change is intentional so a diff is expected;
+     what must hold is that nothing outside the intended change moved.
+  5. `verify_visual.py verify` green in both appearances, the contrast checks
+     included, after any density change.
+  6. Gates: web vitest green; `npx tsc --noEmit` clean; `vite build` ok;
+     server pytest unchanged.
+
 Contracts for the rolling window (the two most recent: ZONE-A and
 ICON). Older blocks are in `ai/TASKS-ARCHIVE.md`.

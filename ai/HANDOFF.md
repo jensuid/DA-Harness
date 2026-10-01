@@ -23,11 +23,15 @@ hazard fixed on the way: EvaluatePanel's hook block sat below its loading
 early return, so a render that took the return skipped its hooks.
 
 **Next: ZONE-B** - item 11's other two findings, L3 (the zones' density) and
-L4 (Chat below the fold in the intelligence zone). Read
-`docs/UX-UI Architecture.md` sec. 2 first: the plan's open question 4 says
-Chat's placement is confirmed against the mental model before any layout
-change, and L3/L4 both move layout and tests, unlike ZONE-A. Item 11 and 12
-are otherwise closed, so the plan's phase 3 is complete and the next phase
+L4 (Chat below the fold in the intelligence zone). Its contract is already
+written (`ai/TASKS.md`, just after the ZONE-A block) with the acceptance
+criteria, so the session starts there rather than re-deriving scope. Step 0
+is a read, not a change: `docs/UX-UI Architecture.md` sec. 2, closing the
+plan's open question 4 (where the mental model puts the copilot) as a
+written decision before any layout moves - L3/L4 both change layout and
+tests, unlike ZONE-A, and if the read says Chat belongs where it is, L4
+closes as a decision and only L3 remains. With items 11 and 12 otherwise
+closed, ZONE-B is the last of the plan's phase 3; after it, the next phase
 is its own roadmap entry.
 
 Gates now: web 325/325 (21 files, +5 landmark tests), tsc clean, build ok,
