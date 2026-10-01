@@ -3,50 +3,45 @@ the motion, the on-screen chart). P8, P7, P6, P5, P4, P3, P2, P1 and P0 are all
 COMPLETE (see the phase table below). Every phase the roadmap and the
 conformance evaluation asked for is delivered; no phase is open.
 
-- **Active task:** SKEL - skeleton loaders, phase 3 item 10 of the audit
-  in `docs/UI-UX Audit & Redesign Plan.md` (observation I4). Loading was a
-  sentence - screen-reader-friendly, but the workspace was blank while ~12
-  artifacts fetched on case open. Now one `Skeleton` component in
-  `web/src/lib/ui.tsx` (five shapes - rows / stages / facts / table / form -
-  composed from the same `surfaces` classes the real panels render) and one
-  `.skeleton` rule in `web/src/index.css` (a bar of `--color-surface-muted`
-  with a `--color-skeleton-shimmer` sweep, one keyframe, gated through
-  `prefers-reduced-motion`). Each waiting panel keeps its sentence -
-  `visually-hidden` beside the shape, so assistive tech still announces it and
-  the DOM text and testids are unchanged - and the shape is `aria-hidden`.
-  Panels that read workspace-owned state (Data, Runs, Eda, Evaluate, Evidence,
-  Context, Plan) take a new `loading` prop from one `CaseWorkspace` flag
-  that is
-  true only until the first `load()` resolves, so no panel flashes its
-  skeleton at every save.
-    **STATUS: DONE, committed and pushed.** Measured: 13 new visual checks in
-  both appearances (the bar resolves `--color-surface-muted`, the sweep runs,
-  and under Chrome's emulated `prefers-reduced-motion: reduce`
-  `animation-name` is `none` while the surface keeps its token); a pre-SKEL vs
-  post-SKEL pixel diff of ZERO changed pixels in every settled workspace
-  shot; web 312/312 (+10 skeleton tests and one composition test that
-  freezes case open in its first beat and asserts twelve panels each wait
-  in the shape they will fill).
-  **Next task: phase 3's last two items - iconography (12), then zone
-  composition (11)** - the order the plan set, because stage marks may become
-  icons and zone composition migrates panel roots from `<div>` to
-  `<section>`/`<aside>`, the largest test surface, deliberately last and
-  per-panel. Iconography is a decision task first: the audit's item 12 asks
-  whether the stage marks, the severity glyphs and the verb icons should be a
-  drawn set or typographic, and `lucide-react` was already removed by
-  UI-REDUX, so a drawn set means new SVG assets. Read `docs/UI-UX Audit &
-  Redesign Plan.md` around line 162 before starting.
+- **Active task:** ICON - iconography, phase 3 item 12 of the audit
+  in `docs/UI-UX Audit & Redesign Plan.md` (finding P1). The audit's open
+  question - drawn icons or typographic glyphs - is closed typographically:
+  `MARKS` in `web/src/lib/ui.tsx` names the shell's five statuses (pass,
+  concern, fail, current, pending) and no component outside that file names
+  a glyph character. `Mark` renders the one treatment a mark that stands
+  alone gets - a 1.1rem inline-flex box, the status's own token, `aria-hidden`
+  - so the label or sentence beside it is what assistive tech announces and
+  `auditStatusNotColorOnly` still returns zero violations. The rail's rungs
+  carry `mark <status> stage-mark`, so the vocabulary lands on the spine's
+  own anchor mask.
+    A drawn set was declined measured: status is text-plus-glyph by contract
+  (AT-32), so an `aria-hidden` drawn mark needs a duplicated label to carry
+  what the sentence already states; DEC-001 bars a package; and the app has
+  no icon-shaped slots - verb icons would restate the verb every button
+  already names. What was broken was the vocabulary, not the medium:
+  `concern` had two glyphs (`!` in the audit's verdict chips elsewhere
+  `⚠`), the decision panel's unvalidated finding read as the stage the loop
+  is on, and a pending agent step sat on an amber chip. All three now read
+  the one glyph and the one colour their status owns.
+    **STATUS: DONE, committed and pushed.** Measured: a pixel diff against a
+  stashed pre-ICON baseline is confined to the rail's rungs - 857 px (light)
+  and 1395 px (dark) of 2.1M, 0.041% / 0.061%, no layout moved; the visual
+  harness gained a `.mark` probe read through the cascade so each mark's own
+  token resolution is measured in both appearances (12 new checks, 78
+  total); web 320/320 (+8 icon tests in a new file).
+  **Next task: phase 3's LAST item - zone composition (11)** - the position
+  the plan left it in, because it migrates panel roots from `<div>` to
+  `<section>`/`<aside>`, the largest test surface in the phase, done last and
+  per-panel, with Chat's position in the intelligence zone bundled with it.
+  Read `docs/UI-UX Audit & Redesign Plan.md` around line 229 before starting.
+  After it the plan's phase 3 is closed.
   No phase is open; this is a task, not a phase.
-  Sebelumnya: DMDARK (dark mode as a token swap), UI-REDUX (the shell's visual
-  and interaction craft, phases 1 and 2), v0.3.7 (the release W5X-001 ships
-  in), W5X-001 (the Data panel's duplicate filename), WALK-UX-005 (validasi
-  W3X-001), WALK-UX-004 (validasi fix W3X + temuan regresi W4X-001), v0.3.6,
-  W3X-003-PROMPT, W3X-002, W3X-004, WALK-UX-003.
-  Sebelumnya: W2X-008 + W2X-013 (the density), W2X-002 + W2X-005 (the first
-  thing the app says), W2X-006 + W2X-007 (the analysis editor), W2X-012 phase
-  B (the settings surface), W2X-012 phase A (the status surface), WALK-UX-002
-  (recorded), v0.3.4 — the first walk's nineteen findings are all resolved;
-  the second walk's six remain open (W2X-009, W2X-003, W2X-004, W2X-011).
+  Sebelumnya: SKEL (skeleton loaders), DMDARK (dark mode as a token swap),
+  UI-REDUX (the shell's visual and interaction craft, phases 1 and 2),
+  v0.3.7 (the release W5X-001 ships in), W5X-001 (the Data panel's duplicate
+  filename), WALK-UX-005 (validasi W3X-001), WALK-UX-004 (validasi fix W3X +
+  temuan regresi W4X-001), v0.3.6, W3X-003-PROMPT, W3X-002, W3X-004,
+  WALK-UX-003.
 
 - **Done before that:** P8-TRACE-010 - the requirement-traceability matrix
   (AT-48). The PRD's section 59 control artifact is code: 48 rows, one per
@@ -95,11 +90,12 @@ conformance evaluation asked for is delivered; no phase is open.
   `desktop/bundle_dmg.sh`, so the shipped triple is what the developer's
   machine produces. Restoring an enforced Intel lane needs a self-hosted
   runner.
-- **Test status:** server 796/796 passed, unchanged by SKEL (no server file
-  moved). The web suite is 311/311 (20 files; +10 skeleton tests and +1 file
-  for SKEL), tsc clean and the build ok. The visual harness is green in both
-  appearances with 66 checks, 13 of them SKEL's own (the surface, the sweep,
-  and the reduced-motion gate, read through the cascade and the OS emulator).
+- **Test status:** server 796/796 passed, unchanged by ICON (no server file
+  moved). The web suite is 320/320 (21 files; +8 icon tests and +1 file for
+  ICON), tsc clean and the build ok. The visual harness is green in both
+  appearances with 78 checks, 12 of them ICON's own (the five marks each
+  resolving their own token in both appearances, and the mark's box measuring
+  the rung's room).
   Desktop shell 30 Rust tests (unchanged; no shell code moved);
   P2, P3 and P4 gates
   PASS; **v0.2.0, v0.3.0, v0.3.1, v0.3.2, v0.3.3, v0.3.4 and v0.3.5 released**
@@ -329,7 +325,7 @@ conformance evaluation asked for is delivered; no phase is open.
 
 ## How to run (web)
 
-- Web tests: `cd web && npm test` (20 files, 312 tests; vitest, jsdom, no network)
+- Web tests: `cd web && npm test` (21 files, 320 tests; vitest, jsdom, no network)
 - Web build: `cd web && npm run build` (tsc -b + vite)
 - Desktop bundle: `cd web && npm run build:desktop` (absolute API URL for the
   Tauri shell)

@@ -5,7 +5,7 @@
  */
 
 import { type CaseProgress } from '../api'
-import { Skeleton, surfaces } from '../lib/ui'
+import { Mark, MARKS, type MarkName, Skeleton, surfaces } from '../lib/ui'
 
 // W2X-005: the stage's action is an action in the product, not an endpoint.
 // The rail's "Next" is the first thing an analyst reads, and a raw HTTP path
@@ -95,10 +95,12 @@ export function WorkflowRail({
             >
               {/* L2: the glyph stays the status the audit pins it as; the
                   fixed-width span is what the rule through the stages aligns
-                  on, so a stage reads as a rung rather than a bullet. */}
-              <span className="stage-mark" aria-hidden="true">
-                {STAGE_MARKS[status]}
-              </span>{' '}
+                  on, so a stage reads as a rung rather than a bullet. ICON:
+                  the mark is the shell's vocabulary now - one glyph and one
+                  treatment per status - and `stage-mark` keeps the spine's
+                  own anchor mask, so the rung draws what it drew. */}
+              <Mark name={STAGE_MARK[status]} className="stage-mark" />
+              {' '}
               {stage.name}
             </li>
           )
@@ -129,12 +131,20 @@ export function stageStatus(
   return 'pending'
 }
 
-export const STAGE_MARKS: Record<string, string> = {
-  complete: '✓',
-  attention: '⚠',
-  current: '●',
-  pending: '○',
+// ICON: the rail's four statuses on the shell's five marks - complete is
+// the positive pole, attention the warning, current the stage the loop is
+// on. The characters are the vocabulary's; the derived map keeps the name
+// the panel split's completeness check reads.
+const STAGE_MARK: Record<string, MarkName> = {
+  complete: 'pass',
+  attention: 'concern',
+  current: 'current',
+  pending: 'pending',
 }
+
+export const STAGE_MARKS: Record<string, string> = Object.fromEntries(
+  Object.entries(STAGE_MARK).map(([status, name]) => [status, MARKS[name]]),
+)
 
 // The case's control center (UX 45, AT-33): the seven things an analyst needs
 // to answer "what is this case, and where does it stand" without scrolling

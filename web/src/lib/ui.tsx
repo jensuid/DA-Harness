@@ -200,6 +200,53 @@ export function Button({
  * The card primitive: a panel whose content is a titled block. The case list
  * rows and the run rows are cards; the workspace's surfaces are panels.
  */
+/**
+ * ICON (P1): the shell's mark vocabulary - one glyph per status, one
+ * treatment for a mark that stands alone.
+ *
+ * The audit's open question was drawn set versus typographic. Typographic,
+ * measured: status is text-plus-glyph by contract (AT-32,
+ * `auditStatusNotColorOnly`), and a drawn mark is `aria-hidden` by nature,
+ * so it needs a duplicated label to carry the meaning the sentence beside it
+ * already states. The glyph's job is to be the eye's handle on a status the
+ * sentence names. What the inventory showed was not the wrong medium but an
+ * unowned vocabulary: `concern` had two glyphs (`!` in the audit's chips,
+ * `⚠` everywhere else) and the same six characters rendered at five
+ * different treatments. The characters live here now, so no panel can
+ * redefine a status.
+ */
+export type MarkName = 'pass' | 'concern' | 'fail' | 'current' | 'pending'
+
+export const MARKS: Record<MarkName, string> = {
+  pass: '✓',
+  concern: '⚠',
+  fail: '✗',
+  current: '●',
+  pending: '○',
+}
+
+/**
+ * A mark that stands alone - the rail's rungs, a key finding's validation -
+ * as opposed to one prefixing the sentence that states its status. The glyph
+ * is `MARKS[name]`; the box and the colour are the one treatment, so a mark
+ * reads the same wherever the shell puts it. Presentational by design:
+ * `aria-hidden`, because the label or sentence beside it is what assistive
+ * tech announces (and the audit's colour-only check reads).
+ */
+export function Mark({
+  name,
+  className = '',
+}: {
+  name: MarkName
+  className?: string
+}) {
+  return (
+    <span aria-hidden="true" data-mark={name} className={'mark ' + name + ' ' + className}>
+      {MARKS[name]}
+    </span>
+  )
+}
+
 export function Card({
   children,
   className,

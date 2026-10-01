@@ -239,8 +239,22 @@ stack. Each item names the files it touches.
 11. **Zone composition (L3, L4, P4)** — revisit Chat's position in the intelligence
     zone, and migrate panel roots from `<div>` to `<section>`/`<aside>`. Largest test
     surface; do last and per-panel.
-12. **Iconography decision (P1)** — remove `lucide-react`, or adopt it deliberately for
-    toolbar/stage marks while keeping text glyphs for status. Resolve alongside L2.
+12. **Iconography decision (P1)** — RESOLVED (typographic): `lucide-react` was
+    removed in UI-REDUX, and the audit's open question is closed in favour of
+    text glyphs formalized as one vocabulary - `MARKS` in `web/src/lib/ui.tsx`
+    names the shell's five statuses (pass / concern / fail / current /
+    pending) and `Mark` renders the one treatment for a mark that stands
+    alone. A drawn set was declined measured: status is text-plus-glyph by
+    contract (AT-32), so an `aria-hidden` drawn mark needs a duplicated label
+    to carry what the sentence already states; DEC-001 bars a package; and the
+    app has no icon-shaped slots - verb icons would restate the verb every
+    button already names. What the inventory showed was an unowned vocabulary,
+    not the wrong medium: `concern` had two glyphs (`!` in the audit's chips,
+    `⚠` elsewhere), the unvalidated finding read as the stage the loop is on
+    (`●`), and a pending step sat on an amber chip. All three now read the one
+    glyph and the one colour their status owns. Marks inside a sentence stay
+    text nodes (`getByText` joins only direct text children, so wrapping them
+    would break the contract tests).
 
 ### Explicitly not in scope
 
@@ -274,9 +288,8 @@ stack. Each item names the files it touches.
 
 ## 11. Open questions
 
-1. **Icons or not?** `lucide-react` is installed but unused. Removing it shrinks the
-   install; adopting it would give the rail and toolbars visual differentiation. This
-   decision gates Phase 3 item 12 and part of Phase 2 item 5.
+1. **Icons or not?** RESOLVED — typographic. See phase 3 item 12 above for the
+   measured reasoning and the vocabulary that replaced the ad-hoc glyphs.
 2. **Dark mode priority.** The token layer is ready, but is a theme toggle a user need
    for this product, or polish? The docs name "Modern IDE" as the reference, which
    argues for it.

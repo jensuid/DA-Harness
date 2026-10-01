@@ -189,6 +189,7 @@ async function readTheme() {
       surface: tok('--color-surface'),
       surfaceMuted: tok('--color-surface-muted'),
       text: tok('--color-text'),
+      textMuted: tok('--color-text-muted'),
       accent: tok('--color-accent'),
       accentSurface: tok('--color-accent-surface'),
       danger: tok('--color-danger'),
@@ -249,6 +250,28 @@ async function readTheme() {
           radius: cs.borderRadius,
         }
         bar.remove()
+        return read
+      })(),
+      // ICON: the five marks, put on the page and read through the cascade -
+      // one treatment per status, coloured by the status's own token, in
+      // whichever appearance is live. A mark that lost its rule falls back to
+      // an inherited colour, which is the quiet failure this catches.
+      marks: (() => {
+        const host = document.createElement('ul')
+        const names = ['pass', 'concern', 'fail', 'current', 'pending']
+        names.forEach((name) => {
+          const span = document.createElement('span')
+          span.className = 'mark ' + name
+          host.appendChild(span)
+        })
+        document.body.appendChild(host)
+        const read = [...host.children].map((span, i) => ({
+          name: names[i],
+          color: getComputedStyle(span).color,
+          width: getComputedStyle(span).width,
+          glyph: span.textContent || null,
+        }))
+        host.remove()
         return read
       })(),
       rampRules: (() => {
@@ -580,6 +603,17 @@ async function verify() {
   check('light skeleton sweep runs', theme.skeleton.animation, 'skeleton-sweep')
   check('light skeleton sweep repeats', theme.skeleton.iterations, 'infinite')
 
+  // ICON: each status's mark reads its own token in light - the same tokens
+  // the chips and the severity ramp paint with, so a mark and the chip that
+  // carries its cousin are one vocabulary. The box is the room the rail's
+  // rung gives a mark, so a mark outside the rail reads as the same mark.
+  const markToken = { pass: theme.ok, concern: theme.warn, fail: theme.danger,
+    current: theme.accent, pending: theme.textMuted }
+  for (const m of theme.marks) {
+    check(`light mark ${m.name} reads its token`, m.color, rgbOf(markToken[m.name]))
+  }
+  check('light mark box is the rung', theme.marks[0].width, '17.5938px')
+
   // DMDARK criterion 2: the dark palette resolves through the same property
   // names - every surface follows the swap, and the meta tracks it, with no
   // reload and no re-render of the DOM.
@@ -616,6 +650,16 @@ async function verify() {
   check('dark skeleton carries the sweep',
     /linear-gradient/.test(theme.skeleton.image), true)
   check('dark skeleton sweep runs', theme.skeleton.animation, 'skeleton-sweep')
+
+  // ICON in the other appearance: the marks follow the swap the way every
+  // other token-driven surface does, so a dark workspace's status reads the
+  // same vocabulary in the dark palette's own values.
+  const darkMarkToken = { pass: theme.ok, concern: theme.warn,
+    fail: theme.danger, current: theme.accent, pending: theme.textMuted }
+  for (const m of theme.marks) {
+    check(`dark mark ${m.name} reads its token`, m.color, rgbOf(darkMarkToken[m.name]))
+  }
+  check('dark mark box is the rung', theme.marks[0].width, '17.5938px')
 
   // SKEL: the motion gate, measured through the OS's own emulator while the
   // preference still drives the theme. The sweep is decoration - the muted bar

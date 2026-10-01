@@ -7,7 +7,7 @@
 import { useState } from 'react'
 import { type Finding, type ValidationResult, validateFinding } from '../api'
 import { messageOf } from '../CaseList'
-import { Button, surfaces } from '../lib/ui'
+import { Button, MARKS, surfaces } from '../lib/ui'
 import { MotionSurface } from '../lib/motion'
 
 export function FindingsPanel({
@@ -97,7 +97,7 @@ export function FindingRow({
                     claim is phrased within them, but the analysis carries a
                     stated limitation. The two read differently, so they render
                     differently (P8-VALID-003). */}
-                {check.passed ? '✓' : check.hard ? '✗' : '⚠'} {check.dimension} —{' '}
+                {check.passed ? MARKS.pass : check.hard ? MARKS.fail : MARKS.concern} {check.dimension} —{' '}
                 {check.detail}
               </li>
             ))}
@@ -126,7 +126,11 @@ export function Verdict({
   axis: string
   detail: string
 }) {
-  const mark = verdict === 'pass' ? '✓' : verdict === 'concern' ? '!' : '✗'
+  // ICON: one glyph per status - the concern read `!` here and `⚠`
+  // everywhere else, so one meaning had two marks. The vocabulary owns it
+  // now, and the chip's own class carries the colour.
+  const mark =
+    verdict === 'pass' ? MARKS.pass : verdict === 'concern' ? MARKS.concern : MARKS.fail
   return (
     <p>
       <span className={`verdict ${verdict}`}>{mark} {axis}</span>

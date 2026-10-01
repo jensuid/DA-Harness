@@ -24,11 +24,16 @@ import {
   putDecision,
 } from './api'
 import { messageOf } from './CaseList'
-import { Button, Skeleton, surfaces } from './lib/ui'
+import { Button, Mark, MARKS, type MarkName, Skeleton, surfaces } from './lib/ui'
 
-const STATUS_MARKS: Record<string, string> = {
-  supported: '✓',
-  partially_supported: '⚠',
+// ICON: a finding's validation status on the shell's marks. The core's own
+// vocabulary is wider than the three the panel renders, so the statuses it
+// does not name read as pending - an unvalidated finding is not started,
+// not the stage the loop is currently on (which is what `current` means).
+function validationMark(status: string): MarkName {
+  if (status === 'supported') return 'pass'
+  if (status === 'partially_supported') return 'concern'
+  return 'pending'
 }
 
 export function DecisionPanel({
@@ -111,7 +116,8 @@ export function DecisionPanel({
             {keyFindings.map((finding) => (
               <li key={finding.id} className={surfaces.row}>
                 <p>
-                  <strong>{STATUS_MARKS[finding.validation_status] ?? '●'}</strong>{' '}
+                  <Mark name={validationMark(finding.validation_status)} />
+                  {' '}
                   {finding.statement}
                 </p>
                 <p className={surfaces.note}>validation: {finding.validation_status}</p>
@@ -142,7 +148,7 @@ export function DecisionPanel({
                   key={finding.id + check.dimension + check.detail}
                   className={check.hard ? 'fail' : 'warn'}
                 >
-                  {check.hard ? '✗' : '⚠'} {check.dimension} — {check.detail}
+                  {check.hard ? MARKS.fail : MARKS.concern} {check.dimension} — {check.detail}
                   <span className={surfaces.note}> (from “{finding.statement}”)</span>
                 </li>
               ))}
@@ -159,7 +165,7 @@ export function DecisionPanel({
                   <ul className={surfaces.panelList}>
                     {item.reasons.map((reason, index) => (
                       <li key={index} className="warn">
-                        ⚠ {reason}
+                        {MARKS.concern} {reason}
                       </li>
                     ))}
                   </ul>

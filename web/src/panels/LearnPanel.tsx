@@ -5,7 +5,7 @@
  */
 
 import { type LearnWalk } from '../api'
-import { Skeleton, surfaces } from '../lib/ui'
+import { MARKS, Skeleton, surfaces } from '../lib/ui'
 
 // W2X-008: the panel renders its body directly. The collapse is the Case
 // record group's own disclosure, which carries this panel's derived summary -
@@ -105,7 +105,7 @@ export function WalkBody({ walk }: { walk: LearnWalk }) {
                   className={stage.completed ? 'stage done' : 'stage'}
                   aria-label={`${stage.action}: ${stage.completed ? 'done' : 'to do'}`}
                 >
-                  {stage.completed ? '✓' : '○'} {stage.action}
+                  {stage.completed ? MARKS.pass : MARKS.pending} {stage.action}
                   <span className={surfaces.note}> — {stage.hint}</span>
                 </li>
               ))}

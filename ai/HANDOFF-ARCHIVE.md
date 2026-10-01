@@ -937,3 +937,37 @@ per-panel. No carried follow-up is open and no walk-test finding is queued.
 
 Gates now: web 301/301, tsc clean, build ok, visual verify green in both
 appearances, server 796/796.
+
+## Next action
+
+**SKEL is done and pushed** - one skeleton surface, one CSS rule, one
+animation, one gate. Loading is still a sentence for assistive tech
+(`visually-hidden` beside the shape, DOM text and testids untouched); what
+the eye gets is the shape the panel is about to render, built from the same
+`surfaces` classes. `web/src/lib/ui.tsx` gained one `Skeleton` component
+(five shapes: rows / stages / facts / table / form); `web/src/index.css`
+gained one `.skeleton` rule reading `--color-surface-muted` plus a new
+`--color-skeleton-shimmer` token, one keyframe, and one reduced-motion block
+that stops it. Contract and measured done-record are in `ai/TASKS.md`.
+
+Both open decisions were measured and closed: the workspace's 16 reads are
+9-40 ms each (368 ms wall), so case open is one beat and per-panel skeletons
+fit without restructuring `load()`; and the reduced-motion gate is read
+through Chrome's media emulator, where `animation-name` resolves to `none`
+in both appearances. The third question the contract asked - whether the five
+existing `prefers-reduced-motion` blocks should merge - was checked and left
+alone: the motion suite reads them with anchored regexes, and merging is a
+refactor with no measured benefit.
+
+**Next: phase 3's last two items, iconography (12) before zone composition
+(11)** - the order the plan set, because stage marks may become icons and
+zone composition migrates panel roots from `<div>` to `<section>`/`<aside>`,
+the largest test surface, deliberately last and per-panel. Iconography is a
+decision task first: the audit's item 12 asks whether the stage marks, the
+severity glyphs and the verb icons should be a drawn set or typographic, and
+`lucide-react` was already removed (UI-REDUX), so a drawn set means new SVG
+assets. Read `docs/UI-UX Audit & Redesign Plan.md` around line 162 before
+starting. No carried follow-up is open and no walk-test finding is queued.
+
+Gates now: web 312/312, tsc clean, build ok, visual verify green in both
+appearances (66 checks, +13 skeleton/gate), server 796/796.

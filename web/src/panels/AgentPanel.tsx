@@ -20,7 +20,7 @@ import {
 } from "../api"
 import { sourceWith } from '../sourceLabel'
 import { messageOf } from '../CaseList'
-import { Button, Skeleton, surfaces } from '../lib/ui'
+import { Button, MARKS, Skeleton, surfaces } from '../lib/ui'
 import { CallProgress, useCallProgress } from '../lib/progress'
 
 export const AGENT_COPY: Record<AgentRole, {
@@ -306,10 +306,16 @@ export function stepSentence(step: AgentStep): string {
 }
 
 export function StepStatus({ step }: { step: AgentStep }) {
-  const mark = step.status === 'done' ? '✓' : step.status === 'rejected' ? '✗' : '○'
+  const mark =
+    step.status === 'done' ? MARKS.pass : step.status === 'rejected' ? MARKS.fail : MARKS.pending
+  // ICON: a pending step is not a concern - it has not been decided - so its
+  // chip is the neutral one, not the amber a warning carries. The glyph and
+  // the chip now say the same thing.
+  const chip =
+    step.status === 'done' ? 'pass' : step.status === 'rejected' ? 'fail' : ''
   return (
     <p>
-      <span className={`verdict ${step.status === 'done' ? 'pass' : step.status === 'rejected' ? 'fail' : 'concern'}`}>
+      <span className={`verdict ${chip}`.trim()}>
         {mark} {step.kind}
       </span>
       <span className={surfaces.note}> — {step.note || stepSentence(step)}</span>

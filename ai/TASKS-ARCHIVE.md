@@ -7852,4 +7852,114 @@ SUMMARY: the Check for Updates menu item performed a check the core
          the parsed answer, which is also how a transport that kept no body at
          all still reaches the window.
 
+### DMDARK contract (dark mode as a token swap)
+
+```
+TASK ID: DMDARK
+MILESTONE: phase 3 item 9 of `docs/UI-UX Audit & Redesign Plan.md`.
+           Prerequisite done: UI-REDUX remapped the quality ramp and every
+           shadow onto named tokens, so this defines values rather than
+           refactors rules.
+TASK: the workspace has one appearance. An analyst works long sessions on
+      data, and the reference the docs name is a modern IDE, where a dark
+      surface is the default expectation - and the Tauri window's own chrome
+      already follows the OS, so a light body under a dark macOS titlebar is
+      a visible mismatch, not a preference.
+STATUS: DONE. Dark mode shipped as a token swap - one driver, one
+          mechanism, measured in both appearances. The resolver is
+          `web/src/theme.ts`; the swap is the `[data-theme='dark']` block in
+          `index.css`; the control is the Appearance row in the settings
+          dialog. See the done-record below for what was measured.
+DECISION MADE (with the analyst): a three-state control - Light / Dark /
+        System - defaulting to System, as a new Appearance row in the existing
+        DAH Settings dialog (`LlmSettingsPanel`, already `role="dialog"
+        aria-label="DAH settings"`, which reads once per open and saves on
+        change). Not auto-only: the analyst wants dark without changing the
+        whole system. Not toggle-only: System is the correct zero-config
+        default for a native app whose chrome already tracks the OS.
+WHY: the token layer anticipates this - it is why the remap onto names was
+    worth doing before it. The work is redefining values, not restructuring.
+ROOT CAUSE: n/a - this is polish the architecture was built for, not a fault.
+NON-GOALS: no new browser-side dependency touching the filesystem or DuckDB
+           (DEC-001); persistence is localStorage in the webview, not a
+           store plugin. No change to panel contracts, DOM text or
+           `data-testid` values. No restructuring of the token names - the
+           point is that they do not move.
+CONSTRAINTS: AT-32 (0 critical a11y violations) holds in BOTH appearances -
+             contrast must be measured, not eyeballed. Motion budget
+             (AT-27/AT-30) and `prefers-reduced-motion` are unaffected but
+             must still pass. Tests are the contract: a test that reads a
+             stylesheet for a colour must not break on the swap.
+MECHANISM (decided): ONE driver - a `data-theme` attribute on <html>. A small
+             resolver maps System -> `matchMedia('(prefers-color-scheme:
+             dark)')` and writes the attribute; it also listens so an OS
+             switch re-themes a running app. CSS has a SINGLE mechanism
+             (`[data-theme="dark"]` redefining the `:root` tokens) - no
+             `@media (prefers-color-scheme)` block racing a class. One place
+             to test, one place to be wrong.
+ACCEPTANCE CRITERIA:
+  1. Light is byte-for-byte the current appearance - the swap changes
+     nothing when it is not active.
+  2. System resolves to the OS preference at launch and re-resolves when the
+     OS changes while the app is open.
+  3. The choice persists across launches (localStorage) and the setting
+     dialog shows the current state.
+  4. MEANING SURVIVES THE SWAP: `--color-danger` still reads as red,
+     `--color-warn` still reads as amber, `--color-ok` still reads as green,
+     and the `.quality-*` severity ramp keeps its climb. A status that
+     changes meaning with the theme is the failure mode this criterion
+     exists to catch.
+  5. Contrast in dark meets the same bar the light surfaces meet (AT-32) -
+     text, borders and the accent on the dark surface, measured.
+  6. The meta theme-color tracks the resolved appearance.
+  7. `verification/visual/verify_visual.py verify` runs green in BOTH
+     appearances - extend its block to assert the dark tokens resolve, and
+     capture a dark `shots` set.
+  8. Gates stay green: web 287/287+, tsc clean, build ok, server 796/796.
+
+OPEN SUB-DECISIONS (resolved, measured - see the done-record below):
+  - The stage glyphs and the accent-surface anchors carry on the same token
+    values. The glyphs are ink on a surface, so they follow the swap; the
+    one adjustment is the anchor's own tint, darkened to #1f242f, so the
+    panel that matters still says so without glowing. Verified in Chrome:
+    `.decision` reads rgb(31,36,47) under dark.
+  - The monospace surfaces keep their weight. The glare at that density is
+    the ink, not the stroke: #e9eaee rather than white carries the density
+    into dark, and `code` measures 12.32:1 against its surface.
+
+DONE-RECORD (DMDARK):
+  What changed - `web/src/theme.ts` is the resolver (read/resolve/apply, a
+  matchMedia listener that re-themes only while System is held); an inline
+  bootstrap in `web/index.html` sets the attribute and the meta before first
+  paint; `index.css` holds the dark block and every hardcoded colour in the
+  component rules moved onto tokens; `lib/ui.tsx` and `lib/chart.tsx` read
+  those tokens, so the panels follow the swap; an Appearance fieldset in
+  `LLMSettingsPanel` is the three-state control. Light is unchanged because
+  every dark value sits under `[data-theme='dark']` and the light values are
+  the ones the rules held.
+  Measured, not asserted - 53 checks in `verify_visual.py verify`, green:
+  light's 15 computed values and both hover reads are byte-identical to the
+  pre-DMDARK baseline (criterion 1); the tokens resolve to the dark values and
+  every surface wears the token it reads; contrast is measured per surface in
+  BOTH appearances - light min 4.68:1 (.llm-status), dark min 5.11:1, all
+  above 4.5 (criterion 5); the three statuses keep their hue families and the
+  severity ramp keeps its climb, neutral below amber below red, in both
+  (criterion 4); the control pass clicks the banner's Configure, chooses Dark
+  (attribute + localStorage), System, flips the emulated OS and watches the
+  attribute re-resolve, then proves a stated Light does not follow the OS
+  (criteria 2 and 3); the meta tracks the resolved appearance (criterion 6).
+  Six dark shots are captured by `shots` (04/05/06) alongside the light set.
+  What broke / lessons - `document.body` carries no background (it is on
+  <html>), and the first `.panel` is the accent-surface anchor, so the first
+  two assertions measured the wrong things; the checks now compare a surface
+  to the token it reads rather than to a hardcoded expectation. Chrome's CSSOM
+  does not expand a `var()` inside a shorthand, so the ramp is measured by
+  putting the elements on the page and reading the cascade, not by walking
+  cssRules. A profile directory reused across runs keeps localStorage, so the
+  harness clears it at the start of every run.
+  Gates: web 301/301 (9 resolver + 5 appearance-row tests added), tsc clean,
+  build ok, visual verify green in both appearances; server 796/796
+  untouched - no server file changed.
+```
+
 Contracts for the rolling window (the two most recent: W3X-003-PROMPT and W3X-004). Older blocks are in `ai/TASKS-ARCHIVE.md`.

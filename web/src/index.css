@@ -1291,6 +1291,45 @@ ul.overview {
   border-radius: 50%;
 }
 
+/* ICON (P1): the one treatment for a mark that stands alone. The glyph is
+   the character the sentence states; the box is the room the rail's rung
+   already gave it, so a mark outside the rail reads as the same mark. One
+   size, one weight, and the status's own token for the colour - the same
+   tokens `.verdict` and `.stage` paint with, so a mark and the chip that
+   carries its cousin read as one vocabulary. */
+.mark {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 50%;
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.mark.pass {
+  color: var(--color-ok);
+}
+
+.mark.concern {
+  color: var(--color-warn);
+}
+
+.mark.fail {
+  color: var(--color-danger);
+}
+
+.mark.current {
+  color: var(--color-accent);
+}
+
+.mark.pending {
+  color: var(--color-text-muted);
+}
+
 /* UI-REDUX L1: every surface in the workspace is the same white card, so
    nothing in the hierarchy said which panel is the anchor. The rail orients -
    it is the sticky surface, the one read first and returned to - and it

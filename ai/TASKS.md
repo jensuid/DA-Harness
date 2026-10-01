@@ -497,115 +497,6 @@ SUMMARY: the loop a first-time analyst walks without a terminal, proven on
          core - recorded because a walk-test that only reports new findings
          cannot tell you the old ones regressed.
 
-### DMDARK contract (dark mode as a token swap)
-
-```
-TASK ID: DMDARK
-MILESTONE: phase 3 item 9 of `docs/UI-UX Audit & Redesign Plan.md`.
-           Prerequisite done: UI-REDUX remapped the quality ramp and every
-           shadow onto named tokens, so this defines values rather than
-           refactors rules.
-TASK: the workspace has one appearance. An analyst works long sessions on
-      data, and the reference the docs name is a modern IDE, where a dark
-      surface is the default expectation - and the Tauri window's own chrome
-      already follows the OS, so a light body under a dark macOS titlebar is
-      a visible mismatch, not a preference.
-STATUS: DONE. Dark mode shipped as a token swap - one driver, one
-          mechanism, measured in both appearances. The resolver is
-          `web/src/theme.ts`; the swap is the `[data-theme='dark']` block in
-          `index.css`; the control is the Appearance row in the settings
-          dialog. See the done-record below for what was measured.
-DECISION MADE (with the analyst): a three-state control - Light / Dark /
-        System - defaulting to System, as a new Appearance row in the existing
-        DAH Settings dialog (`LlmSettingsPanel`, already `role="dialog"
-        aria-label="DAH settings"`, which reads once per open and saves on
-        change). Not auto-only: the analyst wants dark without changing the
-        whole system. Not toggle-only: System is the correct zero-config
-        default for a native app whose chrome already tracks the OS.
-WHY: the token layer anticipates this - it is why the remap onto names was
-    worth doing before it. The work is redefining values, not restructuring.
-ROOT CAUSE: n/a - this is polish the architecture was built for, not a fault.
-NON-GOALS: no new browser-side dependency touching the filesystem or DuckDB
-           (DEC-001); persistence is localStorage in the webview, not a
-           store plugin. No change to panel contracts, DOM text or
-           `data-testid` values. No restructuring of the token names - the
-           point is that they do not move.
-CONSTRAINTS: AT-32 (0 critical a11y violations) holds in BOTH appearances -
-             contrast must be measured, not eyeballed. Motion budget
-             (AT-27/AT-30) and `prefers-reduced-motion` are unaffected but
-             must still pass. Tests are the contract: a test that reads a
-             stylesheet for a colour must not break on the swap.
-MECHANISM (decided): ONE driver - a `data-theme` attribute on <html>. A small
-             resolver maps System -> `matchMedia('(prefers-color-scheme:
-             dark)')` and writes the attribute; it also listens so an OS
-             switch re-themes a running app. CSS has a SINGLE mechanism
-             (`[data-theme="dark"]` redefining the `:root` tokens) - no
-             `@media (prefers-color-scheme)` block racing a class. One place
-             to test, one place to be wrong.
-ACCEPTANCE CRITERIA:
-  1. Light is byte-for-byte the current appearance - the swap changes
-     nothing when it is not active.
-  2. System resolves to the OS preference at launch and re-resolves when the
-     OS changes while the app is open.
-  3. The choice persists across launches (localStorage) and the setting
-     dialog shows the current state.
-  4. MEANING SURVIVES THE SWAP: `--color-danger` still reads as red,
-     `--color-warn` still reads as amber, `--color-ok` still reads as green,
-     and the `.quality-*` severity ramp keeps its climb. A status that
-     changes meaning with the theme is the failure mode this criterion
-     exists to catch.
-  5. Contrast in dark meets the same bar the light surfaces meet (AT-32) -
-     text, borders and the accent on the dark surface, measured.
-  6. The meta theme-color tracks the resolved appearance.
-  7. `verification/visual/verify_visual.py verify` runs green in BOTH
-     appearances - extend its block to assert the dark tokens resolve, and
-     capture a dark `shots` set.
-  8. Gates stay green: web 287/287+, tsc clean, build ok, server 796/796.
-
-OPEN SUB-DECISIONS (resolved, measured - see the done-record below):
-  - The stage glyphs and the accent-surface anchors carry on the same token
-    values. The glyphs are ink on a surface, so they follow the swap; the
-    one adjustment is the anchor's own tint, darkened to #1f242f, so the
-    panel that matters still says so without glowing. Verified in Chrome:
-    `.decision` reads rgb(31,36,47) under dark.
-  - The monospace surfaces keep their weight. The glare at that density is
-    the ink, not the stroke: #e9eaee rather than white carries the density
-    into dark, and `code` measures 12.32:1 against its surface.
-
-DONE-RECORD (DMDARK):
-  What changed - `web/src/theme.ts` is the resolver (read/resolve/apply, a
-  matchMedia listener that re-themes only while System is held); an inline
-  bootstrap in `web/index.html` sets the attribute and the meta before first
-  paint; `index.css` holds the dark block and every hardcoded colour in the
-  component rules moved onto tokens; `lib/ui.tsx` and `lib/chart.tsx` read
-  those tokens, so the panels follow the swap; an Appearance fieldset in
-  `LLMSettingsPanel` is the three-state control. Light is unchanged because
-  every dark value sits under `[data-theme='dark']` and the light values are
-  the ones the rules held.
-  Measured, not asserted - 53 checks in `verify_visual.py verify`, green:
-  light's 15 computed values and both hover reads are byte-identical to the
-  pre-DMDARK baseline (criterion 1); the tokens resolve to the dark values and
-  every surface wears the token it reads; contrast is measured per surface in
-  BOTH appearances - light min 4.68:1 (.llm-status), dark min 5.11:1, all
-  above 4.5 (criterion 5); the three statuses keep their hue families and the
-  severity ramp keeps its climb, neutral below amber below red, in both
-  (criterion 4); the control pass clicks the banner's Configure, chooses Dark
-  (attribute + localStorage), System, flips the emulated OS and watches the
-  attribute re-resolve, then proves a stated Light does not follow the OS
-  (criteria 2 and 3); the meta tracks the resolved appearance (criterion 6).
-  Six dark shots are captured by `shots` (04/05/06) alongside the light set.
-  What broke / lessons - `document.body` carries no background (it is on
-  <html>), and the first `.panel` is the accent-surface anchor, so the first
-  two assertions measured the wrong things; the checks now compare a surface
-  to the token it reads rather than to a hardcoded expectation. Chrome's CSSOM
-  does not expand a `var()` inside a shorthand, so the ramp is measured by
-  putting the elements on the page and reading the cascade, not by walking
-  cssRules. A profile directory reused across runs keeps localStorage, so the
-  harness clears it at the start of every run.
-  Gates: web 301/301 (9 resolver + 5 appearance-row tests added), tsc clean,
-  build ok, visual verify green in both appearances; server 796/796
-  untouched - no server file changed.
-```
 
 ### W5X-001 contract (the Data panel accepts the same filename twice)
 
@@ -2511,5 +2402,144 @@ STATE UPDATE: TASKS/HANDOFF gain the task; phase 3's remaining two items
               follow-up. No schema change.
 ```
 
-Contracts for the rolling window (the two most recent: SKEL and
-DMDARK). Older blocks are in `ai/TASKS-ARCHIVE.md`.
+### ICON contract (iconography - phase 3 item 12)
+
+```
+TASK ID: ICON
+PHASE: P3 polish (docs/UI-UX Audit & Redesign Plan.md item 12, finding P1)
+STATUS: DONE
+
+INTENT: Resolve the iconography question the audit left open, and make the
+  answer deliberate rather than inherited. `lucide-react` is already gone
+  (UI-REDUX), so the dependency half of P1 is closed; what remains is the
+  decision the plan's open question 1 names - drawn set or typographic - and
+  the inconsistency the audit did not measure: the shell's status marks are
+  one vocabulary in name only.
+
+THE DECISION (closed by measurement, recorded here and in the plan doc):
+  typographic, not drawn. The shell keeps text glyphs and formalizes them.
+  Reasons, each measured:
+  1. Status is text-plus-glyph by contract (AT-32, `auditStatusNotColorOnly`).
+     A drawn mark is `aria-hidden` by nature, so it needs a duplicated label
+     to carry the same meaning - which is exactly what the sentence beside it
+     already provides. The glyph's job is to be the eye's handle on a status
+     the sentence already states.
+  2. DEC-001: no new package, and a bundled icon set is a second visual
+     vocabulary the shell would have to maintain beside the token layer it
+     just built (DMDARK). Nothing in the measured inventory needs it.
+  3. The audit found the copy already right and there are no toolbars - the
+     app has no icon-shaped slots. Verb icons would restate the verb every
+     button already names in a sentence, which is the design language the
+     whole workspace is built in.
+  4. What IS broken is the vocabulary, not the medium. Measured from source:
+     one meaning (concern) has TWO glyphs - `⚠` in the rail, the decision
+     panel and the check rows, and `!` in the audit's verdict chips; the same
+     six glyphs render at five different treatments (a circled 1.1rem mark in
+     the rail, a pill chip, a bold inline, and bare text in three panels); no
+     module owns the characters, so every panel redefines them inline.
+
+MECHANISM (one vocabulary, one component - the shape SKEL taught):
+  - `MARKS` in `web/src/lib/ui.tsx`: one record naming the five statuses the
+    shell has - `pass`, `concern`, `fail`, `current`, `pending` - to their
+    glyphs. Every site reads it; no panel redefines a glyph.
+  - `Mark` in `lib/ui.tsx`, for the marks that STAND ALONE (the rail's rungs,
+    the decision panel's key findings): the glyph in a fixed 1.1rem
+    inline-flex box, coloured by the status's own token, `aria-hidden` (the
+    label or sentence beside it is what assistive tech reads), carrying
+    `data-mark` so the treatment is testable. The rail keeps `.stage-mark`
+    for the spine's anchor mask, so the rail's mark carries both classes and
+    the settled rail does not move a pixel.
+  - The marks INSIDE a sentence (verdict chips, check rows, agent steps,
+    learn stages) stay text nodes: `getByText` joins only an element's direct
+    text children, so wrapping them would break the contract tests that read
+    `✗ evidence` as one string. They read their glyph from `MARKS` and their
+    colour from the container's status class, which already reads tokens.
+
+CONSISTENCY FIXES THE VOCABULARY IMPLIES (all in scope):
+  - `Verdict`'s concern glyph is `!`; it becomes `MARKS.concern`, so one
+    meaning has one glyph everywhere.
+  - The decision panel's fallback for an unvalidated finding is `●`
+    (current); it becomes `MARKS.pending` - an unvalidated finding is not
+    started, not the stage the loop is on.
+  - The agent panel renders a pending step on a `concern` (amber) chip;
+    pending is not a concern, so it renders on a neutral chip and the glyph
+    reads `MARKS.pending`.
+  - The agent panel's step marks and the learn panel's stage marks read from
+    `MARKS` rather than inline ternaries.
+
+NON-GOALS: no new dependency (DEC-001), no drawn SVG mark assets, no icons on
+  panel headings or verb buttons, no change to DOM text beyond the glyph
+  characters named above, no new layout, and no change to the accessibility
+  audit's surface (`aria-hidden` marks stay hidden; the labels and sentences
+  it reads are unchanged).
+
+ACCEPTANCE CRITERIA:
+  1. No component outside `lib/ui.tsx` names a glyph character: the five
+     literals live in `MARKS` and nowhere else.
+  2. The rail's rungs and the decision panel's key findings render `Mark`;
+     a test asserts each status's mark resolves its token colour.
+  3. One meaning has one glyph: a test asserts the concern glyph is the same
+     character on the rail, the decision panel, the check rows and the
+     verdict chips.
+  4. The settled workspace's pixel diff is confined to the marks themselves
+     (measured against a pre-ICON baseline): no layout moves - the rail's
+     marks keep their rungs and their size; what changes is the glyph's own
+     ink (the complete stage's rung takes the ok token and every mark takes
+     weight 700).
+  5. `auditStatusNotColorOnly` still returns zero violations and the
+     accessibility suite is green.
+  6. Gates: web vitest green; `npx tsc --noEmit` clean; `vite build` ok;
+     `verify_visual.py verify` green in both appearances; server pytest
+     unchanged.
+```
+
+
+DONE-RECORD (ICON):
+  The decision is recorded in the plan doc (item 12, open question 1) and in
+  the vocabulary itself: `MARKS` in web/src/lib/ui.tsx names the shell's five
+  statuses - pass `✓`, concern `⚠`, fail `✗`, current `●`, pending `○` - and
+  no component outside that file names a glyph character (criterion 1, held by
+  a test AND by grep). `Mark` renders the one treatment for a mark that stands
+  alone: a 1.1rem inline-flex box, the status's own token for the colour, and
+  `aria-hidden` - the label or sentence beside it is what assistive tech
+  announces, which is why `auditStatusNotColorOnly` still returns zero
+  violations. The rail's rungs carry `mark <status> stage-mark`, so the
+  vocabulary's treatment lands on the spine's own anchor mask.
+
+  The three consistency fixes the vocabulary implies, each pinned by a test:
+  the audit's verdict chip read `!` for a concern while everything else read
+  `⚠` - one meaning, two marks - and now reads `MARKS.concern`; the decision
+  panel's fallback for an unvalidated finding was `●` (current, the stage the
+  loop is on) and now reads `○` (pending, not started); the agent panel sat a
+  pending step on an amber `concern` chip and now renders the neutral chip,
+  so the chip and the glyph say the same thing.
+
+  Marks inside a sentence stay text nodes - `getByText` joins only an
+  element's direct text children, so wrapping them would break the contract
+  tests that read `✗ evidence` as one string. They read their character from
+  `MARKS` and their colour from the container's status class, which already
+  reads tokens.
+
+  Criterion 4, pixel-measured against a pre-ICON baseline (source stashed,
+  fresh `shots` run): the settled workspace differs by 857 px in light and
+  1395 px in dark out of 2.1M - 0.041% and 0.061% - and every changed cell is
+  in one column, x 24-72, the rail's seven rungs. No layout moved. The list
+  shot's 4.49% is a 1px content shift plus the isolated core's random case
+  id, both present in an ICON-vs-ICON run-to-run control (same 1px shift at
+  the same rows, 0.565%).
+
+  The visual harness gained a `.mark` probe read through the cascade: each of
+  the five marks resolves its own token in BOTH appearances (light
+  rgb(42,122,42) / rgb(138,106,26) / rgb(160,58,42) / rgb(74,111,165) /
+  rgb(102,102,102), dark rgb(127,214,146) / rgb(220,180,95) / rgb(239,138,118)
+  / rgb(143,178,224) / rgb(154,161,173)), and the box measures 17.5938px -
+  the rung's own room, so a mark outside the rail reads as the same mark.
+
+Gates: web vitest 320/320 (21 files, +8 icon tests in a new file); `npx tsc
+      --noEmit` clean; `vite build` ok; `verify_visual.py verify` green in
+      both appearances (78 checks, +12 mark/token); server pytest 796/796
+      unchanged. Trace and e2e untouched (no API or state change).
+STATE UPDATE: TASKS/HANDOFF gain the task; phase 3's last item (zone
+              composition 11) is the carried follow-up. No schema change.
+Contracts for the rolling window (the two most recent: ICON and
+SKEL). Older blocks are in `ai/TASKS-ARCHIVE.md`.
