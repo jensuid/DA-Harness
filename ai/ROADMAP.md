@@ -4,7 +4,7 @@ Source of truth for **where we are** on the global roadmap
 (`docs/Implementation Roadmap.md`). Every phase completion must update this
 file together with `CURRENT_STATE.md` and `TASKS.md`.
 
-**Current stage: P9 UI/UX Redesign — COMPLETE (4 of 4). No phase is open; v0.3.8 is published.**
+**Current stage: P9 UI/UX Redesign — COMPLETE (4 of 4). No phase is open; v0.3.9 is published.**
 
 ```
 P0 Foundation          DONE  ✓
@@ -28,10 +28,13 @@ P9 UI/UX Redesign       COMPLETE ✓  (all 4 phases: the foundation, the surface
                               the motion, the on-screen chart; 19 walk-test
                               findings closed; v0.3.5 published; the walk-test
                               follow-ups W3X/W4X/W5X closed in v0.3.6 and v0.3.7;
-                              the UI/UX audit plan's twelve items all resolved
+                              the UI/UX audit plan's twelve items all
+                              resolved
                               in v0.3.8: the restyle, the dark mode, the
                               skeletons, the marks, the landmarks and the zone
-                              composition)
+                              composition; v0.3.9 fixed the app icon's
+                              canvas geometry against Apple's measured
+                              template)
                               ← we are here
 ```
 
@@ -88,9 +91,11 @@ production-grade**.
   audit plan's twelve items are all resolved, so no phase and no task is
   queued. Every one of the PRD's 48 acceptance thresholds traces from the PRD,
   through the UX surface, the implementation and the test, to a measured or
-  asserted threshold (`verification/trace/REPORT.md`). v0.3.8 is published
-  (tag `v0.3.8`), bundling the five UI tasks that landed after v0.3.7:
-  DMDARK, SKEL, ICON, ZONE-A and ZONE-B.
+  asserted threshold (`verification/trace/REPORT.md`). v0.3.9 is published
+  (tag `v0.3.9`), fixing the app icon's canvas geometry (see
+  `desktop/src-tauri/icons/README.md`); it follows v0.3.8, which bundled the
+  five UI tasks that landed after v0.3.7: DMDARK, SKEL, ICON, ZONE-A and
+  ZONE-B.
 - **Known issues / blockers:** none in the code. Two are environmental:
   (1) GitHub Actions refuses every job with "recent account payments have
   failed" - an account-billing problem (Settings > Billing & plans), so

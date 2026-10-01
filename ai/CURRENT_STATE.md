@@ -107,7 +107,7 @@ conformance evaluation asked for is delivered; no phase is open.
   unchanged by ZONE-B. Desktop shell 30 Rust tests (unchanged; no shell code moved);
   P2, P3 and P4 gates
   PASS; **v0.2.0, v0.3.0, v0.3.1, v0.3.2, v0.3.3, v0.3.4, v0.3.5, v0.3.6,
-  v0.3.7 and v0.3.8 released**
+  v0.3.7, v0.3.8 and v0.3.9 released**
   (tags `v0.2.0` on `ec819fc`, `v0.3.0` on `ab56541`, `v0.3.1` on `19cefc1`,
   `v0.3.2` on `2ff1bca`, `v0.3.3` on `30db6e9`, `v0.3.4` on `d8bec6a`,
   `v0.3.5` on `1ace6a0`, `v0.3.6` on `0d15052`, `v0.3.7` on `78c13ac`).
@@ -118,6 +118,10 @@ conformance evaluation asked for is delivered; no phase is open.
   and a 0.3.4 core shipped in an app that called itself 0.3.3).
   v0.3.8 is the release the five UI tasks after v0.3.7 ship in (DMDARK, SKEL,
   ICON, ZONE-A, ZONE-B) - the audit plan's twelve items all resolved.
+  v0.3.9 fixes the app icon: the tile was 100% of its canvas while Apple's
+  template measures 80.5% (an 824x824 squircle with a 100px margin), so the
+  icon rendered ~24% wider than every other app. The spec and the numeric
+  verification live in `desktop/src-tauri/icons/README.md`.
 - **e2e:** all 28 real-server steps PASS (re-run at this tree); the
   requirement-traceability matrix 48/48 PASS; the web suite 285/285, tsc
   clean and the build ok - the reports the matrix cites as its measured
